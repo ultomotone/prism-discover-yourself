@@ -4,6 +4,18 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import Assessment from "./pages/Assessment";
+import About from "./pages/About";
+import Profiles from "./pages/Profiles";
+import Individuals from "./pages/Individuals";
+import Teams from "./pages/Teams";
+import Insights from "./pages/Insights";
+import Research from "./pages/Research";
+import FAQ from "./pages/FAQ";
+import Contact from "./pages/Contact";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Accessibility from "./pages/Accessibility";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -16,6 +28,18 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/assessment" element={<Assessment />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/profiles" element={<Profiles />} />
+          <Route path="/individuals" element={<Individuals />} />
+          <Route path="/teams" element={<Teams />} />
+          <Route path="/insights" element={<Insights />} />
+          <Route path="/research" element={<Research />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/accessibility" element={<Accessibility />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
