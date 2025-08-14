@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { useState } from "react";
+import Header from "@/components/Header";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -31,6 +32,7 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="prism-container pt-24 pb-16">
         <div className="max-w-4xl mx-auto">
           {/* Header */}

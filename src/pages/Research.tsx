@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart3, Shield, Users, CheckCircle } from "lucide-react";
+import Header from "@/components/Header";
 
 const Research = () => {
   const methods = [
@@ -12,6 +13,7 @@ const Research = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="prism-container pt-24 pb-16">
         <div className="max-w-6xl mx-auto">
           {/* Header */}

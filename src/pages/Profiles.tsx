@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import Header from "@/components/Header";
 
 const Profiles = () => {
   const profiles = [
@@ -37,6 +38,7 @@ const Profiles = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="prism-container pt-24 pb-16">
         <div className="max-w-6xl mx-auto">
           {/* Header */}

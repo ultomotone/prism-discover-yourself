@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, User, Users } from "lucide-react";
+import Header from "@/components/Header";
 
 const Insights = () => {
   const posts = [
@@ -41,6 +42,7 @@ const Insights = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="prism-container pt-24 pb-16">
         <div className="max-w-4xl mx-auto">
           {/* Header */}

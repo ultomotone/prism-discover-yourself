@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Brain, BarChart3, Zap, Shield, CheckCircle, ArrowRight, HelpCircle } from "lucide-react";
 import { useState } from "react";
+import Header from "@/components/Header";
 
 const About = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -65,6 +66,7 @@ const About = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="prism-container pt-24 pb-16">
         <div className="max-w-6xl mx-auto">
           {/* Hero */}

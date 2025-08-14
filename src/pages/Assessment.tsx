@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Clock, Shield, Brain, CheckCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import Header from "@/components/Header";
 
 const Assessment = () => {
   const assessmentLink = "https://docs.google.com/forms/d/e/1FAIpQLScVFSAWRNUZT10hEoziD1oMXeS_FyCVP9NFTWD61eR8xDQaDA/viewform";
@@ -35,6 +36,7 @@ const Assessment = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="prism-container pt-24 pb-16">
         <div className="max-w-4xl mx-auto">
           {/* Header */}

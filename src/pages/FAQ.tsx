@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { ChevronDown, HelpCircle } from "lucide-react";
 import { useState } from "react";
+import Header from "@/components/Header";
 
 const FAQ = () => {
   const [openItems, setOpenItems] = useState<number[]>([]);
@@ -98,6 +99,7 @@ const FAQ = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="prism-container pt-24 pb-16">
         <div className="max-w-4xl mx-auto">
           {/* Header */}

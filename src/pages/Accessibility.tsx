@@ -1,9 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Eye, Ear, Navigation, Mail } from "lucide-react";
+import Header from "@/components/Header";
 
 const Accessibility = () => {
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="prism-container pt-24 pb-16">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
