@@ -87,7 +87,11 @@ const IndividualsSection = () => {
                 <div className="text-4xl font-bold text-secondary mb-2">15 minutes</div>
                 <div className="text-muted-foreground">to life-changing insights</div>
               </div>
-              <Button variant="assessment" size="lg">
+              <Button 
+                variant="assessment" 
+                size="lg"
+                onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLScVFSAWRNUZT10hEoziD1oMXeS_FyCVP9NFTWD61eR8xDQaDA/viewform', '_blank')}
+              >
                 Start Your Journey
               </Button>
             </div>

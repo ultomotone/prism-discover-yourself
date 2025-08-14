@@ -106,7 +106,12 @@ const TeamsSection = () => {
             </div>
             <div className="text-center lg:text-right">
               <div className="space-y-4">
-                <Button variant="assessment" size="lg" className="bg-white text-primary hover:bg-white/90">
+                <Button 
+                  variant="assessment" 
+                  size="lg" 
+                  className="bg-white text-primary hover:bg-white/90"
+                  onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLScVFSAWRNUZT10hEoziD1oMXeS_FyCVP9NFTWD61eR8xDQaDA/viewform', '_blank')}
+                >
                   Get Team Assessment
                 </Button>
                 <div className="text-white/80 text-sm">
