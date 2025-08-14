@@ -83,10 +83,6 @@ const IndividualsSection = () => {
               </ul>
             </div>
             <div className="text-center lg:text-right">
-              <div className="mb-6">
-                <div className="text-4xl font-bold text-secondary mb-2">15 minutes</div>
-                <div className="text-muted-foreground">to life-changing insights</div>
-              </div>
               <Button 
                 variant="assessment" 
                 size="lg"

@@ -41,21 +41,6 @@ const Hero = () => {
               </Button>
             </div>
 
-            {/* Social Proof */}
-            <div className="flex items-center space-x-8 pt-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">500K+</div>
-                <div className="text-sm text-muted-foreground">Assessments Taken</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-secondary">2,500+</div>
-                <div className="text-sm text-muted-foreground">Teams Transformed</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-accent">98%</div>
-                <div className="text-sm text-muted-foreground">User Satisfaction</div>
-              </div>
-            </div>
           </div>
 
           {/* Right Image */}
