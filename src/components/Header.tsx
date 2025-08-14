@@ -6,7 +6,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navigation = [
-    { name: "About the Science", href: "/about" },
+    { name: "About PRISM", href: "/about" },
     { name: "For Individuals", href: "/individuals" },
     { name: "For Teams", href: "/teams" },
     { name: "Blog & Insights", href: "/insights" },
