@@ -3,29 +3,22 @@ import { Separator } from "@/components/ui/separator";
 import { Mail, Phone, MapPin, Linkedin, Twitter, Facebook } from "lucide-react";
 
 const Footer = () => {
-  const footerLinks = {
-    product: [
-      { name: "Assessment", href: "#assessment" },
-      { name: "For Individuals", href: "#individuals" },
-      { name: "For Teams", href: "#teams" },
-      { name: "Pricing", href: "#pricing" },
+  const popularLinks = {
+    main: [
+      { name: "Take Assessment", href: "/assessment" },
+      { name: "For Individuals", href: "/individuals" },
+      { name: "For Teams", href: "/teams" },
+      { name: "About PRISM", href: "/about" },
     ],
-    company: [
-      { name: "About Us", href: "#about" },
-      { name: "Research", href: "#research" },
-      { name: "Case Studies", href: "#cases" },
-      { name: "Careers", href: "#careers" },
-    ],
-    resources: [
-      { name: "Blog", href: "#blog" },
-      { name: "Download Center", href: "#downloads" },
-      { name: "Support", href: "#support" },
-      { name: "FAQ", href: "#faq" },
+    support: [
+      { name: "FAQ", href: "/faq" },
+      { name: "Research", href: "/research" },
+      { name: "Contact Us", href: "/contact" },
+      { name: "Accessibility", href: "/accessibility" },
     ],
     legal: [
-      { name: "Privacy Policy", href: "#privacy" },
-      { name: "Terms of Service", href: "#terms" },
-      { name: "Cookie Policy", href: "#cookies" },
+      { name: "Privacy Policy", href: "/privacy" },
+      { name: "Terms of Service", href: "/terms" },
     ],
   };
 
@@ -79,11 +72,11 @@ const Footer = () => {
               </div>
             </div>
 
-            {/* Link Columns */}
+            {/* Popular Link Columns */}
             <div>
-              <h3 className="font-semibold mb-4">Product</h3>
+              <h3 className="font-semibold mb-4">Popular</h3>
               <ul className="space-y-2">
-                {footerLinks.product.map((link) => (
+                {popularLinks.main.map((link) => (
                   <li key={link.name}>
                     <a href={link.href} className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
                       {link.name}
@@ -94,22 +87,9 @@ const Footer = () => {
             </div>
 
             <div>
-              <h3 className="font-semibold mb-4">Company</h3>
+              <h3 className="font-semibold mb-4">Support</h3>
               <ul className="space-y-2">
-                {footerLinks.company.map((link) => (
-                  <li key={link.name}>
-                    <a href={link.href} className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
-                      {link.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-4">Resources</h3>
-              <ul className="space-y-2">
-                {footerLinks.resources.map((link) => (
+                {popularLinks.support.map((link) => (
                   <li key={link.name}>
                     <a href={link.href} className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
                       {link.name}
@@ -130,7 +110,7 @@ const Footer = () => {
               © 2024 PRISM Personality System. All rights reserved.
             </div>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              {footerLinks.legal.map((link) => (
+              {popularLinks.legal.map((link) => (
                 <a
                   key={link.name}
                   href={link.href}
