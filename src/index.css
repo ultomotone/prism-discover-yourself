@@ -9,32 +9,65 @@ All colors MUST be HSL.
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 225 15% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 225 15% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 225 15% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* PRISM Primary - Deep Authoritative Blue */
+    --primary: 225 60% 25%;
+    --primary-foreground: 0 0% 98%;
+    --primary-light: 225 45% 35%;
+    --primary-dark: 225 70% 20%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* PRISM Secondary - Trustworthy Teal */
+    --secondary: 190 50% 45%;
+    --secondary-foreground: 0 0% 98%;
+    --secondary-light: 190 40% 55%;
+    --secondary-dark: 190 60% 35%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* PRISM Accent - Energizing Purple */
+    --accent: 270 70% 50%;
+    --accent-foreground: 0 0% 98%;
+    --accent-light: 270 60% 60%;
+    --accent-dark: 270 80% 40%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* PRISM Warm - Inspiring Orange */
+    --warm: 35 85% 55%;
+    --warm-foreground: 0 0% 98%;
+    --warm-light: 35 75% 65%;
+    --warm-dark: 35 95% 45%;
+
+    --muted: 225 10% 95%;
+    --muted-foreground: 225 15% 45%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 225 15% 88%;
+    --input: 225 15% 88%;
+    --ring: 225 60% 25%;
+
+    /* PRISM Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-light)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-light)));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent-light)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    --gradient-warm: linear-gradient(135deg, hsl(var(--warm)), hsl(var(--warm-light)));
+
+    /* PRISM Shadows */
+    --shadow-primary: 0 10px 30px -5px hsl(var(--primary) / 0.15);
+    --shadow-secondary: 0 8px 25px -5px hsl(var(--secondary) / 0.12);
+    --shadow-accent: 0 8px 25px -5px hsl(var(--accent) / 0.12);
+    --shadow-warm: 0 8px 25px -5px hsl(var(--warm) / 0.12);
+    --shadow-card: 0 4px 20px -2px hsl(var(--primary) / 0.08);
+
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --radius: 0.5rem;
 
@@ -100,6 +133,114 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Typography Classes */
+  .prism-heading-xl {
+    @apply text-5xl lg:text-6xl font-bold tracking-tight;
+  }
+
+  .prism-heading-lg {
+    @apply text-4xl lg:text-5xl font-bold tracking-tight;
+  }
+
+  .prism-heading-md {
+    @apply text-3xl lg:text-4xl font-semibold tracking-tight;
+  }
+
+  .prism-heading-sm {
+    @apply text-2xl lg:text-3xl font-semibold;
+  }
+
+  .prism-body-lg {
+    @apply text-lg lg:text-xl leading-relaxed;
+  }
+
+  .prism-body {
+    @apply text-base leading-relaxed;
+  }
+
+  /* Gradient Backgrounds */
+  .prism-gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .prism-gradient-secondary {
+    background: var(--gradient-secondary);
+  }
+
+  .prism-gradient-accent {
+    background: var(--gradient-accent);
+  }
+
+  .prism-gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  .prism-gradient-warm {
+    background: var(--gradient-warm);
+  }
+
+  /* Shadow Utilities */
+  .prism-shadow-primary {
+    box-shadow: var(--shadow-primary);
+  }
+
+  .prism-shadow-secondary {
+    box-shadow: var(--shadow-secondary);
+  }
+
+  .prism-shadow-accent {
+    box-shadow: var(--shadow-accent);
+  }
+
+  .prism-shadow-warm {
+    box-shadow: var(--shadow-warm);
+  }
+
+  .prism-shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Interactive Elements */
+  .prism-transition {
+    transition: var(--transition-smooth);
+  }
+
+  .prism-transition-bounce {
+    transition: var(--transition-bounce);
+  }
+
+  /* Hover Effects */
+  .prism-hover-lift {
+    @apply prism-transition hover:transform hover:-translate-y-1 hover:scale-105;
+  }
+
+  .prism-hover-glow {
+    @apply prism-transition hover:prism-shadow-primary;
+  }
+
+  /* Content Sections */
+  .prism-section {
+    @apply py-16 lg:py-24;
+  }
+
+  .prism-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Hero Specific Styles */
+  .prism-hero-bg {
+    background: linear-gradient(135deg, 
+      hsl(var(--primary)) 0%, 
+      hsl(var(--secondary)) 50%, 
+      hsl(var(--accent)) 100%);
+  }
+
+  .prism-hero-overlay {
+    background: linear-gradient(45deg, 
+      rgba(255,255,255,0.1) 0%, 
+      rgba(255,255,255,0.05) 100%);
   }
 }
