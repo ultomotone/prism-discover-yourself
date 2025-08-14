@@ -20,7 +20,7 @@ const Testimonials = () => {
     {
       name: "Emma Thompson",
       role: "HR Director, Global Consulting",
-      content: "We've used several personality assessments, but PRISM stands out for its research foundation and practical applications. Our employee engagement scores increased 40%.",
+      content: "We've used several personality assessments, but PRISM stands out for its research foundation and practical applications. The insights have been transformative for our team.",
       rating: 5,
       company: "International Consulting Firm"
     }
@@ -67,26 +67,6 @@ const Testimonials = () => {
           ))}
         </div>
 
-        {/* Research Credibility */}
-        <div className="mt-16 text-center">
-          <h3 className="text-2xl font-bold text-primary mb-8">
-            Built on Scientific Research
-          </h3>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-secondary mb-2">15+</div>
-              <div className="text-muted-foreground">Years of Research</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-accent mb-2">50,000+</div>
-              <div className="text-muted-foreground">Data Points Analyzed</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-warm mb-2">99.2%</div>
-              <div className="text-muted-foreground">Reliability Score</div>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );

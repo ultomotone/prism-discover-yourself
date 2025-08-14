@@ -8,25 +8,21 @@ const TeamsSection = () => {
       icon: MessageSquare,
       title: "Enhanced Communication",
       description: "Teams learn to adapt their communication styles for maximum impact and understanding.",
-      stat: "87% improvement",
     },
     {
       icon: Users,
-      title: "Stronger Collaboration",
+      title: "Stronger Collaboration", 
       description: "Understanding personality differences transforms conflict into productive collaboration.",
-      stat: "92% team satisfaction",
     },
     {
       icon: BarChart3,
       title: "Increased Productivity",
       description: "When people work in their natural strengths, performance and engagement soar.",
-      stat: "34% productivity gain",
     },
     {
       icon: Lightbulb,
       title: "Innovation Boost",
       description: "Diverse thinking styles create breakthrough solutions and creative problem-solving.",
-      stat: "3x more innovative ideas",
     },
   ];
 
@@ -52,13 +48,10 @@ const TeamsSection = () => {
                     <outcome.icon className="h-6 w-6 text-white" />
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="mb-3">
                       <h3 className="text-xl font-semibold text-primary">
                         {outcome.title}
                       </h3>
-                      <span className="text-sm font-bold text-accent bg-accent/10 px-3 py-1 rounded-full">
-                        {outcome.stat}
-                      </span>
                     </div>
                     <p className="text-muted-foreground">
                       {outcome.description}
