@@ -36,10 +36,10 @@ const Teams = () => {
           {/* Header */}
           <div className="text-center mb-16">
             <h1 className="prism-heading-lg text-primary mb-6">
-              A shared language for better work
+              PRISM for Teams
             </h1>
             <p className="prism-body-lg text-muted-foreground max-w-3xl mx-auto">
-              Reduce friction, make cleaner decisions, and design meetings that fit how your team thinks.
+              Build understanding, reduce friction, and unlock collective potential. Teams thrive when they understand how each member processes information, makes decisions, and adapts under pressure.
             </p>
           </div>
 

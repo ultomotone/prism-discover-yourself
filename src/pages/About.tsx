@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Brain, BarChart3, Zap, Shield, ArrowRight } from "lucide-react";
+import { Brain, BarChart3, Zap, Shield, ArrowRight, CheckCircle, HelpCircle } from "lucide-react";
+import { useState } from "react";
 import Header from "@/components/Header";
 
 const About = () => {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const assessmentLink = "https://docs.google.com/forms/d/e/1FAIpQLScVFSAWRNUZT10hEoziD1oMXeS_FyCVP9NFTWD61eR8xDQaDA/viewform";
 
@@ -112,118 +114,203 @@ const About = () => {
             </Card>
           </section>
 
-          {/* The Model at a Glance */}
-          <section className="mb-16">
-            <h2 className="prism-heading-md text-primary mb-12 text-center">The Model at a Glance</h2>
-            
-            {/* 1) Information Elements */}
-            <Card className="mb-8 prism-shadow-card">
-              <CardContent className="p-8">
-                <div className="flex items-center mb-6">
-                  <Brain className="h-6 w-6 text-secondary mr-3" />
-                  <h3 className="text-2xl font-semibold text-primary">1) Information Elements (the 8 signals)</h3>
-                </div>
-                <p className="text-muted-foreground mb-6">
-                  Each "signal" is a distinct way of processing information. You use all eight—just in different amounts.
-                </p>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {elements.map((element, index) => (
-                    <div key={index} className="flex items-start p-4 bg-muted/30 rounded-lg">
-                      <div className="w-8 h-8 prism-gradient-secondary rounded-md flex items-center justify-center mr-3 flex-shrink-0">
-                        <span className="text-white font-bold text-sm">{element.code}</span>
-                      </div>
-                      <div>
-                        <span className="font-semibold text-primary">{element.name}</span>
-                        <span className="text-muted-foreground">: {element.desc}</span>
-                      </div>
+          {/* PRISM Overview - Modern Visual */}
+          <Card className="mb-16 prism-shadow-card">
+            <CardContent className="p-8">
+              <h2 className="prism-heading-md text-primary mb-6 text-center">What PRISM Maps</h2>
+              <p className="prism-body text-muted-foreground text-center max-w-3xl mx-auto mb-8">
+                PRISM shows what drives your choices, what changes when life turns up the pressure, and how to use that knowledge to communicate better, decide more wisely, and grow with intention.
+              </p>
+              
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card className="prism-hover-lift border-2 border-secondary/20">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-12 h-12 prism-gradient-secondary rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Brain className="h-6 w-6 text-white" />
                     </div>
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground mt-4 font-medium">
-                  Output: A matrix of Strength (how often/intensely you use it) and Dimensionality (how capable and portable it is).
-                </p>
-              </CardContent>
-            </Card>
+                    <h3 className="font-semibold text-primary mb-2">Information Signals</h3>
+                    <p className="text-sm text-muted-foreground">The 8 mental "languages" your brain uses to process the world</p>
+                    <Button variant="ghost" size="sm" asChild className="mt-2">
+                      <a href="/signals" className="flex items-center gap-1">
+                        Explore <ArrowRight className="h-3 w-3" />
+                      </a>
+                    </Button>
+                  </CardContent>
+                </Card>
 
-            {/* 2) Dimensionality */}
-            <Card className="mb-8 prism-shadow-card">
-              <CardContent className="p-8">
-                <div className="flex items-center mb-6">
-                  <BarChart3 className="h-6 w-6 text-accent mr-3" />
-                  <h3 className="text-2xl font-semibold text-primary">2) Dimensionality (1D–4D)</h3>
-                </div>
-                <p className="text-muted-foreground mb-6">
-                  Not "good vs. bad"—it's about breadth and adaptability.
-                </p>
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {dimensionality.map((dim, index) => (
-                    <div key={index} className="text-center p-4 bg-muted/30 rounded-lg">
-                      <div className="w-12 h-12 prism-gradient-accent rounded-full flex items-center justify-center mx-auto mb-3">
-                        <span className="text-white font-bold">{dim.level}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{dim.desc}</p>
+                <Card className="prism-hover-lift border-2 border-accent/20">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-12 h-12 prism-gradient-accent rounded-full flex items-center justify-center mx-auto mb-4">
+                      <BarChart3 className="h-6 w-6 text-white" />
                     </div>
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground mt-4 font-medium">
-                  Output: Each of the eight elements is labeled 1D–4D based on your responses.
-                </p>
-              </CardContent>
-            </Card>
+                    <h3 className="font-semibold text-primary mb-2">Dimensionality</h3>
+                    <p className="text-sm text-muted-foreground">How broad, adaptable, and portable each signal is (1D–4D)</p>
+                    <Button variant="ghost" size="sm" asChild className="mt-2">
+                      <a href="/dimensionality" className="flex items-center gap-1">
+                        Explore <ArrowRight className="h-3 w-3" />
+                      </a>
+                    </Button>
+                  </CardContent>
+                </Card>
 
-            {/* 3) Block Dynamics */}
-            <Card className="mb-8 prism-shadow-card">
-              <CardContent className="p-8">
-                <div className="flex items-center mb-6">
-                  <Zap className="h-6 w-6 text-warm mr-3" />
-                  <h3 className="text-2xl font-semibold text-primary">3) Block Dynamics (how you shift in real life)</h3>
-                </div>
-                <p className="text-muted-foreground mb-6">
-                  Your system reorganizes under different conditions:
-                </p>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {blocks.map((block, index) => (
-                    <div key={index} className="flex items-start p-4 bg-muted/30 rounded-lg">
-                      <div className="w-3 h-3 prism-gradient-warm rounded-full mt-1 mr-3 flex-shrink-0"></div>
-                      <div>
-                        <span className="font-semibold text-primary">{block.name}</span>
-                        <span className="text-muted-foreground"> — {block.desc}</span>
-                      </div>
+                <Card className="prism-hover-lift border-2 border-warm/20">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-12 h-12 prism-gradient-warm rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Zap className="h-6 w-6 text-white" />
                     </div>
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground mt-4 font-medium">
-                  Output: A block balance and a stress/flow toggle map (what tends to come online when).
-                </p>
-              </CardContent>
-            </Card>
+                    <h3 className="font-semibold text-primary mb-2">Block Dynamics</h3>
+                    <p className="text-sm text-muted-foreground">How your mental system reorganizes in calm, stress, or flow</p>
+                    <Button variant="ghost" size="sm" asChild className="mt-2">
+                      <a href="/blocks" className="flex items-center gap-1">
+                        Explore <ArrowRight className="h-3 w-3" />
+                      </a>
+                    </Button>
+                  </CardContent>
+                </Card>
 
-            {/* 4) The ± Overlay */}
-            <Card className="mb-8 prism-shadow-card">
-              <CardContent className="p-8">
-                <div className="flex items-center mb-6">
-                  <Shield className="h-6 w-6 text-primary mr-3" />
-                  <h3 className="text-2xl font-semibold text-primary">4) The ± Overlay (state)</h3>
+                <Card className="prism-hover-lift border-2 border-primary/20">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-12 h-12 prism-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Shield className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="font-semibold text-primary mb-2">State Overlay (±)</h3>
+                    <p className="text-sm text-muted-foreground">A reactivity lens that explains day-to-day variations</p>
+                    <Button variant="ghost" size="sm" asChild className="mt-2">
+                      <a href="/state-overlay" className="flex items-center gap-1">
+                        Explore <ArrowRight className="h-3 w-3" />
+                      </a>
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Why This Matters */}
+          <Card className="mb-16 prism-shadow-card">
+            <CardContent className="p-8">
+              <h2 className="prism-heading-md text-primary mb-6 text-center">Why This Matters</h2>
+              <div className="grid md:grid-cols-2 gap-8">
+                <div>
+                  <h3 className="text-xl font-semibold text-primary mb-4">For Individuals</h3>
+                  <ul className="space-y-3">
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 prism-gradient-secondary rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                      <span className="text-muted-foreground">See yourself clearly—beyond labels to living patterns</span>
+                    </li>
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 prism-gradient-secondary rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                      <span className="text-muted-foreground">Make better decisions by understanding what drives your choices</span>
+                    </li>
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 prism-gradient-secondary rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                      <span className="text-muted-foreground">Grow with intention using targeted development practices</span>
+                    </li>
+                  </ul>
+                  <Button variant="outline" asChild className="mt-4">
+                    <a href="/individuals">Learn More</a>
+                  </Button>
                 </div>
-                <p className="text-muted-foreground mb-4">
-                  A calm/reactive state overlay (akin to neuroticism) that explains how the same profile can look different on different days.
-                </p>
-                <div className="grid md:grid-cols-2 gap-4 mb-4">
-                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <span className="font-semibold text-red-700">+ (higher reactivity):</span>
-                    <span className="text-red-600 ml-2">more volatile, hyper-vigilant tone</span>
+                <div>
+                  <h3 className="text-xl font-semibold text-primary mb-4">For Teams</h3>
+                  <ul className="space-y-3">
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 prism-gradient-accent rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                      <span className="text-muted-foreground">Build understanding and reduce friction between members</span>
+                    </li>
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 prism-gradient-accent rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                      <span className="text-muted-foreground">Map cognitive diversity and identify capability gaps</span>
+                    </li>
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 prism-gradient-accent rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                      <span className="text-muted-foreground">Navigate stress and conflict with shared understanding</span>
+                    </li>
+                  </ul>
+                  <Button variant="outline" asChild className="mt-4">
+                    <a href="/teams">Learn More</a>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Deep Dive Navigation */}
+          <Card className="mb-16 prism-shadow-card">
+            <CardContent className="p-8">
+              <h2 className="prism-heading-md text-primary mb-6 text-center">Dive Deeper</h2>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-primary">The Model</h3>
+                  <div className="space-y-2">
+                    <Button variant="ghost" asChild className="w-full justify-start">
+                      <a href="/signals" className="flex items-center justify-between">
+                        <span>Information Elements (8 Signals)</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </a>
+                    </Button>
+                    <Button variant="ghost" asChild className="w-full justify-start">
+                      <a href="/dimensionality" className="flex items-center justify-between">
+                        <span>Dimensionality (1D-4D)</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </a>
+                    </Button>
+                    <Button variant="ghost" asChild className="w-full justify-start">
+                      <a href="/blocks" className="flex items-center justify-between">
+                        <span>Block Dynamics</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </a>
+                    </Button>
+                    <Button variant="ghost" asChild className="w-full justify-start">
+                      <a href="/state-overlay" className="flex items-center justify-between">
+                        <span>State Overlay (±)</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </a>
+                    </Button>
                   </div>
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <span className="font-semibold text-green-700">− (lower reactivity):</span>
-                    <span className="text-green-600 ml-2">steadier, easier recovery</span>
+                </div>
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-primary">The Methods</h3>
+                  <div className="space-y-2">
+                    <Button variant="ghost" asChild className="w-full justify-start">
+                      <a href="/assessment-methods" className="flex items-center justify-between">
+                        <span>How the Assessment Works</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </a>
+                    </Button>
+                    <Button variant="ghost" asChild className="w-full justify-start">
+                      <a href="/accuracy-privacy" className="flex items-center justify-between">
+                        <span>Accuracy & Privacy</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </a>
+                    </Button>
+                    <Button variant="ghost" asChild className="w-full justify-start">
+                      <a href="/faq" className="flex items-center justify-between">
+                        <span>Frequently Asked Questions</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </a>
+                    </Button>
                   </div>
                 </div>
-                <p className="text-sm text-primary font-medium">
-                  Important: The overlay changes expression, not your core wiring.
-                </p>
-              </CardContent>
-            </Card>
-          </section>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Privacy Note */}
+          <Card className="mb-16 bg-muted/30">
+            <CardContent className="p-6">
+              <h3 className="font-semibold text-primary mb-2 text-center">A Note on Privacy & Data Handling</h3>
+              <p className="text-sm text-muted-foreground text-center">
+                Your assessment responses are used only for generating your profile. We never sell or share your data with third parties. 
+                All data is encrypted and stored securely with industry-standard protections.
+              </p>
+              <div className="text-center mt-4">
+                <Button variant="ghost" size="sm" asChild>
+                  <a href="/accuracy-privacy">Learn more about our privacy practices</a>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* How the Assessment Works */}
           <section className="mb-16">
