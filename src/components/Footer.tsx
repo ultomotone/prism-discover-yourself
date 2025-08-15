@@ -12,7 +12,7 @@ const Footer = () => {
     ],
     components: [
       { name: "Information Elements", href: "/signals" },
-      { name: "Quadras", href: "/quadras" },
+      { name: "Core Alignments", href: "/core-alignments" },
       { name: "Dimensionality", href: "/dimensionality" },
       { name: "Block Dynamics", href: "/blocks" },
       { name: "State Overlay", href: "/state-overlay" },

@@ -24,7 +24,7 @@ const Header = () => {
     { name: "Ne - Possibility Explorer", href: "/ne" },
     { name: "Si - Steward of Experience", href: "/si" },
     { name: "Se - Real-Time Mover", href: "/se" },
-    { name: "Quadras", href: "/quadras" },
+    { name: "Core Alignments", href: "/core-alignments" },
     { name: "Dimensionality", href: "/dimensionality" },
     { name: "Block Dynamics", href: "/blocks" },
     { name: "State Overlay", href: "/state-overlay" },

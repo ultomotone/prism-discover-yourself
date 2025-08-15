@@ -32,7 +32,7 @@ import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Accessibility from "./pages/Accessibility";
-import Quadras from "./pages/Quadras";
+import CoreAlignments from "./pages/CoreAlignments";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -74,7 +74,7 @@ const App = () => (
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/accessibility" element={<Accessibility />} />
-              <Route path="/quadras" element={<Quadras />} />
+              <Route path="/core-alignments" element={<CoreAlignments />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

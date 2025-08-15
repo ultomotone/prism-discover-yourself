@@ -5,11 +5,11 @@ import Header from "@/components/Header";
 import { ArrowLeft, ArrowRight, Users, Target, Zap, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const Quadras = () => {
-  const quadras = [
+const CoreAlignments = () => {
+  const coreAlignments = [
     {
       name: "Innovative Harmonizers",
-      formerly: "Alpha Quadra",
+      formerly: "Alpha Core Alignment",
       icon: <Zap className="h-8 w-8 text-primary" />,
       archetype: "Enthusiastic explorers who seek out new ideas and shared comfort",
       coreValues: "Openness to possibilities and intellectual playfulness",
@@ -18,7 +18,7 @@ const Quadras = () => {
     },
     {
       name: "Driven Idealists",
-      formerly: "Beta Quadra", 
+      formerly: "Beta Core Alignment", 
       icon: <Target className="h-8 w-8 text-primary" />,
       archetype: "Intense crusaders motivated by vision, loyalty, and impact",
       coreValues: "Mission, unity, and honor",
@@ -27,7 +27,7 @@ const Quadras = () => {
     },
     {
       name: "Pragmatic Realists", 
-      formerly: "Gamma Quadra",
+      formerly: "Gamma Core Alignment",
       icon: <Users className="h-8 w-8 text-primary" />,
       archetype: "Hard-nosed yet principled achievers who keep their eyes on the prize",
       coreValues: "Efficacy and authenticity",
@@ -36,7 +36,7 @@ const Quadras = () => {
     },
     {
       name: "Humanitarian Stabilizers",
-      formerly: "Delta Quadra",
+      formerly: "Delta Core Alignment",
       icon: <Heart className="h-8 w-8 text-primary" />,
       archetype: "Conscientious facilitators who cultivate stability, growth, and well-being for all",
       coreValues: "Steady improvement and ethical sincerity", 
@@ -53,10 +53,10 @@ const Quadras = () => {
         {/* Hero Section */}
         <section className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            PRISM Quadra Definitions
+            PRISM Core Alignments
           </h1>
           <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
-            Understanding quadras – groupings of four personality types with shared values – is crucial in both classical Socionics and its modern evolution under the PRISM model.
+            Understanding core alignments – groupings of four personality types with shared values – is crucial in both classical Socionics and its modern evolution under the PRISM model.
           </p>
         </section>
 
@@ -67,25 +67,25 @@ const Quadras = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              In Socionics, each quadra consists of four types that share the same valued cognitive elements, creating natural "ideological common ground" among them. Members of a quadra communicate easily and feel an innate camaraderie, while those from different quadras often clash or misunderstand each other due to differing priorities.
+              In Socionics, each core alignment consists of four types that share the same valued cognitive elements, creating natural "ideological common ground" among them. Members of a core alignment communicate easily and feel an innate camaraderie, while those from different core alignments often clash or misunderstand each other due to differing priorities.
             </p>
             <p className="text-muted-foreground">
-              Traditionally, these groups were named Alpha, Beta, Gamma, and Delta quadras. However, PRISM updates and renames these quadra definitions to make them more accessible and nuanced for both general audiences and professionals. Each new name captures the archetypal essence of the group while PRISM's dynamic approach adds insight into how individuals can grow and adapt beyond static stereotypes.
+              Traditionally, these groups were named Alpha, Beta, Gamma, and Delta core alignments. However, PRISM updates and renames these core alignment definitions to make them more accessible and nuanced for both general audiences and professionals. Each new name captures the archetypal essence of the group while PRISM's dynamic approach adds insight into how individuals can grow and adapt beyond static stereotypes.
             </p>
           </CardContent>
         </Card>
 
-        {/* Quadras */}
+        {/* Core Alignments */}
         <div className="space-y-8">
-          {quadras.map((quadra, index) => (
+          {coreAlignments.map((coreAlignment, index) => (
             <Card key={index} className="overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10">
                 <div className="flex items-center gap-3 mb-2">
-                  {quadra.icon}
+                  {coreAlignment.icon}
                   <div>
-                    <CardTitle className="text-2xl">{quadra.name}</CardTitle>
+                    <CardTitle className="text-2xl">{coreAlignment.name}</CardTitle>
                     <CardDescription className="text-base">
-                      (formerly {quadra.formerly})
+                      (formerly {coreAlignment.formerly})
                     </CardDescription>
                   </div>
                 </div>
@@ -93,28 +93,28 @@ const Quadras = () => {
               <CardContent className="p-6 space-y-6">
                 <div>
                   <h4 className="font-semibold text-lg mb-2 text-primary">Archetype</h4>
-                  <p className="text-muted-foreground">{quadra.archetype}</p>
+                  <p className="text-muted-foreground">{coreAlignment.archetype}</p>
                 </div>
                 
                 <Separator />
                 
                 <div>
                   <h4 className="font-semibold text-lg mb-2 text-primary">Core Values</h4>
-                  <p className="text-muted-foreground">{quadra.coreValues}</p>
+                  <p className="text-muted-foreground">{coreAlignment.coreValues}</p>
                 </div>
                 
                 <Separator />
                 
                 <div>
                   <h4 className="font-semibold text-lg mb-2 text-primary">Group Characteristics</h4>
-                  <p className="text-muted-foreground">{quadra.characteristics}</p>
+                  <p className="text-muted-foreground">{coreAlignment.characteristics}</p>
                 </div>
                 
                 <Separator />
                 
                 <div>
                   <h4 className="font-semibold text-lg mb-2 text-primary">PRISM's Nuanced Perspective</h4>
-                  <p className="text-muted-foreground">{quadra.prismPerspective}</p>
+                  <p className="text-muted-foreground">{coreAlignment.prismPerspective}</p>
                 </div>
               </CardContent>
             </Card>
@@ -128,13 +128,13 @@ const Quadras = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              Each of these four PRISM quadras offers a distinct strength and perspective, updated from the old Alpha–Delta nomenclature to be more intuitive. By renaming the groups and enriching their descriptions, PRISM makes the concepts accessible to the public while preserving depth for professionals.
+              Each of these four PRISM core alignments offers a distinct strength and perspective, updated from the old Alpha–Delta nomenclature to be more intuitive. By renaming the groups and enriching their descriptions, PRISM makes the concepts accessible to the public while preserving depth for professionals.
             </p>
             <p className="text-muted-foreground">
-              Understanding these quadras can improve teamwork, communication, and personal growth: people can better appreciate why certain values or styles resonate between some and conflict with others, and how to leverage each quadra's strengths.
+              Understanding these core alignments can improve teamwork, communication, and personal growth: people can better appreciate why certain values or styles resonate between some and conflict with others, and how to leverage each core alignment's strengths.
             </p>
             <p className="text-muted-foreground">
-              PRISM's dynamic approach reminds us that personality is not static. Even as we identify with a particular quadra's core values, we can adapt, learn, and integrate qualities from other quadras over time. The updated quadra definitions serve as guiding archetypes, not pigeonholes.
+              PRISM's dynamic approach reminds us that personality is not static. Even as we identify with a particular core alignment's core values, we can adapt, learn, and integrate qualities from other core alignments over time. The updated core alignment definitions serve as guiding archetypes, not pigeonholes.
             </p>
           </CardContent>
         </Card>
@@ -160,7 +160,7 @@ const Quadras = () => {
         <Card className="mt-8 border-l-4 border-l-primary">
           <CardContent className="p-6">
             <p className="text-sm text-muted-foreground">
-              <strong>Sources:</strong> The above definitions and insights are synthesized from PRISM's advanced literature and comparative analyses with Socionics, particularly the <em>Quadra Groups in Socionics vs. PRISM: A Deep Dive</em> whitepaper, which provides an in-depth exploration of how PRISM reinterprets each quadra for greater nuance and real-world applicability.
+              <strong>Sources:</strong> The above definitions and insights are synthesized from PRISM's advanced literature and comparative analyses with Socionics, particularly the <em>Core Alignment Groups in Socionics vs. PRISM: A Deep Dive</em> whitepaper, which provides an in-depth exploration of how PRISM reinterprets each core alignment for greater nuance and real-world applicability.
             </p>
           </CardContent>
         </Card>
@@ -169,4 +169,4 @@ const Quadras = () => {
   );
 };
 
-export default Quadras;
+export default CoreAlignments;
