@@ -10,7 +10,7 @@ const CoreAlignments = () => {
     {
       id: "innovative-harmonizers",
       name: "Innovative Harmonizers",
-      formerly: "Alpha Core Alignment",
+      formerly: "Alpha Quadra",
       icon: <Zap className="h-8 w-8 text-primary" />,
       archetype: "Enthusiastic explorers who seek out new ideas and shared comfort. This group embodies playful creativity, warm sociability, and a positive, inclusive outlook. They thrive on novelty and harmony, balancing imaginative brainstorms with an easygoing, supportive vibe.",
       coreValues: "Openness to possibilities and intellectual playfulness. Innovative Harmonizers prize explorative thinking and brainstorming (valuing Intuition over strict Sensation), and they enjoy exchanging theories or inventive ideas for fun.\n\nThey combine this with a love of personal comfort and present-moment enjoyment, making sure everyone feels at ease (a hallmark of their valued Sensing). Socially, they emphasize warmth, humor, and inclusive friendship, courtesy of valuing empathetic Feeling and principled Thinking in equal measure – debates and discussions are approached as friendly games rather than serious fights.",
@@ -26,7 +26,7 @@ const CoreAlignments = () => {
     {
       id: "driven-idealists",
       name: "Driven Idealists",
-      formerly: "Beta Core Alignment", 
+      formerly: "Beta Quadra", 
       icon: <Target className="h-8 w-8 text-primary" />,
       archetype: "Intense crusaders motivated by vision, loyalty, and impact. This group is defined by passionate energy and a strong sense of purpose – they are the natural champions of causes and communities. Driven Idealists combine boldness and idealism, rallying around convictions and inspiring others through their fervor and camaraderie.",
       coreValues: "Mission, unity, and honor. Driven Idealists value having a clear vision or belief to fight for, guided by future-oriented intuition and decisive will (Ni/Se). They thrive when pursuing big goals or noble causes that give life meaning.\n\nEqually, they esteem group loyalty and shared principles – a commitment to their 'tribe' or inner circle. This comes from valuing emotional expressiveness (Fe) paired with structural integrity (Ti): they often foster tight-knit communities with strong bonds, codes of honor, and even rituals or traditions that reinforce belonging.\n\nIn this atmosphere, hierarchy and leadership tend to emerge naturally. Driven Idealists are comfortable with clear roles and authoritative structure if it serves the group's aim (they are more accepting of ranked order and rules than other quadras).\n\nThey also have a dramatic, all-or-nothing approach to life's challenges: half-measures or idle dilly-dallying don't sit well with them. Instead, they prefer direct action, courage, and wholehearted commitment, often displaying personal bravery and a willingness to confront obstacles head-on for the sake of their ideals.",
@@ -42,7 +42,7 @@ const CoreAlignments = () => {
     {
       id: "pragmatic-realists",
       name: "Pragmatic Realists", 
-      formerly: "Gamma Core Alignment",
+      formerly: "Gamma Quadra",
       icon: <Users className="h-8 w-8 text-primary" />,
       archetype: "Hard-nosed yet principled achievers who keep their eyes on the prize. This quadra is all about practical results, personal responsibility, and realistic goals. Pragmatic Realists combine long-term strategy with down-to-earth execution. They are driven to turn visions into tangible outcomes, valuing efficiency, honesty, and loyalty – making things work in the real world.",
       coreValues: "Efficacy and authenticity. Pragmatic Realists prize effective action and concrete success above idle speculation – they value what works. Guided by foresight and willpower (strong Ni/Se), they focus on long-term gains and strategic thinking: this group is naturally inclined to plan ahead, anticipate future trends, and position themselves (and their allies) to capitalize on opportunities.\n\nThey demand grounded logic and proof (valuing Te): new ideas must demonstrate real-world merit or usefulness before earning their commitment. In personal ethos, they also hold integrity and trustworthiness in high regard (valuing Fi). Once a person proves their loyalty or competence, a Pragmatic Realist will reciprocate with strong loyalty in turn, forming tight alliances.\n\nHowever, their sense of ethics isn't sentimental – it's justice-oriented and merit-based. They believe each individual should pull their own weight, and they won't hesitate to hold others accountable for failing promises or betraying trust.\n\nIn this quadra's culture, there is a 'earn your place' mentality: respect and trust are gained through actions and reliability. They often emphasize self-improvement and accountability – continually bettering oneself and one's situation is expected, and excuses for incompetence or disloyalty wear thin quickly.",
@@ -58,7 +58,7 @@ const CoreAlignments = () => {
     {
       id: "humanitarian-stabilizers",
       name: "Humanitarian Stabilizers",
-      formerly: "Delta Core Alignment",
+      formerly: "Delta Quadra",
       icon: <Heart className="h-8 w-8 text-primary" />,
       archetype: "Conscientious facilitators who cultivate stability, growth, and well-being for all. This quadra is characterized by steady, supportive efforts to build a better life – for themselves and their community. Humanitarian Stabilizers are ethical optimists: responsible, down-to-earth people with an eye for improvement and a heart for helping. They blend practical organization with compassionate values, seeking gradual progress that benefits everyone.",
       coreValues: "Steady improvement and ethical sincerity. Humanitarian Stabilizers value doing what's right and what works in the long run. They emphasize integrity, trust, and personal values (valuing Fi strongly) – decisions must feel morally sound and considerate of others' well-being.\n\nAt the same time, they prize usefulness and competence (valuing Te): they want their work and relationships to actually improve life in tangible ways. This combination yields a highly conscientious outlook: they tend to be diligent, reliable, and oriented toward sustainable results that align with their principles.\n\nAdditionally, they share the Ne/Si intuitive-sensing pairing with the Alpha group, which means they appreciate openness to possibilities and ideas (Ne) balanced with comfort, stability, and practicality (Si). In simple terms, they are open-minded but not reckless – willing to explore new approaches if it seems useful and humane, and patient enough to implement changes gradually.",
