@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Menu, X, ChevronDown } from "lucide-react";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -11,6 +12,23 @@ const Header = () => {
     { name: "For Teams", href: "/teams" },
     { name: "Blog & Insights", href: "/insights" },
     { name: "Resources", href: "/faq" },
+  ];
+
+  const prismComponents = [
+    { name: "Information Elements", href: "/signals" },
+    { name: "Ti - Framework Builder", href: "/ti" },
+    { name: "Te - Efficiency Driver", href: "/te" },
+    { name: "Fi - Inner Compass", href: "/fi" },
+    { name: "Fe - Social Conductor", href: "/fe" },
+    { name: "Ni - Pattern Forecaster", href: "/ni" },
+    { name: "Ne - Possibility Explorer", href: "/ne" },
+    { name: "Si - Steward of Experience", href: "/si" },
+    { name: "Se - Real-Time Mover", href: "/se" },
+    { name: "Dimensionality", href: "/dimensionality" },
+    { name: "Block Dynamics", href: "/blocks" },
+    { name: "State Overlay", href: "/state-overlay" },
+    { name: "Assessment Methods", href: "/assessment-methods" },
+    { name: "Accuracy & Privacy", href: "/accuracy-privacy" },
   ];
 
   return (
@@ -36,6 +54,33 @@ const Header = () => {
                 {item.name}
               </a>
             ))}
+            
+            {/* PRISM Components Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="text-foreground hover:text-primary prism-transition font-medium">
+                  PRISM Components
+                  <ChevronDown className="ml-1 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 bg-background border border-border shadow-lg z-50">
+                <DropdownMenuItem asChild>
+                  <a href="/signals" className="w-full">Information Elements Overview</a>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {prismComponents.slice(1, 9).map((item) => (
+                  <DropdownMenuItem key={item.name} asChild>
+                    <a href={item.href} className="w-full">{item.name}</a>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                {prismComponents.slice(9).map((item) => (
+                  <DropdownMenuItem key={item.name} asChild>
+                    <a href={item.href} className="w-full">{item.name}</a>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* CTA Button */}
@@ -79,6 +124,22 @@ const Header = () => {
                   {item.name}
                 </a>
               ))}
+              
+              {/* PRISM Components in Mobile */}
+              <div className="border-t border-border mt-2 pt-2">
+                <div className="px-3 py-1 text-sm font-semibold text-muted-foreground">PRISM Components</div>
+                {prismComponents.map((item) => (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    className="block px-3 py-2 text-sm text-foreground hover:text-primary prism-transition"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </a>
+                ))}
+              </div>
+              
               <div className="px-3 py-2">
                 <Button 
                   variant="hero" 

@@ -10,6 +10,14 @@ const Footer = () => {
       { name: "For Teams", href: "/teams" },
       { name: "About PRISM", href: "/about" },
     ],
+    components: [
+      { name: "Information Elements", href: "/signals" },
+      { name: "Dimensionality", href: "/dimensionality" },
+      { name: "Block Dynamics", href: "/blocks" },
+      { name: "State Overlay", href: "/state-overlay" },
+      { name: "Assessment Methods", href: "/assessment-methods" },
+      { name: "Accuracy & Privacy", href: "/accuracy-privacy" },
+    ],
     support: [
       { name: "FAQ", href: "/faq" },
       { name: "Research", href: "/research" },
@@ -27,7 +35,7 @@ const Footer = () => {
       <div className="prism-container">
         {/* Main Footer Content */}
         <div className="py-16">
-          <div className="grid lg:grid-cols-5 gap-8">
+          <div className="grid lg:grid-cols-6 gap-8">
             {/* Brand Column */}
             <div className="lg:col-span-2">
               <div className="flex items-center mb-4">
@@ -77,6 +85,19 @@ const Footer = () => {
               <h3 className="font-semibold mb-4">Popular</h3>
               <ul className="space-y-2">
                 {popularLinks.main.map((link) => (
+                  <li key={link.name}>
+                    <a href={link.href} className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
+                      {link.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-4">PRISM Components</h3>
+              <ul className="space-y-2">
+                {popularLinks.components.map((link) => (
                   <li key={link.name}>
                     <a href={link.href} className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
                       {link.name}
