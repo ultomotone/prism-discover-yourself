@@ -255,6 +255,174 @@ const Ni = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* State/Overlay Modulation */}
+          <Card>
+            <CardHeader>
+              <CardTitle>State & Overlay Modulation</CardTitle>
+            </CardHeader>
+            <CardContent className="prose prose-slate max-w-none">
+              <p>
+                The functioning of Ni, perhaps fittingly, is itself influenced by internal states and external pressures – in other words, context modulates intuition just as intuition tries to modulate context. PRISM's dynamic approach notes that factors like stress, emotional overlay, fatigue, or flow state can significantly alter how Ni manifests.
+              </p>
+
+              <div className="space-y-6 mt-6">
+                <div>
+                  <h4 className="text-lg font-semibold mb-2">In Flow State (Positive)</h4>
+                  <p>
+                    In a flow state, where a person is feeling challenged at just the right level and fully engaged (often with positive emotions and focus), Ni can become remarkably clear and effective. Many report that their best insights "clicked" during moments of relaxed concentration – perhaps while taking a walk, showering, or in the middle of absorbing work they love.
+                  </p>
+                  <p>
+                    In such states, the usual noise of anxiety or distraction is low, allowing Ni's unconscious processing to bubble up unimpeded. It's common for Ni-users to have eureka moments when in flow: their mind synthesizes input spontaneously and offers a revelation. For those with strong Ni, a flow state can feel almost mystical – time gets fuzzy, and they surface with a fully formed concept or prediction that might have taken hours of linear thinking otherwise.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-semibold mb-2">Under Stress (Negative)</h4>
+                  <p>
+                    Under stress, Ni's functioning often degrades or skews. Stress – especially intense or chronic – tends to narrow our mental focus to deal with perceived threats, which can sabotage Ni's broad, contemplative style. There are several patterns that emerge:
+                  </p>
+                  
+                  <div className="ml-4 space-y-4">
+                    <div>
+                      <h5 className="font-semibold">Tunnel Vision</h5>
+                      <p>
+                        A stressed Ni-user might latch onto one particular interpretation or future scenario, usually negative, and obsess over it. This is Ni without flexibility – seeing one possible outcome and treating it as inevitable (often a worst-case scenario). For example, an INTJ under pressure might become convinced their project is doomed because they envision a failure path and, in their anxious state, cannot see alternatives.
+                      </p>
+                    </div>
+
+                    <div>
+                      <h5 className="font-semibold">Misinterpretation</h5>
+                      <p>
+                        Ni might still generate insights, but under emotional duress the person misreads their meaning. A trivial event might be seen as an omen of something huge because the stressed mind is looking for patterns in chaos that reflect its internal turmoil. Essentially, stress can amplify Ni's pattern-seeking to the point of seeing false patterns or exaggerating connections.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-semibold mb-2">Emotional Overlays</h4>
+                  <p>
+                    Emotional overlays, like high Neuroticism, strongly color Ni's content. A person prone to anxiety or depression will often have Ni content that skews pessimistic: they foresee doom, or they interpret neutral events negatively. We see here how Ni can feed on emotional state – a happy person with the same factual information might intuit a much brighter outcome than a sad person.
+                  </p>
+                  <p>
+                    PRISM explicitly adds an emotional stability axis to type for this reason. For example, two INTJs with identical cognitive profiles might differ in that the anxious one constantly envisions failure and thus overcorrects or hesitates, while the calm one envisions success or at least manageable challenges and proceeds boldly.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-semibold mb-2">Situational Context</h4>
+                  <p>
+                    Ni tends to function best when the person has enough information to chew on yet also enough freedom to step back. Environments that are information-rich but allow autonomy (like research, creative brainstorming sessions, etc.) are great for Ni. Environments that are either information-starved (sensory isolation, monotony) or information-chaotic with no time to reflect (high-frequency multitasking) can suppress effective Ni.
+                  </p>
+                  <p>
+                    Interestingly, Ni can sometimes work subconsciously through chaos and deliver a gut feeling after the chaos subsides – like a detective who doesn't realize they picked up important clues during a frantic investigation until they later sit quietly and the pattern "clicks."
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-semibold mb-2">Interpersonal Factors</h4>
+                  <p>
+                    Ni can be stronger in solitude or with select collaborators. Many intuitive types find their ability is sharpened in the presence of certain people (perhaps those who inspire them or help them verbalize ideas) and dulled around others (like those who interrupt or demand concrete answers too soon). This is part of co-regulation: a visionary might not voice their vision in a room of hardcore skeptics, effectively dampening Ni expression, whereas in a creative brainstorming group they unleash it.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 bg-muted rounded-lg">
+                <p className="font-semibold mb-2">Key Insight:</p>
+                <p>
+                  In PRISM, the motto could be "No function is an island." Ni is a powerful compass, but how well it points and whether we heed it depends on the weather inside and around us. Recognizing this can help individuals manage Ni better: learning that their dire premonitions occur mostly when they're exhausted or anxious can help an Ni user recalibrate their insights accordingly.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Developmental Arc */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Developmental Arc</CardTitle>
+            </CardHeader>
+            <CardContent className="prose prose-slate max-w-none">
+              <p>
+                The development of Ni over the lifespan illustrates how a cognitive function can evolve from a nascent spark into a refined beacon of insight, given the right experiences and effort.
+              </p>
+
+              <div className="space-y-6 mt-6">
+                <div>
+                  <h4 className="text-lg font-semibold mb-2">Early Life (Childhood and Adolescence)</h4>
+                  <p>
+                    In early life, Ni is often present as a kind of latent potential or subtle background sense. Young children might show Ni in simple ways: a kid might surprise a parent by asking a deep question ("Where does time go when it passes?") or by apparently foreseeing a consequence ("If you do that, you'll be sad later") without being taught. However, such moments are usually fleeting.
+                  </p>
+                  <p>
+                    Childhood Ni tends to be more imaginal than truly predictive – many kids have active imaginations but they lack the experience to ground big intuitions. During the teenage years, Ni can either be nurtured or stifled by one's environment. An intuitive teen who is given room to explore abstract ideas may start developing confidence in their Ni fairly early. They might be the adolescent who already has a clear vision for their future or who "sees through" social games that peers play, displaying an uncanny maturity.
+                  </p>
+                  <p>
+                    Many teens, especially INxx types in Myers-Briggs terms, report a period of intense introspection or search for meaning. This often comes as they form identity: they ask, "Who am I, really? Where am I headed? What's the purpose of all this?" These are quintessential Ni questions.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-semibold mb-2">Young Adulthood (20s)</h4>
+                  <p>
+                    Entering young adulthood, life's increasing complexity tends to demand more of Ni, particularly for those whose careers or studies involve strategy, theory, or forecasting. At this stage, intentional practice can greatly accelerate Ni development. A young strategist in business, for example, might hone Ni by analyzing case studies (learning patterns of success/failure across companies) and then being put in charge of a project where they must anticipate market reactions.
+                  </p>
+                  <p>
+                    PRISM notes that unlike static models that treat function strength as fixed, real people often develop weaker functions out of necessity or ambition. So an individual who might not have been "typed" as an intuitive genius can become quite visionary in their field by their 30s if they continuously train that muscle – essentially increasing dimensionality through learning and adaptation.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-semibold mb-2">Mid-Life (30s-40s)</h4>
+                  <p>
+                    By the time of mid-career or mid-life, many people face a turning point: they either refine and solidify their intuitive approach, or they might experience a need to overhaul it. Those who've always trusted Ni may at this point have accumulated enough successes (and failures) to calibrate it well – their Ni becomes more reliable and maybe earns external validation.
+                  </p>
+                  <p>
+                    This is often when Ni-dominant individuals step into significant leadership or advisory roles, as their long-term insight is now backed by credibility. However, mid-life can also challenge Ni users with unforeseen changes that test whether their internal model can accommodate new paradigms. Sometimes a strong Ni person has a mid-life crisis if their guiding vision proves flawed or empty in some way.
+                  </p>
+                  <p>
+                    For those who had Ni as a hidden or weak function earlier, mid-life is often when it blossoms. The "Hidden Potential" Ni (5th/6th) often awakens fully in the 30s when one has gained confidence in one's primary skills and now seeks deeper purpose. It's not unusual to see practical types become more reflective later on.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-semibold mb-2">Later Life (50s and beyond)</h4>
+                  <p>
+                    Heading into later life, Ni often takes on an even more expansive and detached quality. Elder intuitives frequently report that as they've seen decades come and go, their perspective on time deepens – they now think in terms of legacy and cycles beyond their own lifetime. A fully mature Ni can be profoundly wise: these are the grandparent figures or veteran experts whose "gut feelings" seem like prophecy because they've distilled a lifetime of patterns into simple principles.
+                  </p>
+                  <p>
+                    There is often a sense of peace or fatalism that comes with late-stage Ni development: an acceptance of how some patterns are larger than oneself. For instance, an older Ni user might say, "I've seen this before across different contexts, so I know it'll pass eventually," which can be a calming influence on those around them.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-semibold mb-2">Key Developmental Themes</h4>
+                  <p>
+                    One aspect of Ni development across the arc is learning to articulate and implement Ni's insights. Early on, many struggle to explain their hunches or to act on them effectively. By mid to late life, ideally, they've learned a language or methodology to communicate their intuition – whether that's data to back it up, or storytelling, or just the confidence to say "trust me on this."
+                  </p>
+                  <p>
+                    They also refine the ethics of Ni use: A mature Ni user typically becomes careful about how they share foreknowledge. They might have learned that bluntly telling someone "This won't work" can be harmful, even if true, so they couch it in more palatable terms or guide gently. This is part of the wisdom component – knowing that foresight must be paired with compassion and timing.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-semibold mb-2">Integration with Other Functions</h4>
+                  <p>
+                    From a PRISM perspective, another key to Ni's development is integration with other functions. In youth, an Ni-inclined person may lean too heavily on Ni and neglect, say, practical action (Se) or logical structure (Ti/Te), leading to imbalanced outcomes. Through life, they ideally develop those complementary aspects.
+                  </p>
+                  <p>
+                    By old age, the best Ni users often have robust Te/Ti to give their visions structure and enactment, and decent Se/Si to stay connected to reality. Conversely, someone who came from a practical background might, by later years, have developed their Ni enough to complement their actions with foresight – making them far more effective than they were with just brute force earlier.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 bg-muted rounded-lg">
+                <p className="font-semibold mb-2">PRISM Perspective:</p>
+                <p>
+                  PRISM sees the evolution of Ni as part of the broader narrative that personality is not static. A person might start life typed as very sensing and by retirement be remarkably intuitive in outlook, because life demanded and nurtured those shifts. We avoid saying their "type" changed, but rather their functional repertoire matured and possibly their dimensionality increased in Ni through learning and adaptation.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Bottom Navigation */}
