@@ -6,6 +6,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Assessment from "./pages/Assessment";
 import About from "./pages/About";
+import Signals from "./pages/Signals";
+import Dimensionality from "./pages/Dimensionality";
+import Blocks from "./pages/Blocks";
+import StateOverlay from "./pages/StateOverlay";
+import AssessmentMethods from "./pages/AssessmentMethods";
+import AccuracyPrivacy from "./pages/AccuracyPrivacy";
 import Profiles from "./pages/Profiles";
 import Individuals from "./pages/Individuals";
 import Teams from "./pages/Teams";
@@ -30,6 +36,12 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/assessment" element={<Assessment />} />
           <Route path="/about" element={<About />} />
+          <Route path="/signals" element={<Signals />} />
+          <Route path="/dimensionality" element={<Dimensionality />} />
+          <Route path="/blocks" element={<Blocks />} />
+          <Route path="/state-overlay" element={<StateOverlay />} />
+          <Route path="/assessment-methods" element={<AssessmentMethods />} />
+          <Route path="/accuracy-privacy" element={<AccuracyPrivacy />} />
           <Route path="/profiles" element={<Profiles />} />
           <Route path="/individuals" element={<Individuals />} />
           <Route path="/teams" element={<Teams />} />

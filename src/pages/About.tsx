@@ -1,11 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Brain, BarChart3, Zap, Shield, CheckCircle, ArrowRight, HelpCircle } from "lucide-react";
-import { useState } from "react";
+import { Brain, BarChart3, Zap, Shield, ArrowRight } from "lucide-react";
 import Header from "@/components/Header";
 
 const About = () => {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const assessmentLink = "https://docs.google.com/forms/d/e/1FAIpQLScVFSAWRNUZT10hEoziD1oMXeS_FyCVP9NFTWD61eR8xDQaDA/viewform";
 
