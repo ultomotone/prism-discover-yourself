@@ -11,7 +11,7 @@ const Header = () => {
     { name: "For Individuals", href: "/individuals" },
     { name: "For Teams", href: "/teams" },
     { name: "Blog & Insights", href: "/insights" },
-    { name: "Resources", href: "/faq" },
+    { name: "Resources", href: "/resources" },
   ];
 
   const prismComponents = [
