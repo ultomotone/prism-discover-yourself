@@ -14,7 +14,13 @@ const CoreAlignments = () => {
       archetype: "Enthusiastic explorers who seek out new ideas and shared comfort",
       coreValues: "Openness to possibilities and intellectual playfulness",
       characteristics: "These types create a relaxed, merry atmosphere where hierarchy is low and everyone is welcome. Group gatherings tend to be lighthearted – filled with jokes, creative chatter, shared hobbies, and a 'family-like' inclusive spirit.",
-      prismPerspective: "PRISM emphasizes that they are not limited to being carefree idealists 24/7. Under acute stress they might tap into uncharacteristic assertiveness or focus. Life experience can teach them to 'buckle down' with practicality and structure when needed."
+      prismPerspective: "PRISM emphasizes that they are not limited to being carefree idealists 24/7. Under acute stress they might tap into uncharacteristic assertiveness or focus. Life experience can teach them to 'buckle down' with practicality and structure when needed.",
+      types: [
+        "ILE (ENTp) – Explorative Visionary",
+        "SEI (ISFp) – Comfort Curator",
+        "ESE (ESFj) – Connector",
+        "LII (INTj) – Conceptual Analyst"
+      ]
     },
     {
       name: "Driven Idealists",
@@ -23,7 +29,13 @@ const CoreAlignments = () => {
       archetype: "Intense crusaders motivated by vision, loyalty, and impact",
       coreValues: "Mission, unity, and honor",
       characteristics: "In group settings, Driven Idealists generate a charged, enthusiastic atmosphere. They bond by sharing emotional experiences and unite under symbols and slogans that represent their cause. There's often a 'tribal' mindset – a strong sense of who is 'us' vs. 'them'.",
-      prismPerspective: "PRISM shows that these individuals are more dynamic than the stereotype of an always-aggressive zealot. The same type who is a charismatic leader at a rally might display a gentler, reflective side in private moments, toggling between quiet idealism and rousing zeal as circumstances require."
+      prismPerspective: "PRISM shows that these individuals are more dynamic than the stereotype of an always-aggressive zealot. The same type who is a charismatic leader at a rally might display a gentler, reflective side in private moments, toggling between quiet idealism and rousing zeal as circumstances require.",
+      types: [
+        "SLE (ESTp) – Tactical Commander",
+        "IEI (INFp) – Visionary Dreamer",
+        "EIE (ENFj) – Inspirational Orator",
+        "LSI (ISTj) – Principled Guardian"
+      ]
     },
     {
       name: "Pragmatic Realists", 
@@ -32,7 +44,13 @@ const CoreAlignments = () => {
       archetype: "Hard-nosed yet principled achievers who keep their eyes on the prize",
       coreValues: "Efficacy and authenticity",
       characteristics: "When Pragmatic Realists come together, the mood is focused, candid, and enterprising. Conversations gravitate toward practical matters – plans, business ideas, career goals, strategies for solving problems. The atmosphere is no-nonsense and meritocratic: show your true self and prove your value.",
-      prismPerspective: "PRISM reframes their traits in a more constructive, developmental light. They are not one-dimensional 'money machines' but often care deeply about self-improvement and community improvement – approaching it in a practical, accountable manner. They can learn flexibility, patience, and forgiveness while maintaining their backbone of ambition and realism."
+      prismPerspective: "PRISM reframes their traits in a more constructive, developmental light. They are not one-dimensional 'money machines' but often care deeply about self-improvement and community improvement – approaching it in a practical, accountable manner. They can learn flexibility, patience, and forgiveness while maintaining their backbone of ambition and realism.",
+      types: [
+        "SEE (ESFp) – Charismatic Operator",
+        "ILI (INTp) – Strategic Forecaster",
+        "LIE (ENTj) – Executive Strategist",
+        "ESI (ISFj) – Loyal Protector"
+      ]
     },
     {
       name: "Humanitarian Stabilizers",
@@ -41,7 +59,13 @@ const CoreAlignments = () => {
       archetype: "Conscientious facilitators who cultivate stability, growth, and well-being for all",
       coreValues: "Steady improvement and ethical sincerity", 
       characteristics: "Among a group of Humanitarian Stabilizers, you'll notice a low-pressure, cooperative atmosphere. They foster egalitarian friendship where everyone's input is respected, and decisions are made through calm discussion and consensus. They excel at creating supportive, stable environments where people can flourish.",
-      prismPerspective: "PRISM challenges the stereotype that they are simplistic or unambitious. They often take initiative in their own style – becoming mentors, guides, or quiet influencers who spark change without needing loud fanfare. They blend imagination with realism, believing in a better future while handling the practical steps to get there."
+      prismPerspective: "PRISM challenges the stereotype that they are simplistic or unambitious. They often take initiative in their own style – becoming mentors, guides, or quiet influencers who spark change without needing loud fanfare. They blend imagination with realism, believing in a better future while handling the practical steps to get there.",
+      types: [
+        "IEE (ENFp) – Possibility Catalyst",
+        "SLI (ISTp) – Practical Craftsman",
+        "LSE (ESTj) – Structured Organizer",
+        "EII (INFj) – Ethical Counselor"
+      ]
     }
   ];
 
@@ -108,6 +132,20 @@ const CoreAlignments = () => {
                 <div>
                   <h4 className="font-semibold text-lg mb-2 text-primary">Group Characteristics</h4>
                   <p className="text-muted-foreground">{coreAlignment.characteristics}</p>
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <h4 className="font-semibold text-lg mb-3 text-primary">Types in this Core Alignment</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {coreAlignment.types.map((type, typeIndex) => (
+                      <div key={typeIndex} className="flex items-center gap-2 p-2 rounded-md bg-muted/30">
+                        <div className="w-2 h-2 rounded-full bg-primary"></div>
+                        <span className="text-sm text-muted-foreground">{type}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 
                 <Separator />
