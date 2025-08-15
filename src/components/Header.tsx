@@ -37,12 +37,12 @@ const Header = () => {
       <nav className="prism-container">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center">
+          <a href="/" className="flex items-center hover:opacity-80 prism-transition">
             <div className="w-8 h-8 prism-gradient-hero rounded-md flex items-center justify-center mr-3">
               <span className="text-white font-bold text-lg">P</span>
             </div>
             <span className="text-xl font-bold text-primary">PRISM</span>
-          </div>
+          </a>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
