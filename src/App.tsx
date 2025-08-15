@@ -8,6 +8,14 @@ import Index from "./pages/Index";
 import Assessment from "./pages/Assessment";
 import About from "./pages/About";
 import Signals from "./pages/Signals";
+import Ti from "./pages/Ti";
+import Te from "./pages/Te";
+import Fi from "./pages/Fi";
+import Fe from "./pages/Fe";
+import Ni from "./pages/Ni";
+import Ne from "./pages/Ne";
+import Si from "./pages/Si";
+import Se from "./pages/Se";
 import Dimensionality from "./pages/Dimensionality";
 import Blocks from "./pages/Blocks";
 import StateOverlay from "./pages/StateOverlay";
@@ -40,6 +48,14 @@ const App = () => (
               <Route path="/assessment" element={<Assessment />} />
               <Route path="/about" element={<About />} />
               <Route path="/signals" element={<Signals />} />
+              <Route path="/ti" element={<Ti />} />
+              <Route path="/te" element={<Te />} />
+              <Route path="/fi" element={<Fi />} />
+              <Route path="/fe" element={<Fe />} />
+              <Route path="/ni" element={<Ni />} />
+              <Route path="/ne" element={<Ne />} />
+              <Route path="/si" element={<Si />} />
+              <Route path="/se" element={<Se />} />
               <Route path="/dimensionality" element={<Dimensionality />} />
               <Route path="/blocks" element={<Blocks />} />
               <Route path="/state-overlay" element={<StateOverlay />} />
