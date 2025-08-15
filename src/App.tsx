@@ -21,6 +21,7 @@ import Blocks from "./pages/Blocks";
 import StateOverlay from "./pages/StateOverlay";
 import AssessmentMethods from "./pages/AssessmentMethods";
 import AccuracyPrivacy from "./pages/AccuracyPrivacy";
+import HowItWorks from "./pages/HowItWorks";
 import Profiles from "./pages/Profiles";
 import Individuals from "./pages/Individuals";
 import Teams from "./pages/Teams";
@@ -61,6 +62,7 @@ const App = () => (
               <Route path="/state-overlay" element={<StateOverlay />} />
               <Route path="/assessment-methods" element={<AssessmentMethods />} />
               <Route path="/accuracy-privacy" element={<AccuracyPrivacy />} />
+              <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/profiles" element={<Profiles />} />
               <Route path="/individuals" element={<Individuals />} />
               <Route path="/teams" element={<Teams />} />
