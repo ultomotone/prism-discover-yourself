@@ -61,6 +61,45 @@ export type Database = {
           },
         ]
       }
+      assessment_scoring_key: {
+        Row: {
+          created_at: string
+          fc_map: Json | null
+          pair_group: string | null
+          question_id: number
+          reverse_scored: boolean
+          scale_type: Database["public"]["Enums"]["assessment_scale_type"]
+          social_desirability: boolean
+          tag: string | null
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          fc_map?: Json | null
+          pair_group?: string | null
+          question_id: number
+          reverse_scored?: boolean
+          scale_type: Database["public"]["Enums"]["assessment_scale_type"]
+          social_desirability?: boolean
+          tag?: string | null
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          fc_map?: Json | null
+          pair_group?: string | null
+          question_id?: number
+          reverse_scored?: boolean
+          scale_type?: Database["public"]["Enums"]["assessment_scale_type"]
+          social_desirability?: boolean
+          tag?: string | null
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
+      }
       assessment_sessions: {
         Row: {
           completed_at: string | null
@@ -180,7 +219,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      assessment_scale_type:
+        | "LIKERT_1_5"
+        | "LIKERT_1_7"
+        | "STATE_1_7"
+        | "FORCED_CHOICE_2"
+        | "FORCED_CHOICE_4"
+        | "FORCED_CHOICE_5"
+        | "CATEGORICAL_5"
+        | "FREQUENCY"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -307,6 +354,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      assessment_scale_type: [
+        "LIKERT_1_5",
+        "LIKERT_1_7",
+        "STATE_1_7",
+        "FORCED_CHOICE_2",
+        "FORCED_CHOICE_4",
+        "FORCED_CHOICE_5",
+        "CATEGORICAL_5",
+        "FREQUENCY",
+      ],
+    },
   },
 } as const
