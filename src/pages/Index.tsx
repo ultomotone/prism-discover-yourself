@@ -5,7 +5,6 @@ import TeamsSection from "@/components/TeamsSection";
 import PrismModel from "@/components/PrismModel";
 import BookSection from "@/components/BookSection";
 import Testimonials from "@/components/Testimonials";
-import Footer from "@/components/Footer";
 
 const Index = () => {
   return (
@@ -19,7 +18,6 @@ const Index = () => {
         <BookSection />
         <Testimonials />
       </main>
-      <Footer />
     </div>
   );
 };
