@@ -1,8 +1,11 @@
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play } from "lucide-react";
 import prismHero from "@/assets/prism-hero.jpg";
 
 const Hero = () => {
+  const navigate = useNavigate();
+  
   return (
     <section className="pt-16 prism-section overflow-hidden">
       <div className="prism-container">
@@ -30,7 +33,7 @@ const Hero = () => {
                 variant="assessment" 
                 size="lg" 
                 className="group"
-                onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLScVFSAWRNUZT10hEoziD1oMXeS_FyCVP9NFTWD61eR8xDQaDA/viewform', '_blank')}
+                onClick={() => navigate('/assessment')}
               >
                 Take the PRISM Assessment
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />

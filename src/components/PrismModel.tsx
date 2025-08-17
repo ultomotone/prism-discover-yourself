@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Brain, BarChart3, Zap, Shield, ArrowRight } from "lucide-react";
 
 const PrismModel = () => {
   const [activeElement, setActiveElement] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const informationElements = [
     {
@@ -224,7 +226,7 @@ const PrismModel = () => {
               <Button 
                 variant="assessment" 
                 size="lg"
-                onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLScVFSAWRNUZT10hEoziD1oMXeS_FyCVP9NFTWD61eR8xDQaDA/viewform', '_blank')}
+                onClick={() => navigate('/assessment')}
               >
                 Take the PRISM Assessment
                 <ArrowRight className="ml-2 h-4 w-4" />

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Menu, X, ChevronDown } from "lucide-react";
@@ -6,6 +7,7 @@ import { prismTypes } from "@/data/prismTypes";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const navigation = [
     { name: "About PRISM", href: "/about" },
@@ -133,7 +135,7 @@ const Header = () => {
             <Button 
               variant="hero" 
               size="lg"
-              onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLScVFSAWRNUZT10hEoziD1oMXeS_FyCVP9NFTWD61eR8xDQaDA/viewform', '_blank')}
+              onClick={() => navigate('/assessment')}
             >
               Take Assessment
             </Button>
@@ -219,7 +221,7 @@ const Header = () => {
                 <Button 
                   variant="hero" 
                   className="w-full"
-                  onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLScVFSAWRNUZT10hEoziD1oMXeS_FyCVP9NFTWD61eR8xDQaDA/viewform', '_blank')}
+                  onClick={() => navigate('/assessment')}
                 >
                   Take Assessment
                 </Button>
