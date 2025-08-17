@@ -14,6 +14,92 @@ export type Database = {
   }
   public: {
     Tables: {
+      assessment_responses: {
+        Row: {
+          answer_numeric: number | null
+          answer_value: string | null
+          created_at: string
+          id: string
+          question_id: number
+          question_section: string
+          question_text: string
+          question_type: string
+          response_time_ms: number | null
+          session_id: string
+        }
+        Insert: {
+          answer_numeric?: number | null
+          answer_value?: string | null
+          created_at?: string
+          id?: string
+          question_id: number
+          question_section: string
+          question_text: string
+          question_type: string
+          response_time_ms?: number | null
+          session_id: string
+        }
+        Update: {
+          answer_numeric?: number | null
+          answer_value?: string | null
+          created_at?: string
+          id?: string
+          question_id?: number
+          question_section?: string
+          question_text?: string
+          question_type?: string
+          response_time_ms?: number | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_sessions: {
+        Row: {
+          completed_at: string | null
+          completed_questions: number | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          session_type: string
+          started_at: string
+          total_questions: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_questions?: number | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          session_type?: string
+          started_at?: string
+          total_questions?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          completed_questions?: number | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          session_type?: string
+          started_at?: string
+          total_questions?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       trading_candles: {
         Row: {
           candle_body_pct: number | null

@@ -6,17 +6,28 @@ import { AssessmentResponse } from "./AssessmentForm";
 
 interface AssessmentCompleteProps {
   responses: AssessmentResponse[];
+  sessionId: string;
   onReturnHome: () => void;
   onTakeAgain?: () => void;
 }
 
-export function AssessmentComplete({ responses, onReturnHome, onTakeAgain }: AssessmentCompleteProps) {
+export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeAgain }: AssessmentCompleteProps) {
   const handleDownloadResults = () => {
-    // Create a simple CSV or JSON download of responses
-    const dataStr = JSON.stringify(responses, null, 2);
+    // Create a comprehensive results object with session info
+    const results = {
+      sessionId,
+      completedAt: new Date().toISOString(),
+      totalQuestions: responses.length,
+      responses: responses.map(r => ({
+        questionId: r.questionId,
+        answer: r.answer
+      }))
+    };
+    
+    const dataStr = JSON.stringify(results, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     
-    const exportFileDefaultName = `prism-assessment-${new Date().toISOString().split('T')[0]}.json`;
+    const exportFileDefaultName = `prism-assessment-${sessionId}-${new Date().toISOString().split('T')[0]}.json`;
     
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
@@ -46,7 +57,7 @@ export function AssessmentComplete({ responses, onReturnHome, onTakeAgain }: Ass
             <CardContent className="p-8">
               <h2 className="text-2xl font-semibold text-primary mb-4">Your Responses</h2>
               <p className="text-muted-foreground mb-6">
-                You have successfully completed <strong>{responses.length}</strong> questions across multiple sections of the PRISM assessment.
+                You have successfully completed <strong>{responses.length}</strong> questions across multiple sections of the PRISM assessment. Your responses have been saved with session ID: <code className="bg-muted px-2 py-1 rounded text-sm">{sessionId}</code>
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

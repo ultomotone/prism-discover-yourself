@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { assessmentQuestions, Question } from "@/data/assessmentQuestions";
 import { QuestionComponent } from "./QuestionComponent";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface AssessmentResponse {
   questionId: number;
@@ -13,7 +14,7 @@ export interface AssessmentResponse {
 }
 
 interface AssessmentFormProps {
-  onComplete: (responses: AssessmentResponse[]) => void;
+  onComplete: (responses: AssessmentResponse[], sessionId: string) => void;
   onBack?: () => void;
 }
 
@@ -21,6 +22,9 @@ export function AssessmentForm({ onComplete, onBack }: AssessmentFormProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<AssessmentResponse[]>([]);
   const [currentAnswer, setCurrentAnswer] = useState<string | number>('');
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const currentQuestion = assessmentQuestions[currentQuestionIndex];
@@ -32,7 +36,47 @@ export function AssessmentForm({ onComplete, onBack }: AssessmentFormProps) {
   const sectionQuestions = assessmentQuestions.filter(q => q.section === currentSection);
   const sectionProgress = sectionQuestions.findIndex(q => q.id === currentQuestion?.id) + 1;
 
+  // Initialize assessment session on component mount
   useEffect(() => {
+    const initializeSession = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('assessment_sessions')
+          .insert({
+            session_type: 'prism',
+            total_questions: assessmentQuestions.length,
+            metadata: {
+              browser: navigator.userAgent,
+              timestamp: new Date().toISOString()
+            }
+          })
+          .select('id')
+          .single();
+
+        if (error) {
+          console.error('Error creating session:', error);
+          toast({
+            title: "Error",
+            description: "Failed to initialize assessment session.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setSessionId(data.id);
+        setQuestionStartTime(Date.now());
+      } catch (error) {
+        console.error('Error initializing session:', error);
+      }
+    };
+
+    initializeSession();
+  }, [toast]);
+
+  useEffect(() => {
+    // Reset question start time when moving to a new question
+    setQuestionStartTime(Date.now());
+    
     // Load existing response if it exists
     const existingResponse = responses.find(r => r.questionId === currentQuestion?.id);
     if (existingResponse) {
@@ -42,11 +86,52 @@ export function AssessmentForm({ onComplete, onBack }: AssessmentFormProps) {
     }
   }, [currentQuestionIndex, responses, currentQuestion?.id]);
 
+  const saveResponseToSupabase = async (response: AssessmentResponse, responseTime: number) => {
+    if (!sessionId) return;
+
+    try {
+      const { error } = await supabase
+        .from('assessment_responses')
+        .insert({
+          session_id: sessionId,
+          question_id: response.questionId,
+          question_text: currentQuestion.text,
+          question_type: currentQuestion.type,
+          question_section: currentQuestion.section,
+          answer_value: String(response.answer),
+          answer_numeric: typeof response.answer === 'number' ? response.answer : null,
+          response_time_ms: responseTime
+        });
+
+      if (error) {
+        console.error('Error saving response:', error);
+        // Don't show error to user for individual responses to avoid interrupting flow
+      }
+    } catch (error) {
+      console.error('Error saving response to Supabase:', error);
+    }
+  };
+
+  const updateSessionProgress = async () => {
+    if (!sessionId) return;
+
+    try {
+      await supabase
+        .from('assessment_sessions')
+        .update({
+          completed_questions: currentQuestionIndex + 1
+        })
+        .eq('id', sessionId);
+    } catch (error) {
+      console.error('Error updating session progress:', error);
+    }
+  };
+
   const handleAnswerChange = (answer: string | number) => {
     setCurrentAnswer(answer);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!currentAnswer && currentQuestion.required) {
       toast({
         title: "Answer Required",
@@ -56,25 +141,65 @@ export function AssessmentForm({ onComplete, onBack }: AssessmentFormProps) {
       return;
     }
 
-    // Save current response
-    const newResponse: AssessmentResponse = {
-      questionId: currentQuestion.id,
-      answer: currentAnswer
-    };
+    if (!sessionId) {
+      toast({
+        title: "Session Error", 
+        description: "Assessment session not initialized. Please refresh and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    setResponses(prev => {
-      const filtered = prev.filter(r => r.questionId !== currentQuestion.id);
-      return [...filtered, newResponse];
-    });
+    setIsLoading(true);
 
-    if (isLastQuestion) {
-      // Complete assessment
-      const finalResponses = responses.filter(r => r.questionId !== currentQuestion.id);
-      finalResponses.push(newResponse);
-      onComplete(finalResponses);
-    } else {
-      // Move to next question
-      setCurrentQuestionIndex(prev => prev + 1);
+    try {
+      const responseTime = Date.now() - questionStartTime;
+
+      // Save current response
+      const newResponse: AssessmentResponse = {
+        questionId: currentQuestion.id,
+        answer: currentAnswer
+      };
+
+      // Save to Supabase
+      await saveResponseToSupabase(newResponse, responseTime);
+
+      // Update local state
+      setResponses(prev => {
+        const filtered = prev.filter(r => r.questionId !== currentQuestion.id);
+        return [...filtered, newResponse];
+      });
+
+      // Update session progress
+      await updateSessionProgress();
+
+      if (isLastQuestion) {
+        // Mark session as complete
+        await supabase
+          .from('assessment_sessions')
+          .update({
+            completed_at: new Date().toISOString(),
+            completed_questions: assessmentQuestions.length
+          })
+          .eq('id', sessionId);
+
+        // Complete assessment
+        const finalResponses = responses.filter(r => r.questionId !== currentQuestion.id);
+        finalResponses.push(newResponse);
+        onComplete(finalResponses, sessionId);
+      } else {
+        // Move to next question
+        setCurrentQuestionIndex(prev => prev + 1);
+      }
+    } catch (error) {
+      console.error('Error saving response:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save response. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -154,11 +279,12 @@ export function AssessmentForm({ onComplete, onBack }: AssessmentFormProps) {
 
             <Button
               onClick={handleNext}
+              disabled={isLoading}
               className="flex items-center gap-2"
               variant={isLastQuestion ? 'hero' : 'default'}
             >
-              {isLastQuestion ? 'Complete Assessment' : 'Next'}
-              {!isLastQuestion && <ChevronRight className="h-4 w-4" />}
+              {isLoading ? 'Saving...' : isLastQuestion ? 'Complete Assessment' : 'Next'}
+              {!isLastQuestion && !isLoading && <ChevronRight className="h-4 w-4" />}
             </Button>
           </div>
         </div>

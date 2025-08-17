@@ -9,17 +9,19 @@ type AssessmentState = 'intro' | 'form' | 'complete';
 const Assessment = () => {
   const [currentState, setCurrentState] = useState<AssessmentState>('intro');
   const [responses, setResponses] = useState<AssessmentResponse[]>([]);
+  const [sessionId, setSessionId] = useState<string>('');
 
   const handleStartAssessment = () => {
     setCurrentState('form');
   };
 
-  const handleAssessmentComplete = (assessmentResponses: AssessmentResponse[]) => {
+  const handleAssessmentComplete = (assessmentResponses: AssessmentResponse[], sessionId: string) => {
     setResponses(assessmentResponses);
+    setSessionId(sessionId);
     setCurrentState('complete');
     
-    // Here you could save to Supabase or send to your backend
-    console.log('Assessment completed with responses:', assessmentResponses);
+    // Here you could also trigger additional analytics or notifications
+    console.log('Assessment completed with session ID:', sessionId, 'responses:', assessmentResponses);
   };
 
   const handleReturnToIntro = () => {
@@ -33,6 +35,7 @@ const Assessment = () => {
   const handleTakeAgain = () => {
     setCurrentState('intro');
     setResponses([]);
+    setSessionId('');
   };
 
   return (
@@ -53,6 +56,7 @@ const Assessment = () => {
       {currentState === 'complete' && (
         <AssessmentComplete 
           responses={responses}
+          sessionId={sessionId}
           onReturnHome={handleReturnHome}
           onTakeAgain={handleTakeAgain}
         />
