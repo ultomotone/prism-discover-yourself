@@ -1,38 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { Clock, Shield, Brain, CheckCircle } from "lucide-react";
+import { Clock, Shield, Brain, RotateCcw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import Header from "@/components/Header";
 
 const Assessment = () => {
   const assessmentLink = "https://docs.google.com/forms/d/e/1FAIpQLScVFSAWRNUZT10hEoziD1oMXeS_FyCVP9NFTWD61eR8xDQaDA/viewform";
-
-  const beforeYouStart = [
-    "Set aside ~25–35 minutes without interruptions.",
-    "Go with your first honest answer.",
-    "If something feels 'sometimes,' choose what fits most of the time."
-  ];
-
-  const whatsInside = [
-    "Function Strength & Dimensionality (8 elements)",
-    "Stress/Flow Scenarios & Block Dynamics", 
-    "Validity & Quality checks (to protect accuracy)",
-    "Optional research questions (demographics, context)"
-  ];
-
-  const faqItems = [
-    {
-      q: "How long is it?",
-      a: "~25–35 minutes."
-    },
-    {
-      q: "Do I need to study?", 
-      a: "No—be yourself."
-    },
-    {
-      q: "Can I retake it?",
-      a: "Yes—especially after major life changes or development work."
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -42,120 +14,146 @@ const Assessment = () => {
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="prism-heading-lg text-primary mb-6">
-              Take the PRISM Assessment
+              Before You Start the PRISM Assessment
             </h1>
-            <p className="prism-body-lg text-muted-foreground max-w-3xl mx-auto mb-8">
-              This is a deep-dive self-assessment that powers your PRISM profile. Answer honestly—there are no right or wrong answers.
-            </p>
-            <Button 
-              variant="assessment" 
-              size="lg" 
-              className="text-xl px-12 py-4"
-              onClick={() => window.open(assessmentLink, '_blank')}
-            >
-              Start Assessment
-            </Button>
           </div>
 
-          {/* Before You Start */}
-          <Card className="mb-8 prism-shadow-card">
-            <CardContent className="p-8">
-              <div className="flex items-center mb-6">
-                <CheckCircle className="h-6 w-6 text-secondary mr-3" />
-                <h2 className="text-2xl font-semibold text-primary">Before you start</h2>
-              </div>
-              <ul className="space-y-3">
-                {beforeYouStart.map((item, index) => (
-                  <li key={index} className="flex items-start">
-                    <div className="w-2 h-2 prism-gradient-secondary rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                    <span className="text-muted-foreground">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-
-          {/* What's Inside */}
+          {/* What this is */}
           <Card className="mb-8 prism-shadow-card">
             <CardContent className="p-8">
               <div className="flex items-center mb-6">
                 <Brain className="h-6 w-6 text-accent mr-3" />
-                <h2 className="text-2xl font-semibold text-primary">What's inside</h2>
-              </div>
-              <ul className="space-y-3">
-                {whatsInside.map((item, index) => (
-                  <li key={index} className="flex items-start">
-                    <div className="w-2 h-2 prism-gradient-accent rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                    <span className="text-muted-foreground">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-
-          {/* After You Submit */}
-          <Card className="mb-8 prism-shadow-card">
-            <CardContent className="p-8">
-              <div className="flex items-center mb-6">
-                <Clock className="h-6 w-6 text-warm mr-3" />
-                <h2 className="text-2xl font-semibold text-primary">After you submit (current state)</h2>
+                <h2 className="text-2xl font-semibold text-primary">What this is</h2>
               </div>
               <p className="text-muted-foreground">
-                Results are processed manually right now; automated dashboards are coming. You'll receive a profile summary with type, function matrix, block balance, stress/flow map, and guidance.
+                PRISM (Personality Regulation & Information System Mapping) shows how your mind actually runs in real life—which cognitive elements you rely on, how capable they are across contexts, which "blocks" lead under calm vs. stress, and how current state (our ± overlay) tilts expression.
               </p>
             </CardContent>
           </Card>
 
-          {/* Privacy & Consent */}
+          {/* What you'll get */}
           <Card className="mb-8 prism-shadow-card">
             <CardContent className="p-8">
               <div className="flex items-center mb-6">
-                <Shield className="h-6 w-6 text-primary mr-3" />
-                <h2 className="text-2xl font-semibold text-primary">Privacy & consent</h2>
+                <Clock className="h-6 w-6 text-secondary mr-3" />
+                <h2 className="text-2xl font-semibold text-primary">What you'll get</h2>
               </div>
-              <ul className="space-y-3 text-muted-foreground">
+              <ul className="space-y-3">
                 <li className="flex items-start">
-                  <div className="w-2 h-2 prism-gradient-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                  Your responses are confidential and used to generate your profile.
+                  <div className="w-2 h-2 prism-gradient-secondary rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                  <span className="text-muted-foreground">Your PRISM Profile: type + confidence + ± overlay</span>
                 </li>
                 <li className="flex items-start">
-                  <div className="w-2 h-2 prism-gradient-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                  Optional research items are aggregated and anonymized.
+                  <div className="w-2 h-2 prism-gradient-secondary rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                  <span className="text-muted-foreground">A Function Matrix: Strength × Dimensionality (1D–4D) for Ti/Te/Fi/Fe/Ni/Ne/Si/Se</span>
                 </li>
                 <li className="flex items-start">
-                  <div className="w-2 h-2 prism-gradient-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                  This is a personal development tool, not a clinical instrument.
+                  <div className="w-2 h-2 prism-gradient-secondary rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                  <span className="text-muted-foreground">Block Map: Core, Critic, Hidden, Instinct (calm vs. stress)</span>
+                </li>
+                <li className="flex items-start">
+                  <div className="w-2 h-2 prism-gradient-secondary rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                  <span className="text-muted-foreground">Notes on state effects and next-step tips</span>
                 </li>
               </ul>
             </CardContent>
           </Card>
 
-          {/* FAQ Mini */}
-          <Card className="mb-12 prism-shadow-card">
+          {/* How it works */}
+          <Card className="mb-8 prism-shadow-card">
             <CardContent className="p-8">
-              <h2 className="text-2xl font-semibold text-primary mb-6">FAQ mini</h2>
-              <div className="space-y-4">
-                {faqItems.map((item, index) => (
-                  <div key={index}>
-                    <h3 className="font-semibold text-primary mb-2">{item.q}</h3>
-                    <p className="text-muted-foreground">{item.a}</p>
-                  </div>
-                ))}
-              </div>
+              <h2 className="text-2xl font-semibold text-primary mb-4">How it works</h2>
+              <p className="text-muted-foreground mb-6">
+                A mix of Likert items, forced-choice trade-offs, and short scenarios. Plan for 25–40 minutes in one sitting.
+              </p>
+              
+              <h3 className="text-xl font-semibold text-primary mb-4">Best results: quick prep</h3>
+              <ul className="space-y-3">
+                <li className="flex items-start">
+                  <div className="w-2 h-2 prism-gradient-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                  <span className="text-muted-foreground">Take it when you're rested and calm (not rushed, sick, or highly stressed).</span>
+                </li>
+                <li className="flex items-start">
+                  <div className="w-2 h-2 prism-gradient-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                  <span className="text-muted-foreground">Use a quiet space and a laptop if possible.</span>
+                </li>
+                <li className="flex items-start">
+                  <div className="w-2 h-2 prism-gradient-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                  <span className="text-muted-foreground">Answer for your typical, everyday behavior—not an ideal or rare version of you.</span>
+                </li>
+                <li className="flex items-start">
+                  <div className="w-2 h-2 prism-gradient-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                  <span className="text-muted-foreground">If a question doesn't fit perfectly, pick the option that's closest in practice.</span>
+                </li>
+              </ul>
             </CardContent>
           </Card>
 
-          {/* Final CTA */}
-          <div className="text-center">
-            <Button 
-              variant="hero" 
-              size="lg" 
-              className="text-xl px-12 py-4"
-              onClick={() => window.open(assessmentLink, '_blank')}
-            >
-              Start Your PRISM Assessment
-            </Button>
-          </div>
+          {/* Retesting */}
+          <Card className="mb-8 prism-shadow-card">
+            <CardContent className="p-8">
+              <div className="flex items-center mb-6">
+                <RotateCcw className="h-6 w-6 text-warm mr-3" />
+                <h2 className="text-2xl font-semibold text-primary">Retesting (important for accuracy)</h2>
+              </div>
+              <p className="text-muted-foreground mb-6">
+                PRISM is state-aware, so we recommend a planned retest to separate stable patterns from temporary states.
+              </p>
+              
+              <h3 className="text-xl font-semibold text-primary mb-4">Retest windows</h3>
+              <ul className="space-y-3">
+                <li className="flex items-start">
+                  <div className="w-2 h-2 prism-gradient-warm rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                  <span className="text-muted-foreground">2–4 weeks later if your report flags high ± overlay (strong stress/reactivity today) or if you felt off while testing.</span>
+                </li>
+                <li className="flex items-start">
+                  <div className="w-2 h-2 prism-gradient-warm rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                  <span className="text-muted-foreground">3–6 months later for a normal follow-up to confirm stability and track growth.</span>
+                </li>
+                <li className="flex items-start">
+                  <div className="w-2 h-2 prism-gradient-warm rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                  <span className="text-muted-foreground">After major shifts (new job, big life event, sustained burnout/recovery) to update your profile.</span>
+                </li>
+              </ul>
+              <p className="text-muted-foreground mt-4">
+                Your second pass boosts confidence in your top type vs. close neighbor, and refines Dimensionality bands as the model sees you in a different state.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Privacy & use */}
+          <Card className="mb-12 prism-shadow-card">
+            <CardContent className="p-8">
+              <div className="flex items-center mb-6">
+                <Shield className="h-6 w-6 text-primary mr-3" />
+                <h2 className="text-2xl font-semibold text-primary">Privacy & use</h2>
+              </div>
+              <p className="text-muted-foreground">
+                Responses are used to generate your report and improve scoring quality. We don't sell personal data. If you want your data removed, just ask.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Ready section */}
+          <Card className="mb-8 prism-shadow-card">
+            <CardContent className="p-8">
+              <h2 className="text-2xl font-semibold text-primary mb-4">Ready?</h2>
+              <p className="text-muted-foreground mb-6">
+                When you're set, click Start Assessment. If life is chaotic today, schedule it for a more typical day—then bookmark this page and come back.
+              </p>
+              
+              <div className="text-center">
+                <Button 
+                  variant="hero" 
+                  size="lg" 
+                  className="text-xl px-12 py-4"
+                  onClick={() => window.open(assessmentLink, '_blank')}
+                >
+                  Start Assessment
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
