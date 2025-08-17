@@ -1,13 +1,11 @@
-import Header from "@/components/Header";
+import InfoElementLayout from "@/components/InfoElementLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight, Cog } from "lucide-react";
 
 const Ti = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
+    <InfoElementLayout>
       <main className="prism-container py-16">
         {/* Navigation */}
         <div className="flex justify-between mb-8">
@@ -296,7 +294,7 @@ const Ti = () => {
           </Button>
         </div>
       </main>
-    </div>
+    </InfoElementLayout>
   );
 };
 
