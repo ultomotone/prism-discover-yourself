@@ -221,8 +221,86 @@ const Si = () => {
                 </div>
               </div>
 
+              <div className="space-y-6">
+                <div>
+                  <h4 className="font-semibold text-xl mb-3 text-orange-600">High Neuroticism Overlay (+)</h4>
+                  <p>
+                    With a high neurotic (anxious, emotionally volatile) overlay, Si's natural concern for safety and comfort can become tinged with worry and obsessive caution. An Si-inclined person who is also very high in neuroticism might constantly fret about health and routine to an unhealthy degree – interpreting minor body signals as big issues, over-planning and over-controlling their environment, or sticking to rigid schedules where any deviation causes anxiety. This is basically Si's detail focus amplified by anxiety, leading to perfectionism or ritualistic behavior as a coping mechanism.
+                  </p>
+                  <p>
+                    High neuroticism can cause even a strong Si user to lose confidence in their routines, constantly second-guessing ("Did I lock the door? Did I cook this thoroughly?"). Rather than enjoying their comfortable habits, they might become enslaved to them, feeling that if they don't follow them perfectly, disaster looms.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-xl mb-3 text-blue-600">Low Neuroticism Overlay (-)</h4>
+                  <p>
+                    A low neuroticism (calm, emotionally stable) overlay tends to make Si's expression more easy-going and resilient. A person with strong Si and low anxiety will maintain their routines and comfort, but won't panic if something disrupts them – they'll just pragmatically adjust. Low neuroticism allows them to be present and relaxed in their sensory experiences, handling physical crises with steady nerves.
+                  </p>
+                  <p>
+                    Low-N overlay provides a buffer where comfort doesn't have to mean perfection – the person can tolerate a range of conditions without freaking out. They enjoy their routines but aren't enslaved by them, deriving even more pleasure from Si because they can fully relax into it without intrusive worry.
+                  </p>
+                </div>
+              </div>
+
               <p>
                 Understanding these state fluctuations helps individuals manage Si more effectively – recognizing when dire premonitions occur during exhausted states, or when to deliberately create better conditions for Si to function optimally.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Development Arc */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center text-2xl">
+                <span className="w-4 h-4 bg-accent/80 rounded-full mr-3"></span>
+                Development Arc
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 text-lg leading-relaxed">
+              <p>
+                The development of Introverted Sensing over the lifespan often involves increasing self-awareness of physical needs, refinement of routines, and sometimes a significant shift in how much one values comfort and tradition.
+              </p>
+
+              <div className="space-y-6">
+                <div>
+                  <h4 className="font-semibold text-xl mb-3 text-primary">Childhood</h4>
+                  <p>
+                    Young children with strong Si tendencies can often be identified by their preference for familiarity and routine. They might get very attached to certain foods, toys, or bedtime rituals, have keen sensory memory, and are usually easy to soothe with physical comfort. In contrast, children with weak Si may seem unfazed by irregular schedules or minor injuries, often needing reminders about bodily needs like eating or using the bathroom.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-xl mb-3 text-primary">Adolescence</h4>
+                  <p>
+                    During teenage years, Si-strong adolescents may either lean into their nature (becoming the "mom friend" with snacks and first-aid) or temporarily rebel against it to fit in. They often develop keen aesthetic sense and prefer cozy gatherings over loud clubs. Si-weak teens typically have notoriously messy rooms, irregular sleep, and might only eat junkfood, brushing off parental attempts to impose structure. Late adolescence often brings some awareness that neglecting basics has consequences.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-xl mb-3 text-primary">Early Adulthood (20s-30s)</h4>
+                  <p>
+                    This period often demands independent practical life management. Those with strong Si usually adjust well to "adulting" – they cook with skill, keep orderly spaces, and maintain stable lifestyles. They might be drawn to careers valuing consistent procedure. Early adulthood is frequently a wake-up call for low-Si individuals, who may struggle with basic habits until reality enforces some growth through consequences like illness or burnout.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-xl mb-3 text-primary">Mid-Life & Beyond</h4>
+                  <p>
+                    Middle age often sees Si users refining their mastery further, becoming the reliable pillars of their families and communities. They may develop expert-level skills in areas like cooking, home maintenance, or health management. For those who previously neglected Si, mid-life crises or health scares often force a reckoning with physical needs, sometimes leading to dramatic lifestyle changes toward greater stability and self-care.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-xl mb-3 text-primary">Elder Years</h4>
+                  <p>
+                    In later life, strong Si often manifests as wisdom about sustainable living and deep appreciation for life's simple pleasures. Elder Si users become repositories of traditional knowledge and family memories. Even those who developed Si later may find great satisfaction in finally living according to their body's needs and creating comfortable, meaningful environments in their retirement years.
+                  </p>
+                </div>
+              </div>
+
+              <p>
+                PRISM emphasizes that Si development is not fixed by type – life experiences, necessity, and conscious effort can significantly enhance one's relationship with comfort, routine, and sensory awareness at any stage. The key is recognizing where you are in this developmental journey and what growth might serve you best.
               </p>
             </CardContent>
           </Card>
