@@ -2,14 +2,14 @@ import { NavLink, useLocation } from "react-router-dom";
 import { useState } from "react";
 
 const infoElements = [
-  { code: "Ti", name: "Internal Logic", path: "/ti" },
-  { code: "Te", name: "Effectiveness", path: "/te" },
-  { code: "Fi", name: "Personal Values", path: "/fi" },
-  { code: "Fe", name: "Shared Emotion", path: "/fe" },
-  { code: "Ni", name: "Patterns Over Time", path: "/ni" },
-  { code: "Ne", name: "Possibilities", path: "/ne" },
-  { code: "Si", name: "Steadiness & Comfort", path: "/si" },
-  { code: "Se", name: "Decisive Action", path: "/se" },
+  { code: "Ti", name: "Structural Logic", path: "/ti" },
+  { code: "Te", name: "Pragmatic Logic", path: "/te" },
+  { code: "Fi", name: "Relational Ethics", path: "/fi" },
+  { code: "Fe", name: "Interpersonal Dynamics", path: "/fe" },
+  { code: "Ni", name: "Convergent Synthesis", path: "/ni" },
+  { code: "Ne", name: "Divergent Exploration", path: "/ne" },
+  { code: "Si", name: "Experiential Memory", path: "/si" },
+  { code: "Se", name: "Kinesthetic Responsiveness", path: "/se" },
 ];
 
 export function InfoElementSidebar() {
