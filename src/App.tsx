@@ -35,6 +35,23 @@ import Accessibility from "./pages/Accessibility";
 import CoreAlignments from "./pages/CoreAlignments";
 import Resources from "./pages/Resources";
 import NotFound from "./pages/NotFound";
+// PRISM Type imports
+import IdeaCatalyst from "./pages/types/IdeaCatalyst";
+import FrameworkArchitect from "./pages/types/FrameworkArchitect";
+import ComfortHarmonizer from "./pages/types/ComfortHarmonizer";
+import AtmosphereHost from "./pages/types/AtmosphereHost";
+import TacticalCommander from "./pages/types/TacticalCommander";
+import SystemsMarshal from "./pages/types/SystemsMarshal";
+import VisionMuse from "./pages/types/VisionMuse";
+import InspirationOrchestrator from "./pages/types/InspirationOrchestrator";
+import StrategicExecutor from "./pages/types/StrategicExecutor";
+import ForesightAnalyst from "./pages/types/ForesightAnalyst";
+import RelationalDriver from "./pages/types/RelationalDriver";
+import BoundaryGuardian from "./pages/types/BoundaryGuardian";
+import OperationsSteward from "./pages/types/OperationsSteward";
+import PracticalOptimizer from "./pages/types/PracticalOptimizer";
+import PossibilityConnector from "./pages/types/PossibilityConnector";
+import IntegrityGuide from "./pages/types/IntegrityGuide";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +94,23 @@ const App = () => (
               <Route path="/accessibility" element={<Accessibility />} />
               <Route path="/core-alignments" element={<CoreAlignments />} />
               <Route path="/resources" element={<Resources />} />
+              {/* PRISM Type Routes */}
+              <Route path="/types/idea-catalyst" element={<IdeaCatalyst />} />
+              <Route path="/types/framework-architect" element={<FrameworkArchitect />} />
+              <Route path="/types/comfort-harmonizer" element={<ComfortHarmonizer />} />
+              <Route path="/types/atmosphere-host" element={<AtmosphereHost />} />
+              <Route path="/types/tactical-commander" element={<TacticalCommander />} />
+              <Route path="/types/systems-marshal" element={<SystemsMarshal />} />
+              <Route path="/types/vision-muse" element={<VisionMuse />} />
+              <Route path="/types/inspiration-orchestrator" element={<InspirationOrchestrator />} />
+              <Route path="/types/strategic-executor" element={<StrategicExecutor />} />
+              <Route path="/types/foresight-analyst" element={<ForesightAnalyst />} />
+              <Route path="/types/relational-driver" element={<RelationalDriver />} />
+              <Route path="/types/boundary-guardian" element={<BoundaryGuardian />} />
+              <Route path="/types/operations-steward" element={<OperationsSteward />} />
+              <Route path="/types/practical-optimizer" element={<PracticalOptimizer />} />
+              <Route path="/types/possibility-connector" element={<PossibilityConnector />} />
+              <Route path="/types/integrity-guide" element={<IntegrityGuide />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Menu, X, ChevronDown } from "lucide-react";
+import { prismTypes } from "@/data/prismTypes";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
