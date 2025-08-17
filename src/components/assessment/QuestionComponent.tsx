@@ -12,8 +12,8 @@ interface QuestionComponentProps {
 }
 
 export function QuestionComponent({ question, value, onChange }: QuestionComponentProps) {
-  const handleLikertClick = (optionIndex: number) => {
-    onChange(optionIndex + 1); // Store as 1-5 instead of 0-4
+  const handleLikertClick = (optionValue: number) => {
+    onChange(optionValue);
   };
 
   const handleMultipleChoiceChange = (selectedValue: string) => {
@@ -21,24 +21,45 @@ export function QuestionComponent({ question, value, onChange }: QuestionCompone
   };
 
   switch (question.type) {
-    case 'likert':
+    case 'email':
+      return (
+        <input
+          type="email"
+          value={value?.toString() || ''}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+          placeholder="your@email.com"
+        />
+      );
+
+    case 'text':
+      return (
+        <input
+          type="text"
+          value={value?.toString() || ''}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      );
+
+    case 'likert-1-5':
       return (
         <div className="space-y-4">
           <div className="grid grid-cols-5 gap-2">
-            {question.options?.map((option, index) => (
-              <div key={index} className="text-center">
+            {[1, 2, 3, 4, 5].map((num) => (
+              <div key={num} className="text-center">
                 <Button
-                  variant={value === index + 1 ? "default" : "outline"}
+                  variant={value === num ? "default" : "outline"}
                   className={cn(
                     "w-full mb-2 h-12",
-                    value === index + 1 && "prism-gradient-primary text-white"
+                    value === num && "prism-gradient-primary text-white"
                   )}
-                  onClick={() => handleLikertClick(index)}
+                  onClick={() => handleLikertClick(num)}
                 >
-                  {index + 1}
+                  {num}
                 </Button>
                 <p className="text-xs text-muted-foreground leading-tight">
-                  {option}
+                  {question.options?.[num - 1]?.replace(`${num}=`, '') || ''}
                 </p>
               </div>
             ))}
@@ -46,8 +67,63 @@ export function QuestionComponent({ question, value, onChange }: QuestionCompone
         </div>
       );
 
+    case 'likert-1-7':
+      return (
+        <div className="space-y-4">
+          <div className="grid grid-cols-7 gap-1">
+            {[1, 2, 3, 4, 5, 6, 7].map((num) => (
+              <div key={num} className="text-center">
+                <Button
+                  variant={value === num ? "default" : "outline"}
+                  className={cn(
+                    "w-full mb-2 h-12 text-sm",
+                    value === num && "prism-gradient-primary text-white"
+                  )}
+                  onClick={() => handleLikertClick(num)}
+                >
+                  {num}
+                </Button>
+                <p className="text-xs text-muted-foreground leading-tight">
+                  {question.options?.[num - 1]?.replace(`${num}=`, '') || ''}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'state-1-7':
+      return (
+        <div className="space-y-4">
+          <div className="grid grid-cols-7 gap-1">
+            {question.options?.map((option, index) => (
+              <div key={index} className="text-center">
+                <Button
+                  variant={value === option ? "default" : "outline"}
+                  className={cn(
+                    "w-full mb-2 h-12 text-sm",
+                    value === option && "prism-gradient-primary text-white"
+                  )}
+                  onClick={() => onChange(option)}
+                >
+                  {index + 1}
+                </Button>
+                <p className="text-xs text-muted-foreground leading-tight">
+                  {option.replace(/^\d+=/, '')}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'yes-no':
     case 'multiple-choice':
-    case 'attention-check':
+    case 'forced-choice-2':
+    case 'forced-choice-4':
+    case 'forced-choice-5':
+    case 'categorical-5':
+    case 'frequency':
       return (
         <RadioGroup value={value as string} onValueChange={handleMultipleChoiceChange}>
           <div className="space-y-3">
@@ -66,47 +142,7 @@ export function QuestionComponent({ question, value, onChange }: QuestionCompone
         </RadioGroup>
       );
 
-    case 'scale':
-      return (
-        <div className="space-y-4">
-          <div className="grid grid-cols-5 gap-2">
-            {question.options?.map((option, index) => (
-              <Button
-                key={index}
-                variant={value === option ? "default" : "outline"}
-                className={cn(
-                  "text-center p-4 h-auto min-h-[60px]",
-                  value === option && "prism-gradient-primary text-white"
-                )}
-                onClick={() => onChange(option)}
-              >
-                <span className="text-sm leading-tight">{option}</span>
-              </Button>
-            ))}
-          </div>
-        </div>
-      );
-
-    case 'demographic':
-      return (
-        <RadioGroup value={value as string} onValueChange={handleMultipleChoiceChange}>
-          <div className="grid grid-cols-2 gap-3">
-            {question.options?.map((option, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <RadioGroupItem value={option} id={`demo-${index}`} />
-                <Label 
-                  htmlFor={`demo-${index}`} 
-                  className="flex-1 cursor-pointer text-sm"
-                >
-                  {option}
-                </Label>
-              </div>
-            ))}
-          </div>
-        </RadioGroup>
-      );
-
     default:
-      return <div>Unsupported question type</div>;
+      return <div>Unsupported question type: {question.type}</div>;
   }
 }
