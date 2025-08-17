@@ -9,9 +9,14 @@ const Header = () => {
 
   const navigation = [
     { name: "About PRISM", href: "/about" },
-    { name: "For Individuals", href: "/individuals" },
-    { name: "For Teams", href: "/teams" },
     { name: "Blog & Insights", href: "/insights" },
+  ];
+
+  const solutionsItems = [
+    { name: "Individuals", href: "/individuals" },
+    { name: "Organizations", href: "/teams" },
+    { name: "Consultants", href: "/consultants" },
+    { name: "Education", href: "/education" },
   ];
 
   const prismComponents = [
@@ -55,6 +60,23 @@ const Header = () => {
                 {item.name}
               </a>
             ))}
+            
+            {/* Solutions Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="text-foreground hover:text-primary prism-transition font-medium">
+                  Solutions
+                  <ChevronDown className="ml-1 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-48 bg-background border border-border shadow-lg z-50">
+                {solutionsItems.map((item) => (
+                  <DropdownMenuItem key={item.name} asChild>
+                    <a href={item.href} className="w-full">{item.name}</a>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             {/* PRISM Types Dropdown */}
             <DropdownMenu>
@@ -147,6 +169,21 @@ const Header = () => {
                   {item.name}
                 </a>
               ))}
+              
+              {/* Solutions in Mobile */}
+              <div className="border-t border-border mt-2 pt-2">
+                <div className="px-3 py-1 text-sm font-semibold text-muted-foreground">Solutions</div>
+                {solutionsItems.map((item) => (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    className="block px-3 py-2 text-sm text-foreground hover:text-primary prism-transition"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </a>
+                ))}
+              </div>
               
               {/* PRISM Types in Mobile */}
               <div className="border-t border-border mt-2 pt-2">

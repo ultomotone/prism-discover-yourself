@@ -25,6 +25,8 @@ import HowItWorks from "./pages/HowItWorks";
 import Profiles from "./pages/Profiles";
 import Individuals from "./pages/Individuals";
 import Teams from "./pages/Teams";
+import Consultants from "./pages/Consultants";
+import Education from "./pages/Education";
 import Insights from "./pages/Insights";
 import Research from "./pages/Research";
 import FAQ from "./pages/FAQ";
@@ -85,6 +87,8 @@ const App = () => (
               <Route path="/profiles" element={<Profiles />} />
               <Route path="/individuals" element={<Individuals />} />
               <Route path="/teams" element={<Teams />} />
+              <Route path="/consultants" element={<Consultants />} />
+              <Route path="/education" element={<Education />} />
               <Route path="/insights" element={<Insights />} />
               <Route path="/research" element={<Research />} />
               <Route path="/faq" element={<FAQ />} />
