@@ -306,6 +306,97 @@ const Ne = () => {
               </p>
             </CardContent>
           </Card>
+
+          {/* Behavioral Examples */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center text-2xl">
+                <span className="w-4 h-4 bg-primary/60 rounded-full mr-3"></span>
+                Behavioral Examples
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 text-lg leading-relaxed">
+              <p>
+                To illustrate Ne in action, here are realistic scenarios showing how Extraverted Intuition might appear in different people, contexts, and levels of development:
+              </p>
+
+              <div className="space-y-8">
+                <div className="border-l-4 border-primary pl-6">
+                  <h4 className="font-semibold text-xl mb-3 text-primary">Ne as Core Strength (Creative Innovator)</h4>
+                  <p className="mb-3">
+                    <strong>Maya</strong> leads a product design meeting for a tech startup. She listens to her team's initial concept and immediately starts sketching variations: "What if we target a different user base? Or use the same tech for an entirely new purpose? Actually, here's an off-the-wall idea – what if we gamify the experience?"
+                  </p>
+                  <p>
+                    In half an hour, she presents five distinct approaches. Maya's colleagues are used to her prolific, spontaneous brainstorms. Not every idea sticks, but her creative energy sets the tone. She juggles multiple projects and pulls in seemingly unrelated inspiration – last week she drew an analogy from a documentary about ants that sparked a new app feature. Her Ne is clearly 4D and high-expression.
+                  </p>
+                </div>
+
+                <div className="border-l-4 border-destructive pl-6">
+                  <h4 className="font-semibold text-xl mb-3 text-destructive">Ne Role Usage (Stretching to Ideate)</h4>
+                  <p className="mb-3">
+                    <strong>Damien</strong> is an operations manager known for efficiency and practical approaches. In a company workshop on "visionary leadership," he feels out of his element but doesn't want to stay silent. He offers a couple of safe suggestions – fairly conservative ones like adopting a procedure he read about in a trade journal.
+                  </p>
+                  <p>
+                    While others excitedly pitch transformative ideas, Damien's contributions are measured and stilted. He later admits, "I'm not really an idea guy – I was just trying to participate." This is Ne in his Internal Critic block: he can generate a few notions when expected (using known templates), but it's clearly not his comfort zone.
+                  </p>
+                </div>
+
+                <div className="border-l-4 border-red-600 pl-6">
+                  <h4 className="font-semibold text-xl mb-3 text-red-600">Ne Vulnerable (Blind Spot)</h4>
+                  <p className="mb-3">
+                    <strong>Irina</strong> is a no-nonsense accountant who prides herself on pragmatism. When her imaginative daughter muses about various career paths and wild inventions, Irina sighs: "You should focus on something real that pays the bills. All these 'what-ifs' don't put food on the table."
+                  </p>
+                  <p>
+                    Irina's lack of Ne is evident – she has difficulty entertaining hypotheticals. When a plan falls through, she feels genuinely stuck because she can't readily imagine alternatives. In ambiguous situations, she reacts by doubling down on routine tasks rather than brainstorming solutions. This exemplifies Ne at 1D/Painful: anything too abstract or unproven is met with dismissal or stress.
+                  </p>
+                </div>
+
+                <div className="border-l-4 border-muted-foreground pl-6">
+                  <h4 className="font-semibold text-xl mb-3 text-muted-foreground">Ne Suggestive (Craving Ideas from Others)</h4>
+                  <p className="mb-3">
+                    <strong>Tariq</strong> is a diligent IT specialist who often feels something is missing in his work. He's good at maintaining systems but secretly admires the "big picture" thinkers. He befriends an ENTP coworker, Alex, who is always fiddling with new concepts. During lunch, Alex excitedly explains a radical software optimization approach.
+                  </p>
+                  <p>
+                    Tariq finds himself captivated – this is the highlight of his day. He asks lots of questions, encouraging elaboration. When problems arise, Tariq goes straight to Alex: "Any ideas for a workaround? I bet you've got a clever angle." Tariq demonstrates Ne Suggestive: appreciating and relying on others' creativity to enrich his stable life.
+                  </p>
+                </div>
+
+                <div className="border-l-4 border-blue-600 pl-6">
+                  <h4 className="font-semibold text-xl mb-3 text-blue-600">Ne Mobilizing (Developing Creativity)</h4>
+                  <p className="mb-3">
+                    <strong>Elena</strong> (ISFJ) is a competent project manager who has always been practical and detail-driven. In her 30s, she feels her life has become too routine and that she's pigeonholed as "the organized one" but never "the idea person." Deciding to challenge herself, Elena enrolls in a creative writing workshop.
+                  </p>
+                  <p>
+                    At first, she struggles with safe, familiar stories. But with feedback and encouragement, she begins trying more imaginative plots. She consciously adopts habits to spark Ne: visiting new places weekly to jolt herself out of comfort zones. Over time, friends notice she's more open to spontaneity and even pitches out-of-the-box work suggestions. This portrays Ne being consciously cultivated: initial tentativeness followed by growing confidence.
+                  </p>
+                </div>
+
+                <div className="border-l-4 border-purple-600 pl-6">
+                  <h4 className="font-semibold text-xl mb-3 text-purple-600">Ne Ignoring (Background Capability)</h4>
+                  <p className="mb-3">
+                    <strong>Viktor</strong> is a strategizing CEO known for his singular vision (strong Ni). In meetings, when his team brainstorms, he often appears impatient – he usually has a clear favorite direction already. However, if pressed, Viktor can enumerate several alternative plans off the top of his head.
+                  </p>
+                  <p>
+                    He acknowledges other possibilities only to swiftly explain why his chosen path is better. In crises, colleagues have seen Viktor surprise them: when Plan A utterly fails, he almost immediately presents Plan B and C – ideas seemingly pulled from nowhere but that he'd been keeping in his back pocket. This illustrates Ne Ignoring – Viktor's mind is quite capable of generating multiple strategies (3D Ne), but he seldom shows them because he's fixated on his intuitive preference.
+                  </p>
+                </div>
+
+                <div className="border-l-4 border-green-600 pl-6">
+                  <h4 className="font-semibold text-xl mb-3 text-green-600">Ne Demonstrative (Unspoken Quirkiness)</h4>
+                  <p className="mb-3">
+                    <strong>Sandra</strong> is a conscientious nurse (ESFJ) who appears very traditional and routine-based. She runs her household efficiently and sticks to what's worked for years. Yet those close to her occasionally glimpse an unexpected side: her son mentions Sandra invented a fun bedtime storytelling game where they collaboratively make up fantastical tales.
+                  </p>
+                  <p>
+                    At work, if a colleague is down, Sandra has a knack for saying something off-beat and funny that cheers them up. She never calls herself creative, but people are sometimes surprised by her quick wit or imaginative solutions to comfort patients. She treats these as no big deal, just part of being helpful. This is Ne Demonstrative: quietly strong and often channeled into supporting others, emerging most when it serves her valued ethos of caring.
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-base italic mt-6">
+                These examples showcase how Ne can range from the overt visionary leader to the subtle behind-the-scenes helper. PRISM's nuanced model allows us to understand each case as variations of the same fundamental intuition function, shaped by position, development, and state.
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Bottom Navigation */}
