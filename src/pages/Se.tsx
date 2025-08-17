@@ -215,6 +215,130 @@ const Se = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* State/Overlay Effects */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <span className="w-3 h-3 bg-primary rounded-full mr-3"></span>
+                State/Overlay Effects (Flow, Stress, +/− Overlays)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <p className="text-sm text-muted-foreground">
+                PRISM recognizes that Se doesn't operate in a vacuum – its expression is influenced by temporary states and stable emotional overlays:
+              </p>
+
+              <div className="space-y-6">
+                <div>
+                  <h4 className="font-semibold text-primary mb-3">Flow State</h4>
+                  <p className="text-sm mb-3">
+                    In flow state, Se becomes a breathtaking force of effective action. When fully engaged and at ease, the Se-user's mind and body enter a mode of effortless responsiveness. Athletes often describe this as "the zone": time seems to slow down, and movements or decisions happen with perfect timing.
+                  </p>
+                  <p className="text-sm">
+                    In flow, Se is remarkably accurate – because the person isn't second-guessing or distracted, their impulses align closely with what the situation needs. This is Se operating at its most potent and positively synchronized: the individual is embodying their actions, fully in tune with reality and unimpeded by doubt or hesitation.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-primary mb-3">Stress State</h4>
+                  <p className="text-sm mb-3">
+                    Under acute stress, Se's performance often degrades or distorts. For someone who normally relies on Se, high stress can disrupt their confident spontaneity. One common reaction is to push even harder but less strategically: they might become reckless or confrontational, trying to force a solution when patience is needed.
+                  </p>
+                  <p className="text-sm">
+                    Another pattern is shutdown: if stress is overwhelming, even a typically bold individual can experience paralysis. For individuals who don't value Se, stress might further suppress whatever little real-world engagement they had, causing them to retreat entirely.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-primary mb-3">High Neuroticism Overlay (+)</h4>
+                  <p className="text-sm mb-3">
+                    With high anxiety or emotional volatility, Se's character becomes vigilant and tense. The person remains capable and in-the-moment, but many perceptions and impulses focus on threats or errors. This manifests as hyper-vigilance: constantly keyed up about what might go wrong in the immediate environment.
+                  </p>
+                  <p className="text-sm">
+                    This overlay can make them reactive and edgy – easily irritated or angered, with their temper on a short fuse. Even positive experiences get colored by worry, and self-doubt can inject hesitation into normally decisive behavior.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-primary mb-3">Low Neuroticism Overlay (–)</h4>
+                  <p className="text-sm mb-3">
+                    With emotional stability, Se tends to play out in a more optimistic and relaxed fashion. Low neuroticism means less anxiety about unknowns, giving Se freer rein without negative bias. The individual approaches situations with confidence and poise.
+                  </p>
+                  <p className="text-sm">
+                    This overlay allows them to stay in Se's positive zone: seeing challenges as exciting rather than terrifying. Because they aren't occupied by worry, they can actually enjoy confronting life's hurdles and bounce back quickly from mistakes.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Developmental Arc */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <span className="w-3 h-3 bg-secondary rounded-full mr-3"></span>
+                Developmental Arc
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <p className="text-sm text-muted-foreground">
+                PRISM emphasizes that Se is not static but can grow, atrophy, or transform with experience and intentional development:
+              </p>
+
+              <div className="space-y-6">
+                <div>
+                  <h4 className="font-semibold text-primary mb-3">Early Childhood</h4>
+                  <p className="text-sm mb-3">
+                    Children with strong Se potential may be notably active and explorative – always on the move, climbing, grabbing objects, testing physical limits. They often show fearless curiosity and engage in rough-and-tumble play.
+                  </p>
+                  <p className="text-sm">
+                    Children with weak Se will likely be more passive or sensitive in physical settings – preferring familiar, gentle play and shying away from loud or aggressive activities. They might cling to routine and get easily upset by sudden changes or sensory overload.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-primary mb-3">Adolescence</h4>
+                  <p className="text-sm mb-3">
+                    If Se is a core strength, by high school the person often leans heavily into it – through sports, outdoor adventures, social parties, or outlets that allow hands-on influence. This can be a period of exuberant challenge-seeking and testing authority.
+                  </p>
+                  <p className="text-sm">
+                    Meanwhile, teens with Se in suggestive positions might gravitate toward Se-strong peers, while those with vulnerable Se likely avoid typical high school competitions or physical confrontations.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-primary mb-3">Early Adulthood (20s–30s)</h4>
+                  <p className="text-sm mb-3">
+                    Strong Se users typically dive into work or lifestyles that allow them to be active and in control. This is when their natural drive can yield significant results, but also when the limits of pure hustle become evident.
+                  </p>
+                  <p className="text-sm">
+                    For those with Se in Hidden Potential, this period can bring longing to break out – spurring them to travel, date more, or take on physically challenging hobbies to "not let life pass by."
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-primary mb-3">Midlife (40s–50s)</h4>
+                  <p className="text-sm mb-3">
+                    Around midlife, individuals often reevaluate how they've been using Se. Those who always led with Se might desire to channel it more meaningfully rather than just for intensity's sake, becoming more selective and strategic.
+                  </p>
+                  <p className="text-sm">
+                    For those who had Se as a blind spot, midlife can be revolutionary – experiencing bursts of openness or wanderlust, suddenly booking adventures or asserting themselves in previously avoided situations.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-primary mb-3">Late Adulthood (60s and beyond)</h4>
+                  <p className="text-sm mb-3">
+                    The intensity of earlier decades naturally declines as the body may not handle constant action as before. Healthy development means adapting Se to new reality – finding "softer" versions of interests while maintaining engagement with life.
+                  </p>
+                  <p className="text-sm">
+                    For those who undervalued Se historically, late adulthood is sometimes when they finally allow themselves to cultivate postponed pleasures or adventures, finding new zest for life through previously unexplored physical engagement.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Bottom Navigation */}
