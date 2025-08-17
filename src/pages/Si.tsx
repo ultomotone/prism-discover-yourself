@@ -119,33 +119,65 @@ const Si = () => {
                 The role Si plays in someone's psyche dramatically affects how it shows up in behavior. Here's how Si manifests in each block:
               </p>
 
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <div>
-                  <h4 className="font-semibold text-xl mb-3 text-primary">Core (Ego Block)</h4>
-                  <p>
-                    When Si is in the Core block, it is a principal strength and deeply valued by the individual. Si-leading types put comfort, quality of experience, and inner stability at the forefront. They instinctively know how to make themselves and others comfortable, accumulating an impressive store of experiential knowledge. They often become natural caretakers, hosts, or detail-oriented craftspersons who champion quality of life improvements and continuity.
-                  </p>
+                  <h4 className="font-semibold text-xl mb-3 text-primary">Core (Ego Block – Leading or Creative)</h4>
+                  <div className="space-y-4">
+                    <p>
+                      When Si is in the Core block, it is a principal strength and deeply valued by the individual. In the Leading (Base) position, Si serves as the fundamental lens through which the person interprets life. Si-leading types (like SEI/ISFp or SLI/ISTp in Socionics, roughly corresponding to ISFJ/ISFP and ISTJ/ISTP) put comfort, quality of experience, and inner stability at the forefront.
+                    </p>
+                    <p>
+                      Such a person instinctively knows how to make themselves and others comfortable – it's almost like a 4D radar always scanning for physical ease or distress. They accumulate an impressive store of experiential knowledge: remembering what remedies helped which ailment, which route is most pleasant, how each family member likes their breakfast. They take pride in nurturing well-being and often become natural caretakers, hosts, or detail-oriented craftspersons.
+                    </p>
+                    <p>
+                      In the Creative (Auxiliary) position, Si is still robust (3D) and actively used, but supports another leading function. For example, an ESTJ (LSE, Te-Si) pursues efficiency but uses Si to ensure processes are sustainable and well-regulated. They might implement new work systems while creating clear routines and ergonomic setups so everyone can follow comfortably.
+                    </p>
+                  </div>
                 </div>
 
                 <div>
-                  <h4 className="font-semibold text-xl mb-3 text-destructive">Critic (Super-Ego Block)</h4>
-                  <p>
-                    With Si in the Critic block, matters of comfort, routine, and sensory well-being become weak spots or points of friction. Role Si users can mimic healthy routines but find them burdensome, while Vulnerable Si users are often oblivious to their own physical state until something goes wrong. They may work through exhaustion, have erratic schedules, or dismiss the importance of comfort altogether.
-                  </p>
+                  <h4 className="font-semibold text-xl mb-3 text-destructive">Critic (Super-Ego Block – Role or Vulnerable)</h4>
+                  <div className="space-y-4">
+                    <p>
+                      With Si in the Critic block, matters of comfort, routine, and sensory well-being become weak spots or points of friction. In the Role (3rd) position, Si is something the person can mimic or force themselves to do, but it doesn't come naturally or give joy. Types like ILE (ENTp) or LIE (ENTj) – very idea- or goal-driven personalities – often neglect their own comfort in pursuit of projects or intellect.
+                    </p>
+                    <p>
+                      They know health and rest are important (because others have drilled it into them), so they make periodic attempts at "doing the Si thing." An ENTJ might set New Year's resolutions for healthier routines but internally it feels like a chore. They treat Si as maintenance that must be done grudgingly, often doing the bare minimum to check the box.
+                    </p>
+                    <p>
+                      In the Vulnerable (4th) position, Si is a serious blind spot. Types like ILI (INTp) or LIE (ENTj) who live in abstract realms are often oblivious to their physical state until something goes wrong. They might work through exhaustion, skip meals while focused, or have very high tolerance for uncomfortable environments simply because they're not paying attention to discomfort signals. They may dismiss comfort as trivial or "weak," like to think of themselves as low-maintenance, but often undermine their own maintenance to the point of crisis.
+                    </p>
+                  </div>
                 </div>
 
                 <div>
-                  <h4 className="font-semibold text-xl mb-3 text-muted-foreground">Hidden (Super-Id Block)</h4>
-                  <p>
-                    When Si is in the Hidden Potential block, the person appreciates the value of comfort and stability but isn't skilled at achieving it alone. Suggestive Si individuals deeply enjoy Si-related experiences when provided by others and unconsciously seek out relationships or environments that supply steadiness. Mobilizing Si users try to develop these abilities in themselves over time, often approaching comfort and health as projects to master.
-                  </p>
+                  <h4 className="font-semibold text-xl mb-3 text-muted-foreground">Hidden (Super-Id Block – Suggestive or Mobilizing)</h4>
+                  <div className="space-y-4">
+                    <p>
+                      When Si is in the Hidden Potential block, the person appreciates the value of comfort and stability but isn't skilled at achieving it alone. In the Suggestive (5th) position, Si is a desired help from outside. Types like IEE (ENFp) or EIE (ENFj) are typically driven by ideas or emotions, and their lives can be hectic or high-strung. Yet they yearn for calm and coziness.
+                    </p>
+                    <p>
+                      An ENFP always juggling projects might absolutely adore visiting their ISFJ friend's home, where everything is warm, inviting, and the tea is served just right. They visibly relax – it's like a balm for their overstimulated mind. They unconsciously seek relationships or environments that supply steadiness, responding with grateful wonder when receiving gentle caretaking or ambient stability.
+                    </p>
+                    <p>
+                      In the Mobilizing (6th) position, Si is an ability the person tries to develop over time. Types like LII/INTj or LIE/ENTj typically are intellectual or goal-driven people who realize that improving attention to health and comfort would enhance their effectiveness. They might take on Si as a project: reading about minimalist living, experimenting with cooking, approaching it analytically at first but gradually transforming their lifestyle.
+                    </p>
+                  </div>
                 </div>
 
                 <div>
-                  <h4 className="font-semibold text-xl mb-3 text-primary/70">Instinct (Id Block)</h4>
-                  <p>
-                    With Si in the Instinctive block, the person has strong capacity for Si that operates in the background, largely unacknowledged. Ignoring Si users can manage comfort when they see fit but usually don't bother unless necessary. Demonstrative Si users consistently weave comfort and care into their behavior, especially interpersonally, yet remain detached from that as a defining trait. Both use Si like a safety net – reliably there when needed, but kept in the background.
-                  </p>
+                  <h4 className="font-semibold text-xl mb-3 text-primary/70">Instinct (Id Block – Ignoring or Demonstrative)</h4>
+                  <div className="space-y-4">
+                    <p>
+                      With Si in the Instinctive block, the person has strong capacity for Si that operates in the background, largely unacknowledged in their identity. In the Ignoring (7th) position, Si is the counterpart to an Se- or Ne-focused ego. Types like SEE (ESFp) or IEE (ENFp) generally chase external experiences or ideas and aren't thought of as homebodies, yet because Si is 3D for them, they do have the ability to manage comfort when they see fit.
+                    </p>
+                    <p>
+                      An ESFp might lead a fast-paced social life but when they crash, they actually know how to recuperate quite well – spending days "off the grid" relaxing or knowing exactly which indulgent foods help them recover. Because Si is unvalued, they don't plan life around it, but it kicks in as an auxiliary system when their body demands it.
+                    </p>
+                    <p>
+                      In the Demonstrative (8th) position, Si is a 4D strength used freely but without ego attachment. Types like IEI (INFp) or EIE (ENFj) might seem not particularly concerned with practicalities outwardly, but those close to them notice they have a knack for low-key nurturing and aesthetics. They instinctively provide comforts when needed, consistently weaving comfort and care into their behavior while downplaying their skill. Unvalued strong Si is like a safety net – reliably there when needed, but kept in the background.
+                    </p>
+                  </div>
                 </div>
               </div>
             </CardContent>
