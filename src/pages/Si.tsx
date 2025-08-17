@@ -336,6 +336,97 @@ const Si = () => {
               </p>
             </CardContent>
           </Card>
+
+          {/* Behavioral Examples */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center text-2xl">
+                <span className="w-4 h-4 bg-primary/60 rounded-full mr-3"></span>
+                Behavioral Examples
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 text-lg leading-relaxed">
+              <p>
+                Here are illustrative scenarios showcasing Introverted Sensing in different contexts and levels of development, demonstrating how Si might appear in daily life:
+              </p>
+
+              <div className="space-y-8">
+                <div className="border-l-4 border-primary pl-6">
+                  <h4 className="font-semibold text-xl mb-3 text-primary">Si as Core Comforter (Steady Caregiver)</h4>
+                  <p className="mb-3">
+                    <strong>Marian</strong> is a 52-year-old nurse renowned for her calming presence. Her Si is well-honed and valued – she remembers each patient's preferences ("Mrs. Lopez likes an extra blanket and her tea with honey in the evening") and ensures they are met. Her cart is always stocked with necessities plus comfort items that others forget.
+                  </p>
+                  <p>
+                    Colleagues notice that when things get hectic, Marian sticks to her routines – checking vitals methodically, speaking gently – which grounds everyone. At home, her house is cozy with homemade soup aromas, and she maintains a set schedule. Her grandchildren love visiting because they know exactly how warm and inviting it will be. Marian exemplifies Si in the core: consistent, nurturing, rich with practical memory used to maintain well-being for herself and others.
+                  </p>
+                </div>
+
+                <div className="border-l-4 border-destructive pl-6">
+                  <h4 className="font-semibold text-xl mb-3 text-destructive">Si Role in Action (Conscientious Obligations)</h4>
+                  <p className="mb-3">
+                    <strong>Dev</strong> is a software developer (ENTP) who primarily lives in his head but tries to be "healthy" because he knows he should. Each morning, he forces himself up for a jog and bland cereal – not something he enjoys, but there's an inner voice nagging that he ought to. At work, he keeps a standing desk and water bottle, having heard it's good, yet often forgets to drink until parched.
+                  </p>
+                  <p>
+                    His apartment tends toward disarray, but once monthly in guilt-driven flurries he deep-cleans and tries to "get organized," only for it to slowly slide back. When friends visit, Dev hastily straightens up and lights a scented candle – not because he particularly cares, but he's aware it's expected. This reflects Si as Role function: making effort to imitate good habits, but it's rote and inconsistent.
+                  </p>
+                </div>
+
+                <div className="border-l-4 border-red-600 pl-6">
+                  <h4 className="font-semibold text-xl mb-3 text-red-600">Si Vulnerable (Neglect until Breaking Point)</h4>
+                  <p className="mb-3">
+                    <strong>Alicia</strong> is a driven corporate lawyer (ENTJ) who seemingly runs on coffee and adrenaline. She still largely ignores her body's signals: realizing at 4 PM she hasn't eaten all day, working through migraines with painkillers, insisting she's fine. Her home is a place she "barely knows" – spoiled food in the fridge, laundry piled up because she buys new shirts instead of washing.
+                  </p>
+                  <p>
+                    Alicia genuinely doesn't notice mess or bodily discomfort until it's extreme. One day she nearly collapses in a meeting – turns out she had 102°F fever but kept pushing through deadlines. Forced to rest, she's miserable: bored with downtime, lacking soothing routines, snapping at her spouse's care. This highlights Si vulnerable: very high threshold for noticing physical needs, lacking coping strategies when confronted with them.
+                  </p>
+                </div>
+
+                <div className="border-l-4 border-muted-foreground pl-6">
+                  <h4 className="font-semibold text-xl mb-3 text-muted-foreground">Si Suggestive (Yearning for Rest and Warmth)</h4>
+                  <p className="mb-3">
+                    <strong>Noah</strong> is a high-strung theater actor (ENFJ) whose life is a whirlwind of rehearsals and social events. He loves the excitement but secretly feels overstimulated and burnt out. Noah finds himself increasingly drawn to his friend Ben's lifestyle – Ben has this snug apartment with plants, a cat, and always seems to have homemade muffins or soup on hand.
+                  </p>
+                  <p>
+                    Whenever Noah visits, he melts into the couch and sighs, "It's so peaceful here." He jokingly calls Ben's place his "sanctuary." At his own apartment, things are disorganized and he hardly cooks – it doesn't feel homey. This shows Si suggestive: Noah craves the tranquility and comfort he doesn't naturally cultivate, actively seeking it from his friend and feeling immense relief when he receives it.
+                  </p>
+                </div>
+
+                <div className="border-l-4 border-blue-600 pl-6">
+                  <h4 className="font-semibold text-xl mb-3 text-blue-600">Si Mobilizing (Learning to Slow Down)</h4>
+                  <p className="mb-3">
+                    <strong>Tara</strong> is an INTJ architect, brilliant at her job but historically oblivious to self-care. At 35, chronic stress symptoms (insomnia, back pain) force her to approach this as a design problem – systematically. She reads up on health, buys ergonomic gadgets, schedules "Gym – Tuesday/Friday 6 PM" and "Meal Prep Sunday" into her planner.
+                  </p>
+                  <p>
+                    At first, these are just tasks to tick off. Gym visits are awkward; cooking is messy. But Tara sticks to it and gradually notices improvement. Six months later, colleagues notice her increased energy. A friend finds her peacefully trimming bonsai plants – a patience-cultivating hobby. "Old me wouldn't recognize this," Tara laughs. This shows Si mobilizing: through deliberate effort, developing appreciation for well-being maintenance.
+                  </p>
+                </div>
+
+                <div className="border-l-4 border-purple-600 pl-6">
+                  <h4 className="font-semibold text-xl mb-3 text-purple-600">Si Ignoring (Strong but Backgrounded)</h4>
+                  <p className="mb-3">
+                    <strong>Carlos</strong> is an ESFP event planner who lives a very active, social life. On the surface, he thrives on chaos – late nights, loud venues, constant engagement. However, those close notice: when he takes breaks, he switches fully into rest mode. After intense weeks, Carlos might vanish for weekends at his parents' country house, sleeping in, strolling in pajamas, cooking childhood comfort foods.
+                  </p>
+                  <p>
+                    When an outdoor festival he's organizing gets hit by unexpected rain and wind, while others panic, Carlos rapidly adjusts – securing tents, passing out hot drinks he had quietly prepared based on gut feeling. This reflects ignoring Si: Carlos can manage comfort expertly when needed, but usually puts focus on excitement and connection, "ignoring" Si until circumstances require it.
+                  </p>
+                </div>
+
+                <div className="border-l-4 border-green-600 pl-6">
+                  <h4 className="font-semibold text-xl mb-3 text-green-600">Si Demonstrative (Unassuming Homemaker Traits)</h4>
+                  <p className="mb-3">
+                    <strong>Elaine</strong> is an INFJ therapist known for insightful, empathetic counsel. What many don't see is how her demonstrative Si supports her work. Her office is softly lit with comfortable chairs, plush throws, and subtle jasmine tea scent. New clients often comment, "I feel safe here." Elaine just smiles – to her, it's natural.
+                  </p>
+                  <p>
+                    When her best friend (ENTJ) lost his father and was spiraling, Elaine invited him to stay. She didn't offer therapy talk – instead, she quietly made sure he ate homemade meals, took evening walks, had a comfortable bed. Her friend later said this practical care helped him recover balance more than any advice. Elaine brushed off praise: "I just did what anyone would do." This shows demonstrative Si: unconscious proficiency in creating comfort that greatly benefits others, yet she remains modest about it.
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-base italic mt-6">
+                Through these examples, we see Si wear many hats: the devoted caregiver, the professional learning to heed their body, the friend whose quiet acts go under the radar. Si can be a lifestyle, lifeline, or latent talent, enriching our understanding of how humans create meaning, stability, and connection in life.
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Bottom Navigation */}
