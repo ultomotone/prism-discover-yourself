@@ -222,7 +222,7 @@ export function AssessmentForm({ onComplete, onBack }: AssessmentFormProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background py-8">
+    <div className="min-h-screen bg-background pt-24 pb-8">
       <div className="prism-container">
         <div className="max-w-3xl mx-auto">
           {/* Header with Progress */}

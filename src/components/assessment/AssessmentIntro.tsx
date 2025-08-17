@@ -10,7 +10,7 @@ interface AssessmentIntroProps {
 export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
   return (
     <div className="min-h-screen bg-background">
-      <div className="prism-container pt-8 pb-16">
+      <div className="prism-container pt-24 pb-16">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
