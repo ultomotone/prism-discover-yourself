@@ -346,58 +346,73 @@ const Se = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <p className="text-sm text-muted-foreground">
-                PRISM emphasizes that Se is not static but can grow, atrophy, or transform with experience and intentional development:
+              <p>
+                How does Extraverted Sensing evolve over a person's lifetime? PRISM emphasizes that functions are not static talents set in childhood, but can grow, atrophy, or transform with experience and intentional development. Se's developmental arc often depends on its starting role in one's psyche, but there are some common trajectories and milestones to note:
               </p>
 
               <div className="space-y-6">
                 <div>
                   <h4 className="font-semibold text-primary mb-3">Early Childhood</h4>
-                  <p className="text-sm mb-3">
-                    Children with strong Se potential may be notably active and explorative – always on the move, climbing, grabbing objects, testing physical limits. They often show fearless curiosity and engage in rough-and-tumble play.
+                  <p className="mb-3">
+                    Even young children display traces of their sensing capacity. A child with strong Se potential may be notably active and explorative – the toddler who's always on the move, climbing on furniture, grabbing objects, testing physical limits. They often show a fearless curiosity about their environment ("Don't touch that!" is a phrase caregivers might often use). Such a child tends to engage in lots of rough-and-tumble play and can be impulsive: they'll jump first, then perhaps realize it was high.
                   </p>
-                  <p className="text-sm">
-                    Children with weak Se will likely be more passive or sensitive in physical settings – preferring familiar, gentle play and shying away from loud or aggressive activities. They might cling to routine and get easily upset by sudden changes or sensory overload.
+                  <p className="mb-3">
+                    On the other hand, a child with very weak Se will likely be more passive or sensitive in physical settings – preferring familiar, gentle play and often shying away from loud or aggressive activities. They might cling to routine and get easily upset by sudden changes or sensory overload (like noise or bright lights).
+                  </p>
+                  <p>
+                    Early school experiences can shape Se's growth: a free play, hands-on environment will help an energetic Se kid flourish, whereas overly strict or sedentary settings might frustrate them. Parents often notice Se in a kid who literally bumps into life: skinned knees from endless running, a knack for handling tools or puzzles physically, or getting into minor tussles because they're testing boundaries.
                   </p>
                 </div>
 
                 <div>
                   <h4 className="font-semibold text-primary mb-3">Adolescence</h4>
-                  <p className="text-sm mb-3">
-                    If Se is a core strength, by high school the person often leans heavily into it – through sports, outdoor adventures, social parties, or outlets that allow hands-on influence. This can be a period of exuberant challenge-seeking and testing authority.
+                  <p className="mb-3">
+                    During the teen years, an individual's Core functions consolidate (often by late adolescence or early 20s). If Se is a core strength, by high school the person often leans heavily into it – this might be the teenager who is into sports, outdoor adventures, social parties, or any outlet that lets them be hands-on and influential. This can be a period of exuberant challenge-seeking: an Se-dominant teen might push curfews and test authority, not out of malice but because they're driven to experience freedom and prove their prowess.
                   </p>
-                  <p className="text-sm">
-                    Meanwhile, teens with Se in suggestive positions might gravitate toward Se-strong peers, while those with vulnerable Se likely avoid typical high school competitions or physical confrontations.
+                  <p className="mb-3">
+                    Meanwhile, a teen with Se in a suggestive position might start gravitating towards Se-strong peers, while those with Se vulnerable will likely avoid typical high school competitions or physical confrontations; they may stick to the library or online worlds where immediate pressure is low.
+                  </p>
+                  <p>
+                    This stage is crucial for learning balance: a strong Se teen ideally learns some restraint and long-term thinking, while a weaker Se teen can benefit from safe opportunities to step out of their comfort zone to build confidence.
                   </p>
                 </div>
 
                 <div>
                   <h4 className="font-semibold text-primary mb-3">Early Adulthood (20s–30s)</h4>
-                  <p className="text-sm mb-3">
-                    Strong Se users typically dive into work or lifestyles that allow them to be active and in control. This is when their natural drive can yield significant results, but also when the limits of pure hustle become evident.
+                  <p className="mb-3">
+                    In young adulthood, Se-related themes often revolve around independence and achievement in the real world. Strong Se users in their 20s typically dive into work or lifestyles that allow them to be active and in control – they might start a business, work in physically demanding fields, or energetically network and climb in their careers. This is when their natural drive can yield significant results, but also when the limits of pure hustle become evident.
                   </p>
-                  <p className="text-sm">
-                    For those with Se in Hidden Potential, this period can bring longing to break out – spurring them to travel, date more, or take on physically challenging hobbies to "not let life pass by."
+                  <p className="mb-3">
+                    For those with Se in the Hidden Potential block, this period can bring a longing to break out: an individual who spent college buried in books might feel restless after a few years in routine work, spurring them to deliberately travel, date more, or take on physically challenging hobbies to "not let life pass by."
+                  </p>
+                  <p>
+                    PRISM notes that this era is also when social expectations can force development: someone who becomes a parent may need to develop their weak Se regardless of preference, while a naturally impulsive person may need to tone down because adult life penalizes reckless behavior.
                   </p>
                 </div>
 
                 <div>
                   <h4 className="font-semibold text-primary mb-3">Midlife (40s–50s)</h4>
-                  <p className="text-sm mb-3">
-                    Around midlife, individuals often reevaluate how they've been using Se. Those who always led with Se might desire to channel it more meaningfully rather than just for intensity's sake, becoming more selective and strategic.
+                  <p className="mb-3">
+                    Around midlife, individuals often reevaluate how they've been using Se. For someone who always led with Se, midlife can bring a desire to channel it more meaningfully rather than just intensity for intensity's sake. Many Se-dominants become more selective and strategic in their ventures – they've had decades of action, now they're interested in which actions truly matter.
                   </p>
-                  <p className="text-sm">
-                    For those who had Se as a blind spot, midlife can be revolutionary – experiencing bursts of openness or wanderlust, suddenly booking adventures or asserting themselves in previously avoided situations.
+                  <p className="mb-3">
+                    For those who had Se as a blind spot, midlife can be revolutionary. It's not uncommon for a typically inhibited person to experience bursts of openness or wanderlust – suddenly booking adventures or asserting themselves in previously avoided situations. This could be viewed as midlife crisis, but from a PRISM standpoint it's the psyche attempting to awaken latent Se.
+                  </p>
+                  <p>
+                    PRISM's dynamic view holds that by midlife, many people have increased the dimensionality of their Se if they've made the effort – a 1D Se might now function more like 2D, a 2D might have moments of 3D insight.
                   </p>
                 </div>
 
                 <div>
                   <h4 className="font-semibold text-primary mb-3">Late Adulthood (60s and beyond)</h4>
-                  <p className="text-sm mb-3">
-                    The intensity of earlier decades naturally declines as the body may not handle constant action as before. Healthy development means adapting Se to new reality – finding "softer" versions of interests while maintaining engagement with life.
+                  <p className="mb-3">
+                    In later years, people's relationship with Se often undergoes gentle transformation. The intensity of earlier decades naturally declines as the body may not handle constant action as before. Healthy development means adapting Se to new reality – finding "softer" versions of interests while maintaining engagement with life.
                   </p>
-                  <p className="text-sm">
-                    For those who undervalued Se historically, late adulthood is sometimes when they finally allow themselves to cultivate postponed pleasures or adventures, finding new zest for life through previously unexplored physical engagement.
+                  <p className="mb-3">
+                    For those who undervalued Se historically, late adulthood is sometimes when they finally allow themselves to cultivate postponed pleasures or adventures, finding new zest for life through previously unexplored physical engagement. We even see late bloomers: someone in their 70s suddenly becoming more outspoken or physically active than they ever were.
+                  </p>
+                  <p>
+                    A well-balanced person by their senior years ideally has tempered Se with wisdom: they know when to take action and when to be still. The arc of Se is about learning to engage reality on its terms: first boldly, then smartly, and ultimately gracefully. Each phase can bring out a new dimension – from raw power to seasoned savvy – ensuring that one's later chapters are enriched by the fullness of having truly lived.
                   </p>
                 </div>
               </div>
