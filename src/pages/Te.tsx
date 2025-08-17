@@ -31,7 +31,7 @@ const Te = () => {
             <Target className="h-12 w-12 text-primary mr-4" />
             <div>
               <h1 className="text-4xl font-bold mb-2">Te – Pragmatic Logic</h1>
-              <p className="text-xl text-muted-foreground">"The Efficiency Driver"</p>
+              <p className="text-xl text-muted-foreground">Extraverted Thinking</p>
             </div>
           </div>
         </div>

@@ -30,7 +30,7 @@ const Fe = () => {
           <div className="flex items-center justify-center mb-4">
             <Users className="h-12 w-12 text-primary mr-4" />
             <div>
-              <h1 className="text-4xl font-bold mb-2">Fe – Social Conductor</h1>
+              <h1 className="text-4xl font-bold mb-2">Fe – Interpersonal Dynamics</h1>
               <p className="text-xl text-muted-foreground">Extraverted Feeling</p>
             </div>
           </div>

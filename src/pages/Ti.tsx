@@ -30,8 +30,8 @@ const Ti = () => {
           <div className="flex items-center justify-center mb-4">
             <Cog className="h-12 w-12 text-primary mr-4" />
             <div>
-              <h1 className="text-4xl font-bold mb-2">Ti – Introverted Logic</h1>
-              <p className="text-xl text-muted-foreground">"The Framework Builder"</p>
+              <h1 className="text-4xl font-bold mb-2">Ti – Structural Logic</h1>
+              <p className="text-xl text-muted-foreground">Introverted Thinking</p>
             </div>
           </div>
         </div>

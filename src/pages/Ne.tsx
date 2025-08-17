@@ -30,8 +30,8 @@ const Ne = () => {
           <div className="flex items-center justify-center mb-4">
             <Lightbulb className="h-12 w-12 text-primary mr-4" />
             <div>
-              <h1 className="text-4xl font-bold mb-2">Ne – Extraverted Intuition</h1>
-              <p className="text-xl text-muted-foreground">"The Possibility Explorer"</p>
+              <h1 className="text-4xl font-bold mb-2">Ne – Divergent Exploration</h1>
+              <p className="text-xl text-muted-foreground">Extraverted Intuition</p>
             </div>
           </div>
         </div>

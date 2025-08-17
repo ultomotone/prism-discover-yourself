@@ -30,7 +30,7 @@ const Ni = () => {
           <div className="flex items-center justify-center mb-4">
             <Eye className="h-12 w-12 text-primary mr-4" />
             <div>
-              <h1 className="text-4xl font-bold mb-2">Ni – Pattern Forecaster</h1>
+              <h1 className="text-4xl font-bold mb-2">Ni – Convergent Synthesis</h1>
               <p className="text-xl text-muted-foreground">Introverted Intuition</p>
             </div>
           </div>

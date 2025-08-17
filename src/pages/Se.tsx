@@ -30,8 +30,8 @@ const Se = () => {
           <div className="flex items-center justify-center mb-4">
             <Zap className="h-12 w-12 text-primary mr-4" />
             <div>
-              <h1 className="text-4xl font-bold mb-2">Se – Extraverted Sensing</h1>
-              <p className="text-xl text-muted-foreground">"The Real-Time Mover"</p>
+              <h1 className="text-4xl font-bold mb-2">Se – Kinesthetic Responsiveness</h1>
+              <p className="text-xl text-muted-foreground">Extraverted Sensing</p>
             </div>
           </div>
         </div>

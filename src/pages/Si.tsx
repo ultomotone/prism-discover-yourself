@@ -30,8 +30,8 @@ const Si = () => {
           <div className="flex items-center justify-center mb-4">
             <Archive className="h-12 w-12 text-primary mr-4" />
             <div>
-              <h1 className="text-4xl font-bold mb-2">Si – Introverted Sensing</h1>
-              <p className="text-xl text-muted-foreground">"The Steward of Experience"</p>
+              <h1 className="text-4xl font-bold mb-2">Si – Experiential Memory</h1>
+              <p className="text-xl text-muted-foreground">Introverted Sensing</p>
             </div>
           </div>
         </div>

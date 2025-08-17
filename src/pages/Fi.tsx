@@ -31,7 +31,7 @@ const Fi = () => {
             <Heart className="h-12 w-12 text-primary mr-4" />
             <div>
               <h1 className="text-4xl font-bold mb-2">Fi – Relational Ethics</h1>
-              <p className="text-xl text-muted-foreground">"The Inner Compass"</p>
+              <p className="text-xl text-muted-foreground">Introverted Feeling</p>
             </div>
           </div>
         </div>
