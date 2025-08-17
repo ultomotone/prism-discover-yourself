@@ -13,7 +13,7 @@ const PrismModel = () => {
       fullName: "Introverted Thinking",
       title: "Structural Logic",
       description: "Internal framework building - organizing ideas into coherent systems",
-      color: "from-blue-500 to-blue-600",
+      color: "bg-[#4F46E5]", // Blue
       traits: ["Logical consistency", "Internal frameworks", "Principled reasoning", "Analytical depth"]
     },
     {
@@ -22,7 +22,7 @@ const PrismModel = () => {
       fullName: "Extraverted Thinking",
       title: "Pragmatic Logic",
       description: "External effectiveness - optimizing processes and achieving concrete results",
-      color: "from-cyan-500 to-cyan-600",
+      color: "bg-[#0891B2]", // Cyan/Teal
       traits: ["Practical efficiency", "Goal achievement", "Process optimization", "Results-focused"]
     },
     {
@@ -31,7 +31,7 @@ const PrismModel = () => {
       fullName: "Introverted Feeling",
       title: "Relational Ethics",
       description: "Personal values and authentic relationships - staying true to inner compass",
-      color: "from-rose-500 to-rose-600", 
+      color: "bg-[#E11D48]", // Rose/Red
       traits: ["Personal authenticity", "Deep values", "Individual empathy", "Moral integrity"]
     },
     {
@@ -40,7 +40,7 @@ const PrismModel = () => {
       fullName: "Extraverted Feeling",
       title: "Interpersonal Dynamics",
       description: "Group harmony and emotional atmosphere - reading and influencing collective mood",
-      color: "from-pink-500 to-pink-600",
+      color: "bg-[#EC4899]", // Pink
       traits: ["Group harmony", "Emotional attunement", "Social connection", "Collective mood"]
     },
     {
@@ -49,7 +49,7 @@ const PrismModel = () => {
       fullName: "Introverted Intuition", 
       title: "Convergent Synthesis",
       description: "Pattern recognition over time - synthesizing complex information into unified insights",
-      color: "from-purple-500 to-purple-600",
+      color: "bg-[#9333EA]", // Purple
       traits: ["Future insights", "Pattern synthesis", "Deep convergence", "Visionary clarity"]
     },
     {
@@ -58,7 +58,7 @@ const PrismModel = () => {
       fullName: "Extraverted Intuition",
       title: "Divergent Exploration", 
       description: "Possibility generation - exploring connections and potential in the external world",
-      color: "from-violet-500 to-violet-600",
+      color: "bg-[#7C3AED]", // Violet (slightly different from Ni)
       traits: ["Possibility exploration", "Creative connections", "Brainstorm generation", "Adaptive innovation"]
     },
     {
@@ -67,7 +67,7 @@ const PrismModel = () => {
       fullName: "Introverted Sensing",
       title: "Experiential Memory",
       description: "Personal experience anchoring - maintaining stability through familiar patterns",
-      color: "from-emerald-500 to-emerald-600", 
+      color: "bg-[#059669]", // Emerald/Green
       traits: ["Stability maintenance", "Experience-based wisdom", "Comfort preservation", "Reliable consistency"]
     },
     {
@@ -76,7 +76,7 @@ const PrismModel = () => {
       fullName: "Extraverted Sensing",
       title: "Kinesthetic Responsiveness",
       description: "Real-time awareness - responding dynamically to immediate environmental demands",
-      color: "from-amber-500 to-amber-600",
+      color: "bg-[#D97706]", // Amber/Orange
       traits: ["Real-time adaptability", "Present awareness", "Dynamic response", "Immediate action"]
     }
   ];
@@ -143,7 +143,7 @@ const PrismModel = () => {
                   activeElement === element.id 
                     ? "ring-2 ring-white ring-opacity-50 scale-105" 
                     : "hover:scale-105"
-                } bg-gradient-to-br ${element.color}`}
+                } ${element.color}`}
               >
                 <div className="text-2xl font-bold">{element.name}</div>
                 <div className="text-sm opacity-90">{element.title}</div>
@@ -159,7 +159,7 @@ const PrismModel = () => {
                   const element = informationElements.find(e => e.id === activeElement);
                   return element ? (
                     <div className="text-center">
-                      <div className={`w-16 h-16 bg-gradient-to-br ${element.color} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
+                      <div className={`w-16 h-16 ${element.color} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
                         <span className="text-2xl font-bold text-white">{element.name}</span>
                       </div>
                       <h3 className="text-2xl font-bold text-primary mb-2">
@@ -174,7 +174,7 @@ const PrismModel = () => {
                       <div className="grid grid-cols-2 gap-2 max-w-md mx-auto mb-6">
                         {element.traits.map((trait, index) => (
                           <div key={index} className="flex items-center justify-center">
-                            <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${element.color} mr-2`}></div>
+                            <div className={`w-2 h-2 rounded-full ${element.color} mr-2`}></div>
                             <span className="text-sm text-muted-foreground">{trait}</span>
                           </div>
                         ))}
