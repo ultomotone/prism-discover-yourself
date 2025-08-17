@@ -109,8 +109,13 @@ const Footer = () => {
             </div>
 
             <div>
-              <h3 className="font-semibold mb-4">Support</h3>
+              <h3 className="font-semibold mb-4">Resources</h3>
               <ul className="space-y-2">
+                <li>
+                  <a href="/resources" className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
+                    Resources
+                  </a>
+                </li>
                 {popularLinks.support.map((link) => (
                   <li key={link.name}>
                     <a href={link.href} className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
