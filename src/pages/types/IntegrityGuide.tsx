@@ -1,12 +1,10 @@
-import Header from "@/components/Header";
+import TypeLayout from "@/components/TypeLayout";
 
 const IntegrityGuide = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="pt-16">
-        <div className="prism-container py-12">
-          <div className="max-w-4xl mx-auto">
+    <TypeLayout>
+      <div className="prism-container py-12">
+        <div className="max-w-4xl mx-auto">
             {/* Header */}
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-4 mb-6">
@@ -195,8 +193,7 @@ const IntegrityGuide = () => {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+    </TypeLayout>
   );
 };
 
