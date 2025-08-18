@@ -16,83 +16,63 @@ const InspirationOrchestrator = () => {
                   <p className="text-xl text-muted-foreground">Fe–Ni • Change Mobilizer</p>
                 </div>
               </div>
-              <p className="text-lg text-foreground">Charismatic, empathetic leader who inspires and connects with people.</p>
+              <p className="text-lg text-foreground">Passionate visionaries who rally emotion around compelling future narratives and inspire transformation.</p>
             </div>
 
             {/* Content sections */}
             <div className="space-y-8">
-              {/* Profile */}
+              {/* Core */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Profile</h2>
+                <h2 className="text-2xl font-semibold mb-4">Core</h2>
                 <div className="prism-card p-6">
                   <p className="text-lg leading-relaxed mb-4">
-                    You are a charismatic, empathetic leader who thrives on inspiring and connecting with people. Your dominant Extraverted Feeling (Fe) means you naturally tune into others' emotions and needs, and you take great joy in fostering harmony and development in those around you. Warm and socially adept, you often find yourself in the role of organizer, mentor, or coach among your peers – the one who brings people together and motivates them toward a common good.
+                    EIEs are passionate visionaries powered by extroverted feeling (Fe<sup>+</sup>) base and introverted intuition (Ni<sup>–</sup>) creative. Their Fe base is 4-dimensional and high-intensity – EIEs live and breathe the emotional currents of human interaction. They are adept at inspiring others, conveying sentiments dramatically, and rallying people around ideas or causes. With a "plus" Fe, they tap into a wide spectrum of emotional expression, often amplifying the mood to create momentum or urgency. They aren't afraid of strong feelings; in fact, they believe that a surge of enthusiasm, outrage, or joy can be the catalyst for meaningful change.
                   </p>
                   <p className="text-lg leading-relaxed mb-4">
-                    You have a strong sense of ethics and interpersonal responsibility; it genuinely matters to you that everyone is heard, supported, and working cooperatively. Supporting this is auxiliary Introverted Intuition (Ni), which grants you a visionary outlook. You don't just empathize with individuals in the moment, you also see their potential and the larger dynamics at play.
+                    Paired with this is Ni<sup>–</sup> creative, which gives them a strategic, if sometimes cautionary, sense of timing and destiny. EIEs use Ni to weave narratives about where things are headed – their intuition often focuses on the grand arc of events, cultural movements, or an individual's potential path (with a "minus" tilt, meaning they're sensitive to what could go wrong or what challenges lie ahead).
                   </p>
                   <p className="text-lg leading-relaxed">
-                    ENFJs often have almost prophetic insight into others' talents or future possibilities, which is why you excel at guiding teams or communities toward improvement. You might, for example, spearhead a new initiative at work because you intuitively sense what strategy will inspire colleagues and you know how to communicate it compellingly.
+                    In flow, an EIE resembles a charismatic storyteller or leader-for-a-cause: they might be on stage (literal or metaphorical), captivating an audience with a compelling vision of the future, charged with emotional conviction. They thrive when they can align their personal fervor with a larger purpose. Their Fe-Ni synergy allows them to not only stir hearts in the moment but also offer a direction or prophecy – "This is where we're headed if we don't change, and this is how I feel about it!" EIEs often have an imaginative, almost theatrical streak; life for them is full of meaning and drama, and they feel most alive when engaging both.
                   </p>
                 </div>
               </section>
 
-              {/* Flow State */}
+              {/* Critic */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">In Flow</h2>
+                <h2 className="text-2xl font-semibold mb-4">Critic</h2>
                 <div className="prism-card p-6">
                   <p className="text-lg leading-relaxed mb-4">
-                    You are at your best when leading or facilitating in a value-driven project – perhaps running a workshop to help people grow, organizing a charity event, or even creatively directing a team toward a shared vision. You feel energized and "in the zone" when your empathetic engagement and foresight combine; you're making a positive impact and you can practically see the future flourishing you're enabling.
+                    The Critic block for EIE encompasses their more prosaic and practical weaknesses: introverted sensing (Si) as role and introverted logic (Ti) as vulnerable. Si (2D) is something EIEs try to manage – they know they ought to handle day-to-day logistics and self-care, and at times they will make genuine efforts (an EIE might, for instance, throw a lovely dinner party paying attention to decor and cuisine, or attempt a fitness regimen). But these efforts usually have an ulterior motive linked to Fe/Ni goals (such as creating an atmosphere for their friends or keeping themselves energized for their work). Sustained attention to mundane routines doesn't come naturally. If life forces an EIE into a too-simple, domestic, or repetitive role, they can feel stifled or depressed.
+                  </p>
+                  <p className="text-lg leading-relaxed mb-4">
+                    Ti (1D) is an EIE's Achilles heel: they find strictly logical, rule-based frameworks confining and often get tangled in details or inconsistency when they try to follow them. In moments of collapse – say, when confronted with bureaucratic red tape, technical manuals, or a debate demanding rigorous logic – EIEs can feel extremely frustrated and insecure. They might overcompensate by citing half-understood theories or by rejecting the premise of logic altogether ("this is heartless and nitpicky!").
                   </p>
                   <p className="text-lg leading-relaxed">
-                    Your enthusiasm becomes contagious, and others are drawn in by your genuine passion and confidence in the mission. This is that sweet spot where empathy and vision meet action.
+                    Under stress, an EIE can become erratic: one minute excessively controlling (in a panicked attempt to impose order via their limited Ti/Si grasp), and the next minute overwhelmed by emotion or pessimism (Ni- seeing doom everywhere). They may oscillate between idealism and despair. Emotionally, while they're adept at rousing others, their own feelings can sometimes run away from them. An EIE might experience emotional burnout, where their usual fiery energy crashes into exhaustion – a sign they've been running hot for too long without attending to Si needs like rest and stability.
                   </p>
                 </div>
               </section>
 
-              {/* Internal Critic & Growth */}
+              {/* Hidden & Instinct */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Internal Critic & Growth</h2>
+                <h2 className="text-2xl font-semibold mb-4">Hidden & Instinct</h2>
                 <div className="space-y-6">
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Common Challenges</h3>
+                    <h3 className="text-lg font-semibold mb-3">Hidden Block</h3>
                     <p className="text-lg leading-relaxed mb-4">
-                      Your challenges often center on balancing your intense focus on others with your own needs. Your Internal Critic (tertiary Se, inferior Ti) might nag you privately in ways others wouldn't guess, since outwardly you appear so put-together. For instance, you may secretly worry, "Am I being too impractical or emotional?" (that's inferior Ti questioning your decisions with cold logic) or "Am I missing something real and now while dreaming of the future?" (Se doubt when you're very Ni-focused).
-                    </p>
-                    <p className="text-lg leading-relaxed">
-                      Under stress, ENFJs can flip into a more critical, withdrawn mode – you might become uncharacteristically impersonal and blunt as Ti takes over, suddenly pointing out logical flaws or isolating yourself to analyze (which can confuse your loved ones). Or you might fall into indulgent behaviors, like impulsive spending or over-partying, as a way to blow off steam (a sign of Se grip).
+                      In the Hidden block, EIEs carry a respect for precisely what they lack: Si suggestive means they deeply appreciate those who are calm, grounded, and can take care of practical matters. An EIE often benefits from a stable partner or team who keeps their environment comfortable and schedules on track – this allows the EIE to soar without burning up. They also have Te mobilizing, indicating that with maturity, EIEs do develop better analytical and organizational skills, especially as it pertains to advancing their vision. Many EIEs learn to navigate media, politics, or complex plans, not out of love for cold logic but because they recognize it's necessary to give their ideals real impact. For example, an EIE activist might teach themselves the intricacies of lawmaking (Te) to push their emotional appeals into concrete legislation.
                     </p>
                   </div>
 
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Watch Out For</h3>
+                    <h3 className="text-lg font-semibold mb-3">Instinct Block</h3>
                     <p className="text-lg leading-relaxed mb-4">
-                      Another common struggle is people-pleasing: because you're so oriented to others, you may stretch yourself too thin saying "yes" to everyone, or you may have a hard time showing anger and thus bottling it up. This can lead to burnout or passive-aggressive moments.
+                      In the Instinct block, EIEs wield powerful yet background talents. They have strong hidden personal ethics (Fi demonstrative) – despite their public expressiveness, they often privately hold very specific loyalties and convictions about right/wrong that guide their choices of allies and causes. And they possess a quiet reservoir of willful endurance (Se ignoring) – while not as overtly forceful as a Se-base type, a determined EIE can demonstrate surprising tenacity and even confrontational courage when a situation reaches a boiling point. They generally prefer persuasion over coercion, but if pushed to the wall, they won't shy away from a fight to defend their vision.
                     </p>
                     <p className="text-lg leading-relaxed">
-                      Additionally, your strong convictions about what's best for people might edge into over-protectiveness or bossiness – watch out for being so sure of your vision that you override others' autonomy. However, those are usually the exceptions; most experience you as compassionate and inspiring.
+                      Developmentally, EIEs grow by learning to pace and ground themselves. As they expand, they often adopt routines or physical practices (from yoga to simply remembering to eat/sleep on schedule) to harness their energy sustainably. They also sharpen their message with facts and structure (honing their Te/Ti) so that their passion doesn't exist in an echo chamber. With life experience, an EIE typically becomes a wiser idealist – still fervent and inspiring, but more measured in execution and resilient in the face of setbacks. Their highs and lows even out somewhat, resulting in a figure who can lead and uplift others through both the storms and calms of progress.
                     </p>
                   </div>
-
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Growth Path</h3>
-                    <p className="text-lg leading-relaxed">
-                      To grow, it's healthy for ENFJs to practice stepping back for self-care and letting others carry their own weight at times. Tapping into your Hidden Potential (Ti/Se) constructively can mean learning some analytical problem-solving techniques or engaging in a grounding physical hobby – things that center you without reference to anyone else's needs.
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Guiding Light */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">Guiding Light</h2>
-                <div className="prism-card p-6">
-                  <p className="text-lg leading-relaxed mb-4">
-                    Remember that your gift is lighting the spark of growth in others while keeping an eye on the greater good. When you lead with both heart and insight, you truly live up to the nickname "Protagonist" – driving positive change in any group or community you're part of.
-                  </p>
-                  <p className="text-lg leading-relaxed">
-                    Your flow state is that sweet spot where empathy and vision meet action, so strive to spend your time in roles that allow you to do just that.
-                  </p>
                 </div>
               </section>
             </div>

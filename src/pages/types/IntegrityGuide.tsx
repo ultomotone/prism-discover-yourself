@@ -16,177 +16,62 @@ const IntegrityGuide = () => {
                   <p className="text-xl text-muted-foreground">Fi–Ne • Ethics Consultant</p>
                 </div>
               </div>
-              <p className="text-lg text-foreground">Principle-first counselor who reads character deeply, explores humane options, and steers choices toward congruence.</p>
+              <p className="text-lg text-foreground">Empathetic idealists who orient by values, explore humane options, and guide others toward authentic living.</p>
             </div>
 
             {/* Content sections */}
             <div className="space-y-8">
-              {/* Snapshot */}
+              {/* Core */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Snapshot</h2>
+                <h2 className="text-2xl font-semibold mb-4">Core</h2>
                 <div className="prism-card p-6">
+                  <p className="text-lg leading-relaxed mb-4">
+                    EIIs are empathetic idealists, characterized by introverted feeling (Fi<sup>+</sup>) base and extroverted intuition (Ne<sup>–</sup>) creative. Their Fi base is 4-dimensional, giving them a profound depth of inner values and a nuanced understanding of human emotions and ethics. As a "plus" ethics type, an EII's Fi seeks to expand understanding and harmony – they strive to find common principles, uplift others morally, and build bridges of mutual respect. EIIs often see the good in people or the potential for good, and they feel a strong sense of personal responsibility to act with integrity and kindness. This internal moral compass guides their decisions more than any external rulebook.
+                  </p>
+                  <p className="text-lg leading-relaxed mb-4">
+                    Complementing this is Ne<sup>–</sup> creative, a 3D function that allows EIIs to explore possibilities and ideas, but with a "minus" flavor – they tend to focus on refining possibilities, selecting the meaningful or realistic ones rather than a scattershot of random notions. This makes them insightful counselors or mentors: they can envision someone's latent talents or foresee pitfalls in a plan, gently steering toward the best outcome.
+                  </p>
                   <p className="text-lg leading-relaxed">
-                    Principle-first counselor who reads character deeply, explores humane options, and steers choices toward congruence. Thrives where trust, ethics, and long-term fit matter. In PRISM you typically see high Fi Strength, 3–4D Fi, 3–4D Ne, Se PoLR (1D), and Top-2 neighbors of ESI or LSE.
+                    In flow, an EII might resemble a compassionate sage or a counselor under a tree. They feel at home when helping people navigate life's choices in line with their authentic selves. They also enjoy intellectual pursuits that align with their values – literature, psychology, social activism – anything that expands understanding of the human condition and can be used for positive change. Their Fi-Ne synergy means they often communicate through analogies and stories, enriching moral points with imaginative examples.
                   </p>
                 </div>
               </section>
 
-              {/* Function Matrix */}
+              {/* Critic */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Function Matrix (Strength × Dimensionality)</h2>
-                <div className="overflow-x-auto">
-                  <table className="w-full border border-border rounded-lg overflow-hidden">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="text-left p-4 font-semibold">Element</th>
-                        <th className="text-left p-4 font-semibold">Typical Strength</th>
-                        <th className="text-left p-4 font-semibold">Dimensionality</th>
-                        <th className="text-left p-4 font-semibold">What it looks like day-to-day</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Fi</td>
-                        <td className="p-4">High</td>
-                        <td className="p-4">3–4D (adaptive → portable)</td>
-                        <td className="p-4">Fine-grained boundary/loyalty judgments; keeps relationships congruent under pressure.</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Ne</td>
-                        <td className="p-4">Med–High</td>
-                        <td className="p-4">3–4D</td>
-                        <td className="p-4">Surfaces humane alternatives; reframes stalemates; spots emerging fits.</td>
-                      </tr>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Te</td>
-                        <td className="p-4">Aspiring (suggestive)</td>
-                        <td className="p-4">1–2D</td>
-                        <td className="p-4">Wants clear facts, criteria, and workflows from trusted sources.</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Si</td>
-                        <td className="p-4">Aspiring (mobilizing)</td>
-                        <td className="p-4">2–3D</td>
-                        <td className="p-4">Builds sustainable routines and health practices with encouragement.</td>
-                      </tr>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Ni</td>
-                        <td className="p-4">Demonstrative</td>
-                        <td className="p-4">4D</td>
-                        <td className="p-4">Quiet foresight; senses trajectories but seldom foregrounds them.</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Fe</td>
-                        <td className="p-4">Ignoring</td>
-                        <td className="p-4">3D</td>
-                        <td className="p-4">Reads group mood yet resists performative affect; prefers sincerity.</td>
-                      </tr>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Ti</td>
-                        <td className="p-4">Role</td>
-                        <td className="p-4">2D</td>
-                        <td className="p-4">Can "sound formal/logical" briefly; tires of hair-splitting.</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Se</td>
-                        <td className="p-4">Vulnerable (PoLR)</td>
-                        <td className="p-4">1D</td>
-                        <td className="p-4">Dislikes direct force and abrupt confrontations; freezes or overreacts.</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-sm text-muted-foreground mt-4">
-                  <strong>Model note (mapping only):</strong> Classic Model A for EII ≈ Fi–Ne | Ti–Se | Si–Te | Ni–Fe by blocks; PRISM preserves positions while scoring Strength and 1D–4D per individual.
-                </p>
-              </section>
-
-              {/* Block Map */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">Block Map (calm vs. stress)</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-primary">Calm / Flow</h3>
-                    <p>Core Drive (Fi, Ne) leads; Instinctive Self (Ni, Fe) quietly adds timing sense and gentle social smoothing.</p>
-                  </div>
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-destructive">Stress / Crunch</h3>
-                    <p>Internal Critic (Ti, Se) hijacks—stiff formalism or avoidance/over-push; Hidden Potential (Si, Te) wobbles between comfort-seeking and sudden rule-making.</p>
-                  </div>
+                <h2 className="text-2xl font-semibold mb-4">Critic</h2>
+                <div className="prism-card p-6">
+                  <p className="text-lg leading-relaxed mb-4">
+                    The Critic block for EII contains their weaker pragmatic functions: extroverted sensing (Se) as vulnerable and extroverted logic (Te) as role. Se (1D) is extremely difficult for EIIs – they typically avoid confrontation, heavy competition, or assertive dominance. Aggressive environments can feel toxic to them. When forced to "be tough" or make quick, forceful moves, an EII may either freeze or act uncharacteristically harsh and then regret it. They might have a hard time standing their ground, sometimes being too yielding and later feeling resentful if their boundaries were crossed. Under collapse conditions (e.g., being bullied at work or dealing with a chaotic crisis), an EII can become unusually withdrawn, disheartened, or even physically unwell, as if their psyche is protesting the demand to use Se.
+                  </p>
+                  <p className="text-lg leading-relaxed mb-4">
+                    Te as a role means EIIs are aware they should be logical and efficient in certain matters – and they do try. Many EIIs, for instance, are responsible with personal finances or will do research to ensure their decisions (like buying a product or choosing a school) are well-informed. However, they approach Te somewhat mechanically, not joyfully. Prolonged or intense Te work (like managing a large technical project or dealing with a flurry of raw data) drains them. They may become nitpicky or anxious, fearing they'll overlook some crucial detail.
+                  </p>
+                  <p className="text-lg leading-relaxed">
+                    In emotional regulation, EIIs often internalize stress. They might put on a composed exterior (using role-Te to keep functioning at work perhaps) but inside they are churning with unresolved feelings which they don't readily unload. Without a healthy outlet (like talking to a trusted friend or expressing themselves creatively), they can spiral into melancholy or anxiety. At times, a normally gentle EII might snap under pressure with an out-of-character logical criticism ("That's not following protocol!") or a sharp tone, as their patience frays – often surprising those around them.
+                  </p>
                 </div>
               </section>
 
-              {/* Communication Tips */}
+              {/* Hidden & Instinct */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Comms & Decision Tips (for/with EII)</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-primary">Do</h3>
-                    <ul className="space-y-2">
-                      <li>• State the value at stake, provide evidence kindly</li>
-                      <li>• Offer a humane option set</li>
-                    </ul>
-                  </div>
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-destructive">Avoid</h3>
-                    <ul className="space-y-2">
-                      <li>• Pressuring pace, public spectacles</li>
-                      <li>• KPI-only arguments with no ethical frame</li>
-                    </ul>
-                  </div>
-                </div>
-              </section>
-
-              {/* 7-Day Practice */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">7-Day Micro-Practice</h2>
-                <div className="space-y-4">
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D1 (Te bite)</h3>
-                    <p>Define one measurable "done" for a current task.</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D2 (Si anchor)</h3>
-                    <p>Install a 10-min daily recovery ritual.</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D3 (Se step)</h3>
-                    <p>One calm boundary set early (behavioral, not moral labels).</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D4 (Ni refine)</h3>
-                    <p>10-line horizon note (now → near → far implications).</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D5 (Fe flex)</h3>
-                    <p>Begin a meeting with one emotion-label + invitation.</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D6–D7 (Ne funnel)</h3>
-                    <p>Generate 3 options, retire 2, commit to 1.</p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Mistype Disambiguators */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">"If-Not-This-Then-That" (mistype disambiguators)</h2>
+                <h2 className="text-2xl font-semibold mb-4">Hidden & Instinct</h2>
                 <div className="space-y-6">
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">EII vs. ESI</h3>
-                    <p>Both Fi-valuing. EII persuades with options and principles (Fi–Ne); ESI enforces with decisive presence (Fi–Se).</p>
+                    <h3 className="text-lg font-semibold mb-3">Hidden Block</h3>
+                    <p className="text-lg leading-relaxed mb-4">
+                      Within the Hidden block, EIIs yearn for strength and impact (Se suggestive). They are often quietly drawn to people who are decisive, protective, and can help them take action when they hesitate. A supportive, honorable SLE or LSE type, for instance, can make the EII feel safe to assert themselves, knowing someone "has their back." They also have mobilizing Te, which indicates that in favorable conditions, EIIs do grow more confident in organizing and doing. Many EIIs blossom in adulthood by turning their ideals into practical initiatives – for example, they might head a charity, start a small business aligned with their values, or simply learn to fix household issues independently, proving to themselves they're not as helpless as they once felt.
+                    </p>
                   </div>
+
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">EII vs. IEI</h3>
-                    <p>Both intuitive. EII frames by values/options (Fi–Ne); IEI frames by timing/mood (Ni–Fe).</p>
-                  </div>
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">EII vs. INFJ-lookalikes</h3>
-                    <p>PRISM scenarios split Fi congruence + Ne options from duty-bound Si/Te caretaking.</p>
-                  </div>
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Overlay tells</h3>
-                    <p><strong>EII⁺</strong> = faster moral alarms, quicker withdrawal under pressure. <strong>EII⁻</strong> = warmer tone, more tolerance for slow consensus.</p>
+                    <h3 className="text-lg font-semibold mb-3">Instinct Block</h3>
+                    <p className="text-lg leading-relaxed mb-4">
+                      The Instinct block houses their dormant powerhouse functions. EIIs have an underrated capacity for analytical rigor (Ti demonstrative) – they often do understand complex systems or theories quite well, but they don't base their identity on being "the logical one." Still, if needed, an EII can dissect an argument or create a structured plan; they just prefer to keep such analysis in service of people rather than as an end in itself. They also possess more will and independence (Si ignoring) than appears at first glance. While they enjoy harmony, many EIIs are perfectly content in solitude and can be surprisingly self-sufficient in managing daily life; they just might not flaunt it. They may maintain a stable routine, personal hobbies, or health practices quietly and diligently, without needing external enforcement – a hint of the strong Si backbone that operates in the background.
+                    </p>
+                    <p className="text-lg leading-relaxed">
+                      Developmentally, EIIs flourish by embracing assertiveness and selective selfishness. As they expand, they learn that saying "no" or standing up firmly for their values in the moment (Se) is not violent or wrong – it can prevent worse conflicts later. They also learn to channel their empathy into tangible results (strengthening Te): instead of merely feeling someone's pain, they organize help for them; instead of dreaming of a better world, they draft a concrete proposal to bring to the town hall. A mature EII retains their heartfelt idealism and deep compassion, but fortifies it with the courage to act and the logic to make those actions count. This balance turns them into quiet but powerful catalysts for positive change.
+                    </p>
                   </div>
                 </div>
               </section>
