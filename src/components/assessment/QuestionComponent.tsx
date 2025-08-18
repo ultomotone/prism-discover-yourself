@@ -3,6 +3,8 @@ import { Question } from "@/data/assessmentQuestions";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { countries } from "@/data/countries";
 import { cn } from "@/lib/utils";
 
 interface QuestionComponentProps {
@@ -40,6 +42,22 @@ export function QuestionComponent({ question, value, onChange }: QuestionCompone
           onChange={(e) => onChange(e.target.value)}
           className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
         />
+      );
+
+    case 'country-select':
+      return (
+        <Select value={value?.toString() || ''} onValueChange={(selectedValue) => onChange(selectedValue)}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select your country/region" />
+          </SelectTrigger>
+          <SelectContent>
+            {countries.map((country) => (
+              <SelectItem key={country} value={country}>
+                {country}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       );
 
     case 'likert-1-5':

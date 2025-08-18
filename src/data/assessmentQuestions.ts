@@ -1,7 +1,7 @@
 export interface Question {
   id: number;
   text: string;
-  type: 'email' | 'text' | 'multiple-choice' | 'likert-1-5' | 'likert-1-7' | 'yes-no' | 'forced-choice-2' | 'forced-choice-4' | 'forced-choice-5' | 'state-1-7' | 'categorical-5' | 'frequency' | 'matrix' | 'select-all' | 'ranking';
+  type: 'email' | 'text' | 'multiple-choice' | 'likert-1-5' | 'likert-1-7' | 'yes-no' | 'forced-choice-2' | 'forced-choice-4' | 'forced-choice-5' | 'state-1-7' | 'categorical-5' | 'frequency' | 'matrix' | 'select-all' | 'ranking' | 'country-select';
   options?: string[];
   required: boolean;
   section: string;
@@ -45,7 +45,7 @@ export const assessmentQuestions: Question[] = [
   {
     id: 4,
     text: "Country/region of residence",
-    type: 'text',
+    type: 'country-select',
     required: false,
     section: 'Demographics & Contact'
   },
