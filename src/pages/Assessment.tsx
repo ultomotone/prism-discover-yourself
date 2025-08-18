@@ -79,6 +79,19 @@ const Assessment = () => {
   };
 
   const handleStartAssessment = () => {
+    // Check if there's a saved session with progress before starting new
+    try {
+      const cached = JSON.parse(localStorage.getItem('prism_last_session') || '{}');
+      if (cached?.id && (cached?.completed_questions ?? 0) > 0) {
+        console.log('🚫 Preventing new assessment - resuming existing session:', cached.id);
+        setResumeSessionId(cached.id);
+        setCurrentState('form');
+        return;
+      }
+    } catch (e) {
+      console.warn('Error checking cached session on start', e);
+    }
+    
     setResumeSessionId(undefined);
     setCurrentState('form');
   };
