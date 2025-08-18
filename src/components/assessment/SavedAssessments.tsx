@@ -32,7 +32,9 @@ export function SavedAssessments({ onResumeAssessment, onStartNew }: SavedAssess
 
   const loadSavedSessions = async () => {
     try {
+      console.log('SavedAssessments: Loading saved sessions...');
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('SavedAssessments: Current user:', user?.id || 'anonymous');
       
       // Load incomplete sessions (both for authenticated and anonymous users)
       const { data: sessions, error } = await supabase
@@ -43,12 +45,16 @@ export function SavedAssessments({ onResumeAssessment, onStartNew }: SavedAssess
         .eq('user_id', user?.id || null)
         .order('created_at', { ascending: false });
 
+      console.log('SavedAssessments: Query result:', sessions);
+      console.log('SavedAssessments: Query error:', error);
+
       if (error) {
         console.error('Error loading saved sessions:', error);
         return;
       }
 
       setSavedSessions(sessions || []);
+      console.log('SavedAssessments: Set saved sessions to:', sessions || []);
     } catch (error) {
       console.error('Error loading saved sessions:', error);
     } finally {

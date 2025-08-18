@@ -16,6 +16,7 @@ const Assessment = () => {
 
   // Check for saved assessments on load
   useEffect(() => {
+    console.log('Assessment page mounted, checking for saved assessments...');
     checkForSavedAssessments();
   }, []);
 
@@ -27,17 +28,22 @@ const Assessment = () => {
       
       const { data: sessions, error } = await supabase
         .from('assessment_sessions')
-        .select('id, completed_questions, total_questions')
+        .select('id, completed_questions, total_questions, created_at')
         .is('completed_at', null)
         .gt('completed_questions', 0)
         .eq('user_id', user?.id || null)
-        .limit(1);
+        .limit(10);
+
+      console.log('Query result - sessions:', sessions);
+      console.log('Query error:', error);
 
       console.log('Found saved sessions:', sessions);
 
       if (!error && sessions && sessions.length > 0) {
-        console.log('Setting state to saved');
+        console.log('Found', sessions.length, 'saved sessions, setting state to saved');
         setCurrentState('saved');
+      } else {
+        console.log('No saved sessions found, staying on intro');
       }
     } catch (error) {
       console.error('Error checking for saved assessments:', error);

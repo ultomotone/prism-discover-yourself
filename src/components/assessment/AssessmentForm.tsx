@@ -375,7 +375,15 @@ setQuestionStartTime(Date.now());
   };
 
   const handleSaveAndExit = async () => {
-    if (!sessionId) return;
+    console.log('handleSaveAndExit called');
+    console.log('Current sessionId:', sessionId);
+    console.log('Current question index:', currentQuestionIndex);
+    console.log('Current answer:', currentAnswer);
+    
+    if (!sessionId) {
+      console.log('No sessionId, cannot save');
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -385,6 +393,8 @@ setQuestionStartTime(Date.now());
         currentAnswer.length > 0 : 
         currentAnswer !== '' && currentAnswer !== null && currentAnswer !== undefined;
         
+      console.log('Has answer to save:', hasAnswer);
+        
       if (hasAnswer) {
         const responseTime = Date.now() - questionStartTime;
         const newResponse: AssessmentResponse = {
@@ -392,17 +402,24 @@ setQuestionStartTime(Date.now());
           answer: currentAnswer
         };
         
+        console.log('Saving response:', newResponse);
         await saveResponseToSupabase(newResponse, responseTime);
         
         // Update session progress
-        await supabase
+        console.log('Updating session progress to:', currentQuestionIndex + 1);
+        const { error: updateError } = await supabase
           .from('assessment_sessions')
           .update({
             completed_questions: currentQuestionIndex + 1
           })
           .eq('id', sessionId);
+          
+        if (updateError) {
+          console.error('Error updating session progress:', updateError);
+        }
       }
 
+      console.log('Save completed successfully');
       toast({
         title: "Assessment Saved",
         description: "Your progress has been saved. You can continue later.",
