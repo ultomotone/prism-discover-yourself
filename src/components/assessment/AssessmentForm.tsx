@@ -57,31 +57,30 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
         .eq('id', sessionId)
         .maybeSingle();
 
-      if (sessionError) {
-        console.error('Error loading session:', sessionError);
-        localStorage.removeItem('prism_last_session');
-        toast({
-          title: "Failed to Load",
-          description: "Could not load saved assessment. Starting a new one.",
-          variant: "destructive",
-        });
-        setIsResumingSession(false);
-        return;
-      }
-
-      if (!session) {
-        console.log('❌ Session not found in database, clearing cache and returning to intro');
-        localStorage.removeItem('prism_last_session');
-        toast({
-          title: "Session Expired",
-          description: "Your saved assessment could not be found. Please start a new assessment.",
-          variant: "destructive",
-        });
-        setIsResumingSession(false);
-        // Navigate back to intro by calling onBack if available
-        if (onBack) {
-          onBack();
+      if (sessionError || !session) {
+        console.error('Session load issue, falling back to local cache:', sessionError);
+        try {
+          const cached = JSON.parse(localStorage.getItem('prism_last_session') || '{}');
+          const idx = Math.min(Number(cached?.completed_questions) || 0, assessmentQuestions.length - 1);
+          setSessionId(sessionId);
+          setResponses([]); // responses will be re-captured going forward
+          setCurrentQuestionIndex(idx);
+          setQuestionStartTime(Date.now());
+          toast({
+            title: "Resumed Locally",
+            description: `Continuing from question ${idx + 1}. Your progress is saved locally and will sync as you continue.`,
+          });
+        } catch (e) {
+          console.warn('No valid local cache available; returning to intro');
+          localStorage.removeItem('prism_last_session');
+          toast({
+            title: "Session Expired",
+            description: "Your saved assessment could not be found. Please start a new assessment.",
+            variant: "destructive",
+          });
+          if (onBack) onBack();
         }
+        setIsResumingSession(false);
         return;
       }
 
