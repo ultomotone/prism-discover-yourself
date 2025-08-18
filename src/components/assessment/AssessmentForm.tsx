@@ -337,8 +337,26 @@ setQuestionStartTime(Date.now());
         return [...filtered, newResponse];
       });
 
-      // Update session progress
-      await updateSessionProgress();
+      // Auto-save email if this is the first question and contains an email
+      if (currentQuestionIndex === 0 && typeof currentAnswer === 'string' && currentAnswer.includes('@')) {
+        console.log('Auto-saving email from first question:', currentAnswer);
+        await supabase
+          .from('assessment_sessions')
+          .update({ 
+            email: currentAnswer,
+            completed_questions: currentQuestionIndex + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', sessionId);
+        
+        toast({
+          title: "Progress Saved",
+          description: "Your email has been saved. Your progress will be automatically saved as you continue.",
+        });
+      } else {
+        // Update session progress normally
+        await updateSessionProgress();
+      }
 
       if (isLastQuestion) {
         // Mark session as complete

@@ -34,13 +34,12 @@ const Assessment = () => {
       console.log('ALL email-based sessions in database:', allEmailSessions);
       console.log('All email sessions error:', allError);
       
-      // Now check for incomplete sessions with progress
+      // Check for incomplete sessions with progress (email OR progress-based)
       const { data: sessions, error } = await supabase
         .from('assessment_sessions')
         .select('id, completed_questions, total_questions, created_at, email, user_id')
         .is('completed_at', null)
         .gt('completed_questions', 0)
-        .not('email', 'is', null)
         .order('created_at', { ascending: false })
         .limit(10);
 
