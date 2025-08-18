@@ -40,8 +40,6 @@ const Assessment = () => {
       console.log('Query result - sessions:', sessions);
       console.log('Query error:', error);
 
-      console.log('Found saved sessions:', sessions);
-
       if (!error && sessions && sessions.length > 0) {
         console.log('Found', sessions.length, 'saved sessions, setting state to saved');
         setCurrentState('saved');

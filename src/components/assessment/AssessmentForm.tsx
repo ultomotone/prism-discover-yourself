@@ -417,6 +417,8 @@ setQuestionStartTime(Date.now());
           
         if (updateError) {
           console.error('Error updating session progress:', updateError);
+        } else {
+          console.log('Session progress updated successfully');
         }
       }
 
