@@ -21,101 +21,61 @@ const IdeaCatalyst = () => {
 
             {/* Content sections */}
             <div className="space-y-8">
-              {/* Profile */}
+              {/* Core */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Profile</h2>
+                <h2 className="text-2xl font-semibold mb-4">Core</h2>
                 <div className="prism-card p-6">
                   <p className="text-lg leading-relaxed mb-4">
-                    You are an energetic innovator and natural questioner of the status quo, known for your quick wit and love of debate. As an ENTP, your dominant Extraverted Intuition (Ne) makes you a fountain of ideas – you're constantly exploring possibilities, spotting hidden connections, and challenging assumptions to see things in a new light. You thrive in environments where you can brainstorm and bounce off different concepts; in fact, playing with ideas is your idea of fun.
+                    ILEs are energetic innovators driven by extroverted intuition (Ne⁺) base and introverted logic (Ti⁻) creative. With Ne⁺ as a 4D base, the ILE's mind brims with expanding possibilities and ingenious connections. They constantly scan for the "new" – new theories, experiences, technologies, or angles – and delight in brainstorming and experimentation.
                   </p>
                   <p className="text-lg leading-relaxed mb-4">
-                    You tend to approach life with a sense of intellectual playfulness – rules are flexible, and almost anything can be reimagined or improved. Auxiliary Introverted Thinking (Ti) gives you a solid logical core to evaluate and refine all those ideas. You enjoy dissecting arguments and theories to ensure they make sense, and you can be quite analytical, even if you present it in a light, humorous way.
+                    This plus-oriented Ne produces incorrigible dreamers: ILEs often look beyond the horizon and propose ideas that others find bold or even far-fetched, yet they have an uncanny ability to envision which of these ideas carry positive potential at their core. Balancing this imaginative breadth is their Ti⁻ creative function, lending structure and logical coherence to their explorations. ILEs use Ti to categorize and systematize their myriad ideas, at least enough to explain or implement them.
                   </p>
                   <p className="text-lg leading-relaxed">
-                    ENTPs are often called the "Debater" or "Visionary" type: you're the person in a meeting who says, "Devil's advocate: what if we tried this approach...," or the friend who sparks a lively discussion on some offbeat topic that others never considered. You're typically outgoing, enthusiastic, and not afraid to question authority or tradition. This can make you a leader in innovation – you're willing to take risks and experiment.
+                    In a flow state, an ILE can be pictured as an inventive scientist or a hacker in the zone: intensely absorbed in chasing a concept, making rapid-fire associations, and solving theoretical puzzles, often losing track of time in the process. They thrive when their environment offers mental stimulation and when they have the freedom to jump between projects or lines of inquiry. Thanks to their strong functional dimensionality, ILEs are confident in both improvising on the fly and reasoning from first principles, which makes them remarkably adaptable thinkers.
                   </p>
                 </div>
               </section>
 
-              {/* Social & Flow */}
+              {/* Critic */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Social & Flow</h2>
-                <div className="space-y-6">
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Social Style</h3>
-                    <p className="text-lg leading-relaxed">
-                      Socially, people are drawn to your charismatic energy; you likely have a knack for storytelling and making others laugh with clever observations. However, you also don't shy away from argumentative banter – in fact, you find a good debate intellectually stimulating, not personal. You bring a unique mix of inventiveness and reason that often leads to breakthroughs (or at least very entertaining conversations).
-                    </p>
-                  </div>
-
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">In Flow</h3>
-                    <p className="text-lg leading-relaxed mb-4">
-                      You feel at your best when you're solving a complex problem in a novel way or engaged in spirited idea exchange. You might hit a flow state designing a new invention or startup concept, improvising in a hackathon, or engrossed in philosophical debate at 2 AM. Time flies as you generate possibilities and logically riff on them; it's like your mind is "on fire" in the best way.
-                    </p>
-                    <p className="text-lg leading-relaxed">
-                      Another flow trigger for ENTP can be competition – not so much physical, but mental competitions (chess, strategic games, pitching ideas) where you get to outsmart opponents. You love the challenge and unpredictability, and even if others find it intense, you experience it as exhilarating.
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Internal Critic & Growth */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">Internal Critic & Growth</h2>
-                <div className="space-y-6">
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Focus & Follow-Through</h3>
-                    <p className="text-lg leading-relaxed mb-4">
-                      The flip side of your strengths involves focus and follow-through. Your Internal Critic block (tertiary Fe, inferior Si) can lead to difficulties in routine maintenance and occasionally in understanding emotional nuances. Details, repetition, and patience for step-by-step execution can bore you to tears. You prefer the rush of a new idea's inception to the grind of implementation.
-                    </p>
-                    <p className="text-lg leading-relaxed">
-                      As a result, you might internally kick yourself for not finishing projects or for neglecting practical logistics until they become urgent. "Ugh, I could have done even better if I'd studied rather than cramming last minute" or "Why do I keep misplacing these files?" – those self-admonishments might sound familiar.
-                    </p>
-                  </div>
-
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Under Stress</h3>
-                    <p className="text-lg leading-relaxed mb-4">
-                      Under stress, this can worsen; you may become overly rigid suddenly (a panicked attempt to use Si – e.g., obsessively organizing your bookshelf instead of tackling a looming deadline) or you might retreat to nostalgia, reminiscing about past successes rather than dealing with the chaotic present.
-                    </p>
-                    <p className="text-lg leading-relaxed">
-                      In moments of personal stress (say, a major failure or conflict), ENTPs might also swing into an Fe grip response: suddenly feeling very emotional, insecure about how others perceive them, or even lonely. This is often fleeting, but it can be perplexing for someone who usually prides themselves on rational detachment.
-                    </p>
-                  </div>
-
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Emotional Considerations</h3>
-                    <p className="text-lg leading-relaxed mb-4">
-                      On the Fe (Extraverted Feeling) side, while you're generally sociable, reading or catering to others' deeper emotions doesn't come naturally. You might prefer to keep things light and intellectual, sometimes avoiding or inadvertently bulldozing over feelings. When your Fe is underdeveloped, you might get feedback that you come off as argumentative or insensitive, especially if you treat debates as a sport while others take the content to heart.
-                    </p>
-                    <p className="text-lg leading-relaxed">
-                      You usually mean no harm – in fact, you often enjoy playing with opposing viewpoints, not necessarily because you believe them, but to stimulate discussion. However, not everyone gets that, so part of growth is learning when to apply tact or just listen without jumping in to debate every point.
-                    </p>
-                  </div>
-
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Development Path</h3>
-                    <p className="text-lg leading-relaxed mb-4">
-                      First, try to practice finishing some of what you start. You certainly don't need to curb your idea generation – that's your superpower – but pick a few high-impact ideas and see them through. Using external aids (reminders, delegating detail-work to others if possible, or setting structure by breaking tasks into mini-challenges for yourself) can trick your brain into handling the boring parts.
-                    </p>
-                    <p className="text-lg leading-relaxed">
-                      Second, refine your people skills: you already have charm; adding empathy and active listening will make you truly influential. Your Hidden Potential block (Fe/Si) indicates that you can indeed learn to attend to people's emotional needs and to established conventions when it serves you. Drawing on Si can give you depth; connecting new ideas with historical knowledge or personal past experiences can ground your innovations and make them more viable.
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Guiding Light */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">Guiding Light</h2>
+                <h2 className="text-2xl font-semibold mb-4">Critic</h2>
                 <div className="prism-card p-6">
                   <p className="text-lg leading-relaxed mb-4">
-                    Never lose your spark of innovation and cleverness – it's what makes you uniquely you. You excel at seeing what others overlook and injecting fresh perspectives that propel progress. Your talent for arguing both sides and thinking outside the box is a gift. Just be mindful to sometimes slow down and consider the human element and practical steps, because those are what turn a clever idea into a world-changing reality.
+                    The Critic block of ILE contains introverted sensing (Si) as vulnerable and introverted feeling (Fi) as role. Si (1D) is the ILE's sore spot: they often forget about mundane needs – regular meals, rest, physical comfort – when engrossed in mentally stimulating activities. They can be notoriously neglectful of their health or surroundings (think of the "absent-minded professor" who hasn't slept or eaten properly because they're chasing an idea).
+                  </p>
+                  <p className="text-lg leading-relaxed mb-4">
+                    When Si demands catch up (like exhaustion or illness), ILEs experience a collapse that forces them to stop and recover, which they find frustrating. Likewise, they may inadvertently offend others by overlooking social niceties related to comfort ("Oops, I didn't realize you were cold/hungry!"). Their Fi role (2D) means ILEs are somewhat aware of interpersonal dynamics and will attempt to manage them – often by using humor, charm or a bit of chameleon-like behavior to get along.
                   </p>
                   <p className="text-lg leading-relaxed">
-                    In essence, keep being the daring thinker and interlocutor, but remember: the goal isn't just to win debates, it's to advance understanding (and have fun doing it). When you align your debate skills and creativity towards constructive ends, you'll find yourself in a state of flow that not only exhilarates you, but earns you respect and genuine admiration from others.
+                    However, deep emotional bonding or attending to people's unspoken feelings is not their forte. They keep relationships light and intellectual, which can come off as aloof or inconsistent in commitment. Under stress, an ILE might display snappish logical critiques (via Ti) one moment, then try to appease with a joke the next (an awkward Fi role effort), revealing an inner confusion about how to handle conflict. Emotional self-regulation is a challenge: ILEs intellectualize feelings and may vent by talking excessively about their problems or escaping into yet another project rather than sitting with the emotion.
                   </p>
+                </div>
+              </section>
+
+              {/* Hidden & Instinct */}
+              <section>
+                <h2 className="text-2xl font-semibold mb-4">Hidden & Instinct</h2>
+                <div className="space-y-6">
+                  <div className="prism-card p-6">
+                    <h3 className="text-lg font-semibold mb-3">Hidden Desires</h3>
+                    <p className="text-lg leading-relaxed mb-4">
+                      Hidden within the ILE is a strong desire for stability and care (Si suggestive) – they truly appreciate friends or partners who help anchor them in the physical world, whether that's reminding them to eat or creating a comfy home ambiance. This kind of support soothes the frenetic Ne so the ILE can shine even brighter intellectually.
+                    </p>
+                    <p className="text-lg leading-relaxed">
+                      Additionally, their mobilizing Fi hints that, with maturity, ILEs develop a more earnest ethical core: they learn to value certain ideals or people deeply and to act with more personal sincerity instead of constant jokester mode.
+                    </p>
+                  </div>
+
+                  <div className="prism-card p-6">
+                    <h3 className="text-lg font-semibold mb-3">Instinct Block</h3>
+                    <p className="text-lg leading-relaxed mb-4">
+                      In the Instinct block, ILEs possess serious yet background capabilities: they have potent willpower and tactical sense (Se demonstrative) and a breadth of emotional expression (Fe ignoring) that they typically underuse. An ILE might not seek leadership, but when a situation calls for it, they can surprisingly take command, using their Se to push an agenda or defend an idea vigorously.
+                    </p>
+                    <p className="text-lg leading-relaxed">
+                      Similarly, they often appear nonchalant emotionally, but they're fully capable of theatrical humor or rallying a group with enthusiasm (Fe) if logical persuasion alone isn't working. Over time, ILEs expand by incorporating more balance between novelty and stability. They learn that not every idea must be pursued at once – some follow-through and routine (developing a bit of Si) actually enables greater innovation by preventing burnout. A well-rounded ILE remains brilliantly imaginative and analytically sharp, but also knows when to slow down, care for themselves and others, and see a venture through to completion – effectively turning flashes of genius into real-world impact.
+                    </p>
+                  </div>
                 </div>
               </section>
             </div>

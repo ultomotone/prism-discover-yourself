@@ -21,171 +21,60 @@ const RelationalDriver = () => {
 
             {/* Content sections */}
             <div className="space-y-8">
-              {/* Snapshot */}
+              {/* Core */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Snapshot</h2>
+                <h2 className="text-2xl font-semibold mb-4">Core</h2>
                 <div className="prism-card p-6">
+                  <p className="text-lg leading-relaxed mb-4">
+                    SEEs are dynamic go-getters with a Core of extroverted sensing (Se⁺) base and introverted feeling (Fi⁻) creative. As a 4D base, Se gives SEEs a keen awareness of the present reality – they notice opportunities, resources, and power dynamics in their environment and are quick to act on them. Their Se comes with a "plus" charge, meaning it's an expanding, enterprising force.
+                  </p>
+                  <p className="text-lg leading-relaxed mb-4">
+                    SEEs push boundaries and generate momentum: they'll initiate projects, galvanize people into action, and often take the lead in a very hands-on fashion. They thrive on excitement and visible progress – one can picture an SEE as the director who orchestrates events or the entrepreneur making bold moves in a market. Supporting this is Fi⁻ creative, which in their case provides a personal touch and moral compass to their use of power.
+                  </p>
                   <p className="text-lg leading-relaxed">
-                    Charismatic mover who reads the room, pushes for outcomes, and protects personal bonds. Best where influence, timing, and relationship capital move results. In PRISM you typically see high Se Strength, 3–4D Se, 3D Fi, Ti PoLR (1D), Ni/Te valued but developing, and Top-2 neighbors of ESI or SLE.
+                    Unlike a purely aggressive type, SEEs actually care about individual relationships and loyalties; their Fi allows them to charm others, build alliances, and align actions with heartfelt values (albeit selectively). As a "minus" Fi, they tend to have a discerning approach to friendship – they'll fiercely protect their inner circle and may show open skepticism or coldness to outsiders until trust is earned. In flow, an SEE is like a charismatic field commander or social influencer: confidently handling immediate challenges, negotiating on the fly, and infusing their interactions with personal warmth or flair.
                   </p>
                 </div>
               </section>
 
-              {/* Function Matrix */}
+              {/* Critic */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Function Matrix (Strength × Dimensionality)</h2>
-                <div className="overflow-x-auto">
-                  <table className="w-full border border-border rounded-lg overflow-hidden">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="text-left p-4 font-semibold">Element</th>
-                        <th className="text-left p-4 font-semibold">Typical Strength</th>
-                        <th className="text-left p-4 font-semibold">Dimensionality</th>
-                        <th className="text-left p-4 font-semibold">What it looks like day-to-day</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Se</td>
-                        <td className="p-4">High</td>
-                        <td className="p-4">3–4D (adaptive → portable)</td>
-                        <td className="p-4">Senses leverage instantly; asserts cleanly; makes timely moves in social/market spaces.</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Fi</td>
-                        <td className="p-4">Med–High</td>
-                        <td className="p-4">2–3D</td>
-                        <td className="p-4">Tracks trust/loyalty; advocates for "my people"; draws firm personal lines.</td>
-                      </tr>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Te</td>
-                        <td className="p-4">Aspiring (mobilizing)</td>
-                        <td className="p-4">2–3D</td>
-                        <td className="p-4">Learns to anchor pushes in evidence/process; risks over-hustle without it.</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Ni</td>
-                        <td className="p-4">Aspiring (suggestive)</td>
-                        <td className="p-4">1–2D</td>
-                        <td className="p-4">Wants guidance on long-arc timing; benefits from strategic counsel.</td>
-                      </tr>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Fe</td>
-                        <td className="p-4">Demonstrative</td>
-                        <td className="p-4">4D</td>
-                        <td className="p-4">Can amplify group energy on demand; doesn't rely on it as identity.</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Si</td>
-                        <td className="p-4">Ignoring</td>
-                        <td className="p-4">3D</td>
-                        <td className="p-4">Knows comfort pacing but deprioritizes it for momentum; restores when needed.</td>
-                      </tr>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Ne</td>
-                        <td className="p-4">Role</td>
-                        <td className="p-4">2D</td>
-                        <td className="p-4">Can brainstorm briefly; prefers to converge and act.</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Ti</td>
-                        <td className="p-4">Vulnerable (PoLR)</td>
-                        <td className="p-4">1D</td>
-                        <td className="p-4">Dislikes abstract rule hair-splitting; patience for formal logic is low.</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <h2 className="text-2xl font-semibold mb-4">Critic</h2>
+                <div className="prism-card p-6">
+                  <p className="text-lg leading-relaxed mb-4">
+                    The Critic block of SEE features their less natural abstract side – extroverted intuition (Ne) as role and extroverted logic (Te) as vulnerable. Ne (2D) is something SEEs use occasionally: they can brainstorm or engage with imaginative ideas, especially if it helps them further a concrete goal ("Sure, let's consider some out-of-the-box tactics to win this client"). However, endless theorizing or indecision by exploring too many options frustrates them. They prefer to pick a promising idea and run with it rather than overanalyze.
+                  </p>
+                  <p className="text-lg leading-relaxed mb-4">
+                    Te (1D) is the weak spot: SEEs are not naturally systematic or detail-oriented with facts and data. Dealing with tedious logistics, complex technical details, or impersonal criteria can bog them down. In collapses – say, when an SEE is forced into paperwork or must follow strict procedures – they can become irritable, cut corners, or delegate the task entirely.
+                  </p>
+                  <p className="text-lg leading-relaxed">
+                    Likewise, if their impulsive decisions backfire, they might lack the Te calm to methodically troubleshoot, and instead react with impatience or by doubling down with more force (Se) which isn't always the right solution. They also might struggle to objectively measure outcomes; an SEE could get so caught up in winning people over (Fi) or making a splash (Se) that they neglect accounting or long-term planning, leading to sudden crises (like financial issues). Emotionally, SEEs are passionate and can have a short fuse (a product of strong Se under stress).
+                  </p>
                 </div>
               </section>
 
-              {/* Block Map */}
+              {/* Hidden & Instinct */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Block Map (calm vs. stress)</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-primary">Calm / Flow</h3>
-                    <p>Core Drive (Se, Fi) leads; Instinctive Self (Fe, Si) quietly boosts tone and stabilizes pace.</p>
-                  </div>
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-destructive">Stress / Crunch</h3>
-                    <p>Internal Critic (Te, Ti) hijacks—sudden KPI policing or brittle formalism; Hidden Potential (Ni, Te) over- or under-plans.</p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Communication Tips */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">Comms & Decision Tips (for/with SEE)</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-primary">Do</h3>
-                    <ul className="space-y-2">
-                      <li>• Define the win, the stakes, and the boundary</li>
-                      <li>• Give quick proof points</li>
-                      <li>• Let them move</li>
-                    </ul>
-                  </div>
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-destructive">Avoid</h3>
-                    <ul className="space-y-2">
-                      <li>• Abstract rule debates</li>
-                      <li>• Comfort-first pacing that kills urgency</li>
-                      <li>• Endless ideation with no action</li>
-                    </ul>
-                  </div>
-                </div>
-              </section>
-
-              {/* 7-Day Practice */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">7-Day Micro-Practice</h2>
-                <div className="space-y-4">
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D1 (Ni peek)</h3>
-                    <p>10-minute "two moves ahead" map for one push.</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D2 (Te bite)</h3>
-                    <p>Add one measurable criterion to go/no-go.</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D3 (Ti hygiene)</h3>
-                    <p>Replace a debate with a single if/then rule.</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D4 (Fi care)</h3>
-                    <p>Name one person's need and meet it concretely.</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D5 (Si restore)</h3>
-                    <p>Add a short post-push recovery ritual.</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D6–D7 (Se aim)</h3>
-                    <p>Choose one high-leverage action; decline two low-leverage ones.</p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Mistype Disambiguators */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">"If-Not-This-Then-That" (mistype disambiguators)</h2>
+                <h2 className="text-2xl font-semibold mb-4">Hidden & Instinct</h2>
                 <div className="space-y-6">
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">SEE vs. ESI</h3>
-                    <p>Both value Fi. SEE leads with push & presence (Se→Fi), ESI leads with principle & defense (Fi→Se).</p>
+                    <h3 className="text-lg font-semibold mb-3">Hidden Block</h3>
+                    <p className="text-lg leading-relaxed mb-4">
+                      In their Hidden block, SEEs quietly appreciate wisdom and foresight (Ne suggestive). They actually enjoy when someone can show them a bigger picture or a future implication they hadn't considered – as long as it's presented supportively, not as criticism. A partner who occasionally says, "Have you thought about where this leads in a year?" can help the SEE temper their impulsivity without dampening their drive.
+                    </p>
+                    <p className="text-lg leading-relaxed">
+                      They also have a mobilizing Te, meaning over time they recognize the value of a bit of organization and expertise. Many SEEs, especially later in life, take pride in learning some hard skills or business savvy to complement their people skills; for example, an SEE entrepreneur might force themselves to learn accounting basics or an SEE community leader might study project management – not because they love it, but because they see it's necessary to protect their interests.
+                    </p>
                   </div>
+
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">SEE vs. SLE</h3>
-                    <p>Both Se-heavy. SEE frames through relationships (Fi), SLE through impersonal rules (Ti).</p>
-                  </div>
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">SEE vs. ESFP-lookalikes</h3>
-                    <p>PRISM weights scenarios to separate Se leverage + Fi loyalty from vibe-first Fe performers.</p>
-                  </div>
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Overlay tells</h3>
-                    <p><strong>SEE⁺</strong> = faster escalation, stronger "in-group/out-group" reactions. <strong>SEE⁻</strong> = steadier tone, more measured pacing before a push.</p>
+                    <h3 className="text-lg font-semibold mb-3">Instinct Block</h3>
+                    <p className="text-lg leading-relaxed mb-4">
+                      Meanwhile, the Instinct block grants SEEs some formidable quiet powers. They have strong holistic logic (Ti demonstrative) – often a knack for understanding underlying structures or rules of a game, even if they claim to dislike theory. This can emerge when strategizing (an SEE might not articulate a formal plan, but they intuitively "get" the framework and how to exploit it). They also possess deep wells of imaginative thought (Ni ignoring) that they don't often show; in private moments, SEEs can be surprisingly reflective, occasionally sensing when their current path might lead to burnout or envisioning a long-term legacy they want.
+                    </p>
+                    <p className="text-lg leading-relaxed">
+                      However, they tend to push those Ni whispers aside in favor of immediate pursuits, unless circumstances force reflection. The developmental journey of an SEE involves learning to moderate their high-impact style with patience and foresight. As they expand, they often become more considerate leaders who can balance action with strategy. They remain bold and engaging – the sparkplug of their communities – but grow better at picking their battles and planning for the future, which in turn secures the lasting loyalty and success they naturally seek.
+                    </p>
                   </div>
                 </div>
               </section>

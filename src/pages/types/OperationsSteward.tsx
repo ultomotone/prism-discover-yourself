@@ -21,106 +21,61 @@ const OperationsSteward = () => {
 
             {/* Content sections */}
             <div className="space-y-8">
-              {/* Profile */}
+              {/* Core */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Profile</h2>
+                <h2 className="text-2xl font-semibold mb-4">Core</h2>
                 <div className="prism-card p-6">
                   <p className="text-lg leading-relaxed mb-4">
-                    You are a take-charge, results-oriented person who believes in duty, reliability, and getting things done right. Your dominant Extraverted Thinking (Te) makes you a natural organizer and leader in virtually any setting. You have a keen eye for inefficiency and cannot stand when things are disorganized or goal-less – your impulse is to step in and impose order.
+                    LSEs are productive organizers, anchored by extroverted logic (Te⁺) base and introverted sensing (Si⁻) creative. Their Te base is 4-dimensional, endowing them with a robust ability to manage tasks, resources, and information efficiently. As a "plus" logic, LSE's Te emphasizes acceleration and results – they believe in working swiftly, pragmatically, and getting tangible outcomes.
                   </p>
                   <p className="text-lg leading-relaxed mb-4">
-                    ESTJs are often the ones coordinating plans, enforcing policies, or supervising operations, because you do it so well. You think in clear, structured terms: define the objective, map out the process, assign roles, execute. Your communication is typically straightforward and assertive; people rarely have to guess where you stand on an issue.
+                    This makes them natural administrators: they excel at coordinating projects, enforcing procedures, and making sure everyone stays on schedule. Their Si⁻ creative, meanwhile, focuses on maintaining stability and refining processes. An LSE's Si is about consistency and reducing chaos; they pay attention to practical details like health, comfort, and tradition, ensuring that the environment and routines support productivity.
                   </p>
                   <p className="text-lg leading-relaxed">
-                    Supporting this, your auxiliary Introverted Sensing (Si) gives you a strong memory for detail and precedent. You respect traditions, proven methods, and hierarchical structures that have stood the test of time. Often, you serve as the custodian of best practices in your group – you remember how things were done and ensure important routines or rituals are maintained.
+                    In an LSE's ideal world, "everything works like a well-oiled machine" – a phrase that encapsulates how their Si (attention to the physical state of things) complements their Te (drive for effectiveness). In flow, LSEs are the dependable workhorses and pillars of their communities. Picture someone happily organizing a complex event – making checklists, delegating tasks, double-checking facilities – all the while greeting people with cordial stability. They take pride in being competent and useful. Their high-dimensional Te-Si pair means they leverage both personal experience and learned best practices to solve problems, making them appear seasoned and prepared even in novel situations.
                   </p>
                 </div>
               </section>
 
-              {/* Leadership Style */}
+              {/* Critic */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Leadership Style</h2>
+                <h2 className="text-2xl font-semibold mb-4">Critic</h2>
                 <div className="prism-card p-6">
                   <p className="text-lg leading-relaxed mb-4">
-                    Together, Te-Si produces a personality often nicknamed "The Executive" or "Supervisor." You likely take pride in being responsible and trustworthy. If you say you'll do something, you will do it, and probably do it early and under budget! You also value community engagement and can be quite social in a practical way (think organizing community events, leading a club, or being the dependable friend who fixes things).
-                  </p>
-                </div>
-              </section>
-
-              {/* In Flow */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">In Flow</h2>
-                <div className="prism-card p-6">
-                  <p className="text-lg leading-relaxed mb-4">
-                    You shine when you're managing a project or operation efficiently. You love checking off a well-organized to-do list, achieving tangible results, and keeping everything running like clockwork. For instance, you might experience flow while coordinating a major event (ensuring every logistic is handled), or at work when you're streamlining a process that saves time and money. You feel energized by accomplishment and by upholding standards of excellence.
+                    In the Critic block, LSEs face their blind spots: introverted intuition (Ni) as vulnerable and introverted feeling (Fi) as role. Ni (1D) is extremely challenging for them – LSEs live in the "now" and the concrete; asking them to speculate on far-future possibilities or read between the lines for hidden meanings can yield blank stares or stubborn denial. They often have a bias for action and may neglect long-term vision, focusing instead on immediate needs.
                   </p>
                   <p className="text-lg leading-relaxed mb-4">
-                    Another flow state for ESTJ can be competitive endeavors that reward preparation and skill – you channel your natural discipline into sports, debates, or even games, and the act of striving to win within established rules is exhilarating. You are fundamentally action-oriented, so stagnation drains you, but a challenging goal focuses your energy in a very satisfying way.
+                    When Ni issues demand attention (say, an unpredictable industry shift or an existential question of purpose), an LSE can enter a crisis of uncertainty. In such a collapse, they might react by doubling their routine efforts (trying to brute-force the problem with Te) or conversely, feeling uncharacteristically lost and immobilized because their usual methods don't apply.
                   </p>
                   <p className="text-lg leading-relaxed">
-                    When everything and everyone is in alignment under your guidance, it's like a well-conducted orchestra – that's the kind of harmony you appreciate.
+                    Fi as a role means LSEs are aware of social courtesies and moral expectations; they want to be seen as decent, friendly people and often follow societal norms for behavior. They can display genuine kindness, but it's typically in practical acts of service rather than emotional effusiveness. Deeply introspecting on feelings or values is less comfortable. Under stress, an LSE might oscillate between overwork (ignoring feelings entirely) and prickly outbursts if they feel underappreciated or if their integrity is questioned. They regulate emotion by doing – burying themselves in tasks or problem-solving to avoid stewing on feelings.
                   </p>
                 </div>
               </section>
 
-              {/* Internal Critic & Growth */}
+              {/* Hidden & Instinct */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Internal Critic & Growth</h2>
+                <h2 className="text-2xl font-semibold mb-4">Hidden & Instinct</h2>
                 <div className="space-y-6">
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Flexibility Challenges</h3>
+                    <h3 className="text-lg font-semibold mb-3">Hidden Block</h3>
                     <p className="text-lg leading-relaxed mb-4">
-                      On the flip side, your focus on order and correctness can make you inflexible or impatient in certain situations. Your Internal Critic (tertiary Ne, inferior Fi) can make dealing with sudden change or ambiguous situations a sore spot. Because you rely on Si's past experience and Te's logical plans, when something totally unexpected or "illogical" happens, it frustrates you.
-                    </p>
-                    <p className="text-lg leading-relaxed mb-4">
-                      You might inwardly scold yourself (or others) when caught off-guard: "I should have anticipated that!" or "Why are people being so random/unreliable?" That's your inferior Ne discomfort – an aversion to the chaotic or unproven.
+                      Lurking in the Hidden block of LSE is a desire for inspiration and meaning (Ni suggestive). They secretly respect visionaries who can guide them on what's coming next or why they're doing all this work. A wise strategic partner or an occasional philosophical talk can ignite their own latent sense of purpose, aligning their hard work with a bigger picture.
                     </p>
                     <p className="text-lg leading-relaxed">
-                      Under extreme stress, some ESTJs fall into an Ne grip: they may start imagining worst-case scenarios or feel overwhelmed by too many unknowns, leading to anxiety (very unlike their usual confident self). However, more commonly others see your stress in how you externalize it: you may become overly controlling, micromanaging, and raising your voice or strictness. Your patience for deviation drops to zero.
+                      Their mobilizing Fi indicates that as LSEs mature, they invest more in understanding people and values: many LSEs eventually develop a strong ethical code or commitment to community, beyond just getting things done. They might become pillars of moral authority in organizations (combining efficiency with fairness).
                     </p>
                   </div>
 
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Emotional Considerations</h3>
+                    <h3 className="text-lg font-semibold mb-3">Instinct Block</h3>
                     <p className="text-lg leading-relaxed mb-4">
-                      The other part of your internal challenge is Fi – your own and others' feelings. As someone who values facts and objective decisions, emotional considerations can seem like irrelevant or bothersome noise. You likely keep your own emotions private and may even feel awkward with displays of sentiment.
-                    </p>
-                    <p className="text-lg leading-relaxed mb-4">
-                      This can result in unintended insensitivity: for example, you might implement a change at work very practically, not realizing some team members feel hurt or demoralized by it. Or in personal life, you might give plenty of practical support to a loved one but forget to say "I love you" or show empathy in words, assuming they know you care by your actions.
+                      In the Instinct block, LSEs have strengths they seldom advertise. They possess a comprehensive, if background, grasp of theory (Ti demonstrative) and an ability to brainstorm creatively (Ne ignoring) when needed. For instance, an LSE manager might typically enforce standard procedures (Te+Si), but when faced with an unprecedented challenge, they can surprisingly devise a clever workaround (drawing on ignored Ne) or analyze the underlying mechanics of a system (Ti) to fix it.
                     </p>
                     <p className="text-lg leading-relaxed">
-                      Over time, those around you might feel underappreciated or unheard on a personal level, even though you truly do care about their welfare (you just show it through being responsible).
+                      They usually prefer proven methods, but this hidden adaptability means they're not as rigid as they seem – they just save out-of-the-box thinking as a last resort. Developmentally, LSEs flourish by easing up on control and embracing a bit of downtime and reflection. As they expand, learning to trust their team or loved ones (instead of micromanaging) and allowing themselves moments of idle dreaming (honing Ni) can greatly improve their leadership. Likewise, openly acknowledging their feelings (even if awkwardly at first) helps prevent resentment from building. A seasoned LSE stands out as a balanced leader: one who still exemplifies reliability and productivity, but also mentors others with wisdom about life's larger purpose and treats people as more than just roles in a plan.
                     </p>
                   </div>
-
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Growth Path</h3>
-                    <p className="text-lg leading-relaxed mb-4">
-                      To grow, working on active listening and flexibility is key. Your Hidden Potential functions (Ne/Fi) indicate that embracing a bit more open-minded creativity and personal reflection will make you more effective and fulfilled. For example, when a novel idea comes up, instead of instinctively dismissing it as impractical, give yourself time to consider it – maybe even brainstorm (Ne) how it could work or recall times something new did succeed.
-                    </p>
-                    <p className="text-lg leading-relaxed mb-4">
-                      And regarding Fi, allow yourself to occasionally prioritize values over logic. Ask, "Does this align with what I really care about or what others care about?" even if it's not the most efficient on paper. Also, cultivating empathy: recognizing that not everyone has your thick skin or straightforward nature. Sometimes people just need encouragement or understanding rather than instruction.
-                    </p>
-                    <p className="text-lg leading-relaxed">
-                      By paying attention to the human element, you'll actually enhance team morale and loyalty, which ultimately furthers your goals too.
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Guiding Light */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">Guiding Light</h2>
-                <div className="prism-card p-6">
-                  <p className="text-lg leading-relaxed mb-4">
-                    You are at your best when you uphold integrity, tradition, and efficiency in a balanced way. Your leadership and organizational abilities are immense strengths; you're often the backbone of whichever group you're in, turning plans into reality. Continue to be that reliable pillar – society needs people like you to function smoothly.
-                  </p>
-                  <p className="text-lg leading-relaxed mb-4">
-                    Just remember that rules and goals serve people, not the other way around. If you sometimes bend a rule to show compassion, or take a detour to accommodate a new idea, it won't betray your principles – it will show your wisdom. When you integrate a bit of flexibility and understanding with your natural drive, you truly exemplify the best of the "executive" type: effective and respected.
-                  </p>
-                  <p className="text-lg leading-relaxed">
-                    In flow, you'll not only accomplish great things, but also enjoy the trust and admiration of those you lead, knowing that you care about them as much as the results.
-                  </p>
                 </div>
               </section>
             </div>
