@@ -18,13 +18,12 @@ export interface AssessmentResponse {
 interface AssessmentFormProps {
   onComplete: (responses: AssessmentResponse[], sessionId: string) => void;
   onBack?: () => void;
-  onSaveAndExit?: (email?: string) => void;
+  onSaveAndExit?: () => void;
   resumeSessionId?: string;
-  userEmail?: string;
 }
 
-export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessionId, userEmail }: AssessmentFormProps) {
-  console.log('AssessmentForm component mounting with resumeSessionId:', resumeSessionId, 'userEmail:', userEmail);
+export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessionId }: AssessmentFormProps) {
+  console.log('AssessmentForm component mounting with resumeSessionId:', resumeSessionId);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<AssessmentResponse[]>([]);
   const [currentAnswer, setCurrentAnswer] = useState<string | number | string[] | number[]>('');
@@ -167,14 +166,12 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
           .insert({
             id: newId,
             user_id: user?.id || null,
-            email: userEmail || null,
             session_type: 'prism',
             total_questions: assessmentQuestions.length,
             metadata: {
               browser: navigator.userAgent,
               timestamp: new Date().toISOString(),
-              anonymous: !user?.id,
-              hasEmail: !!userEmail
+              anonymous: !user?.id
             }
           });
 
@@ -382,13 +379,8 @@ setQuestionStartTime(Date.now());
   };
 
   const handleSaveAndExit = () => {
-    // If user already provided an email, save directly
-    if (userEmail) {
-      performSaveWithEmail(userEmail);
-    } else {
-      // Show email prompt
-      setShowEmailPrompt(true);
-    }
+    // Always show email prompt for saving
+    setShowEmailPrompt(true);
   };
 
   const performSaveWithEmail = async (email: string) => {
@@ -452,7 +444,7 @@ setQuestionStartTime(Date.now());
 
       setShowEmailPrompt(false);
       if (onSaveAndExit) {
-        onSaveAndExit(email);
+        onSaveAndExit();
       }
     } catch (error) {
       console.error('Error saving assessment:', error);
