@@ -531,6 +531,22 @@ try {
       }
 
       console.log('Save completed successfully');
+      
+      // Update localStorage cache
+      try {
+        const finalCompletedQuestions = currentQuestionIndex + (hasAnswer ? 1 : 0);
+        const cacheData = {
+          id: sessionId,
+          email: email,
+          completed_questions: finalCompletedQuestions,
+          updated_at: new Date().toISOString()
+        };
+        localStorage.setItem('prism_last_session', JSON.stringify(cacheData));
+        console.log('🗄️ SAVE & EXIT - Updated cache to:', cacheData);
+      } catch (e) {
+        console.warn('Failed to update local cache during save & exit', e);
+      }
+      
       toast({
         title: "Assessment Saved",
         description: `Your progress has been saved to ${email}. You can continue later by entering this email.`,
