@@ -45,20 +45,20 @@ export function AssessmentForm({ onComplete, onBack }: AssessmentFormProps) {
         // Get current user (null if anonymous)
         const { data: { user } } = await supabase.auth.getUser();
         
-        const { data, error } = await supabase
-          .from('assessment_sessions')
-          .insert({
-            user_id: user?.id || null,
-            session_type: 'prism',
-            total_questions: assessmentQuestions.length,
-            metadata: {
-              browser: navigator.userAgent,
-              timestamp: new Date().toISOString(),
-              anonymous: !user?.id
-            }
-          })
-          .select('id')
-          .single();
+const newId = crypto.randomUUID();
+const { error } = await supabase
+  .from('assessment_sessions')
+  .insert({
+    id: newId,
+    user_id: user?.id || null,
+    session_type: 'prism',
+    total_questions: assessmentQuestions.length,
+    metadata: {
+      browser: navigator.userAgent,
+      timestamp: new Date().toISOString(),
+      anonymous: !user?.id
+    }
+  });
 
         if (error) {
           console.error('Error creating session:', error);
@@ -71,9 +71,9 @@ export function AssessmentForm({ onComplete, onBack }: AssessmentFormProps) {
           return;
         }
 
-        console.log('Session initialized successfully:', data.id);
-        setSessionId(data.id);
-        setQuestionStartTime(Date.now());
+console.log('Session initialized successfully:', newId);
+setSessionId(newId);
+setQuestionStartTime(Date.now());
       } catch (error) {
         console.error('Error initializing session:', error);
         toast({
