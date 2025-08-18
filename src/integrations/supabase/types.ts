@@ -181,17 +181,23 @@ export type Database = {
       profiles: {
         Row: {
           base_func: string | null
+          baseline_session_id: string | null
           blocks: Json | null
           blocks_norm: Json | null
           confidence: string | null
           created_at: string | null
           creative_func: string | null
+          deltas: Json | null
           dimensions: Json | null
           dims_highlights: Json | null
+          email_mask: string | null
           glossary_version: number | null
           id: string
           neuroticism: Json | null
           overlay: string | null
+          person_key: string | null
+          prev_session_id: string | null
+          run_index: number | null
           session_id: string
           strengths: Json | null
           top_types: Json | null
@@ -204,17 +210,23 @@ export type Database = {
         }
         Insert: {
           base_func?: string | null
+          baseline_session_id?: string | null
           blocks?: Json | null
           blocks_norm?: Json | null
           confidence?: string | null
           created_at?: string | null
           creative_func?: string | null
+          deltas?: Json | null
           dimensions?: Json | null
           dims_highlights?: Json | null
+          email_mask?: string | null
           glossary_version?: number | null
           id?: string
           neuroticism?: Json | null
           overlay?: string | null
+          person_key?: string | null
+          prev_session_id?: string | null
+          run_index?: number | null
           session_id: string
           strengths?: Json | null
           top_types?: Json | null
@@ -227,17 +239,23 @@ export type Database = {
         }
         Update: {
           base_func?: string | null
+          baseline_session_id?: string | null
           blocks?: Json | null
           blocks_norm?: Json | null
           confidence?: string | null
           created_at?: string | null
           creative_func?: string | null
+          deltas?: Json | null
           dimensions?: Json | null
           dims_highlights?: Json | null
+          email_mask?: string | null
           glossary_version?: number | null
           id?: string
           neuroticism?: Json | null
           overlay?: string | null
+          person_key?: string | null
+          prev_session_id?: string | null
+          run_index?: number | null
           session_id?: string
           strengths?: Json | null
           top_types?: Json | null

@@ -62,6 +62,35 @@ const mapDim = (avg: number, t: {one:number; two:number; three:number}) => {
   return 4;
 };
 
+// --- additional helpers for config + identity hashing ---
+async function getCfg(supabase: SupabaseClient, key: string): Promise<any> {
+  const { data } = await supabase
+    .from("scoring_config")
+    .select("value")
+    .eq("key", key)
+    .maybeSingle();
+  return data?.value ?? {};
+}
+
+function normalizeEmail(raw: string) {
+  return raw.trim().toLowerCase();
+}
+
+function maskEmail(e: string) {
+  const [u, d] = e.split("@");
+  if (!u || !d) return e;
+  const head = u[0] || "";
+  return `${head}${u.length > 1 ? "***" : ""}@${d}`;
+}
+
+async function hashKey(input: string, salt: string) {
+  const data = new TextEncoder().encode(`${salt}|${input}`);
+  const buf = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 function scoreType(
   code: string,
   strengths: Record<string, number>,
@@ -211,13 +240,44 @@ serve(async (req) => {
       strengths[f] = hasFC ? (meanL*0.5 + fcScaled*0.5) : meanL;
     }
 
-    // Dimensions (1..4)
-    const dimensions: Record<string, number> = {};
-    for (const f of FUNCS) {
-      const L = dims[f] || [];
-      const avg = L.length ? (L.reduce((a,b)=>a+b,0)/L.length) : 0;
-      dimensions[f] = avg ? mapDim(avg, dim_thresholds) : 0;
-    }
+// Dimensions (1..4) with optional person-mean centering + coherence gate
+const dimCenterCfg = await getCfg(supabase, "dim_centering"); // { enabled:boolean, lambda:number }
+const gateCfg = await getCfg(supabase, "dim_coherence_gate"); // { min_strength_for_3D:number }
+const lambda = Number(dimCenterCfg?.lambda ?? 0.75);
+
+// 1) compute raw averages 1..5
+const dimAvgRaw: Record<string, number> = {};
+let allDsum = 0, allDn = 0;
+for (const f of FUNCS) {
+  const L = dims[f] || [];
+  const avg = L.length ? L.reduce((a, b) => a + b, 0) / L.length : 0;
+  dimAvgRaw[f] = avg;
+  if (avg) { allDsum += avg; allDn++; }
+}
+
+// 2) optional person-mean centering: shrink toward 3
+const dimAdj: Record<string, number> = {};
+const globalMeanD = allDn ? (allDsum / allDn) : 0;
+for (const f of FUNCS) {
+  const raw = dimAvgRaw[f] || 0;
+  if (dimCenterCfg?.enabled && globalMeanD) {
+    const centered = 3 + (raw - globalMeanD) * lambda;
+    dimAdj[f] = Math.max(1, Math.min(5, centered));
+  } else {
+    dimAdj[f] = raw;
+  }
+}
+
+// 3) map to 1..4 cutpoints
+const dimensions: Record<string, number> = {};
+for (const f of FUNCS) {
+  const avg = dimAdj[f];
+  let d = avg ? mapDim(avg, dim_thresholds) : 0;
+  // 4) coherence gate for >=3D
+  const minS = Number(gateCfg?.min_strength_for_3D ?? 3.0);
+  const s = strengths[f] || 0;
+  dimensions[f] = (d >= 3 && s < minS) ? 2 : d;
+}
 
     // Base & Creative selection
     const sortedFuncs = [...FUNCS].sort((a,b)=> (strengths[b]||0) - (strengths[a]||0));
@@ -296,18 +356,142 @@ serve(async (req) => {
       Instinct: Math.round((blocks.Instinct/bSum)*1000)/10
     } : { Core:0, Critic:0, Hidden:0, Instinct:0 };
 
-    const payload: any = {
-      version:"v2.2",
-      session_id,
-      ...(user_id ? { user_id } : {}),
-      type_code:`${typeCode}${overlay}`,
-      base_func: base, creative_func: creative, overlay,
-      strengths, dimensions,
-      blocks, blocks_norm,
-      neuroticism:{ raw_mean:nMean, z },
-      validity, confidence,
-      type_scores, top_types: top3, dims_highlights
-    };
+// --- Retest linking: derive person_key/email from responses; find previous run; compute deltas
+let person_key: string | null = null;
+let email_mask: string | null = null;
+let run_index = 1;
+let prev: string | null = null;
+let baseline: string | null = null;
+let deltas: any = null;
+
+try {
+  const emailCfg = await getCfg(supabase, "dashboard_email_qid"); // { id: number }
+  const saltCfg = await getCfg(supabase, "hash_salt"); // { value: string }
+  let emailRaw = "";
+  for (const a of (answers || [])) {
+    if (String(a.question_id) === String(emailCfg?.id)) {
+      emailRaw = String(a.answer_value ?? "").trim();
+      break;
+    }
+  }
+  if (emailRaw) {
+    const norm = normalizeEmail(emailRaw);
+    person_key = await hashKey(norm, String(saltCfg?.value || "default_salt"));
+    email_mask = maskEmail(norm);
+  }
+
+  if (person_key) {
+    const { data: prior } = await supabase
+      .from("profiles")
+      .select("session_id, created_at")
+      .eq("person_key", person_key)
+      .order("created_at", { ascending: true });
+
+    if (prior && prior.length > 0) {
+      baseline = prior[0].session_id;
+      const last = prior[prior.length - 1];
+      prev = last.session_id;
+      run_index = prior.length + 1;
+    }
+
+    if (prev) {
+      const { data: pprev } = await supabase
+        .from("profiles")
+        .select("type_code, strengths, dimensions, neuroticism, overlay")
+        .eq("session_id", prev)
+        .single();
+
+      if (pprev) {
+        const d_strengths: Record<string, number> = {};
+        const d_dimensions: Record<string, number> = {};
+        for (const f of FUNCS) {
+          d_strengths[f] = Number(((strengths[f] || 0) - (pprev.strengths?.[f] || 0)).toFixed(3));
+          d_dimensions[f] = (dimensions[f] || 0) - (pprev.dimensions?.[f] || 0);
+        }
+
+        // optional state reasons if configured
+        const stateCfg = await getCfg(supabase, "state_qids");
+        const reasons: string[] = [];
+        let stateMap: Record<string, number> = {};
+        let statePrev: Record<string, number> = {};
+        if (stateCfg && Object.keys(stateCfg).length) {
+          const ids = Object.values(stateCfg).map((v: any) => Number(v));
+          const { data: curS } = await supabase
+            .from("assessment_responses")
+            .select("question_id, answer_value")
+            .eq("session_id", session_id)
+            .in("question_id", ids);
+          curS?.forEach((r: any) => {
+            const k = Object.keys(stateCfg).find((k) => String((stateCfg as any)[k]) === String(r.question_id));
+            if (k) stateMap[k] = Number(r.answer_value);
+          });
+          const { data: prevS } = await supabase
+            .from("assessment_responses")
+            .select("question_id, answer_value")
+            .eq("session_id", prev)
+            .in("question_id", ids);
+          prevS?.forEach((r: any) => {
+            const k = Object.keys(stateCfg).find((k) => String((stateCfg as any)[k]) === String(r.question_id));
+            if (k) statePrev[k] = Number(r.answer_value);
+          });
+        }
+
+        const d_neuro = {
+          mean: Number((nMean - (pprev.neuroticism?.raw_mean ?? 0)).toFixed(3)),
+          z: Number((z - (pprev.neuroticism?.z ?? 0)).toFixed(3)),
+          overlay_from: pprev.overlay || null,
+          overlay_to: overlay
+        };
+        if (Math.abs(d_neuro.z) >= 0.5) reasons.push("Shift in neuroticism likely influenced expression.");
+        if (stateMap.stress && statePrev.stress && (stateMap.stress - statePrev.stress) >= 2)
+          reasons.push("Higher situational stress increased reactive patterns.");
+        if (stateMap.sleep && statePrev.sleep && (statePrev.sleep - stateMap.sleep) >= 2)
+          reasons.push("Worse sleep likely reduced consistency.");
+        const biggest = [...FUNCS]
+          .map((f) => ({ f, dv: Math.abs(d_strengths[f]) }))
+          .sort((a, b) => b.dv - a.dv)[0];
+        if (biggest && biggest.dv >= 0.8) reasons.push(`Largest functional shift in ${biggest.f}.`);
+
+        deltas = {
+          strengths: d_strengths,
+          dimensions: d_dimensions,
+          neuro: d_neuro,
+          type: { from: pprev.type_code || null, to: `${typeCode}${overlay}` },
+          reasons
+        };
+      }
+    }
+  }
+} catch (e) {
+  console.warn("Retest linking/deltas skipped:", e?.message || String(e));
+}
+
+const payload: any = {
+  version: "v2.2",
+  session_id,
+  ...(user_id ? { user_id } : {}),
+  type_code: `${typeCode}${overlay}`,
+  base_func: base,
+  creative_func: creative,
+  overlay,
+  strengths,
+  dimensions,
+  blocks,
+  blocks_norm,
+  neuroticism: { raw_mean: nMean, z },
+  validity,
+  confidence,
+  type_scores,
+  top_types: top3,
+  dims_highlights,
+  // new linkage fields
+  ...(person_key ? { person_key } : {}),
+  ...(email_mask ? { email_mask } : {}),
+  ...(baseline ? { baseline_session_id: baseline } : { baseline_session_id: run_index === 1 ? session_id : null }),
+  prev_session_id: prev,
+  run_index,
+  ...(deltas ? { deltas } : {})
+};
 
     // Save
     const { error: perr } = await supabase.from("profiles").upsert(payload);
