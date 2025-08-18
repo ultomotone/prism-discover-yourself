@@ -39,81 +39,7 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
   const sectionQuestions = assessmentQuestions.filter(q => q.section === currentSection);
   const sectionProgress = sectionQuestions.findIndex(q => q.id === currentQuestion?.id) + 1;
 
-  // Initialize assessment session on component mount
-  useEffect(() => {
-    const initializeSession = async () => {
-      try {
-        console.log('Initializing assessment session...');
-        
-        // If resuming a session, load existing session data
-        if (resumeSessionId) {
-          await loadExistingSession(resumeSessionId);
-          return;
-        }
-        
-        // Get current user (null if anonymous)
-        const { data: { user } } = await supabase.auth.getUser();
-        
-const newId = crypto.randomUUID();
-const { error } = await supabase
-  .from('assessment_sessions')
-  .insert({
-    id: newId,
-    user_id: user?.id || null,
-    session_type: 'prism',
-    total_questions: assessmentQuestions.length,
-    metadata: {
-      browser: navigator.userAgent,
-      timestamp: new Date().toISOString(),
-      anonymous: !user?.id
-    }
-  });
-
-        if (error) {
-          console.error('Error creating session:', error);
-          console.error('Error details:', error.message, error.code, error.details);
-          toast({
-            title: "Failed to Initialize",
-            description: "Could not start assessment session. Please refresh the page and try again.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-console.log('Session initialized successfully:', newId);
-setSessionId(newId);
-setQuestionStartTime(Date.now());
-      } catch (error) {
-        console.error('Error initializing session:', error);
-        toast({
-          title: "Failed to Initialize", 
-          description: "An unexpected error occurred. Please refresh the page and try again.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    initializeSession();
-  }, [toast, resumeSessionId]);
-
-  useEffect(() => {
-    // Reset question start time when moving to a new question
-    setQuestionStartTime(Date.now());
-    
-    // Load existing response if it exists
-    const existingResponse = responses.find(r => r.questionId === currentQuestion?.id);
-    if (existingResponse) {
-      setCurrentAnswer(existingResponse.answer);
-    } else {
-      // Initialize based on question type
-      if (currentQuestion?.type === 'matrix' || currentQuestion?.type === 'select-all' || currentQuestion?.type === 'ranking') {
-        setCurrentAnswer([]);
-      } else {
-        setCurrentAnswer('');
-      }
-    }
-  }, [currentQuestionIndex, responses, currentQuestion?.id]);
-
+  
   const loadExistingSession = async (sessionId: string) => {
     try {
       console.log('Loading existing session:', sessionId);
@@ -183,10 +109,12 @@ setQuestionStartTime(Date.now());
       
       console.log('Calculated nextQuestionIndex:', nextQuestionIndex);
       console.log('Total loaded responses:', loadedResponses.length);
+      console.log('About to call setCurrentQuestionIndex with:', nextQuestionIndex);
       
       setCurrentQuestionIndex(nextQuestionIndex);
       setQuestionStartTime(Date.now());
 
+      console.log('Current question index set, showing toast...');
       toast({
         title: "Assessment Resumed",
         description: `Continuing from question ${nextQuestionIndex + 1}`,
@@ -200,6 +128,94 @@ setQuestionStartTime(Date.now());
       });
     }
   };
+
+  // Initialize assessment session on component mount
+  useEffect(() => {
+    console.log('AssessmentForm useEffect triggered with resumeSessionId:', resumeSessionId);
+    
+    const initializeSession = async () => {
+      try {
+        console.log('Initializing assessment session...');
+        
+        // If resuming a session, load existing session data
+        if (resumeSessionId) {
+          console.log('Attempting to resume session:', resumeSessionId);
+          await loadExistingSession(resumeSessionId);
+          return;
+        }
+        
+        console.log('Creating new session...');
+        
+        // Get current user (null if anonymous)
+        const { data: { user } } = await supabase.auth.getUser();
+        
+const newId = crypto.randomUUID();
+const { error } = await supabase
+  .from('assessment_sessions')
+  .insert({
+    id: newId,
+    user_id: user?.id || null,
+    session_type: 'prism',
+    total_questions: assessmentQuestions.length,
+    metadata: {
+      browser: navigator.userAgent,
+      timestamp: new Date().toISOString(),
+      anonymous: !user?.id
+    }
+  });
+
+        if (error) {
+          console.error('Error creating session:', error);
+          console.error('Error details:', error.message, error.code, error.details);
+          toast({
+            title: "Failed to Initialize",
+            description: "Could not start assessment session. Please refresh the page and try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+console.log('Session initialized successfully:', newId);
+setSessionId(newId);
+setQuestionStartTime(Date.now());
+      } catch (error) {
+        console.error('Error initializing session:', error);
+        toast({
+          title: "Failed to Initialize", 
+          description: "An unexpected error occurred. Please refresh the page and try again.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    initializeSession();
+  }, [toast, resumeSessionId]);
+  useEffect(() => {
+    console.log('Question change useEffect triggered. Current question index:', currentQuestionIndex);
+    console.log('Current question ID:', currentQuestion?.id);
+    console.log('Current responses:', responses);
+    
+    // Reset question start time when moving to a new question
+    setQuestionStartTime(Date.now());
+    
+    // Load existing response if it exists
+    const existingResponse = responses.find(r => r.questionId === currentQuestion?.id);
+    console.log('Found existing response for question', currentQuestion?.id, ':', existingResponse);
+    
+    if (existingResponse) {
+      console.log('Setting current answer to existing response:', existingResponse.answer);
+      setCurrentAnswer(existingResponse.answer);
+    } else {
+      // Initialize based on question type
+      if (currentQuestion?.type === 'matrix' || currentQuestion?.type === 'select-all' || currentQuestion?.type === 'ranking') {
+        console.log('Initializing array answer for question type:', currentQuestion?.type);
+        setCurrentAnswer([]);
+      } else {
+        console.log('Initializing empty string answer');
+        setCurrentAnswer('');
+      }
+    }
+  }, [currentQuestionIndex, responses, currentQuestion?.id]);
 
   const saveResponseToSupabase = async (response: AssessmentResponse, responseTime: number) => {
     if (!sessionId) return;
