@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play } from "lucide-react";
-import prismHero from "@/assets/prism-hero.jpg";
+import DashboardPreview from "@/components/DashboardPreview";
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -46,20 +46,9 @@ const Hero = () => {
 
           </div>
 
-          {/* Right Image */}
+          {/* Right Dashboard Preview */}
           <div className="relative">
-            <div className="relative prism-hover-lift">
-              <img
-                src={prismHero}
-                alt="PRISM Personality System - Scientific personality assessment"
-                className="w-full h-auto rounded-2xl prism-shadow-card"
-              />
-              <div className="absolute inset-0 prism-hero-overlay rounded-2xl"></div>
-            </div>
-            
-            {/* Floating Elements */}
-            <div className="absolute -top-4 -right-4 w-20 h-20 prism-gradient-accent rounded-full opacity-20 animate-pulse"></div>
-            <div className="absolute -bottom-4 -left-4 w-16 h-16 prism-gradient-secondary rounded-full opacity-30 animate-pulse delay-700"></div>
+            <DashboardPreview />
           </div>
         </div>
       </div>
