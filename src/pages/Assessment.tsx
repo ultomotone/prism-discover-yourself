@@ -21,40 +21,46 @@ const Assessment = () => {
 
   const checkForSavedAssessments = async () => {
     try {
-      console.log('Checking for saved assessments...');
+      console.log('=== CHECKING FOR SAVED ASSESSMENTS ===');
       const { data: { user } } = await supabase.auth.getUser();
       console.log('Current user:', user?.id || 'anonymous');
       
-      // Check for both user-based and email-based saved sessions
-      let query = supabase
+      // First, let's see ALL email-based sessions to debug
+      const { data: allEmailSessions, error: allError } = await supabase
         .from('assessment_sessions')
-        .select('id, completed_questions, total_questions, created_at, email')
+        .select('id, completed_questions, total_questions, created_at, completed_at, email, user_id')
+        .not('email', 'is', null);
+        
+      console.log('ALL email-based sessions in database:', allEmailSessions);
+      console.log('All email sessions error:', allError);
+      
+      // Now check for incomplete sessions with progress
+      const { data: sessions, error } = await supabase
+        .from('assessment_sessions')
+        .select('id, completed_questions, total_questions, created_at, email, user_id')
         .is('completed_at', null)
         .gt('completed_questions', 0)
+        .not('email', 'is', null)
+        .order('created_at', { ascending: false })
         .limit(10);
 
-      // If user is logged in, also check their user-based sessions
-      if (user?.id) {
-        query = query.or(`user_id.eq.${user.id},email.is.not.null`);
-      } else {
-        // For anonymous users, only check email-based sessions
-        query = query.not('email', 'is', null);
-      }
-
-      const { data: sessions, error } = await query;
-
-      console.log('Found sessions:', sessions);
+      console.log('FILTERED incomplete sessions with email and progress:', sessions);
       console.log('Query error:', error);
+      console.log('Sessions found:', sessions?.length || 0);
 
       if (!error && sessions && sessions.length > 0) {
-        console.log('Found', sessions.length, 'saved sessions, showing saved state');
+        console.log('✅ Found', sessions.length, 'saved sessions, showing saved state');
         setCurrentState('saved');
       } else {
-        console.log('No saved sessions found, showing intro');
+        console.log('❌ No saved sessions found, showing intro');
+        console.log('Error:', !!error);
+        console.log('Sessions null:', !sessions);
+        console.log('Sessions empty:', sessions?.length === 0);
         setCurrentState('intro');
       }
+      console.log('=== END CHECKING SAVED ASSESSMENTS ===');
     } catch (error) {
-      console.error('Error checking for saved assessments:', error);
+      console.error('❌ Error checking for saved assessments:', error);
       setCurrentState('intro');
     }
   };
