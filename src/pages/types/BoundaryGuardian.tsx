@@ -26,13 +26,13 @@ const BoundaryGuardian = () => {
                 <h2 className="text-2xl font-semibold mb-4">Core</h2>
                 <div className="prism-card p-6">
                   <p className="text-lg leading-relaxed mb-4">
-                    ESIs are steadfast guardians of values, defined by introverted feeling (Fi⁻) base and extroverted sensing (Se⁺) creative. Their Fi⁻ base is deeply evaluative and selective: as a 4D function, it processes a lifetime of personal experiences and moral impressions to draw clear lines about who and what is important.
+                    ESIs are steadfast guardians of values, defined by introverted feeling (Fi) base and extroverted sensing (Se) creative. Their Fi base is deeply evaluative and selective: as a 4D function, it processes a lifetime of personal experiences and moral impressions to draw clear lines about who and what is important.
                   </p>
                   <p className="text-lg leading-relaxed mb-4">
                     Because it's a "minus" ethics, ESI's Fi is focused on refining relationships – distinguishing genuine bonds from superficial ones, holding themselves and others to high standards of loyalty, and, if necessary, cutting ties when their inner compass says something is off. This gives ESIs a reputation for being principled, private, and sometimes stern, but also incredibly trustworthy to those in their inner circle.
                   </p>
                   <p className="text-lg leading-relaxed">
-                    Paired with this is Se⁺ creative, a 3D function that they use to actively defend and implement their values in the real world. Their Se is expansive and forceful when needed: ESIs can take charge of situations, assert boundaries, and ensure that practical matters align with their sense of right and wrong. In a flow state, an ESI might not appear "flowy" in the relaxed sense, but they exhibit a confident solidity – like a vigilant sentinel or a conscientious manager, smoothly handling responsibilities and protecting loved ones' welfare. They find satisfaction in knowing things are under control and aligned with what they care about.
+                    Paired with this is Se creative, a 3D function that they use to actively defend and implement their values in the real world. Their Se is expansive and forceful when needed: ESIs can take charge of situations, assert boundaries, and ensure that practical matters align with their sense of right and wrong. In a flow state, an ESI might not appear "flowy" in the relaxed sense, but they exhibit a confident solidity – like a vigilant sentinel or a conscientious manager, smoothly handling responsibilities and protecting loved ones' welfare. They find satisfaction in knowing things are under control and aligned with what they care about.
                   </p>
                 </div>
               </section>
