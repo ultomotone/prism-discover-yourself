@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 
 interface QuestionComponentProps {
   question: Question;
-  value: string | number;
-  onChange: (value: string | number) => void;
+  value: string | number | string[] | number[];
+  onChange: (value: string | number | string[] | number[]) => void;
 }
 
 export function QuestionComponent({ question, value, onChange }: QuestionComponentProps) {
@@ -114,6 +114,95 @@ export function QuestionComponent({ question, value, onChange }: QuestionCompone
               </div>
             ))}
           </div>
+        </div>
+      );
+
+    case 'matrix':
+      return (
+        <div className="space-y-6">
+          {question.parts?.map((part, partIndex) => (
+            <div key={partIndex} className="space-y-2">
+              <h4 className="font-medium text-sm">{part.label}</h4>
+              <RadioGroup 
+                value={(Array.isArray(value) ? value[partIndex] : '') as string} 
+                onValueChange={(selectedValue) => {
+                  const newValue = Array.isArray(value) ? [...value as string[]] : [];
+                  newValue[partIndex] = selectedValue;
+                  onChange(newValue);
+                }}
+              >
+                <div className="space-y-2">
+                  {part.options?.map((option, optionIndex) => (
+                    <div key={optionIndex} className="flex items-center space-x-2">
+                      <RadioGroupItem value={option} id={`part-${partIndex}-option-${optionIndex}`} />
+                      <Label 
+                        htmlFor={`part-${partIndex}-option-${optionIndex}`}
+                        className="flex-1 cursor-pointer text-sm"
+                      >
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </RadioGroup>
+            </div>
+          ))}
+        </div>
+      );
+
+    case 'select-all':
+      return (
+        <div className="space-y-3">
+          {question.options?.map((option, index) => (
+            <div key={index} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id={`checkbox-${index}`}
+                checked={Array.isArray(value) && (value as string[]).includes(option)}
+                onChange={(e) => {
+                  const currentValue = Array.isArray(value) ? [...value as string[]] : [];
+                  if (e.target.checked) {
+                    onChange([...currentValue, option]);
+                  } else {
+                    onChange(currentValue.filter(v => v !== option));
+                  }
+                }}
+                className="rounded border-border"
+              />
+              <Label 
+                htmlFor={`checkbox-${index}`}
+                className="flex-1 cursor-pointer text-sm"
+              >
+                {option}
+              </Label>
+            </div>
+          ))}
+        </div>
+      );
+
+    case 'ranking':
+      return (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">Rank your top 3 preferences (1 = most preferred)</p>
+          {question.options?.map((option, index) => (
+            <div key={index} className="flex items-center space-x-3">
+              <select
+                value={(Array.isArray(value) && value[index]) || ''}
+                onChange={(e) => {
+                  const newValue = Array.isArray(value) ? [...value as string[]] : [];
+                  newValue[index] = e.target.value;
+                  onChange(newValue);
+                }}
+                className="w-16 px-2 py-1 border border-border rounded text-sm"
+              >
+                <option value="">-</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+              </select>
+              <Label className="flex-1 text-sm">{option}</Label>
+            </div>
+          ))}
         </div>
       );
 

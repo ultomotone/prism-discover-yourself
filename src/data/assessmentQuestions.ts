@@ -5,6 +5,10 @@ export interface Question {
   options?: string[];
   required: boolean;
   section: string;
+  parts?: {
+    label: string;
+    options: string[];
+  }[];
   subQuestions?: {
     id: string;
     text: string;
