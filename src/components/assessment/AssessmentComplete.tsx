@@ -28,8 +28,7 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
       setScoreError(null);
       const { data, error } = await supabase.functions.invoke('score_prism', {
         body: { 
-          session_id: sessionId,
-          user_id: null // Allow anonymous users
+          session_id: sessionId
         },
       });
       if (error || !data || data.status !== 'success') {

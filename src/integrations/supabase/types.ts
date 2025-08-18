@@ -182,6 +182,7 @@ export type Database = {
         Row: {
           base_func: string | null
           blocks: Json | null
+          blocks_norm: Json | null
           confidence: string | null
           created_at: string | null
           creative_func: string | null
@@ -199,10 +200,12 @@ export type Database = {
           updated_at: string | null
           user_id: string | null
           validity: Json | null
+          version: string | null
         }
         Insert: {
           base_func?: string | null
           blocks?: Json | null
+          blocks_norm?: Json | null
           confidence?: string | null
           created_at?: string | null
           creative_func?: string | null
@@ -220,10 +223,12 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
           validity?: Json | null
+          version?: string | null
         }
         Update: {
           base_func?: string | null
           blocks?: Json | null
+          blocks_norm?: Json | null
           confidence?: string | null
           created_at?: string | null
           creative_func?: string | null
@@ -241,6 +246,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
           validity?: Json | null
+          version?: string | null
         }
         Relationships: []
       }
