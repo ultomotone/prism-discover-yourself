@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, Download, RotateCcw } from "lucide-react";
 import { AssessmentResponse } from "./AssessmentForm";
 import { supabase } from "@/integrations/supabase/client";
+import { ResultsV2 } from "./ResultsV2";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -36,13 +37,15 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
       setLoadingScore(true);
       setScoreError(null);
       const { data, error } = await supabase.functions.invoke('score_prism', {
-        body: { session_id: sessionId },
+        body: { 
+          session_id: sessionId,
+          user_id: null // Allow anonymous users
+        },
       });
       if (error || !data || data.status !== 'success') {
-        // @ts-ignore
         setScoreError(error?.message || data?.error || 'Scoring failed');
       } else {
-        setScoring((data as any).profile);
+        setScoring(data.profile);
       }
       setLoadingScore(false);
     };

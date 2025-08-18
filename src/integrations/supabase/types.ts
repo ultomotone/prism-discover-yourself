@@ -139,6 +139,129 @@ export type Database = {
         }
         Relationships: []
       }
+      kb_definitions: {
+        Row: {
+          content: Json
+          key: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: Json
+          key: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: Json
+          key?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      kb_types: {
+        Row: {
+          code: string
+          overview: Json
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          overview: Json
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          overview?: Json
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          base_func: string | null
+          blocks: Json | null
+          confidence: string | null
+          created_at: string | null
+          creative_func: string | null
+          dimensions: Json | null
+          dims_highlights: Json | null
+          glossary_version: number | null
+          id: string
+          neuroticism: Json | null
+          overlay: string | null
+          session_id: string
+          strengths: Json | null
+          top_types: Json | null
+          type_code: string | null
+          type_scores: Json | null
+          updated_at: string | null
+          user_id: string | null
+          validity: Json | null
+        }
+        Insert: {
+          base_func?: string | null
+          blocks?: Json | null
+          confidence?: string | null
+          created_at?: string | null
+          creative_func?: string | null
+          dimensions?: Json | null
+          dims_highlights?: Json | null
+          glossary_version?: number | null
+          id?: string
+          neuroticism?: Json | null
+          overlay?: string | null
+          session_id: string
+          strengths?: Json | null
+          top_types?: Json | null
+          type_code?: string | null
+          type_scores?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+          validity?: Json | null
+        }
+        Update: {
+          base_func?: string | null
+          blocks?: Json | null
+          confidence?: string | null
+          created_at?: string | null
+          creative_func?: string | null
+          dimensions?: Json | null
+          dims_highlights?: Json | null
+          glossary_version?: number | null
+          id?: string
+          neuroticism?: Json | null
+          overlay?: string | null
+          session_id?: string
+          strengths?: Json | null
+          top_types?: Json | null
+          type_code?: string | null
+          type_scores?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+          validity?: Json | null
+        }
+        Relationships: []
+      }
+      scoring_config: {
+        Row: {
+          key: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       trading_candles: {
         Row: {
           candle_body_pct: number | null
