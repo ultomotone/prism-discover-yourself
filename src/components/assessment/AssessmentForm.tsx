@@ -40,14 +40,21 @@ export function AssessmentForm({ onComplete, onBack }: AssessmentFormProps) {
   useEffect(() => {
     const initializeSession = async () => {
       try {
+        console.log('Initializing assessment session...');
+        
+        // Get current user (null if anonymous)
+        const { data: { user } } = await supabase.auth.getUser();
+        
         const { data, error } = await supabase
           .from('assessment_sessions')
           .insert({
+            user_id: user?.id || null,
             session_type: 'prism',
             total_questions: assessmentQuestions.length,
             metadata: {
               browser: navigator.userAgent,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
+              anonymous: !user?.id
             }
           })
           .select('id')
@@ -55,18 +62,25 @@ export function AssessmentForm({ onComplete, onBack }: AssessmentFormProps) {
 
         if (error) {
           console.error('Error creating session:', error);
+          console.error('Error details:', error.message, error.code, error.details);
           toast({
-            title: "Error",
-            description: "Failed to initialize assessment session.",
+            title: "Failed to Initialize",
+            description: "Could not start assessment session. Please refresh the page and try again.",
             variant: "destructive",
           });
           return;
         }
 
+        console.log('Session initialized successfully:', data.id);
         setSessionId(data.id);
         setQuestionStartTime(Date.now());
       } catch (error) {
         console.error('Error initializing session:', error);
+        toast({
+          title: "Failed to Initialize", 
+          description: "An unexpected error occurred. Please refresh the page and try again.",
+          variant: "destructive",
+        });
       }
     };
 
