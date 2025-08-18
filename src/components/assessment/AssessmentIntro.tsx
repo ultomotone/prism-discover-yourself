@@ -233,10 +233,7 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
                   variant="hero" 
                   size="lg" 
                   className="text-xl px-12 py-4"
-                  onClick={() => {
-                    console.log('🔴 Start Assessment button clicked');
-                    onStart();
-                  }}
+                  onClick={onStart}
                 >
                   Start Assessment
                 </Button>

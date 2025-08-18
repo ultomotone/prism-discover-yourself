@@ -66,9 +66,7 @@ const Assessment = () => {
   };
 
   const handleStartAssessment = () => {
-    console.log('🟢 handleStartAssessment called');
     setResumeSessionId(undefined);
-    console.log('🟢 Setting state to form');
     setCurrentState('form');
   };
 
@@ -124,26 +122,16 @@ const Assessment = () => {
       )}
 
       {currentState === 'intro' && (
-        <div>
-          <div style={{background: 'red', color: 'white', padding: '10px', position: 'fixed', top: 0, left: 0, zIndex: 9999}}>
-            DEBUG: Showing intro state
-          </div>
-          <AssessmentIntro onStart={handleStartAssessment} />
-        </div>
+        <AssessmentIntro onStart={handleStartAssessment} />
       )}
       
       {currentState === 'form' && (
-        <div>
-          <div style={{background: 'green', color: 'white', padding: '10px', position: 'fixed', top: 0, left: 0, zIndex: 9999}}>
-            DEBUG: Showing form state
-          </div>
-          <AssessmentForm 
-            onComplete={handleAssessmentComplete}
-            onBack={handleReturnToIntro}
-            onSaveAndExit={handleSaveAndExit}
-            resumeSessionId={resumeSessionId}
-          />
-        </div>
+        <AssessmentForm 
+          onComplete={handleAssessmentComplete}
+          onBack={handleReturnToIntro}
+          onSaveAndExit={handleSaveAndExit}
+          resumeSessionId={resumeSessionId}
+        />
       )}
       
       {currentState === 'complete' && (
