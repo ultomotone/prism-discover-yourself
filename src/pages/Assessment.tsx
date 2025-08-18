@@ -8,8 +8,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 type AssessmentState = 'intro' | 'form' | 'complete' | 'saved';
 
+console.log('Assessment file loaded - this should appear immediately');
+
 const Assessment = () => {
-  console.log('Assessment component is mounting');
+  console.log('🚀 Assessment component is mounting - start of function');
   const [currentState, setCurrentState] = useState<AssessmentState>('intro');
   const [responses, setResponses] = useState<AssessmentResponse[]>([]);
   const [sessionId, setSessionId] = useState<string>('');
