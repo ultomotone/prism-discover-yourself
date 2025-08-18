@@ -55,16 +55,33 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
         .from('assessment_sessions')
         .select('*')
         .eq('id', sessionId)
-        .single();
+        .maybeSingle();
 
       if (sessionError) {
         console.error('Error loading session:', sessionError);
+        localStorage.removeItem('prism_last_session');
         toast({
           title: "Failed to Load",
           description: "Could not load saved assessment. Starting a new one.",
           variant: "destructive",
         });
         setIsResumingSession(false);
+        return;
+      }
+
+      if (!session) {
+        console.log('❌ Session not found in database, clearing cache and returning to intro');
+        localStorage.removeItem('prism_last_session');
+        toast({
+          title: "Session Expired",
+          description: "Your saved assessment could not be found. Please start a new assessment.",
+          variant: "destructive",
+        });
+        setIsResumingSession(false);
+        // Navigate back to intro by calling onBack if available
+        if (onBack) {
+          onBack();
+        }
         return;
       }
 
