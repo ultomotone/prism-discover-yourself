@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, Download, RotateCcw } from "lucide-react";
 import { AssessmentResponse } from "./AssessmentForm";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AssessmentCompleteProps {
   responses: AssessmentResponse[];
@@ -12,6 +13,29 @@ interface AssessmentCompleteProps {
 }
 
 export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeAgain }: AssessmentCompleteProps) {
+  const [scoring, setScoring] = useState<any | null>(null);
+  const [loadingScore, setLoadingScore] = useState(false);
+  const [scoreError, setScoreError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const run = async () => {
+      if (!sessionId) return;
+      setLoadingScore(true);
+      setScoreError(null);
+      const { data, error } = await supabase.functions.invoke('score_prism', {
+        body: { session_id: sessionId },
+      });
+      if (error || !data || data.status !== 'success') {
+        // @ts-ignore
+        setScoreError(error?.message || data?.error || 'Scoring failed');
+      } else {
+        setScoring((data as any).profile);
+      }
+      setLoadingScore(false);
+    };
+    run();
+  }, [sessionId]);
+
   const handleDownloadResults = () => {
     // Create a comprehensive results object with session info
     const results = {
@@ -74,6 +98,31 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
                   <div className="text-sm text-muted-foreground">Completion Rate</div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Scored Results */}
+          <Card className="mb-8 prism-shadow-card">
+            <CardContent className="p-8">
+              <h2 className="text-2xl font-semibold text-primary mb-4">Scored Results</h2>
+              {loadingScore && <p className="text-muted-foreground">Scoring your results…</p>}
+              {scoreError && <p className="text-destructive">{scoreError}</p>}
+              {scoring && (
+                <div className="text-left space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-background/50 rounded-lg border">
+                      <div className="text-sm text-muted-foreground">Type</div>
+                      <div className="text-xl font-semibold text-primary">
+                        {scoring.type} <span className="text-muted-foreground text-base">({scoring.base}-{scoring.creative})</span>
+                      </div>
+                    </div>
+                    <div className="p-4 bg-background/50 rounded-lg border">
+                      <div className="text-sm text-muted-foreground">Confidence</div>
+                      <div className="text-xl font-semibold text-accent">{Math.round(scoring.confidence)}%</div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
