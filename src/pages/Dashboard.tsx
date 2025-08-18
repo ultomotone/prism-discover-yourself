@@ -353,9 +353,16 @@ const Dashboard = () => {
 
           <Button 
             onClick={() => window.open('/assessment', '_blank')}
-            className="bg-white text-primary hover:bg-white/90"
+            className="bg-white text-primary hover:bg-white/90 mr-4"
           >
             Take the PRISM Assessment <ExternalLink className="ml-2 h-4 w-4" />
+          </Button>
+          <Button 
+            onClick={() => window.open('/history', '_blank')}
+            variant="outline"
+            className="border-white text-white hover:bg-white hover:text-primary"
+          >
+            View Your History
           </Button>
         </div>
       </section>

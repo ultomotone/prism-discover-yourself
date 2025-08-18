@@ -2,3 +2,6 @@ project_id = "gnkuikentdtnatazeriu"
 
 [functions.score_prism]
 verify_jwt = false
+
+[functions.compare_runs]
+verify_jwt = true
