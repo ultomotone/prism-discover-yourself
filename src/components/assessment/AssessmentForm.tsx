@@ -116,6 +116,8 @@ setQuestionStartTime(Date.now());
 
   const loadExistingSession = async (sessionId: string) => {
     try {
+      console.log('Loading existing session:', sessionId);
+      
       // Load session data
       const { data: session, error: sessionError } = await supabase
         .from('assessment_sessions')
@@ -133,6 +135,8 @@ setQuestionStartTime(Date.now());
         return;
       }
 
+      console.log('Loaded session data:', session);
+
       // Load existing responses
       const { data: responses, error: responsesError } = await supabase
         .from('assessment_responses')
@@ -143,6 +147,9 @@ setQuestionStartTime(Date.now());
       if (responsesError) {
         console.error('Error loading responses:', responsesError);
       }
+
+      console.log('Loaded responses:', responses);
+      console.log('Session completed_questions:', session.completed_questions);
 
       // Convert responses to the expected format
       const loadedResponses: AssessmentResponse[] = responses?.map(r => {
@@ -173,6 +180,10 @@ setQuestionStartTime(Date.now());
         session.completed_questions || 0,
         assessmentQuestions.length - 1
       );
+      
+      console.log('Calculated nextQuestionIndex:', nextQuestionIndex);
+      console.log('Total loaded responses:', loadedResponses.length);
+      
       setCurrentQuestionIndex(nextQuestionIndex);
       setQuestionStartTime(Date.now());
 

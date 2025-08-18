@@ -21,17 +21,22 @@ const Assessment = () => {
 
   const checkForSavedAssessments = async () => {
     try {
+      console.log('Checking for saved assessments...');
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('Current user:', user?.id || 'anonymous');
       
       const { data: sessions, error } = await supabase
         .from('assessment_sessions')
-        .select('id')
+        .select('id, completed_questions, total_questions')
         .is('completed_at', null)
         .gt('completed_questions', 0)
         .eq('user_id', user?.id || null)
         .limit(1);
 
+      console.log('Found saved sessions:', sessions);
+
       if (!error && sessions && sessions.length > 0) {
+        console.log('Setting state to saved');
         setCurrentState('saved');
       }
     } catch (error) {
@@ -69,6 +74,7 @@ const Assessment = () => {
   };
 
   const handleResumeAssessment = (savedSessionId: string) => {
+    console.log('Resuming assessment with session ID:', savedSessionId);
     setResumeSessionId(savedSessionId);
     setCurrentState('form');
   };
