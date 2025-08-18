@@ -74,9 +74,12 @@ const Assessment = () => {
   };
 
   const handleResumeAssessment = (savedSessionId: string) => {
-    console.log('Resuming assessment with session ID:', savedSessionId);
+    console.log('handleResumeAssessment called with session ID:', savedSessionId);
+    console.log('Current state before resume:', currentState);
     setResumeSessionId(savedSessionId);
+    console.log('Set resumeSessionId to:', savedSessionId);
     setCurrentState('form');
+    console.log('Set currentState to form');
   };
 
   const handleSaveAndExit = () => {

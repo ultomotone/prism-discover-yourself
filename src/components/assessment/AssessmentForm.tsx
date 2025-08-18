@@ -28,6 +28,7 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
   const [isLoading, setIsLoading] = useState(false);
+  const [isResumingSession, setIsResumingSession] = useState(false);
   const { toast } = useToast();
 
   const currentQuestion = assessmentQuestions[currentQuestionIndex];
@@ -43,6 +44,7 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
   const loadExistingSession = async (sessionId: string) => {
     try {
       console.log('Loading existing session:', sessionId);
+      setIsResumingSession(true);
       
       // Load session data
       const { data: session, error: sessionError } = await supabase
@@ -58,6 +60,7 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
           description: "Could not load saved assessment. Starting a new one.",
           variant: "destructive",
         });
+        setIsResumingSession(false);
         return;
       }
 
@@ -111,6 +114,7 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
       console.log('Total loaded responses:', loadedResponses.length);
       console.log('About to call setCurrentQuestionIndex with:', nextQuestionIndex);
       
+      // Important: Set the question index BEFORE setting isResumingSession to false
       setCurrentQuestionIndex(nextQuestionIndex);
       setQuestionStartTime(Date.now());
 
@@ -119,6 +123,8 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
         title: "Assessment Resumed",
         description: `Continuing from question ${nextQuestionIndex + 1}`,
       });
+      
+      setIsResumingSession(false);
     } catch (error) {
       console.error('Error loading existing session:', error);
       toast({
@@ -126,6 +132,7 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
         description: "Could not load saved assessment. Starting a new one.",
         variant: "destructive",
       });
+      setIsResumingSession(false);
     }
   };
 
@@ -194,6 +201,13 @@ setQuestionStartTime(Date.now());
     console.log('Question change useEffect triggered. Current question index:', currentQuestionIndex);
     console.log('Current question ID:', currentQuestion?.id);
     console.log('Current responses:', responses);
+    console.log('IsResumingSession:', isResumingSession);
+    
+    // Don't reset answers if we're in the middle of resuming a session
+    if (isResumingSession) {
+      console.log('Skipping question change logic because we are resuming session');
+      return;
+    }
     
     // Reset question start time when moving to a new question
     setQuestionStartTime(Date.now());
@@ -215,7 +229,7 @@ setQuestionStartTime(Date.now());
         setCurrentAnswer('');
       }
     }
-  }, [currentQuestionIndex, responses, currentQuestion?.id]);
+  }, [currentQuestionIndex, responses, currentQuestion?.id, isResumingSession]);
 
   const saveResponseToSupabase = async (response: AssessmentResponse, responseTime: number) => {
     if (!sessionId) return;

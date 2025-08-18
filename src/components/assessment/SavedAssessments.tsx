@@ -177,7 +177,10 @@ export function SavedAssessments({ onResumeAssessment, onStartNew }: SavedAssess
                       </Button>
                       
                       <Button
-                        onClick={() => onResumeAssessment(session.id)}
+                        onClick={() => {
+                          console.log('Continue button clicked for session:', session.id);
+                          onResumeAssessment(session.id);
+                        }}
                         className="flex items-center gap-2"
                       >
                         <Play className="h-4 w-4" />
