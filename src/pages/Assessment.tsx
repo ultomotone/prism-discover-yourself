@@ -9,10 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 type AssessmentState = 'intro' | 'form' | 'complete' | 'saved';
 
 const Assessment = () => {
+  console.log('Assessment component is mounting');
   const [currentState, setCurrentState] = useState<AssessmentState>('intro');
   const [responses, setResponses] = useState<AssessmentResponse[]>([]);
   const [sessionId, setSessionId] = useState<string>('');
   const [resumeSessionId, setResumeSessionId] = useState<string | undefined>();
+  
+  console.log('Assessment component state:', { currentState, sessionId, resumeSessionId });
 
   // Check for saved assessments on load
   useEffect(() => {

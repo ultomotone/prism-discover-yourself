@@ -22,6 +22,7 @@ interface AssessmentFormProps {
 }
 
 export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessionId }: AssessmentFormProps) {
+  console.log('AssessmentForm component mounting with resumeSessionId:', resumeSessionId);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<AssessmentResponse[]>([]);
   const [currentAnswer, setCurrentAnswer] = useState<string | number | string[] | number[]>('');
