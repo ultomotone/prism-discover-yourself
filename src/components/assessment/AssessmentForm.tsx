@@ -277,16 +277,29 @@ setQuestionStartTime(Date.now());
 
   const updateSessionProgress = async () => {
     if (!sessionId) return;
-
+    
     try {
-      await supabase
+      console.log('🟡 Updating session progress for:', sessionId);
+      console.log('🟡 Current question index + 1:', currentQuestionIndex + 1);
+      
+      const { error } = await supabase
         .from('assessment_sessions')
         .update({
-          completed_questions: currentQuestionIndex + 1
+          completed_questions: currentQuestionIndex + 1,
+          updated_at: new Date().toISOString()
         })
         .eq('id', sessionId);
+        
+      if (error) {
+        console.error('🟡 SESSION PROGRESS UPDATE ERROR:', error);
+      } else {
+        console.log('🟡 SESSION PROGRESS UPDATED SUCCESSFULLY');
+      }
+      
+      return { error };
     } catch (error) {
-      console.error('Error updating session progress:', error);
+      console.error('🟡 Error updating session progress:', error);
+      return { error };
     }
   };
 
@@ -320,6 +333,11 @@ setQuestionStartTime(Date.now());
     setIsLoading(true);
 
     try {
+      console.log('🚀 STARTING handleNext');
+      console.log('🚀 Current question:', currentQuestion?.id);
+      console.log('🚀 Current answer:', currentAnswer);
+      console.log('🚀 Session ID:', sessionId);
+      
       const responseTime = Date.now() - questionStartTime;
 
       // Save current response
@@ -327,6 +345,8 @@ setQuestionStartTime(Date.now());
         questionId: currentQuestion.id,
         answer: currentAnswer
       };
+
+      console.log('🚀 Saving response to Supabase:', newResponse);
 
       // Save to Supabase
       await saveResponseToSupabase(newResponse, responseTime);
@@ -339,8 +359,10 @@ setQuestionStartTime(Date.now());
 
       // Auto-save email if this is the first question and contains an email
       if (currentQuestionIndex === 0 && typeof currentAnswer === 'string' && currentAnswer.includes('@')) {
-        console.log('Auto-saving email from first question:', currentAnswer);
-        await supabase
+        console.log('🔥 DETECTED EMAIL ON FIRST QUESTION:', currentAnswer);
+        console.log('🔥 SESSION ID:', sessionId);
+        
+        const updateResult = await supabase
           .from('assessment_sessions')
           .update({ 
             email: currentAnswer,
@@ -349,13 +371,25 @@ setQuestionStartTime(Date.now());
           })
           .eq('id', sessionId);
         
-        toast({
-          title: "Progress Saved",
-          description: "Your email has been saved. Your progress will be automatically saved as you continue.",
-        });
+        console.log('🔥 EMAIL SAVE RESULT:', updateResult);
+        
+        if (updateResult.error) {
+          console.error('🔥 EMAIL SAVE ERROR:', updateResult.error);
+        } else {
+          console.log('✅ EMAIL SAVED SUCCESSFULLY');
+          toast({
+            title: "Progress Saved",
+            description: "Your email has been saved. Your progress will be automatically saved as you continue.",
+          });
+        }
       } else {
+        console.log('🔥 REGULAR PROGRESS UPDATE');
+        console.log('🔥 Current question index:', currentQuestionIndex);
+        console.log('🔥 Current answer:', currentAnswer);
+        
         // Update session progress normally
-        await updateSessionProgress();
+        const progressResult = await updateSessionProgress();
+        console.log('🔥 PROGRESS UPDATE RESULT:', progressResult);
       }
 
       if (isLastQuestion) {
