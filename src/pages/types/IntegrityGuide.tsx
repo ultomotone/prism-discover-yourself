@@ -32,7 +32,7 @@ const IntegrityGuide = () => {
                     Complementing this is Ne creative, a 3D function that allows EIIs to explore possibilities and ideas, but with a "minus" flavor – they tend to focus on refining possibilities, selecting the meaningful or realistic ones rather than a scattershot of random notions. This makes them insightful counselors or mentors: they can envision someone's latent talents or foresee pitfalls in a plan, gently steering toward the best outcome.
                   </p>
                   <p className="text-lg leading-relaxed">
-                    In flow, an EII might resemble a compassionate sage or a counselor under a tree. They feel at home when helping people navigate life's choices in line with their authentic selves. They also enjoy intellectual pursuits that align with their values – literature, psychology, social activism – anything that expands understanding of the human condition and can be used for positive change. Their Fi-Ne synergy means they often communicate through analogies and stories, enriching moral points with imaginative examples.
+                    In flow, an EII might resemble a compassionate sage or a counselor under a tree. They feel at home when helping people navigate life's choices in line with their authentic selves. They also enjoy intellectual pursuits that align with their values – literature, psychology, social activism – anything that expands understanding of the human condition and can be used for positive change. Their Fi Ne synergy means they often communicate through analogies and stories, enriching moral points with imaginative examples.
                   </p>
                 </div>
               </section>

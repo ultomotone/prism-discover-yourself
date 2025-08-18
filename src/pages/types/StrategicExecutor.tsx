@@ -93,7 +93,7 @@ const StrategicExecutor = () => {
                   <div className="prism-card p-6">
                     <h3 className="text-lg font-semibold mb-3">Hidden Block (Ignoring–Demonstrative)</h3>
                     <p className="text-lg leading-relaxed mb-4">
-                      Their Ignoring function is Introverted Logic (Ti). LIEs actually have a strong ability to understand logical structures and classifications – they can internally grasp complex theories or organize information – but they see over-analysis or "useless theory" as counterproductive. Thus, they often dismiss Ti-heavy approaches (analysis paralysis, perfectionistic rule systems) in favor of practical action.
+                      Their Ignoring function is Introverted Logic (Ti). LIEs actually have a strong ability to understand logical structures and classifications – they can internally grasp complex theories or organize information – but they see over-analysis or "useless theory" as counterproductive. Thus, they often dismiss Ti heavy approaches (analysis paralysis, perfectionistic rule systems) in favor of practical action.
                     </p>
                     <p className="text-lg leading-relaxed">
                       Their Demonstrative function is Extraverted Intuition (Ne), which is 4D like their base. This means LIEs have an enormous well of latent creativity and ideation. They can generate alternative possibilities and witty improvisations effortlessly, often exhibiting a sly, multi-layered sense of humor and brainstorming ability. However, because Ne is unvalued, they don't build their identity on being imaginative for imagination's sake.
@@ -122,7 +122,7 @@ const StrategicExecutor = () => {
                       LIEs should focus on cultivating their emotional intelligence and self-care habits. Building a bit of their Vulnerable Si into life – for instance, setting a basic routine for rest, meals, and downtime – will prevent burnout and enhance their long-term effectiveness (even the most visionary project can falter if the leader is exhausted or ill).
                     </p>
                     <p className="text-lg leading-relaxed">
-                      Likewise, improving Fi awareness is key: LIEs benefit from reflecting on their values and the feelings of those around them. This could mean occasionally stepping back from work to ask, "How will this decision affect my relationships?" or seeking mentorship from an Fi-strong individual on handling interpersonal dilemmas.
+                      Likewise, improving Fi awareness is key: LIEs benefit from reflecting on their values and the feelings of those around them. This could mean occasionally stepping back from work to ask, "How will this decision affect my relationships?" or seeking mentorship from an Fi strong individual on handling interpersonal dilemmas.
                     </p>
                   </div>
 

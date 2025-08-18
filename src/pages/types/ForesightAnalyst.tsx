@@ -59,7 +59,7 @@ const ForesightAnalyst = () => {
                       </p>
                       
                       <p className="mb-3">
-                        Under extreme stress, an INTJ can experience "Se-grip" episodes: for instance, you might impulsively overindulge in sensory pleasures (binging TV, food, etc.) or become uncharacteristically reactive and short-tempered about immediate issues, as all that suppressed Se bursts out. Generally, though, you keep a handle on overt emotions; your struggles are more often felt internally.
+                        Under extreme stress, an INTJ can experience "Se grip" episodes: for instance, you might impulsively overindulge in sensory pleasures (binging TV, food, etc.) or become uncharacteristically reactive and short-tempered about immediate issues, as all that suppressed Se bursts out. Generally, though, you keep a handle on overt emotions; your struggles are more often felt internally.
                       </p>
                       
                       <p className="mb-3">
@@ -227,11 +227,11 @@ const ForesightAnalyst = () => {
                   </div>
                   <div className="prism-card p-6">
                     <h3 className="text-lg font-semibold mb-3">ILI vs. IEI</h3>
-                    <p>Both Ni-heavy; ILI frames with metrics (Te), IEI frames with mood/meaning (Fe).</p>
+                    <p>Both Ni heavy; ILI frames with metrics (Te), IEI frames with mood/meaning (Fe).</p>
                   </div>
                   <div className="prism-card p-6">
                     <h3 className="text-lg font-semibold mb-3">ILI vs. INTJ-lookalikes</h3>
-                    <p>PRISM scenarios separate quiet Ni–Te advisorship from Te-led command roles.</p>
+                    <p>PRISM scenarios separate quiet Ni Te advisorship from Te led command roles.</p>
                   </div>
                   <div className="prism-card p-6">
                     <h3 className="text-lg font-semibold mb-3">Overlay tells</h3>
