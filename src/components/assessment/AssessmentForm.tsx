@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { assessmentQuestions, Question } from "@/data/assessmentQuestions";
 import { QuestionComponent } from "./QuestionComponent";
+import { EmailSavePrompt } from "./EmailSavePrompt";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Save } from "lucide-react";
@@ -17,19 +18,22 @@ export interface AssessmentResponse {
 interface AssessmentFormProps {
   onComplete: (responses: AssessmentResponse[], sessionId: string) => void;
   onBack?: () => void;
-  onSaveAndExit?: () => void;
+  onSaveAndExit?: (email?: string) => void;
   resumeSessionId?: string;
+  userEmail?: string;
 }
 
-export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessionId }: AssessmentFormProps) {
-  console.log('AssessmentForm component mounting with resumeSessionId:', resumeSessionId);
+export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessionId, userEmail }: AssessmentFormProps) {
+  console.log('AssessmentForm component mounting with resumeSessionId:', resumeSessionId, 'userEmail:', userEmail);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<AssessmentResponse[]>([]);
   const [currentAnswer, setCurrentAnswer] = useState<string | number | string[] | number[]>('');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [isResumingSession, setIsResumingSession] = useState(false);
+  const [showEmailPrompt, setShowEmailPrompt] = useState(false);
   const { toast } = useToast();
 
   const currentQuestion = assessmentQuestions[currentQuestionIndex];
@@ -157,20 +161,22 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
         // Get current user (null if anonymous)
         const { data: { user } } = await supabase.auth.getUser();
         
-const newId = crypto.randomUUID();
-const { error } = await supabase
-  .from('assessment_sessions')
-  .insert({
-    id: newId,
-    user_id: user?.id || null,
-    session_type: 'prism',
-    total_questions: assessmentQuestions.length,
-    metadata: {
-      browser: navigator.userAgent,
-      timestamp: new Date().toISOString(),
-      anonymous: !user?.id
-    }
-  });
+        const newId = crypto.randomUUID();
+        const { error } = await supabase
+          .from('assessment_sessions')
+          .insert({
+            id: newId,
+            user_id: user?.id || null,
+            email: userEmail || null,
+            session_type: 'prism',
+            total_questions: assessmentQuestions.length,
+            metadata: {
+              browser: navigator.userAgent,
+              timestamp: new Date().toISOString(),
+              anonymous: !user?.id,
+              hasEmail: !!userEmail
+            }
+          });
 
         if (error) {
           console.error('Error creating session:', error);
@@ -375,19 +381,33 @@ setQuestionStartTime(Date.now());
     }
   };
 
-  const handleSaveAndExit = async () => {
-    console.log('handleSaveAndExit called');
+  const handleSaveAndExit = () => {
+    // If user already provided an email, save directly
+    if (userEmail) {
+      performSaveWithEmail(userEmail);
+    } else {
+      // Show email prompt
+      setShowEmailPrompt(true);
+    }
+  };
+
+  const performSaveWithEmail = async (email: string) => {
+    console.log('performSaveWithEmail called with:', email);
     console.log('Current sessionId:', sessionId);
     console.log('Current question index:', currentQuestionIndex);
-    console.log('Current answer:', currentAnswer);
     
     if (!sessionId) {
       console.log('No sessionId, cannot save');
+      toast({
+        title: "Save Failed",
+        description: "No active session to save. Please try again.",
+        variant: "destructive",
+      });
       return;
     }
 
     try {
-      setIsLoading(true);
+      setIsSaving(true);
       
       // Save current answer if there is one
       const hasAnswer = Array.isArray(currentAnswer) ? 
@@ -405,31 +425,34 @@ setQuestionStartTime(Date.now());
         
         console.log('Saving response:', newResponse);
         await saveResponseToSupabase(newResponse, responseTime);
+      }
+
+      // Update session with email and progress
+      const updateData = {
+        completed_questions: currentQuestionIndex + (hasAnswer ? 1 : 0),
+        email: email
+      };
+      
+      console.log('Updating session with:', updateData);
+      const { error: updateError } = await supabase
+        .from('assessment_sessions')
+        .update(updateData)
+        .eq('id', sessionId);
         
-        // Update session progress
-        console.log('Updating session progress to:', currentQuestionIndex + 1);
-        const { error: updateError } = await supabase
-          .from('assessment_sessions')
-          .update({
-            completed_questions: currentQuestionIndex + 1
-          })
-          .eq('id', sessionId);
-          
-        if (updateError) {
-          console.error('Error updating session progress:', updateError);
-        } else {
-          console.log('Session progress updated successfully');
-        }
+      if (updateError) {
+        console.error('Error updating session:', updateError);
+        throw updateError;
       }
 
       console.log('Save completed successfully');
       toast({
         title: "Assessment Saved",
-        description: "Your progress has been saved. You can continue later.",
+        description: `Your progress has been saved to ${email}. You can continue later by entering this email.`,
       });
 
+      setShowEmailPrompt(false);
       if (onSaveAndExit) {
-        onSaveAndExit();
+        onSaveAndExit(email);
       }
     } catch (error) {
       console.error('Error saving assessment:', error);
@@ -439,7 +462,7 @@ setQuestionStartTime(Date.now());
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -535,6 +558,18 @@ setQuestionStartTime(Date.now());
           </div>
         </div>
       </div>
+      
+      <EmailSavePrompt 
+        isOpen={showEmailPrompt}
+        onSave={performSaveWithEmail}
+        onSkip={() => {
+          setShowEmailPrompt(false);
+          if (onSaveAndExit) {
+            onSaveAndExit();
+          }
+        }}
+        onCancel={() => setShowEmailPrompt(false)}
+      />
     </div>
   );
 }

@@ -114,6 +114,7 @@ export type Database = {
           completed_at: string | null
           completed_questions: number | null
           created_at: string
+          email: string | null
           id: string
           metadata: Json | null
           session_type: string
@@ -126,6 +127,7 @@ export type Database = {
           completed_at?: string | null
           completed_questions?: number | null
           created_at?: string
+          email?: string | null
           id?: string
           metadata?: Json | null
           session_type?: string
@@ -138,6 +140,7 @@ export type Database = {
           completed_at?: string | null
           completed_questions?: number | null
           created_at?: string
+          email?: string | null
           id?: string
           metadata?: Json | null
           session_type?: string
