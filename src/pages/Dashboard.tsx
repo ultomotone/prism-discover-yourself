@@ -22,7 +22,7 @@ interface DashboardData {
   latestAssessments: Array<{
     created_at: string;
     type_code: string;
-    top_types: any;
+    top_types?: any;
     overlay: string;
     country?: string;
     email?: string;
@@ -75,8 +75,8 @@ const Dashboard = () => {
         .eq('key', 'dashboard_email_qid')
         .single();
 
-      const countryId = countryConfig?.value?.id;
-      const emailId = emailConfig?.value?.id;
+      const countryId = (countryConfig?.value as any)?.id;
+      const emailId = (emailConfig?.value as any)?.id;
       setCountryQId(countryId);
       setEmailQId(emailId);
 
@@ -125,16 +125,8 @@ const Dashboard = () => {
           .select('type_code')
           .gte('created_at', startDate.toISOString()),
 
-        // Country distribution (if config exists)
-        countryId
-          ? supabase
-              .from('profiles')
-              .select(`
-                assessment_responses!inner(answer_value)
-              `)
-              .eq('assessment_responses.question_id', countryId)
-              .gte('created_at', startDate.toISOString())
-          : Promise.resolve({ data: [], error: null }),
+        // Country distribution (if config exists) - simplified approach
+        Promise.resolve({ data: [], error: null }),
 
         // Latest assessments with details
         supabase
@@ -184,16 +176,29 @@ const Dashboard = () => {
         .map(([type, count]) => ({ type, count: count as number }))
         .sort((a, b) => b.count - a.count);
 
-      // Process country distribution
-      const countryCount = countryResult.data?.reduce((acc: any, profile: any) => {
-        const country = profile.assessment_responses?.[0]?.answer_value || 'Unknown';
-        acc[country] = (acc[country] || 0) + 1;
-        return acc;
-      }, {});
-      const countryDistribution = Object.entries(countryCount || {})
-        .map(([country, count]) => ({ country, count: count as number }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10);
+      // Process country distribution - fetch separately
+      let countryDistribution: Array<{ country: string; count: number }> = [];
+      if (countryId && latestResult.data) {
+        const sessionIds = latestResult.data.map((p: any) => p.session_id).slice(0, 50);
+        if (sessionIds.length > 0) {
+          const { data: countryResponses } = await supabase
+            .from('assessment_responses')
+            .select('answer_value')
+            .eq('question_id', countryId)
+            .in('session_id', sessionIds);
+
+          const countryCount = (countryResponses || []).reduce((acc: any, resp: any) => {
+            const country = resp.answer_value || 'Unknown';
+            acc[country] = (acc[country] || 0) + 1;
+            return acc;
+          }, {});
+
+          countryDistribution = Object.entries(countryCount)
+            .map(([country, count]) => ({ country, count: count as number }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10);
+        }
+      }
 
       // Get additional details for latest assessments
       const latestWithDetails = await Promise.all(
