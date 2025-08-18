@@ -107,10 +107,18 @@ const Assessment = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {(() => {
+        console.log('🎯 ASSESSMENT PAGE STATE:', currentState);
+        return null;
+      })()}
       {currentState !== 'form' && <Header />}
       
       {currentState === 'saved' && (
         <div className="pt-24 pb-8">
+          {(() => {
+            console.log('🟦 SHOWING SAVED ASSESSMENTS VIEW');
+            return null;
+          })()}
           <div className="prism-container">
             <SavedAssessments 
               onResumeAssessment={handleResumeAssessment}
@@ -121,7 +129,13 @@ const Assessment = () => {
       )}
 
       {currentState === 'intro' && (
-        <AssessmentIntro onStart={handleStartAssessment} />
+        <div>
+          {(() => {
+            console.log('🟥 SHOWING INTRO VIEW');
+            return null;
+          })()}
+          <AssessmentIntro onStart={handleStartAssessment} />
+        </div>
       )}
       
       {currentState === 'form' && (
