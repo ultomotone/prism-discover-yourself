@@ -309,12 +309,15 @@ try {
         console.log('🟡 SESSION PROGRESS UPDATED SUCCESSFULLY');
         try {
           const cached = JSON.parse(localStorage.getItem('prism_last_session') || '{}');
-          localStorage.setItem('prism_last_session', JSON.stringify({
+          console.log('🗄️ BEFORE: Current cached session:', cached);
+          const updatedCache = {
             ...cached,
             id: sessionId,
             completed_questions: currentQuestionIndex + 1,
             updated_at: new Date().toISOString()
-          }));
+          };
+          localStorage.setItem('prism_last_session', JSON.stringify(updatedCache));
+          console.log('🗄️ AFTER: Updated cache to:', updatedCache);
         } catch (e) {
           console.warn('Failed to update local session cache', e);
         }
@@ -403,13 +406,16 @@ try {
           console.log('✅ EMAIL SAVED SUCCESSFULLY');
           try {
             const cached = JSON.parse(localStorage.getItem('prism_last_session') || '{}');
-            localStorage.setItem('prism_last_session', JSON.stringify({
+            console.log('🗄️ EMAIL SAVE - BEFORE: Current cached session:', cached);
+            const updatedCache = {
               ...cached,
               id: sessionId,
               email: currentAnswer,
               completed_questions: currentQuestionIndex + 1,
               updated_at: new Date().toISOString()
-            }));
+            };
+            localStorage.setItem('prism_last_session', JSON.stringify(updatedCache));
+            console.log('🗄️ EMAIL SAVE - AFTER: Updated cache to:', updatedCache);
           } catch (e) {
             console.warn('Failed to update local session cache with email', e);
           }
