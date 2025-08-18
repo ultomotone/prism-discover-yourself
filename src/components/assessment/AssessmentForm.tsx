@@ -189,6 +189,19 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
 console.log('Session initialized successfully:', newId);
 setSessionId(newId);
 setQuestionStartTime(Date.now());
+
+// Local fallback: remember latest session
+try {
+  localStorage.setItem('prism_last_session', JSON.stringify({
+    id: newId,
+    completed_questions: 0,
+    email: null,
+    updated_at: new Date().toISOString()
+  }));
+  console.log('🗄️ Stored local fallback for session:', newId);
+} catch (e) {
+  console.warn('Failed to write local session cache', e);
+}
       } catch (error) {
         console.error('Error initializing session:', error);
         toast({
@@ -294,6 +307,17 @@ setQuestionStartTime(Date.now());
         console.error('🟡 SESSION PROGRESS UPDATE ERROR:', error);
       } else {
         console.log('🟡 SESSION PROGRESS UPDATED SUCCESSFULLY');
+        try {
+          const cached = JSON.parse(localStorage.getItem('prism_last_session') || '{}');
+          localStorage.setItem('prism_last_session', JSON.stringify({
+            ...cached,
+            id: sessionId,
+            completed_questions: currentQuestionIndex + 1,
+            updated_at: new Date().toISOString()
+          }));
+        } catch (e) {
+          console.warn('Failed to update local session cache', e);
+        }
       }
       
       return { error };
@@ -377,6 +401,18 @@ setQuestionStartTime(Date.now());
           console.error('🔥 EMAIL SAVE ERROR:', updateResult.error);
         } else {
           console.log('✅ EMAIL SAVED SUCCESSFULLY');
+          try {
+            const cached = JSON.parse(localStorage.getItem('prism_last_session') || '{}');
+            localStorage.setItem('prism_last_session', JSON.stringify({
+              ...cached,
+              id: sessionId,
+              email: currentAnswer,
+              completed_questions: currentQuestionIndex + 1,
+              updated_at: new Date().toISOString()
+            }));
+          } catch (e) {
+            console.warn('Failed to update local session cache with email', e);
+          }
           toast({
             title: "Progress Saved",
             description: "Your email has been saved. Your progress will be automatically saved as you continue.",

@@ -51,6 +51,20 @@ const Assessment = () => {
         console.log('✅ Found', sessions.length, 'saved sessions, showing saved state');
         setCurrentState('saved');
       } else {
+        // Local fallback: auto-resume last session if present
+        try {
+          const cachedRaw = localStorage.getItem('prism_last_session');
+          const cached = cachedRaw ? JSON.parse(cachedRaw) : null;
+          console.log('🗄️ Local cached session:', cached);
+          if (cached?.id && (cached?.completed_questions ?? 0) > 0) {
+            console.log('🗄️ Auto-resuming local cached session:', cached.id);
+            setResumeSessionId(cached.id);
+            setCurrentState('form');
+            return;
+          }
+        } catch (e) {
+          console.warn('Failed to read local session cache', e);
+        }
         console.log('❌ No saved sessions found, showing intro');
         console.log('Error:', !!error);
         console.log('Sessions null:', !sessions);
