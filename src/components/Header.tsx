@@ -10,8 +10,8 @@ const Header = () => {
   const navigate = useNavigate();
 
   const navigation = [
-    { name: "About PRISM", href: "/about" },
-    { name: "Blog & Insights", href: "/insights" },
+    { name: "About", href: "/about" },
+    { name: "Resources", href: "/insights" },
   ];
 
   const solutionsItems = [
