@@ -31,6 +31,48 @@ const VisionMuse = () => {
                 </div>
               </section>
 
+              {/* Profile */}
+              <section>
+                <h2 className="text-2xl font-semibold mb-4">Profile</h2>
+                <div className="prism-card p-6">
+                  <div className="space-y-4 text-base leading-relaxed">
+                    <p>
+                      You are a forward-thinking idealist with a deep focus on future possibilities and human values. Driven by Introverted Intuition (Ni), you constantly synthesize patterns and seek meaning behind events, envisioning how things will unfold in the long run. You often form a clear inner vision or ideal to guide you and are energized by contemplating what could be. This makes you highly insightful – you can often predict outcomes or understand complex problems via sudden "aha!" realizations.
+                    </p>
+                    
+                    <p>
+                      Paired with your auxiliary Extraverted Feeling (Fe), you are warm, compassionate, and attuned to others' emotions. You genuinely care about people's well-being and have a talent for understanding their needs or motivations. This empathetic side drives you to foster harmony and help others grow. In groups, you tend to be the quiet catalyst – gently guiding people toward a positive vision of the future. You may find yourself acting as a counselor or confidant, as others sense your empathy and wisdom.
+                    </p>
+                    
+                    <p>
+                      In flow, you're at your best when you can align your visionary insights with making a difference for others. For example, you might experience flow while quietly crafting a plan to improve someone's life or writing an imaginative story full of human meaning – you feel "made to do this," time falls away, and you're fully immersed in the meaningful pursuit.
+                    </p>
+                    
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">Internal Critic & Growth</h3>
+                      <p className="mb-3">
+                        Your Internal Critic block (tertiary Ti and inferior Se) can make you prone to self-doubt and occasional burnout. You hold very high ideals, so your inner critic might chastise you for not being "logical enough" or for ignoring everyday practicalities. Indeed, under stress you may slip into a Ni-Ti loop – overanalyzing your perceptions endlessly and withdrawing from others – or fall into the "grip" of Se, suddenly seeking sensory indulgence or becoming obsessed with minute details in a rather uncharacteristic way.
+                      </p>
+                      
+                      <p className="mb-3">
+                        When out of balance (especially if Neuroticism is high), you can become overly vague and disconnected from reality, losing yourself in hazy visions and then feeling upset when reality doesn't match your ideal. You may also become sensitive to criticism, taking negative feedback very personally. An INFJ with a "+" neuroticism overlay might experience more of this self-critique and anxiety, whereas an INFJ– stays calmer.
+                      </p>
+                      
+                      <p>
+                        Remember that your Hidden Potential lies in skills like logical structuring (Ti) and attending to details (Se) – you can develop these without losing your core strengths. In fact, doing some practical, grounding activities (like a hands-on hobby or exercise) can relieve stress and help bring your lofty visions into reality. In growth, learning to explain your insights in simple, concrete terms (instead of assuming others see the same vision) is key.
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">Guiding Light</h3>
+                      <p>
+                        Stay true to your Ni-Fe idealism – your gift is envisioning a better future and compassionately guiding others toward it. When you use that gift in balanced ways, you enter a flow state of creative inspiration and human connection, which is clearly where you thrive.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
               {/* Function Matrix */}
               <section>
                 <h2 className="text-2xl font-semibold mb-4">Function Matrix (Strength × Dimensionality)</h2>
