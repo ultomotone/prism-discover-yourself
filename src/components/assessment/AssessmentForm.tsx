@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface AssessmentResponse {
   questionId: number;
-  answer: string | number;
+  answer: string | number | string[] | number[];
 }
 
 interface AssessmentFormProps {
@@ -21,7 +21,7 @@ interface AssessmentFormProps {
 export function AssessmentForm({ onComplete, onBack }: AssessmentFormProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<AssessmentResponse[]>([]);
-  const [currentAnswer, setCurrentAnswer] = useState<string | number>('');
+  const [currentAnswer, setCurrentAnswer] = useState<string | number | string[] | number[]>('');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
   const [isLoading, setIsLoading] = useState(false);
@@ -96,7 +96,12 @@ setQuestionStartTime(Date.now());
     if (existingResponse) {
       setCurrentAnswer(existingResponse.answer);
     } else {
-      setCurrentAnswer('');
+      // Initialize based on question type
+      if (currentQuestion?.type === 'matrix' || currentQuestion?.type === 'select-all' || currentQuestion?.type === 'ranking') {
+        setCurrentAnswer([]);
+      } else {
+        setCurrentAnswer('');
+      }
     }
   }, [currentQuestionIndex, responses, currentQuestion?.id]);
 
@@ -104,18 +109,32 @@ setQuestionStartTime(Date.now());
     if (!sessionId) return;
 
     try {
+      const responseData: any = {
+        session_id: sessionId,
+        question_id: response.questionId,
+        question_text: currentQuestion.text,
+        question_type: currentQuestion.type,
+        question_section: currentQuestion.section,
+        response_time_ms: responseTime
+      };
+
+      // Handle different answer types
+      if (Array.isArray(response.answer)) {
+        if (currentQuestion.type === 'matrix') {
+          responseData.answer_object = { matrix_answers: response.answer };
+        } else {
+          responseData.answer_array = response.answer;
+        }
+      } else if (typeof response.answer === 'number') {
+        responseData.answer_numeric = response.answer;
+        responseData.answer_value = response.answer.toString();
+      } else {
+        responseData.answer_value = response.answer.toString();
+      }
+
       const { error } = await supabase
         .from('assessment_responses')
-        .insert({
-          session_id: sessionId,
-          question_id: response.questionId,
-          question_text: currentQuestion.text,
-          question_type: currentQuestion.type,
-          question_section: currentQuestion.section,
-          answer_value: String(response.answer),
-          answer_numeric: typeof response.answer === 'number' ? response.answer : null,
-          response_time_ms: responseTime
-        });
+        .insert(responseData);
 
       if (error) {
         console.error('Error saving response:', error);
@@ -141,12 +160,16 @@ setQuestionStartTime(Date.now());
     }
   };
 
-  const handleAnswerChange = (answer: string | number) => {
+  const handleAnswerChange = (answer: string | number | string[] | number[]) => {
     setCurrentAnswer(answer);
   };
 
   const handleNext = async () => {
-    if (!currentAnswer && currentQuestion.required) {
+    const hasAnswer = Array.isArray(currentAnswer) ? 
+      currentAnswer.length > 0 : 
+      currentAnswer !== '' && currentAnswer !== null && currentAnswer !== undefined;
+      
+    if (!hasAnswer && currentQuestion.required) {
       toast({
         title: "Answer Required",
         description: "Please provide an answer before continuing.",

@@ -16,7 +16,9 @@ export type Database = {
     Tables: {
       assessment_responses: {
         Row: {
+          answer_array: string[] | null
           answer_numeric: number | null
+          answer_object: Json | null
           answer_value: string | null
           created_at: string
           id: string
@@ -28,7 +30,9 @@ export type Database = {
           session_id: string
         }
         Insert: {
+          answer_array?: string[] | null
           answer_numeric?: number | null
+          answer_object?: Json | null
           answer_value?: string | null
           created_at?: string
           id?: string
@@ -40,7 +44,9 @@ export type Database = {
           session_id: string
         }
         Update: {
+          answer_array?: string[] | null
           answer_numeric?: number | null
+          answer_object?: Json | null
           answer_value?: string | null
           created_at?: string
           id?: string
@@ -67,6 +73,7 @@ export type Database = {
           fc_map: Json | null
           pair_group: string | null
           question_id: number
+          question_type: string | null
           reverse_scored: boolean
           scale_type: Database["public"]["Enums"]["assessment_scale_type"]
           social_desirability: boolean
@@ -79,6 +86,7 @@ export type Database = {
           fc_map?: Json | null
           pair_group?: string | null
           question_id: number
+          question_type?: string | null
           reverse_scored?: boolean
           scale_type: Database["public"]["Enums"]["assessment_scale_type"]
           social_desirability?: boolean
@@ -91,6 +99,7 @@ export type Database = {
           fc_map?: Json | null
           pair_group?: string | null
           question_id?: number
+          question_type?: string | null
           reverse_scored?: boolean
           scale_type?: Database["public"]["Enums"]["assessment_scale_type"]
           social_desirability?: boolean
@@ -375,6 +384,9 @@ export type Database = {
         | "FORCED_CHOICE_5"
         | "CATEGORICAL_5"
         | "FREQUENCY"
+        | "matrix"
+        | "select-all"
+        | "ranking"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -511,6 +523,9 @@ export const Constants = {
         "FORCED_CHOICE_5",
         "CATEGORICAL_5",
         "FREQUENCY",
+        "matrix",
+        "select-all",
+        "ranking",
       ],
     },
   },
