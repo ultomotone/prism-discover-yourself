@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Footer from "./components/Footer";
 import Index from "./pages/Index";
 import Assessment from "./pages/Assessment";
+import Dashboard from "./pages/Dashboard";
 import About from "./pages/About";
 import Signals from "./pages/Signals";
 import Ti from "./pages/Ti";
@@ -68,6 +69,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/assessment" element={<Assessment />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/about" element={<About />} />
               <Route path="/signals" element={<Signals />} />
               <Route path="/ti" element={<Ti />} />
