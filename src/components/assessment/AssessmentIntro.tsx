@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Clock, Brain, Shield, CheckCircle, Users, AlertTriangle } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Clock, Brain, Shield, CheckCircle, Users, AlertTriangle, ChevronDown, Target, Zap, TrendingUp, BarChart3 } from "lucide-react";
 
 interface AssessmentIntroProps {
   onStart: () => void;
 }
 
 export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
+  const [isDifferencesOpen, setIsDifferencesOpen] = useState(false);
+  const [isFAQOpen, setIsFAQOpen] = useState(false);
+  
   return (
     <div className="min-h-screen bg-background">
       <div className="prism-container pt-24 pb-16">
@@ -52,6 +56,128 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
                   <span className="text-muted-foreground"><strong>Optional Research Questions</strong> – Demographics, life context, and self-perception questions to support model improvement and academic study.</span>
                 </li>
               </ul>
+            </CardContent>
+          </Card>
+
+          {/* How PRISM Differs */}
+          <Card className="mb-8 prism-shadow-card">
+            <CardContent className="p-8">
+              <div className="flex items-center mb-6">
+                <Target className="h-6 w-6 text-secondary mr-3" />
+                <h2 className="text-2xl font-semibold text-primary">How PRISM Differs</h2>
+              </div>
+              
+              <p className="text-muted-foreground mb-6">
+                <strong>Short answer: yes—with nuance.</strong> PRISM is hybrid: it blends normative Likert data with ipsative (forced-choice) signals, adds state-aware controls, and outputs both absolute, sample-invariant "fit" and relative "share". Most personality tests are purely normative and don't separate stable preference from situational expression.
+              </p>
+
+              <Collapsible open={isDifferencesOpen} onOpenChange={setIsDifferencesOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="w-full justify-between p-0 h-auto text-left">
+                    <span className="text-lg font-medium text-primary">Key Differences from Typical Tests</span>
+                    <ChevronDown className={`h-4 w-4 transition-transform ${isDifferencesOpen ? 'rotate-180' : ''}`} />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-6 mt-6">
+                  
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex items-start space-x-3">
+                        <Zap className="h-5 w-5 text-accent mt-0.5 flex-shrink-0" />
+                        <div>
+                          <h4 className="font-semibold text-primary">Hybrid Scoring</h4>
+                          <p className="text-sm text-muted-foreground">We combine Likert items with forced-choice trade-offs. The ipsative layer dampens "agree-with-everything" styles and sharpens which functions you actually prefer when choices conflict.</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start space-x-3">
+                        <Shield className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                        <div>
+                          <h4 className="font-semibold text-primary">Bias & Validity Controls</h4>
+                          <p className="text-sm text-muted-foreground">We compute social-desirability index, inconsistency pairs, and person-mean centering. These guard against inflated profiles without changing the raw data.</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-start space-x-3">
+                        <Brain className="h-5 w-5 text-secondary mt-0.5 flex-shrink-0" />
+                        <div>
+                          <h4 className="font-semibold text-primary">State-Aware Overlay</h4>
+                          <p className="text-sm text-muted-foreground">We factor short-term state (stress, sleep, time pressure, mood, focus) into an N+/– overlay and confidence, so you can tell "core preference" from "current pressure."</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start space-x-3">
+                        <BarChart3 className="h-5 w-5 text-accent mt-0.5 flex-shrink-0" />
+                        <div>
+                          <h4 className="font-semibold text-primary">Absolute vs. Relative</h4>
+                          <p className="text-sm text-muted-foreground">We report an absolute fit (0–100) calibrated to fixed criteria and a relative share % across the 16 types.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <div className="flex items-start space-x-3">
+                      <TrendingUp className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-primary">Retest Intelligence</h4>
+                        <p className="text-sm text-muted-foreground">When you take it again, we show deviations and why (e.g., "Stress +2, Sleep –2; Fe −0.6; overlay flipped to N+"), not just a new label.</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="text-center italic text-muted-foreground">
+                    "Most tests give a static snapshot. PRISM shows both your core type and how it expresses today—with clear retest deltas."
+                  </div>
+                  
+                </CollapsibleContent>
+              </Collapsible>
+            </CardContent>
+          </Card>
+
+          {/* FAQ Section */}
+          <Card className="mb-8 prism-shadow-card">
+            <CardContent className="p-8">
+              <div className="flex items-center mb-6">
+                <Users className="h-6 w-6 text-primary mr-3" />
+                <h2 className="text-2xl font-semibold text-primary">Frequently Asked Questions</h2>
+              </div>
+              
+              <Collapsible open={isFAQOpen} onOpenChange={setIsFAQOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="w-full justify-between p-0 h-auto text-left">
+                    <span className="text-lg font-medium text-primary">Common Questions About PRISM</span>
+                    <ChevronDown className={`h-4 w-4 transition-transform ${isFAQOpen ? 'rotate-180' : ''}`} />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-6 mt-6">
+                  
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="font-semibold text-primary mb-2">Is PRISM ipsative?</h4>
+                      <p className="text-sm text-muted-foreground">Partly. PRISM is hybrid: it combines normative Likert items with forced-choice trade-offs. The ipsative layer reduces response bias and clarifies priorities between competing functions.</p>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold text-primary mb-2">How is PRISM "invariance-oriented"?</h4>
+                      <p className="text-sm text-muted-foreground">We compute an absolute fit score against fixed criteria (usage, depth, forced-choice support, conflict penalties). This is designed to be stable across samples. A separate share % shows how your result ranks among types for you.</p>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold text-primary mb-2">Does PRISM handle bias and state?</h4>
+                      <p className="text-sm text-muted-foreground">Yes. We track social desirability and inconsistency and add a state overlay (N+/–) that reflects current pressure/steadiness, so guidance adjusts without rewriting your core type.</p>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold text-primary mb-2">Can I compare runs?</h4>
+                      <p className="text-sm text-muted-foreground">Yes. We show what changed and why—function and dimension deltas, overlay shift, and likely contributors (e.g., stress/sleep). Your history stays linked privately via hashed email.</p>
+                    </div>
+                  </div>
+                  
+                </CollapsibleContent>
+              </Collapsible>
             </CardContent>
           </Card>
 
