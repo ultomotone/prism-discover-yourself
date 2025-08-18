@@ -21,176 +21,129 @@ const StrategicExecutor = () => {
 
             {/* Content sections */}
             <div className="space-y-8">
-              {/* Snapshot */}
+              {/* Base & Creative Functions */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Snapshot</h2>
+                <h2 className="text-2xl font-semibold mb-4">Base & Creative Functions (Core Dynamics)</h2>
                 <div className="prism-card p-6">
-                  <p className="text-lg leading-relaxed">
-                    Outcome-first builder who spots leverage, sets metrics, and moves fast. Best in ambiguous markets or projects where a clear scoreboard and long-range trajectory matter. In PRISM reports, LIEs typically show high Te Strength, 3–4D Te, 3–4D Ni, low Si dimensionality, and a Top-2 neighbor of LSE or ILI. Core type is stable; expression shifts with ± overlay (reactivity) and context.
+                  <p className="text-lg leading-relaxed mb-4">
+                    LIE's Base function is Extraverted Logic (Te) – a 4-dimensional, highly confident focus on efficiency, output, and objective data. This makes LIEs results-driven strategists who constantly seek to optimize methods and achieve tangible goals. Their Creative function is Introverted Intuition (Ni), a 3-dimensional auxiliary that works alongside Te.
                   </p>
-                  <div className="mt-4 text-sm text-muted-foreground">
-                    <span>References: </span>
-                    <a href="https://sedecology.com" target="_blank" rel="noopener" className="text-primary hover:underline">sedecology.com</a> • 
-                    <a href="https://wikisocion.github.io" target="_blank" rel="noopener" className="text-primary hover:underline ml-1">wikisocion.github.io</a> • 
-                    <a href="https://library.socionic.info" target="_blank" rel="noopener" className="text-primary hover:underline ml-1">library.socionic.info</a>
-                  </div>
+                  <p className="text-lg leading-relaxed mb-4">
+                    Ni gives LIEs foresight and big-picture insight – they intuit future trends and "prognose" outcomes over time. Behaviorally, this Te–Ni pairing manifests as an enterprising visionary: the LIE formulates long-range plans (Ni) and immediately mobilizes resources to execute them (Te). They often appear innovative, risk-taking, and pragmatic, able to spot opportunities and turn theories into practice.
+                  </p>
+                  <p className="text-lg leading-relaxed">
+                    Their Ni enables creative scenario-planning and timely action, while Te ensures they measure success in concrete results. In short, the Core block (functions 1 and 2) makes the LIE a forward-looking problem-solver – someone who sets ambitious objectives and systematically works out how to reach them.
+                  </p>
                 </div>
               </section>
 
-              {/* Function Matrix */}
+              {/* Dimensionality & Strengths */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Function Matrix (Strength × Dimensionality)</h2>
-                <div className="overflow-x-auto">
-                  <table className="w-full border border-border rounded-lg overflow-hidden">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="text-left p-4 font-semibold">Element</th>
-                        <th className="text-left p-4 font-semibold">Typical Strength</th>
-                        <th className="text-left p-4 font-semibold">Dimensionality</th>
-                        <th className="text-left p-4 font-semibold">What that looks like day-to-day</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Te (Extraverted Thinking)</td>
-                        <td className="p-4">High</td>
-                        <td className="p-4">3–4D "adaptive → portable"</td>
-                        <td className="p-4">Operates by evidence, KPIs, iteration; turns ideas into processes; delegates by metrics.</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Ni (Introverted Intuition)</td>
-                        <td className="p-4">Med–High</td>
-                        <td className="p-4">3–4D</td>
-                        <td className="p-4">Reads trend lines, timing, risk; prunes noise; sets strategic arcs.</td>
-                      </tr>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Se (Extraverted Sensing)</td>
-                        <td className="p-4">Low–Med (aspiring)</td>
-                        <td className="p-4">2D "routine"</td>
-                        <td className="p-4">Pushes when needed; developing situational force (often over/under-shoots early).</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Fi (Introverted Feeling)</td>
-                        <td className="p-4">Low–Med (aspiring)</td>
-                        <td className="p-4">2D</td>
-                        <td className="p-4">Working on boundaries & one-to-one attunement; principled but can feel "costly."</td>
-                      </tr>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Ti (Introverted Thinking)</td>
-                        <td className="p-4">Background</td>
-                        <td className="p-4">3D</td>
-                        <td className="p-4">Can tighten models when required but deprioritizes purity for outcomes.</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Ne (Extraverted Intuition)</td>
-                        <td className="p-4">Background</td>
-                        <td className="p-4">4D (demonstrative)</td>
-                        <td className="p-4">Quiet flood of options when stuck; uses as a tool, not an identity.</td>
-                      </tr>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Fe (Extraverted Feeling)</td>
-                        <td className="p-4">Situational (role)</td>
-                        <td className="p-4">2D</td>
-                        <td className="p-4">Can "turn on" group energy briefly; tires of it fast.</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Si (Introverted Sensing)</td>
-                        <td className="p-4">Low</td>
-                        <td className="p-4">1D "emerging"</td>
-                        <td className="p-4">Blind spot for comfort/pace; risks overdrive & recovery crashes.</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-sm text-muted-foreground mt-4">
-                  <strong>Model note:</strong> In classical Model A the LIE stack is Te-Ni | Fe-Si | Fi-Se | Ti-Ne (1→8). PRISM preserves the mapping but measures Strength and 1D–4D continuously (not as absolutes).
-                </p>
-              </section>
-
-              {/* Block Map */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">Block Map (calm vs. stress)</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-primary">Calm / Flow</h3>
-                    <p>Core Drive (Te, Ni) leads; Instinctive Self (Ti, Ne) cleans edges; fast, strategic execution.</p>
-                  </div>
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-destructive">Stress / Crunch</h3>
-                    <p>Internal Critic (Fe, Si) hijacks—over-managing tone or ignoring body needs; Hidden Potential (Fi, Se) oscillates between too soft and too forceful.</p>
-                  </div>
+                <h2 className="text-2xl font-semibold mb-4">Dimensionality & Strengths</h2>
+                <div className="prism-card p-6">
+                  <p className="text-lg leading-relaxed mb-4">
+                    In LIEs, Te as the Base is 4D (strong in experience, norms, situation, and time), meaning they can flexibly apply logic across contexts and anticipate how processes unfold. Ni as their Creative is 3D, giving adaptive insight – they integrate personal experience and general principles to fit the current situation. Together these strong functions allow LIEs to plan ahead and improvise within a plan.
+                  </p>
+                  <p className="text-lg leading-relaxed mb-4">
+                    By contrast, some other functions are much lower dimensional. The LIE's Vulnerable function (4th) is Introverted Sensing (Si) at 1D, so they rely only on firsthand experience in that domain and struggle with new or theoretical advice about comfort, health, or slow routines. Indeed, LIEs characteristically neglect physical relaxation and personal comfort, pushing themselves hard and often disregarding cozy stability.
+                  </p>
+                  <p className="text-lg leading-relaxed">
+                    They find it difficult to slow down – idling or attending to small domestic details feels unnatural. Likewise, their Suggestive function (5th) is Introverted Ethics (Fi) at 1D, indicating that nuanced interpersonal ethics are not well developed internally – they learn about personal relationship values only through personal encounters and mistakes.
+                  </p>
                 </div>
               </section>
 
-              {/* Communication Tips */}
+              {/* Flow State & Regulation */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Comms & Decision Tips (for/with LIE)</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-primary">Do</h3>
-                    <ul className="space-y-2">
-                      <li>• Bring numbers, deadlines, constraints</li>
-                      <li>• Ask for the success metric</li>
-                      <li>• Propose two viable options</li>
-                    </ul>
-                  </div>
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-destructive">Avoid</h3>
-                    <ul className="space-y-2">
-                      <li>• Vibe-only arguments</li>
-                      <li>• Open-ended "what ifs" without payoff</li>
-                      <li>• Slow consensus circles</li>
-                    </ul>
-                  </div>
+                <h2 className="text-2xl font-semibold mb-4">Flow State & Regulation</h2>
+                <div className="prism-card p-6">
+                  <p className="text-lg leading-relaxed mb-4">
+                    LIEs enter a flow state when they are in a goal-oriented, intellectually stimulating environment that engages their Te–Ni to the fullest. They thrive on complex projects, strategic decision-making, and high-stakes problem-solving, especially when they have the freedom to improve systems or launch new ventures. Their cognitive-emotional regulation is optimized in environments that are future-focused, efficient, and somewhat challenging.
+                  </p>
+                  <p className="text-lg leading-relaxed mb-4">
+                    They actually prefer a degree of uncertainty or risk – it energizes their intuitive forecasting ability and activates their creative Ni to adjust on the fly. Emotionally, LIEs regulate best with minimal micromanagement and no heavy emotional drama; they like working with competent, self-sufficient colleagues so they can delegate personal or routine matters.
+                  </p>
+                  <p className="text-lg leading-relaxed">
+                    An LIE with an N+ overlay (higher neuroticism) may experience more agitation under stress – they can become visibly impatient, critical, or anxious about potential failures when their emotional reactivity is high. An LIE with an N– overlay (lower neuroticism) will appear calmly confident and resilient – even in volatile situations they maintain poise, trusting their strategies.
+                  </p>
                 </div>
               </section>
 
-              {/* 7-Day Practice */}
+              {/* Block Dynamics */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">7-Day Micro-Practice</h2>
-                <div className="space-y-4">
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">Day 1–2 (Fi reps)</h3>
-                    <p>10-minute debrief after tough calls—"Which values did I protect/harm?"</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">Day 3 (Si pit-stop)</h3>
-                    <p>Schedule micro-recovery (nutrition/sleep) around sprints.</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">Day 4 (Se edge)</h3>
-                    <p>One deliberate confrontation with clear ask & exit criteria.</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">Day 5 (Ni refine)</h3>
-                    <p>Write a 5-line "failure pre-mortem."</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">Day 6–7 (Te system)</h3>
-                    <p>Automate one recurring decision with a simple KPI gate.</p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Mistype Disambiguators */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">"If-Not-This-Then-That" (mistype disambiguators)</h2>
+                <h2 className="text-2xl font-semibold mb-4">Block Dynamics</h2>
                 <div className="space-y-6">
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">LIE vs. LSE</h3>
-                    <p>Both metric-driven. LSE favors Si routine & stability; LIE favors Ni bets & pivots. Ask a scenario: optimize the factory (LSE) vs reposition the product (LIE).</p>
+                    <h3 className="text-lg font-semibold mb-3">Core Block (Base–Creative)</h3>
+                    <p className="text-lg leading-relaxed">
+                      LIEs display focused strength and confidence. Their identity centers on being a "strategic executor" – they set big goals (Ni) and push relentlessly to implement them (Te). This gives them outstanding leadership potential in analysis, entrepreneurship, and innovation. They often derive pride and motivation from this core; it's where they feel most alive and competent.
+                    </p>
                   </div>
+
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">LIE vs. ILI</h3>
-                    <p>Both strategic. LIE acts to move markets (Te/Se), ILI analyzes risk and times moves (Ni/Te with lower Se).</p>
+                    <h3 className="text-lg font-semibold mb-3">Critic Block (Role–Vulnerable)</h3>
+                    <p className="text-lg leading-relaxed mb-4">
+                      The LIE's Role function is Extraverted Ethics (Fe) – an area they can intellectualize the value of (they know social energy and emotional expression matters) and perform in a superficial manner, but it's not authentic or sustainable for them. An LIE might try to play the "cheerful motivator" or engage in networking when necessary, yet it comes off a bit forced and they drop it quickly under pressure.
+                    </p>
+                    <p className="text-lg leading-relaxed">
+                      Their Vulnerable function is Introverted Sensing (Si), which they truly devalue and avoid. As a result, LIEs can be remarkably oblivious to their own physical needs or the emotional comfort of others. They may ignore fatigue, skip meals, or work in disorderly conditions without noticing, and they get irritated when others demand a slow, cozy atmosphere.
+                    </p>
                   </div>
+
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">LIE vs. ENTJ-style MBTI</h3>
-                    <p>PRISM will down-weight mood-driven Likerts; ipsatives & scenarios separate Te-led execution from Fe-led leadership theatre.</p>
+                    <h3 className="text-lg font-semibold mb-3">Hidden Block (Ignoring–Demonstrative)</h3>
+                    <p className="text-lg leading-relaxed mb-4">
+                      Their Ignoring function is Introverted Logic (Ti). LIEs actually have a strong ability to understand logical structures and classifications – they can internally grasp complex theories or organize information – but they see over-analysis or "useless theory" as counterproductive. Thus, they often dismiss Ti-heavy approaches (analysis paralysis, perfectionistic rule systems) in favor of practical action.
+                    </p>
+                    <p className="text-lg leading-relaxed">
+                      Their Demonstrative function is Extraverted Intuition (Ne), which is 4D like their base. This means LIEs have an enormous well of latent creativity and ideation. They can generate alternative possibilities and witty improvisations effortlessly, often exhibiting a sly, multi-layered sense of humor and brainstorming ability. However, because Ne is unvalued, they don't build their identity on being imaginative for imagination's sake.
+                    </p>
                   </div>
+
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Overlay (+/–) tells</h3>
-                    <p><strong>LIE⁺</strong> = impatient, sharper pushes, "just ship it." <strong>LIE⁻</strong> = steadier pacing, cleaner delegation. Type remains LIE; overlay only modulates expression.</p>
+                    <h3 className="text-lg font-semibold mb-3">Instinct Block (Suggestive–Mobilizing)</h3>
+                    <p className="text-lg leading-relaxed mb-4">
+                      Their Suggestive (5th) function is Introverted Ethics (Fi) – the area of personal relationships, loyalty, and inner conscience that they yearn to experience more fully. LIEs truly crave trustworthy, stable relationships and a sense of mutual loyalty. Often, they are "blind" to this need in themselves; they might pursue career and innovation endlessly, yet feel a vague emptiness until they find people who genuinely care for them.
+                    </p>
+                    <p className="text-lg leading-relaxed">
+                      The Mobilizing (6th) function is Extraverted Sensing (Se) – an area the LIE tries to develop and often overuses in bursts. Se gives them a drive to assert, compete, and take direct action. Under the influence of their strategic vision, LIEs will push themselves to be more commanding and decisive. They may hit the gym intensely, adopt an authoritative tone, or throw themselves into negotiations – sometimes to the point of coming across as aggressive or confrontational.
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+              {/* Personal Development, Collaboration & Leadership */}
+              <section>
+                <h2 className="text-2xl font-semibold mb-4">Personal Development, Collaboration & Leadership</h2>
+                <div className="space-y-6">
+                  <div className="prism-card p-6">
+                    <h3 className="text-lg font-semibold mb-3">Development</h3>
+                    <p className="text-lg leading-relaxed mb-4">
+                      LIEs should focus on cultivating their emotional intelligence and self-care habits. Building a bit of their Vulnerable Si into life – for instance, setting a basic routine for rest, meals, and downtime – will prevent burnout and enhance their long-term effectiveness (even the most visionary project can falter if the leader is exhausted or ill).
+                    </p>
+                    <p className="text-lg leading-relaxed">
+                      Likewise, improving Fi awareness is key: LIEs benefit from reflecting on their values and the feelings of those around them. This could mean occasionally stepping back from work to ask, "How will this decision affect my relationships?" or seeking mentorship from an Fi-strong individual on handling interpersonal dilemmas.
+                    </p>
+                  </div>
+
+                  <div className="prism-card p-6">
+                    <h3 className="text-lg font-semibold mb-3">Collaboration</h3>
+                    <p className="text-lg leading-relaxed mb-4">
+                      In team settings, LIEs are proactive, organized visionaries who naturally take on planning and management roles. They excel at setting objectives, delegating tasks, and keeping the group focused on goals. Colleagues will appreciate that LIEs deliver results and cut through ambiguity – they're often the one to say "Alright, here's the plan...," which provides structure to the team.
+                    </p>
+                    <p className="text-lg leading-relaxed">
+                      However, LIEs should be mindful of their tone; their bluntness and urgency can unintentionally steamroll more sensitive teammates. Co-regulation in collaboration means LIEs do best with partners who complement their weaknesses. For example, pairing with an ethical type (high Fi or Fe) can help translate the LIE's plans into considerate communication, smoothing any rough edges.
+                    </p>
+                  </div>
+
+                  <div className="prism-card p-6">
+                    <h3 className="text-lg font-semibold mb-3">Leadership</h3>
+                    <p className="text-lg leading-relaxed mb-4">
+                      Many LIEs naturally ascend to leadership positions thanks to their strategic mindset and confidence in execution. They are often visionary leaders who articulate a clear direction for an organization or project. In leadership, their strengths are planning, innovation, and mobilizing resources. They tend to introduce efficient systems and won't shy away from tough decisions to reach targets.
+                    </p>
+                    <p className="text-lg leading-relaxed">
+                      However, LIEs must guard against a few pitfalls: impatience with process, poor emotional attunement, and delegating insufficiently. Because they see the end goal so vividly, they might impose unrealistic deadlines or get frustrated when others need more explanation. The best LIE leaders actively work to develop an empathetic communication style, perhaps by scheduling one-on-one check-ins or soliciting anonymous feedback to gauge team morale.
+                    </p>
                   </div>
                 </div>
               </section>
