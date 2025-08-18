@@ -16,133 +16,66 @@ const VisionMuse = () => {
                   <p className="text-xl text-muted-foreground">Ni–Te • Strategic Analyst</p>
                 </div>
               </div>
-              <p className="text-lg text-foreground">Thoughtful and inquisitive analyst, driven by an insatiable curiosity to understand how things work.</p>
+              <p className="text-lg text-foreground">Far-sighted strategist who maps complex scenarios and refines concepts to withstand real-world conditions.</p>
             </div>
 
             {/* Content sections */}
             <div className="space-y-8">
-              {/* Base & Creative Functions */}
+              {/* Core */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Base & Creative Functions (Core Dynamics)</h2>
+                <h2 className="text-2xl font-semibold mb-4">Core</h2>
                 <div className="prism-card p-6">
                   <p className="text-lg leading-relaxed mb-4">
-                    ILI's Base function is Introverted Intuition (Ni), a 4-dimensional perceptive focus on patterns over time, meaning, and foresight. This makes ILIs quintessential analysts and forecasters – they are comfortable dwelling in contemplation, mapping out how situations are likely to unfold and distilling complex trends into fundamental insights.
+                    ILIs have a Core defined by introverted intuition (Ni⁺) as a 4-dimensional base and extroverted logic (Te⁻) as a 3-dimensional creative function. Their Ni⁺ base gives them penetrating insight into the flow of time, patterns, and probabilities; they naturally envision how situations will unfold and spot potential outcomes long before others do.
                   </p>
                   <p className="text-lg leading-relaxed mb-4">
-                    Their Creative function is Extraverted Logic (Te), a 3-dimensional pragmatic function oriented to facts, efficiency, and external results. The Ni–Te pairing defines the ILI's Core: they quietly observe and anticipate future implications (Ni), then apply objective reasoning to devise practical solutions or critiques (Te).
+                    Because this Ni is a "plus" overlay, ILIs are expanding intuitives – they aren't afraid of chaos and change, seeing disruptive shifts as opportunities for evolution and improvement. Their Te⁻ creative function complements this with an analytical drive to test ideas in reality and strip away impractical fluff.
                   </p>
                   <p className="text-lg leading-relaxed">
-                    Behaviorally, ILIs often come across as thoughtful, skeptical strategists. They may be the person in the room who points out, "If we proceed down this path, in a year we might face X consequence," backing it up with data or historical analogies. They excel at identifying underlying causes and predicting problems long before others see them.
+                    An ILI in flow resembles a far-sighted strategist or sage: quietly absorbing information, mapping out complex scenarios in their mind, and deftly refining concepts to withstand real-world conditions. They excel at cognitive economizing – doing the most with the least effort – by foreseeing which avenues will pay off and focusing their energy there. ILIs often work in bursts of inspired concentration, preferring to perfect a plan internally before acting.
                   </p>
                 </div>
               </section>
 
-              {/* Dimensionality & Strengths */}
+              {/* Critic */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Dimensionality & Strengths</h2>
-                <div className="prism-card p-6">
-                  <p className="text-lg leading-relaxed mb-4">
-                    With Ni as a Base, ILIs process information through the time dimension fluently – they can take into account past, present, and possible future "frames" of a situation with ease. This 4D strength allows them to be remarkably prescient and comfortable with uncertainty (they mentally simulate many what-ifs). Te as a Creative is 3D, which means ILIs adeptly adjust their logical approach to fit circumstances.
-                  </p>
-                  <p className="text-lg leading-relaxed mb-4">
-                    Their weaker dimensions show up in more human and immediate domains. The ILI's Vulnerable function is Extraverted Ethics (Fe), typically 1-dimensional. This means ILIs have minimal intuitive grasp of managing shared emotional atmospheres or performing enthusiastic social expressions. They often feel drained or awkward in high-energy social environments; processing emotional signals in real-time is difficult.
-                  </p>
-                  <p className="text-lg leading-relaxed">
-                    Similarly, Extraverted Sensing (Se) is typically a weak area for ILIs. They generally have only 1D or 2D competence with Se, indicating hesitancy with immediate action, physical engagement, or forceful influence. They are not naturally swift at seizing the moment or asserting themselves in a visceral way. Many ILIs struggle with the demands of day-to-day hustle or pushing others – they prefer to wait, watch, and act at the right time rather than constantly enforce their will.
-                  </p>
-                </div>
-              </section>
-
-              {/* Flow State & Regulation */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">Flow State & Regulation</h2>
-                <div className="prism-card p-6">
-                  <p className="text-lg leading-relaxed mb-4">
-                    ILIs find their flow in stable, intellectually rich environments where they have the space and time to reflect. A classic ILI flow state might be when they are deep in research, analysis, or strategic planning – essentially whenever their Ni is fully engaged in understanding something over time, and their Te is sorting and structuring the information into useful knowledge.
-                  </p>
-                  <p className="text-lg leading-relaxed mb-4">
-                    The cognitive-emotional environment that optimizes their regulation is one with low sensory overstimulation and minimal emotional drama. ILIs regulate best when their surroundings are calm and predictable – sudden surprises or chaotic multitasking disrupt their Ni focus and can make them withdraw. They appreciate having clear factual parameters and being able to concentrate on one topic deeply rather than juggling many superficial tasks.
-                  </p>
-                  <p className="text-lg leading-relaxed">
-                    An ILI with N+ (high neuroticism) typically experiences more frequent anxiety about the future – given their Ni focus on what could happen, a highly neurotic ILI might fall into chronic worry or pessimism. An ILI with N– (low neuroticism), by contrast, tends to be cool-headed and unflappable. This ILI will come across as the wise sage: unperturbed by potential problems, calmly considering every angle without panic.
-                  </p>
-                </div>
-              </section>
-
-              {/* Block Dynamics */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">Block Dynamics</h2>
+                <h2 className="text-2xl font-semibold mb-4">Critic</h2>
                 <div className="space-y-6">
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Core Block (Ni–Te)</h3>
-                    <p className="text-lg leading-relaxed">
-                      For ILIs, the Core block of Ni–Te is where they feel most competent and in control mentally. They often identify strongly with being knowledgeable, insightful, and logical. This core gives them confidence in offering counsel: many ILIs gravitate towards roles like advisors, strategists, researchers, or critics. They take pride in seeing what others miss and providing a sobering perspective that can save a project or effort from disaster.
-                    </p>
-                  </div>
-
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Critic Block</h3>
                     <p className="text-lg leading-relaxed mb-4">
-                      ILIs often have Si and Fe in their Superego. Extraverted Ethics (Fe) is the Vulnerable function. This aligns with the common observation that ILIs are highly uncomfortable expressing emotions publicly or dealing with group sentiments. Fe vulnerable means they do not actively cultivate an enthusiastic or emotionally engaging persona – in fact, they may disparage environments that expect them to be "cheery" or socially available all the time.
+                      The Critic (Super-ego) block for ILI contains extroverted feeling (Fe) as a painful vulnerable spot and extroverted sensing (Se) as a role function. Fe (1D) is an area of genuine discomfort: ILIs struggle with overt emotional expression and may feel embarrassed or drained by high-emotion environments. They often maintain a composed, even detached exterior to avoid chaotic feelings.
                     </p>
-                    <p className="text-lg leading-relaxed">
-                      Introverted Sensing (Si) likely sits as the Role function – ILIs know on some level that taking care of health, comfort, and routine is important (especially because their Te minds see the logic in it), so they make sporadic efforts. For example, an ILI might conscientiously try a structured daily schedule, exercise regimen, or tidy workspace, but these efforts are often half-hearted or inconsistent.
-                    </p>
-                  </div>
-
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Hidden Block (Id)</h3>
                     <p className="text-lg leading-relaxed mb-4">
-                      ILIs have Ignoring Introverted Logic (Ti) – meaning while they can be highly analytical and methodical (indeed many ILIs are quite systematic in thought), they often choose not to emphasize pure theory or strict rule systems when those conflict with their Ni agenda or Te evidence. They dislike feeling constrained by dogma. This is why ILIs often position themselves as critics of overly rigid thinking.
+                      Under stress, they can seem pessimistic or dismissive – a defensive stance when they cannot parse the emotional climate. Their Se role (2D) means they can step up with practical action or decisiveness when absolutely required (for instance, handling a sudden crisis), but it doesn't come naturally and is not sustained. They're inherently not aggressive; they apply just enough Se to assert boundaries or meet external expectations, then retreat back into observation.
                     </p>
                     <p className="text-lg leading-relaxed">
-                      Their Demonstrative Extraverted Intuition (Ne) shows up in a subtle but profound way: ILIs are often endlessly curious and somewhat inventive internally. They may not show it overtly (because Ne is not valued – they won't scatter their energy chasing every idea), but they generate scenarios and alternatives constantly in their mind.
-                    </p>
-                  </div>
-
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Instinct Block (Super-Id)</h3>
-                    <p className="text-lg leading-relaxed mb-4">
-                      ILIs have Suggestive Se: they deeply appreciate and need someone or something to nudge them into action. Because they are so often lost in thought, they benefit immensely from external stimuli that force decisive engagement with reality. An ILI might gravitate towards friends who drag them to events, or a work partner who says "Alright, let's stop analyzing and DO this."
-                    </p>
-                    <p className="text-lg leading-relaxed">
-                      The Mobilizing function for ILI would then be Introverted Ethics (Fi). ILIs actually hold personal relationships and loyalty in high regard – it's an area of aspiration and gradual development. Early in life, an ILI may be somewhat indifferent or awkward about making close connections, but as they mature, they often work on being a better friend or partner, cultivating empathy and moral consistency.
+                      In collapse, an ILI may become excessively withdrawn and critical – seeing only looming threats or errors (Ni in a negative loop) and ignoring opportunities. They might fixate on worst-case scenarios while neglecting immediate action, leading to stagnation or missed chances. Emotionally, their regulation style is often intellectualized – they prefer calm, reasoned discussions and may privately funnel feelings into solitary hobbies (like writing or gaming) rather than outward displays.
                     </p>
                   </div>
                 </div>
               </section>
 
-              {/* Personal Development, Collaboration & Leadership */}
+              {/* Hidden & Instinct */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Personal Development, Collaboration & Leadership</h2>
+                <h2 className="text-2xl font-semibold mb-4">Hidden & Instinct</h2>
                 <div className="space-y-6">
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Development</h3>
+                    <h3 className="text-lg font-semibold mb-3">Hidden Block</h3>
                     <p className="text-lg leading-relaxed mb-4">
-                      ILIs grow by bridging the gap between insight and action. One key development task is to practice acting a bit sooner and more often, even if conditions aren't 100% ideal. This doesn't mean abandoning their careful approach, but rather recognizing when further deliberation has diminishing returns.
+                      The Hidden block holds the ILI's unspoken desires: they deeply yearn for positive emotional environments and enthusiasm from others (Fe suggestive) to draw them out of their shell, and they have a latent potential for personal passion and adventure via Se mobilizing. When supported by close allies or a pleasant atmosphere, ILIs can surprise people by showing dry wit, gentle humor, or sudden bursts of willpower to champion a cause they care about.
                     </p>
                     <p className="text-lg leading-relaxed">
-                      Another vital area is developing interpersonal warmth (their Fi) and expression (low Fe). ILIs could challenge themselves to communicate their feelings or appreciation explicitly to close ones – perhaps in writing if not in person at first. They might also work on listening and showing empathy: consciously stepping out of analysis mode to simply be present with someone's emotions without trying to "fix" them.
+                      Over time, many ILIs expand by nurturing these latent parts – seeking out warm relationships or creative outlets that allow them to express feelings safely, and gradually building confidence in acting on their insights.
                     </p>
                   </div>
 
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Collaboration</h3>
+                    <h3 className="text-lg font-semibold mb-3">Instinct Block</h3>
                     <p className="text-lg leading-relaxed mb-4">
-                      In a team, ILIs are the visionary realists. They contribute best by offering well-thought-out analyses, spotting risks and inefficiencies, and crafting long-term strategies. Colleagues will come to appreciate that an ILI on the team means fewer nasty surprises, because ILIs will often warn everyone about issues before they happen.
+                      In the Instinct block, ILIs have significant untapped strengths: introverted feeling (Fi ignoring) and extroverted intuition (Ne demonstrative) are high-dimensional for them. This means an ILI often has a quiet moral compass and empathy that they don't flaunt, as well as a rich imagination for alternative possibilities (Ne) that they use in playful or hypothetical contexts.
                     </p>
                     <p className="text-lg leading-relaxed">
-                      However, teams might initially find ILIs standoffish or overly critical. It's important for ILIs to consciously temper how they deliver criticisms – using more "we" language and acknowledging others' efforts before pointing out flaws can help. Co-workers should also know that ILIs often prefer written communication (emails, reports) over spontaneous meetings.
-                    </p>
-                  </div>
-
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Leadership</h3>
-                    <p className="text-lg leading-relaxed mb-4">
-                      Many ILIs do not seek traditional leadership positions, especially those requiring extensive public engagement or quick on-the-spot decisions. They tend to be deliberative, behind-the-scenes leaders if they step up. It's not uncommon to find ILIs in roles like department heads in R&D, editors, strategists, or think-tank directors – positions where thought leadership is key but day-to-day people management is secondary.
-                    </p>
-                    <p className="text-lg leading-relaxed">
-                      As leaders, ILIs bring clarity of vision and risk mitigation. They plan thoroughly, ensuring their organization or team is prepared for various scenarios. They tend to set realistic goals and will rarely over-promise just to sound good – in fact, they may under-promise and then over-deliver, which builds credibility.
+                      They might craft complex fictional worlds in their mind or understand people's motivations more than they let on, using these skills as a behind-the-scenes guide. The developmental tone for ILIs involves moving from a cautious observer into a more engaged visionary: as they learn to trust others and themselves, their insights gain practical impact and their reserved demeanor softens into something akin to wisdom balanced with modest kindness.
                     </p>
                   </div>
                 </div>

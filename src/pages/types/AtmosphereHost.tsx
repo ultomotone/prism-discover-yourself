@@ -21,171 +21,57 @@ const AtmosphereHost = () => {
 
             {/* Content sections */}
             <div className="space-y-8">
-              {/* Snapshot */}
+              {/* Core */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Snapshot</h2>
+                <h2 className="text-2xl font-semibold mb-4">Core</h2>
                 <div className="prism-card p-6">
+                  <p className="text-lg leading-relaxed mb-4">
+                    ESEs have a vibrant Core block defined by extroverted feeling (Fe⁻) base and introverted sensing (Si⁺) creative. Their 4D Fe base is tuned to the emotional atmosphere around them – they instinctively read and influence people's moods, often acting as the cheerleader or host in social settings. Because their Fe carries a "minus" overlay, ESEs emphasize harmonizing and smoothing over negative emotions.
+                  </p>
+                  <p className="text-lg leading-relaxed mb-4">
+                    They excel at fostering comfort and enthusiasm in others, but do so in a practical, steady way rather than overwhelming drama. This pairs perfectly with their Si⁺ creative function, which is all about sensory well-being, familiarity, and positive experiences in the moment. Si⁺ as an expanding irrational element means ESEs joyfully create cozy, aesthetically pleasing environments and traditions – think of someone who remembers your favorite meal or organizes festive gatherings to make everyone feel at home.
+                  </p>
                   <p className="text-lg leading-relaxed">
-                    Tone-first coordinator who reads the room, lifts energy, and keeps experiences pleasant and on-pace. Thrives where morale, hospitality, and day-to-day rhythm drive outcomes. In PRISM you typically see high Fe Strength, 3–4D Fe, 3–4D Si, low Ti (PoLR 1D), Ne/Fi valued but developing, and Top-2 neighbors of SEI or LII.
+                    In their flow state, ESEs are like warm suns radiating encouragement: they deftly manage the social "climate" (Fe) while attending to tangible details that keep people comfortable and engaged (Si). Their high-dimensional Fe and Si give them a rich store of personal experience and cultural norms to draw upon, making them confident event organizers, counselors, or community builders who intuitively know just what gesture will brighten someone's day.
                   </p>
                 </div>
               </section>
 
-              {/* Function Matrix */}
+              {/* Critic */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Function Matrix (Strength × Dimensionality)</h2>
-                <div className="overflow-x-auto">
-                  <table className="w-full border border-border rounded-lg overflow-hidden">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="text-left p-4 font-semibold">Element</th>
-                        <th className="text-left p-4 font-semibold">Typical Strength</th>
-                        <th className="text-left p-4 font-semibold">Dimensionality</th>
-                        <th className="text-left p-4 font-semibold">What it looks like day-to-day</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Fe</td>
-                        <td className="p-4">High</td>
-                        <td className="p-4">3–4D (adaptive → portable)</td>
-                        <td className="p-4">Tunes group affect; synchronizes; creates shared moments; diffuses friction early.</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Si</td>
-                        <td className="p-4">Med–High</td>
-                        <td className="p-4">3–4D</td>
-                        <td className="p-4">Maintains humane pace and comfort; notices drift; keeps quality consistent.</td>
-                      </tr>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Ne</td>
-                        <td className="p-4">Aspiring (suggestive)</td>
-                        <td className="p-4">1–2D</td>
-                        <td className="p-4">Enjoys light novelty and playful ideas from trusted sources.</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Fi</td>
-                        <td className="p-4">Aspiring (mobilizing)</td>
-                        <td className="p-4">2–3D</td>
-                        <td className="p-4">Works on 1:1 sincerity and boundary clarity beneath public warmth.</td>
-                      </tr>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Te</td>
-                        <td className="p-4">Role</td>
-                        <td className="p-4">2D</td>
-                        <td className="p-4">Can speak KPIs/policies briefly to support logistics; tires of "cold metrics."</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Se</td>
-                        <td className="p-4">Demonstrative</td>
-                        <td className="p-4">4D</td>
-                        <td className="p-4">Surprising firmness when needed; protects the space decisively, then relaxes.</td>
-                      </tr>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Ni</td>
-                        <td className="p-4">Ignoring</td>
-                        <td className="p-4">3D</td>
-                        <td className="p-4">Understands long-arc talk but downplays it in favor of today's experience.</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Ti</td>
-                        <td className="p-4">Vulnerable (PoLR)</td>
-                        <td className="p-4">1D</td>
-                        <td className="p-4">Dislikes abstract hair-splitting; struggles with rigid taxonomies without help.</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <h2 className="text-2xl font-semibold mb-4">Critic</h2>
+                <div className="prism-card p-6">
+                  <p className="text-lg leading-relaxed mb-4">
+                    The Critic block of an ESE contains their more analytical, impersonal sides – introverted logic (Ti) as the vulnerable function and introverted intuition (Ni) as the role. Ti being 1-dimensional means ESEs struggle with cold logic, complex systems, or abstract frameworks that lack a human element. They can feel anxiety when pressed to analyze things purely logically or when dealing with rigid rules; it threatens their natural interpersonal focus.
+                  </p>
+                  <p className="text-lg leading-relaxed mb-4">
+                    During collapses (e.g. when swamped by data or bureaucratic tasks), an ESE may become unusually disorganized or defensive, as if their mental framework "short-circuits." They may also take critique of their methods very personally due to this weak Ti. Their Ni role (2D) allows ESEs to occasionally think ahead or consider long-term implications – for instance, they can plan for future events or sense when current harmony might not last – but this foresight is not a comfortable strength.
+                  </p>
+                  <p className="text-lg leading-relaxed">
+                    They prefer the immediacy of the present (Si) and the visible mood of the group (Fe) over distant planning. In emotionally trying times, ESEs can swing between bursts of worry about the future (Ni role kicking in pessimistically) and an urge to simply do something positive right now to fix the mood. Their emotional regulation strategy is largely externalized: they talk out their feelings, seek support, and try to actively change negative atmospheres, which generally helps them bounce back. However, if isolated or forced to dwell on impersonal problems, they may feel helpless or drained.
+                  </p>
                 </div>
               </section>
 
-              {/* Block Map */}
+              {/* Hidden & Instinct */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Block Map (calm vs. stress)</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-primary">Calm / Flow</h3>
-                    <p>Core Drive (Fe, Si) leads; Instinctive Self (Se, Ni) quietly guards boundaries and horizon sense.</p>
-                  </div>
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-destructive">Stress / Crunch</h3>
-                    <p>Internal Critic (Te, Ti) hijacks—rigid KPI talk or brittle logic; Hidden Potential (Ne, Fi) flickers between scatter and over-personalizing.</p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Communication Tips */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">Comms & Decision Tips (for/with ESE)</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-primary">Do</h3>
-                    <ul className="space-y-2">
-                      <li>• Set a humane pace</li>
-                      <li>• Show how the plan improves people's experience</li>
-                      <li>• Give 1–2 friendly options with simple criteria</li>
-                    </ul>
-                  </div>
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-destructive">Avoid</h3>
-                    <ul className="space-y-2">
-                      <li>• Sterile logic fights</li>
-                      <li>• Comfort-blind urgency</li>
-                      <li>• Big pivots without social prep</li>
-                    </ul>
-                  </div>
-                </div>
-              </section>
-
-              {/* 7-Day Practice */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">7-Day Micro-Practice</h2>
-                <div className="space-y-4">
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D1 (Fi rep)</h3>
-                    <p>State one boundary kindly ("When X happens, I'll do Y").</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D2 (Te bite)</h3>
-                    <p>Add a single "done = …" metric to an event/task.</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D3 (Se hygiene)</h3>
-                    <p>Practice one calm "no + alternative."</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D4 (Ne spark)</h3>
-                    <p>Introduce a micro-novelty to a recurring routine.</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D5 (Ti tidy)</h3>
-                    <p>Name one classification rule in plain language.</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D6–D7 (Si restore)</h3>
-                    <p>Sleep/light/nutrition tune-up; adjust one habit.</p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Mistype Disambiguators */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">"If-Not-This-Then-That" (mistype disambiguators)</h2>
+                <h2 className="text-2xl font-semibold mb-4">Hidden & Instinct</h2>
                 <div className="space-y-6">
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">ESE vs. SEI</h3>
-                    <p>Both Alpha SF. ESE leads with public tone (Fe), SEI leads with comfort pacing (Si).</p>
+                    <h3 className="text-lg font-semibold mb-3">Hidden Aspirations</h3>
+                    <p className="text-lg leading-relaxed mb-4">
+                      In the Hidden realm, ESEs have an unspoken aspiration for intellectual structure and independence (Ti suggestive) – they actually admire those who are logical and principled, and they benefit from partners or colleagues who can supply clear reasoning or technical know-how. Likewise, their mobilizing Ni gives them a budding interest in deeper meanings and future vision; as they grow, many ESEs develop an appreciation for philosophy, spirituality, or strategic thinking to complement their natural pragmatism.
+                    </p>
                   </div>
+
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">ESE vs. ENFJ-lookalikes</h3>
-                    <p>PRISM scenarios separate Fe–Si hospitality from Fe–Ni rally/mission framing.</p>
-                  </div>
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">ESE vs. LII</h3>
-                    <p>Duals—ESE supplies tone/pace; LII supplies clean frameworks.</p>
-                  </div>
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Overlay tells</h3>
-                    <p><strong>ESE⁺</strong> = bigger crescendos, quicker people-pleasing then fatigue. <strong>ESE⁻</strong> = steadier warmth, clearer boundaries earlier.</p>
+                    <h3 className="text-lg font-semibold mb-3">Instinct Block</h3>
+                    <p className="text-lg leading-relaxed mb-4">
+                      The Instinct block of the ESE holds robust yet background capabilities. They have strong unconscious intuition of possibilities (Ne demonstrative) and an ability to assert or enforce boundaries when needed (Se ignoring, which at 3D strength can surface if someone they care about is threatened). Typically jovial and accommodating, an ESE might surprise others by taking charge decisively in a crisis (tapping into unused Se) or generating a flurry of creative ideas in a brainstorming session (latent Ne).
+                    </p>
+                    <p className="text-lg leading-relaxed">
+                      Over time, ESEs expand by tempering their eagerness to please with a bit of objective Ti clarity – learning that sometimes saying "no" or stepping back to analyze won't alienate others. They also become more comfortable with quiet and solitude (developing Ni's patience) so they aren't always "on." Ultimately, a mature ESE retains their infectious optimism and kindness while gaining more analytical savvy and foresight, resulting in a well-rounded facilitator who can guide communities with both heart and mind.
+                    </p>
                   </div>
                 </div>
               </section>
