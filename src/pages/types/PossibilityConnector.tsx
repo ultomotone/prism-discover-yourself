@@ -16,177 +16,93 @@ const PossibilityConnector = () => {
                   <p className="text-xl text-muted-foreground">Ne–Fi • Opportunity Catalyst</p>
                 </div>
               </div>
-              <p className="text-lg text-foreground">Warm scout who spots emerging fits between people and ideas, reframes impasses, and champions potential.</p>
+              <p className="text-lg text-foreground">Enthusiastic, creative soul who radiates optimism and loves exploring new ideas and experiences.</p>
             </div>
 
             {/* Content sections */}
             <div className="space-y-8">
-              {/* Snapshot */}
+              {/* Profile */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Snapshot</h2>
+                <h2 className="text-2xl font-semibold mb-4">Profile</h2>
                 <div className="prism-card p-6">
+                  <p className="text-lg leading-relaxed mb-4">
+                    You are an enthusiastic, creative soul who radiates optimism and loves exploring new ideas and experiences. Your dominant Extraverted Intuition (Ne) makes you a natural brainstormer – you see possibilities everywhere, constantly connecting the dots between seemingly unrelated concepts. Where others see a mundane object or situation, you're quick to imagine "what else it could be." This visionary, inventive mindset often gives ENFPs a reputation for being innovative trend-setters or inspiring catalysts in their circles.
+                  </p>
+                  <p className="text-lg leading-relaxed mb-4">
+                    You're energized by change and novelty; in fact, nothing deflates you faster than a life of repetitive routine or having to focus on dry facts with no room for imagination. Your auxiliary Introverted Feeling (Fi) brings in deep personal values and a caring heart. You genuinely strive to live authentically and help others do the same. You're often passionate about causes or projects that align with your ideals – whether it's an artistic endeavor, social justice issue, or personal growth journey, you put your heart into what matters to you.
+                  </p>
                   <p className="text-lg leading-relaxed">
-                    Warm scout who spots emerging fits between people and ideas, reframes impasses, and champions potential. Thrives where options, relationships, and humane change matter. In PRISM you typically see high Ne Strength, 3–4D Ne, 3–4D Fi, weak Ti (PoLR), and Top-2 neighbors of EII or SLI.
+                    In interaction, ENFPs are typically warm, playful, and perceptive about people. You can be very empathetic (even if you don't always show it in a traditional nurturing way, you do feel others' pain and joys deeply inside). People often find your energy contagious – you have a way of inspiring those around you with your excitement and belief in possibilities.
                   </p>
                 </div>
               </section>
 
-              {/* Function Matrix */}
+              {/* In Flow */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Function Matrix (Strength × Dimensionality)</h2>
-                <div className="overflow-x-auto">
-                  <table className="w-full border border-border rounded-lg overflow-hidden">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="text-left p-4 font-semibold">Element</th>
-                        <th className="text-left p-4 font-semibold">Typical Strength</th>
-                        <th className="text-left p-4 font-semibold">Dimensionality</th>
-                        <th className="text-left p-4 font-semibold">What it looks like day-to-day</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Ne</td>
-                        <td className="p-4">High</td>
-                        <td className="p-4">3–4D (adaptive → portable)</td>
-                        <td className="p-4">Surfaces options quickly; reframes stalemates; tracks weak signals.</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Fi</td>
-                        <td className="p-4">Med–High</td>
-                        <td className="p-4">3–4D</td>
-                        <td className="p-4">Reads sincerity/boundaries; advocates for congruent choices.</td>
-                      </tr>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Te</td>
-                        <td className="p-4">Mobilizing</td>
-                        <td className="p-4">2–3D</td>
-                        <td className="p-4">Learns to ground ideas in simple KPIs/steps; risks over-hustle without it.</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Si</td>
-                        <td className="p-4">Suggestive</td>
-                        <td className="p-4">1–2D</td>
-                        <td className="p-4">Craves sustainable routines/pace support; benefits from comfort scaffolds.</td>
-                      </tr>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Ni</td>
-                        <td className="p-4">Demonstrative</td>
-                        <td className="p-4">4D</td>
-                        <td className="p-4">Quiet long-arc sense; can time moves but doesn't foreground it.</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Fe</td>
-                        <td className="p-4">Ignoring</td>
-                        <td className="p-4">3D</td>
-                        <td className="p-4">Reads group mood yet prefers sincerity to performance.</td>
-                      </tr>
-                      <tr className="border-t border-border">
-                        <td className="p-4 font-medium">Se</td>
-                        <td className="p-4">Mobilizing (alt)</td>
-                        <td className="p-4">2–3D</td>
-                        <td className="p-4">Practices clean asks and timely pushes; developing assertiveness.</td>
-                      </tr>
-                      <tr className="border-t border-border bg-muted/30">
-                        <td className="p-4 font-medium">Ti</td>
-                        <td className="p-4">Vulnerable (PoLR)</td>
-                        <td className="p-4">1D</td>
-                        <td className="p-4">Dislikes rigid taxonomies/"gotcha" logic; prefers lived coherence.</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <h2 className="text-2xl font-semibold mb-4">In Flow</h2>
+                <div className="prism-card p-6">
+                  <p className="text-lg leading-relaxed mb-4">
+                    You excel when you have creative freedom and a meaningful purpose. You might hit a flow state when brainstorming a new startup idea, improvising in an art form (like creative writing, painting, performing), or embarking on an adventurous experience that expands your horizons. During these moments, you feel completely alive – ideas firing on all cylinders, your sense of self fully engaged in the moment, and a thrilling sense that anything is possible.
+                  </p>
+                  <p className="text-lg leading-relaxed mb-4">
+                    Because you love variety, you may juggle multiple interests; when in flow, even your multitasking can seem effortless as one idea sparks the next. You also come alive socially when you can bounce ideas with open-minded, positive people. A lively philosophical conversation or a collaborative creative session can absorb you for hours in joyous focus.
+                  </p>
                 </div>
               </section>
 
-              {/* Block Map */}
+              {/* Internal Critic & Growth */}
               <section>
-                <h2 className="text-2xl font-semibold mb-4">Block Map (calm vs. stress)</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-primary">Calm / Flow</h3>
-                    <p>Core Drive (Ne, Fi) leads; Instinctive Self (Ni, Fe) quietly supplies timing and light social smoothing.</p>
-                  </div>
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-destructive">Stress / Crunch</h3>
-                    <p>Internal Critic (Te, Ti) hijacks—sudden KPI policing or brittle logic fights; Hidden Potential (Si, Se) seeks comfort/force but wobbles.</p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Communication Tips */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">Comms & Decision Tips (for/with IEE)</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-primary">Do</h3>
-                    <ul className="space-y-2">
-                      <li>• Share the value at stake</li>
-                      <li>• Invite 2–3 options, then co-pick one</li>
-                      <li>• Provide simple metric and first step</li>
-                    </ul>
-                  </div>
-                  <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3 text-destructive">Avoid</h3>
-                    <ul className="space-y-2">
-                      <li>• Boxing into rigid categories</li>
-                      <li>• Comfort-blind urgency</li>
-                      <li>• Debating abstractions for sport</li>
-                    </ul>
-                  </div>
-                </div>
-              </section>
-
-              {/* 7-Day Practice */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">7-Day Micro-Practice</h2>
-                <div className="space-y-4">
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D1 (Te bite)</h3>
-                    <p>Add a single "done = …" metric to one idea.</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D2 (Si anchor)</h3>
-                    <p>Install a 10-min daily recovery ritual.</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D3 (Se step)</h3>
-                    <p>One clean, time-boxed assertive ask.</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D4 (Ni refine)</h3>
-                    <p>10-line arc (now → near → far) for a favored idea.</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D5 (Fi care)</h3>
-                    <p>Name one person's need and meet it concretely.</p>
-                  </div>
-                  <div className="prism-card p-4">
-                    <h3 className="font-semibold mb-2">D6–D7 (Ne funnel)</h3>
-                    <p>Generate 3 options; retire 2; commit to 1.</p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Mistype Disambiguators */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">"If-Not-This-Then-That" (mistype disambiguators)</h2>
+                <h2 className="text-2xl font-semibold mb-4">Internal Critic & Growth</h2>
                 <div className="space-y-6">
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">IEE vs. EII</h3>
-                    <p>Both Fi-valuing. IEE scouts options and mobilizes; EII counsels depth and congruence.</p>
+                    <h3 className="text-lg font-semibold mb-3">Common Challenges</h3>
+                    <p className="text-lg leading-relaxed mb-4">
+                      Your challenges often stem from the flip side of having so many possibilities: difficulty with follow-through and structure. Your Internal Critic (tertiary Te, inferior Si) nags you most about those "boring" details of life – organizing, scheduling, consistency. You likely pride yourself on being spontaneous and adaptable, but you might inwardly criticize yourself for being disorganized or procrastinating until the last minute.
+                    </p>
+                    <p className="text-lg leading-relaxed">
+                      Perhaps you've had the experience of missing an appointment or leaving a project unfinished, and then beating yourself up: "Why can't I be more disciplined? Other people manage it…" That's your tertiary Te speaking, trying to impose some order.
+                    </p>
                   </div>
+
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">IEE vs. ENFP-lookalikes</h3>
-                    <p>PRISM weights ipsatives/scenarios to separate Ne–Fi congruence from high-Fe performance styles.</p>
+                    <h3 className="text-lg font-semibold mb-3">Under Stress</h3>
+                    <p className="text-lg leading-relaxed mb-4">
+                      In grip-stress situations, ENFPs can do a 180 and become unusually rigid or obsessed with order: you might suddenly try to micromanage everything or harshly criticize those around you for inefficiency (a shock to your friends!). This is typically a sign of severe stress when your inferior Si kicks in – you may become uncharacteristically stuck in the past, ruminating over mistakes, or fixate on minor details and routines in a futile attempt to regain control.
+                    </p>
+                    <p className="text-lg leading-relaxed">
+                      Another common stress reaction: because you normally see endless options, when severely stressed, you can feel trapped and out of options, leading to anxiety or a sense of doom. You might become "catastrophic" in your thinking (which is very unlike your usual optimism). Recognize that this is temporary; your mind's natural breadth will return once you calm down.
+                    </p>
                   </div>
+
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">IEE vs. SLI</h3>
-                    <p>Duals—IEE expands possibilities and people-fit; SLI grounds them in durable systems.</p>
+                    <h3 className="text-lg font-semibold mb-3">Emotional Vulnerability</h3>
+                    <p className="text-lg leading-relaxed">
+                      You wear your heart on your sleeve for the things you value, which is beautiful but can also leave you feeling hurt when others don't share your enthusiasm or values. Rejection – whether of your ideas or your affections – can hit ENFPs hard, though you might hide it with humor or move on to the next exciting thing.
+                    </p>
                   </div>
+
                   <div className="prism-card p-6">
-                    <h3 className="text-lg font-semibold mb-3">Overlay tells</h3>
-                    <p><strong>IEE⁺</strong> = faster pivots, sharper withdrawal from rigid rules. <strong>IEE⁻</strong> = steadier tone, clearer follow-through on one chosen path.</p>
+                    <h3 className="text-lg font-semibold mb-3">Development Tips</h3>
+                    <p className="text-lg leading-relaxed mb-4">
+                      Learning a bit of time-management (Te) and comfort with some routine (Si) can supercharge your effectiveness. Simple tools like creative planners or apps can make structure fun (imagine scheduling as a new "game" or challenge). Also, practice finishing things: an idea is brilliant, but seeing it come to fruition is its own high.
+                    </p>
+                    <p className="text-lg leading-relaxed">
+                      Perhaps partner with friends or colleagues who complement your style – for example, someone who's good at logistics can help turn your big ideas into reality. Your Hidden Potential block (Te/Si) suggests you have more capability for organization than you think – many ENFPs later develop into excellent project managers or entrepreneurs once they harness those lesser-used muscles, all without losing their spark.
+                    </p>
                   </div>
+                </div>
+              </section>
+
+              {/* Guiding Light */}
+              <section>
+                <h2 className="text-2xl font-semibold mb-4">Guiding Light</h2>
+                <div className="prism-card p-6">
+                  <p className="text-lg leading-relaxed mb-4">
+                    Stay true to your curiosity and authenticity. You're at your best when you remember why you care about something and let that passion drive you. Your gift to the world is that you open our eyes to new possibilities and infuse optimism and human touch into everything you do. In a world of cynicism, your hopeful imagination is a breath of fresh air. Cultivate it, channel it, and don't let naysayers quash it.
+                  </p>
+                  <p className="text-lg leading-relaxed">
+                    When you strike the balance of dreaming and doing, you're virtually unstoppable and life feels like an endless horizon to explore – that's the ENFP sweet spot.
+                  </p>
                 </div>
               </section>
             </div>
