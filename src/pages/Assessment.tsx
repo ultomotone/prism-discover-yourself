@@ -1,17 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from "@/components/Header";
 import { AssessmentIntro } from "@/components/assessment/AssessmentIntro";
 import { AssessmentForm, AssessmentResponse } from "@/components/assessment/AssessmentForm";
 import { AssessmentComplete } from "@/components/assessment/AssessmentComplete";
+import { SavedAssessments } from "@/components/assessment/SavedAssessments";
+import { supabase } from "@/integrations/supabase/client";
 
-type AssessmentState = 'intro' | 'form' | 'complete';
+type AssessmentState = 'intro' | 'form' | 'complete' | 'saved';
 
 const Assessment = () => {
   const [currentState, setCurrentState] = useState<AssessmentState>('intro');
   const [responses, setResponses] = useState<AssessmentResponse[]>([]);
   const [sessionId, setSessionId] = useState<string>('');
+  const [resumeSessionId, setResumeSessionId] = useState<string | undefined>();
+
+  // Check for saved assessments on load
+  useEffect(() => {
+    checkForSavedAssessments();
+  }, []);
+
+  const checkForSavedAssessments = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data: sessions, error } = await supabase
+        .from('assessment_sessions')
+        .select('id')
+        .is('completed_at', null)
+        .gt('completed_questions', 0)
+        .eq('user_id', user?.id || null)
+        .limit(1);
+
+      if (!error && sessions && sessions.length > 0) {
+        setCurrentState('saved');
+      }
+    } catch (error) {
+      console.error('Error checking for saved assessments:', error);
+      // Continue to intro if there's an error
+    }
+  };
 
   const handleStartAssessment = () => {
+    setResumeSessionId(undefined);
     setCurrentState('form');
   };
 
@@ -38,10 +68,36 @@ const Assessment = () => {
     setSessionId('');
   };
 
+  const handleResumeAssessment = (savedSessionId: string) => {
+    setResumeSessionId(savedSessionId);
+    setCurrentState('form');
+  };
+
+  const handleSaveAndExit = () => {
+    setCurrentState('intro');
+    setResumeSessionId(undefined);
+  };
+
+  const handleStartNewAssessment = () => {
+    setResumeSessionId(undefined);
+    setCurrentState('intro');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {currentState !== 'form' && <Header />}
       
+      {currentState === 'saved' && (
+        <div className="pt-24 pb-8">
+          <div className="prism-container">
+            <SavedAssessments 
+              onResumeAssessment={handleResumeAssessment}
+              onStartNew={handleStartNewAssessment}
+            />
+          </div>
+        </div>
+      )}
+
       {currentState === 'intro' && (
         <AssessmentIntro onStart={handleStartAssessment} />
       )}
@@ -50,6 +106,8 @@ const Assessment = () => {
         <AssessmentForm 
           onComplete={handleAssessmentComplete}
           onBack={handleReturnToIntro}
+          onSaveAndExit={handleSaveAndExit}
+          resumeSessionId={resumeSessionId}
         />
       )}
       

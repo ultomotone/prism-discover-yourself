@@ -7,6 +7,7 @@ import { assessmentQuestions, Question } from "@/data/assessmentQuestions";
 import { QuestionComponent } from "./QuestionComponent";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Save } from "lucide-react";
 
 export interface AssessmentResponse {
   questionId: number;
@@ -16,9 +17,11 @@ export interface AssessmentResponse {
 interface AssessmentFormProps {
   onComplete: (responses: AssessmentResponse[], sessionId: string) => void;
   onBack?: () => void;
+  onSaveAndExit?: () => void;
+  resumeSessionId?: string;
 }
 
-export function AssessmentForm({ onComplete, onBack }: AssessmentFormProps) {
+export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessionId }: AssessmentFormProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<AssessmentResponse[]>([]);
   const [currentAnswer, setCurrentAnswer] = useState<string | number | string[] | number[]>('');
@@ -41,6 +44,12 @@ export function AssessmentForm({ onComplete, onBack }: AssessmentFormProps) {
     const initializeSession = async () => {
       try {
         console.log('Initializing assessment session...');
+        
+        // If resuming a session, load existing session data
+        if (resumeSessionId) {
+          await loadExistingSession(resumeSessionId);
+          return;
+        }
         
         // Get current user (null if anonymous)
         const { data: { user } } = await supabase.auth.getUser();
@@ -85,7 +94,7 @@ setQuestionStartTime(Date.now());
     };
 
     initializeSession();
-  }, [toast]);
+  }, [toast, resumeSessionId]);
 
   useEffect(() => {
     // Reset question start time when moving to a new question
@@ -104,6 +113,82 @@ setQuestionStartTime(Date.now());
       }
     }
   }, [currentQuestionIndex, responses, currentQuestion?.id]);
+
+  const loadExistingSession = async (sessionId: string) => {
+    try {
+      // Load session data
+      const { data: session, error: sessionError } = await supabase
+        .from('assessment_sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .single();
+
+      if (sessionError) {
+        console.error('Error loading session:', sessionError);
+        toast({
+          title: "Failed to Load",
+          description: "Could not load saved assessment. Starting a new one.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Load existing responses
+      const { data: responses, error: responsesError } = await supabase
+        .from('assessment_responses')
+        .select('question_id, answer_value, answer_numeric, answer_array, answer_object')
+        .eq('session_id', sessionId)
+        .order('question_id');
+
+      if (responsesError) {
+        console.error('Error loading responses:', responsesError);
+      }
+
+      // Convert responses to the expected format
+      const loadedResponses: AssessmentResponse[] = responses?.map(r => {
+        let answer: string | number | string[] | number[] = '';
+        
+        if (r.answer_array) {
+          answer = r.answer_array;
+        } else if (r.answer_numeric !== null) {
+          answer = r.answer_numeric;
+        } else if (r.answer_object && typeof r.answer_object === 'object' && r.answer_object !== null) {
+          const answerObj = r.answer_object as { matrix_answers?: any };
+          answer = answerObj.matrix_answers || [];
+        } else {
+          answer = r.answer_value || '';
+        }
+        
+        return {
+          questionId: r.question_id,
+          answer: answer
+        };
+      }) || [];
+
+      setSessionId(sessionId);
+      setResponses(loadedResponses);
+      
+      // Set current question index to the next unanswered question
+      const nextQuestionIndex = Math.min(
+        session.completed_questions || 0,
+        assessmentQuestions.length - 1
+      );
+      setCurrentQuestionIndex(nextQuestionIndex);
+      setQuestionStartTime(Date.now());
+
+      toast({
+        title: "Assessment Resumed",
+        description: `Continuing from question ${nextQuestionIndex + 1}`,
+      });
+    } catch (error) {
+      console.error('Error loading existing session:', error);
+      toast({
+        title: "Failed to Load",
+        description: "Could not load saved assessment. Starting a new one.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const saveResponseToSupabase = async (response: AssessmentResponse, responseTime: number) => {
     if (!sessionId) return;
@@ -248,6 +333,55 @@ setQuestionStartTime(Date.now());
     }
   };
 
+  const handleSaveAndExit = async () => {
+    if (!sessionId) return;
+
+    try {
+      setIsLoading(true);
+      
+      // Save current answer if there is one
+      const hasAnswer = Array.isArray(currentAnswer) ? 
+        currentAnswer.length > 0 : 
+        currentAnswer !== '' && currentAnswer !== null && currentAnswer !== undefined;
+        
+      if (hasAnswer) {
+        const responseTime = Date.now() - questionStartTime;
+        const newResponse: AssessmentResponse = {
+          questionId: currentQuestion.id,
+          answer: currentAnswer
+        };
+        
+        await saveResponseToSupabase(newResponse, responseTime);
+        
+        // Update session progress
+        await supabase
+          .from('assessment_sessions')
+          .update({
+            completed_questions: currentQuestionIndex + 1
+          })
+          .eq('id', sessionId);
+      }
+
+      toast({
+        title: "Assessment Saved",
+        description: "Your progress has been saved. You can continue later.",
+      });
+
+      if (onSaveAndExit) {
+        onSaveAndExit();
+      }
+    } catch (error) {
+      console.error('Error saving assessment:', error);
+      toast({
+        title: "Save Failed",
+        description: "Could not save your progress. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!currentQuestion) {
     return (
       <Card className="max-w-2xl mx-auto">
@@ -314,15 +448,29 @@ setQuestionStartTime(Date.now());
               {currentQuestionIndex === 0 ? 'Back to Intro' : 'Previous'}
             </Button>
 
-            <Button
-              onClick={handleNext}
-              disabled={isLoading}
-              className="flex items-center gap-2"
-              variant={isLastQuestion ? 'hero' : 'default'}
-            >
-              {isLoading ? 'Saving...' : isLastQuestion ? 'Complete Assessment' : 'Next'}
-              {!isLastQuestion && !isLoading && <ChevronRight className="h-4 w-4" />}
-            </Button>
+            <div className="flex items-center gap-3">
+              {onSaveAndExit && (
+                <Button
+                  variant="outline"
+                  onClick={handleSaveAndExit}
+                  disabled={isLoading}
+                  className="flex items-center gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  Save & Exit
+                </Button>
+              )}
+              
+              <Button
+                onClick={handleNext}
+                disabled={isLoading}
+                className="flex items-center gap-2"
+                variant={isLastQuestion ? 'hero' : 'default'}
+              >
+                {isLoading ? 'Saving...' : isLastQuestion ? 'Complete Assessment' : 'Next'}
+                {!isLastQuestion && !isLoading && <ChevronRight className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
