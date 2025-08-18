@@ -38,9 +38,14 @@ const Hero = () => {
                 Take the PRISM Assessment
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button variant="outline-primary" size="lg" className="group">
-                <Play className="mr-2 h-4 w-4" />
-                Watch Demo
+              <Button 
+                variant="outline-primary" 
+                size="lg" 
+                onClick={() => navigate('/history')}
+                className="group"
+              >
+                View Your History
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
 

@@ -130,8 +130,15 @@ const Header = () => {
             </DropdownMenu>
           </div>
 
-          {/* CTA Button */}
+          {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/history')}
+              className="text-sm"
+            >
+              View History
+            </Button>
             <Button 
               variant="hero" 
               size="lg"
@@ -217,11 +224,25 @@ const Header = () => {
                 ))}
               </div>
               
-              <div className="px-3 py-2">
+              
+              <div className="px-3 py-2 space-y-2">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    navigate('/history');
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  View History
+                </Button>
                 <Button 
                   variant="hero" 
                   className="w-full"
-                  onClick={() => navigate('/assessment')}
+                  onClick={() => {
+                    navigate('/assessment');
+                    setIsMenuOpen(false);
+                  }}
                 >
                   Take Assessment
                 </Button>
