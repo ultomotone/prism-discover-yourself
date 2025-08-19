@@ -41,6 +41,26 @@ const CustomTooltip = ({ active, payload }: any) => {
 const CustomContent = ({ root, depth, x, y, width, height, index, payload }: any) => {
   const ROUNDING = 8;
   
+  // Guard against undefined payload
+  if (!payload) {
+    return (
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        rx={ROUNDING}
+        ry={ROUNDING}
+        style={{
+          fill: COLORS[index % COLORS.length],
+          stroke: 'hsl(var(--border))',
+          strokeWidth: 2,
+        }}
+        className="transition-all duration-300 hover:opacity-80"
+      />
+    );
+  }
+  
   return (
     <g>
       <rect
@@ -57,7 +77,7 @@ const CustomContent = ({ root, depth, x, y, width, height, index, payload }: any
         }}
         className="transition-all duration-300 hover:opacity-80"
       />
-      {width > 80 && height > 40 && (
+      {width > 80 && height > 40 && payload.country && (
         <text
           x={x + width / 2}
           y={y + height / 2 - 8}
@@ -69,7 +89,7 @@ const CustomContent = ({ root, depth, x, y, width, height, index, payload }: any
           {payload.country}
         </text>
       )}
-      {width > 80 && height > 40 && (
+      {width > 80 && height > 40 && payload.count && (
         <text
           x={x + width / 2}
           y={y + height / 2 + 8}
