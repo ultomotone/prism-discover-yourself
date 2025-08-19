@@ -122,9 +122,19 @@ const Dashboard = () => {
           count: count as number 
         })).sort((a, b) => b.count - a.count) : [];
 
-      // For latest assessments, we need a different approach since we can't access individual profiles
-      // We'll show aggregate data instead
-      const latestAssessments: AssessmentDetail[] = [];
+      // Get recent assessments using secure function that returns anonymized data
+      const { data: recentAssessments } = await supabase
+        .rpc('get_recent_assessments_safe');
+
+      const latestAssessments: AssessmentDetail[] = (recentAssessments || []).map((assessment: any) => ({
+        created_at: assessment.created_at,
+        type_code: assessment.type_display,
+        overlay: '', // Already included in type_display
+        country: assessment.country_display,
+        email: undefined, // Never show email for privacy
+        top_types: undefined,
+        type_scores: undefined
+      }));
 
       setData({
         totalAssessments: stats?.total_assessments || 0,
@@ -133,7 +143,7 @@ const Dashboard = () => {
         overlayStats,
         typeDistribution,
         countryDistribution: [], // Not available in aggregated data for privacy
-        latestAssessments // Empty for privacy
+        latestAssessments // Now shows anonymized recent assessments
       });
 
     } catch (error) {
@@ -462,18 +472,15 @@ const Dashboard = () => {
                     <TableCell>
                       {new Date(assessment.created_at).toLocaleString()}
                     </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {assessment.type_code?.substring(0, 3)}{assessment.overlay}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{assessment.country || 'Unknown'}</TableCell>
-                    <TableCell>
-                      {assessment.top_types?.[0] && assessment.type_scores?.[assessment.top_types[0]] ? 
-                        `${Math.round(assessment.type_scores[assessment.top_types[0]].fit_abs || 0)}` : 
-                        'N/A'
-                      }
-                    </TableCell>
+                     <TableCell>
+                       <Badge variant="outline">
+                         {assessment.type_code}
+                       </Badge>
+                     </TableCell>
+                     <TableCell>{assessment.country || 'Unknown'}</TableCell>
+                     <TableCell>
+                       Privacy Protected
+                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

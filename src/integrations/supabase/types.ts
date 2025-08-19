@@ -647,6 +647,16 @@ export type Database = {
       }
     }
     Functions: {
+      get_recent_assessments_safe: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          country_display: string
+          created_at: string
+          fit_indicator: string
+          time_period: string
+          type_display: string
+        }[]
+      }
       update_dashboard_statistics: {
         Args: Record<PropertyKey, never>
         Returns: undefined
