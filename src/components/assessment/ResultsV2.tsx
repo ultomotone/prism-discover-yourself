@@ -1,4 +1,5 @@
 import React from "react";
+import { ResponsiveContainer, BarChart, Bar as RechartsBar, XAxis, YAxis, Tooltip, ReferenceLine } from "recharts";
 
 // thresholds for labels (tune later)
 const LABEL_THRESH = {
@@ -17,6 +18,63 @@ function InfoTip({ title, children }:{
         <div className="text-gray-700">{children}</div>
       </div>
     </span>
+  );
+}
+
+// Fit interpretation component
+function FitInfo() {
+  return (
+    <div className="flex items-center gap-2 text-xs text-gray-700">
+      <span><b>Absolute fit (0–100)</b> = invariant closeness to each type's prototype (uses strengths, dimensionality, FC support, opposite penalties).</span>
+      <InfoTip title="How to read Fit">
+        <ul className="list-disc ml-5">
+          <li><b>75–100</b>: Very strong prototype match</li>
+          <li><b>55–74</b>: Strong match</li>
+          <li><b>35–54</b>: Moderate / partial match</li>
+          <li><b>0–34</b>: Weak match (retest or more data)</li>
+        </ul>
+        <p className="mt-2">This score is invariant (not affected by other types). <i>Share (%)</i> is relative among all 16 types.</p>
+      </InfoTip>
+    </div>
+  );
+}
+
+function Top3FitChart({ data, primary }:{
+  data: { code: string; fit: number; share: number }[];
+  primary: string;
+}) {
+  // emphasize primary bar
+  const BAR = (code:string) => (code === primary ? "#111111" : "#bdbdbd");
+  return (
+    <div className="mt-3 p-3 border rounded-xl bg-white">
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-sm font-medium">Top-3 Fit comparison (0–100)</div>
+        <div className="text-[11px] text-gray-500">Darker bar = selected type</div>
+      </div>
+      <div style={{ width: "100%", height: 160 }}>
+        <ResponsiveContainer>
+          <BarChart data={data} margin={{ top: 6, right: 12, left: 12, bottom: 0 }}>
+            <XAxis dataKey="code" tickLine={false} axisLine={false}/>
+            <YAxis domain={[0,100]} width={28} tickLine={false} axisLine={false}/>
+            <Tooltip
+              formatter={(v:any, n:any, p:any)=> n === "fit" ? [`${v}`, "Fit"] : [`${v}%`, "Share"]}
+              labelFormatter={(code)=> `Type ${code}`}
+              wrapperStyle={{ fontSize: 12 }}
+            />
+            {/* Interpretation reference lines */}
+            <ReferenceLine y={35} stroke="#e5e7eb" strokeDasharray="3 3" />
+            <ReferenceLine y={55} stroke="#e5e7eb" strokeDasharray="3 3" />
+            <ReferenceLine y={75} stroke="#e5e7eb" strokeDasharray="3 3" />
+            {data.map((d) => (
+              <RechartsBar key={d.code} dataKey="fit" fill={BAR(d.code)} radius={[6,6,0,0]} />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="mt-2 text-[11px] text-gray-600">
+        Guide lines: 35, 55, 75 (weak · moderate · strong). Hover bars for exact Fit and Share.
+      </div>
+    </div>
   );
 }
 
@@ -262,6 +320,17 @@ function Top3({ p }:{ p:Profile }){
           );
         })}
       </div>
+      
+      <FitInfo />
+      
+      <Top3FitChart
+        primary={primary}
+        data={p.top_types.map(code => ({
+          code,
+          fit: p.type_scores?.[code]?.fit_abs ?? 0,
+          share: p.type_scores?.[code]?.share_pct ?? 0
+        }))}
+      />
     </section>
   );
 }
