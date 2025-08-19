@@ -11,6 +11,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Search, Download, ExternalLink, Calendar, Users, TrendingUp, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
+import AssessmentGlobalHeatmap from "@/components/AssessmentGlobalHeatmap";
 
 interface DashboardData {
   totalAssessments: number;
@@ -139,13 +140,26 @@ const Dashboard = () => {
         fit_score: assessment.fit_score // Store fit score in the new property
       }));
 
+      // Extract country distribution from recent assessments for the heatmap
+      const countryDistribution = (recentAssessments || []).reduce((acc: any[], assessment: any) => {
+        if (assessment.country_display && assessment.country_display !== 'Unknown') {
+          const existing = acc.find(item => item.country === assessment.country_display);
+          if (existing) {
+            existing.count++;
+          } else {
+            acc.push({ country: assessment.country_display, count: 1 });
+          }
+        }
+        return acc;
+      }, []);
+
       setData({
         totalAssessments: stats?.total_assessments || 0,
         todayCount: stats?.daily_assessments || 0,
         weeklyTrend,
         overlayStats,
         typeDistribution,
-        countryDistribution: [], // Not available in aggregated data for privacy
+        countryDistribution, // Now contains actual country data for heatmap
         latestAssessments // Now shows anonymized recent assessments
       });
 
@@ -371,8 +385,8 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Type Distribution Chart */}
+        <div className="grid grid-cols-1 gap-6 mb-8">
           <Card className="prism-shadow-card">
             <CardHeader>
               <CardTitle>Type Distribution</CardTitle>
@@ -391,23 +405,22 @@ const Dashboard = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
 
+        {/* Global Assessment Heatmap - Full Width */}
+        <div className="mb-8">
           <Card className="prism-shadow-card">
             <CardHeader>
-              <CardTitle>Top Countries</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                Global Assessment Activity
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Real-time visualization of where people are taking PRISM assessments worldwide
+              </p>
             </CardHeader>
             <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data?.countryDistribution}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="country" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="hsl(var(--secondary))" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              <AssessmentGlobalHeatmap countryData={data?.countryDistribution || []} />
             </CardContent>
           </Card>
         </div>
