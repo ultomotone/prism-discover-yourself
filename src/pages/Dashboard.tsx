@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { MilestoneProgress } from "@/components/ui/milestone-progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -267,7 +267,12 @@ const Dashboard = () => {
               <span>{data?.totalAssessments || 0} / 1000</span>
               <span>{progressPercentage}%</span>
             </div>
-            <Progress value={progressPercentage} className="h-3 bg-white/20" />
+            <MilestoneProgress 
+              value={data?.totalAssessments || 0} 
+              max={1000}
+              milestones={[100, 500]}
+              className="h-3 bg-white/20" 
+            />
           </div>
           
           <p className="text-sm text-white/70 mb-6">

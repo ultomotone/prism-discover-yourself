@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { MilestoneProgress } from "@/components/ui/milestone-progress";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Users, ExternalLink, BarChart3 } from "lucide-react";
 
@@ -158,8 +158,10 @@ const DashboardPreview = () => {
                   {stats?.totalAssessments || 0}/1000
                 </span>
               </div>
-              <Progress 
-                value={stats?.progressPercentage || 0} 
+              <MilestoneProgress 
+                value={stats?.totalAssessments || 0} 
+                max={1000}
+                milestones={[100, 500]}
                 className="h-3"
               />
               <div className="flex justify-between text-xs text-muted-foreground">
