@@ -227,10 +227,26 @@ export default function Results() {
           {/* Support Section */}
           <Card className="max-w-4xl mx-auto">
             <CardContent className="p-6 text-center">
-              <h2 className="text-2xl font-bold mb-4">Need More Support?</h2>
-              <p className="text-muted-foreground mb-6">
-                Get personalized coaching and deeper insights into your PRISM results
+              <h2 className="text-2xl font-bold mb-4">Fund Our Nerdy Quest (So Your Type Can Stop Arguing With Your Top-2)</h2>
+              <p className="text-muted-foreground mb-4">
+                Every dollar helps us run the assessment, refine the math, and publish open findings. Also, our servers like snacks.
               </p>
+              
+              <div className="max-w-2xl mx-auto text-left mb-6 space-y-4">
+                <p className="text-sm">
+                  PRISM is building a modern, evidence-minded personality map. Donations keep the lights on while we:
+                </p>
+                <ul className="text-sm text-muted-foreground space-y-2 ml-4">
+                  <li>• run and improve the assessment,</li>
+                  <li>• analyze results (hello, 1,000-assessment milestone),</li>
+                  <li>• publish clear, human-readable findings,</li>
+                  <li>• and make the Results page so good your mom will ask for a link.</li>
+                </ul>
+                <p className="text-sm text-center pt-2">
+                  If PRISM helped you see yourself a bit clearer, toss a coin to your typologist. 🪙
+                </p>
+              </div>
+              
               <div className="flex justify-center">
                 <div 
                   dangerouslySetInnerHTML={{
