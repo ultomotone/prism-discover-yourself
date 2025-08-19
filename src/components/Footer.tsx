@@ -116,6 +116,11 @@ const Footer = () => {
                     Roadmap
                   </a>
                 </li>
+                <li>
+                  <a href="https://chatgpt.com/g/g-675b5288dcfc8191bf08a6f560c22af7-prism-ai-coach" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
+                    PRISM AI Coach
+                  </a>
+                </li>
                 {popularLinks.support.map((link) => (
                   <li key={link.name}>
                     <a href={link.href} className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
