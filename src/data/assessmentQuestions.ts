@@ -2091,21 +2091,21 @@ export const assessmentQuestions: Question[] = [
     subQuestions: [
       {
         id: 'A',
-        text: 'Part A (ability): How easily can you generate novel options without examples?',
+        text: 'Ability level',
         type: 'multiple-choice',
-        options: ['Never', 'Once with help', 'Can with effort', 'Reliable low effort', 'Routinely/teach others']
+        options: ['Novice', 'Emerging', 'Competent', 'Strong', 'Expert']
       },
       {
         id: 'B',
-        text: 'Part B (frequency, last 12 months):',
+        text: 'Frequency',
         type: 'multiple-choice',
-        options: ['0', '1', '2–3', '4–6', '7+']
+        options: ['Never', 'Rarely', 'Sometimes', 'About half the time', 'Often', 'Usually', 'Always']
       },
       {
         id: 'C',
-        text: 'Part C (energy cost):',
+        text: 'Energy / Effort',
         type: 'multiple-choice',
-        options: ['None', 'Low', 'Moderate', 'High', 'Very high']
+        options: ['Very Low', 'Low', 'Slightly Low', 'Neutral', 'Slightly High', 'High', 'Very High']
       }
     ]
   },
