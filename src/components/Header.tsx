@@ -11,7 +11,7 @@ const Header = () => {
 
   const navigation = [
     { name: "About", href: "/about" },
-    { name: "Resources", href: "/insights" },
+    { name: "Resources", href: "/resources" },
   ];
 
   const solutionsItems = [
@@ -35,8 +35,6 @@ const Header = () => {
     { name: "Dimensionality", href: "/dimensionality" },
     { name: "Block Dynamics", href: "/blocks" },
     { name: "State Overlay", href: "/state-overlay" },
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "Roadmap", href: "/roadmap" },
   ];
 
   return (

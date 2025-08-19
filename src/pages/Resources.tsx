@@ -13,7 +13,6 @@ const Resources = () => {
       items: [
         { name: "PRISM Framework Overview", href: "/about" },
         { name: "Information Elements Guide", href: "/signals" },
-        { name: "Assessment Methods", href: "/assessment-methods" },
         { name: "Core Alignments", href: "/core-alignments" },
         { name: "Dimensionality Theory", href: "/dimensionality" }
       ]
@@ -37,6 +36,14 @@ const Resources = () => {
         { name: "For Teams", href: "/teams" },
         { name: "Profiles Overview", href: "/profiles" },
         { name: "Insights & Guides", href: "/insights" }
+      ]
+    },
+    {
+      title: "Analytics & Planning",
+      icon: <BookOpen className="h-6 w-6" />,
+      items: [
+        { name: "Dashboard", href: "/dashboard" },
+        { name: "Roadmap", href: "/roadmap" }
       ]
     }
   ];
@@ -74,7 +81,7 @@ const Resources = () => {
                 Explore PRISM
               </h2>
               
-              <div className="grid md:grid-cols-3 gap-8">
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {resourceCategories.map((category) => (
                   <Card key={category.title} className="prism-card-hover">
                     <CardHeader>
