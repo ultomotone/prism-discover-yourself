@@ -55,15 +55,14 @@ const MilestoneProgress = React.forwardRef<
                 isPassed ? "bg-primary" : "bg-muted-foreground/60"
               )}
             />
-            {/* Label */}
-            <div 
-              className={cn(
-                "absolute -top-6 text-xs font-medium whitespace-nowrap transform -translate-x-1/2",
-                isPassed ? "text-primary" : "text-muted-foreground"
-              )}
-            >
-              {milestone}
-            </div>
+            {/* Label - only show 500 milestone to declutter */}
+            {milestone === 500 && (
+              <div 
+                className="absolute -top-6 text-xs font-medium whitespace-nowrap transform -translate-x-1/2 text-white"
+              >
+                {milestone}
+              </div>
+            )}
           </div>
         );
       })}
