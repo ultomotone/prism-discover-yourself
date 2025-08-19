@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.compare_runs]
 verify_jwt = true
+
+[functions.cleanup_profiles]
+verify_jwt = false

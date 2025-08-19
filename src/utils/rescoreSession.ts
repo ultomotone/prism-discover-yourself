@@ -3,14 +3,15 @@ import { supabase } from '@/integrations/supabase/client';
 
 export async function rescoreSession(sessionId: string) {
   try {
-    // Delete existing invalid profile first
-    const { error: deleteError } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('session_id', sessionId);
-      
-    if (deleteError) {
-      console.error('Error deleting profile:', deleteError);
+    // Clean up old UNK profile(s) with service-edge helper
+    const { data: cleanupData, error: cleanupError } = await supabase.functions.invoke('cleanup_profiles', {
+      body: { session_id: sessionId },
+    });
+
+    if (cleanupError) {
+      console.error('Cleanup error:', cleanupError);
+    } else {
+      console.log('Cleanup result:', cleanupData);
     }
 
     // Trigger re-scoring with the updated edge function
