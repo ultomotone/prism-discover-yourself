@@ -197,25 +197,17 @@ serve(async (req) => {
       }
     }
 
-    // NEW: Force FC intake - reject sessions with < 24 FC answers
+    // NEW: Track FC completeness - warn but don't block if < 24 FC answers
+    let fcCompleteness = "complete";
     if (fcAnsweredCount < 24) {
       console.log(`evt:incomplete_fc,session_id:${session_id},fc_count:${fcAnsweredCount}`);
+      fcCompleteness = "incomplete";
       
-      // Update session status to incomplete_fc
+      // Update session status to incomplete_fc but continue processing
       await supabase
         .from('assessment_sessions')
         .update({ status: 'incomplete_fc' })
         .eq('id', session_id);
-
-      return new Response(JSON.stringify({ 
-        status:"error", 
-        error:"Insufficient forced-choice responses", 
-        fc_answered: fcAnsweredCount,
-        required: 24 
-      }), { 
-        status:400, 
-        headers:{...corsHeaders,"Content-Type":"application/json"}
-      });
     }
 
     // ---- state modifiers (stress, time, sleep, focus) ----
