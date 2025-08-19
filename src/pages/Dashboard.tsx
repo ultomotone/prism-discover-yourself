@@ -11,7 +11,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Search, Download, ExternalLink, Calendar, Users, TrendingUp, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
-import AssessmentGlobalHeatmap from "@/components/AssessmentGlobalHeatmap";
+import CountryDistributionChart from "@/components/CountryDistributionChart";
 
 interface DashboardData {
   totalAssessments: number;
@@ -420,7 +420,7 @@ const Dashboard = () => {
               </p>
             </CardHeader>
             <CardContent>
-              <AssessmentGlobalHeatmap countryData={data?.countryDistribution || []} />
+              <CountryDistributionChart data={data?.countryDistribution || []} />
             </CardContent>
           </Card>
         </div>
