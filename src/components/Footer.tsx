@@ -129,9 +129,6 @@ const Footer = () => {
             {/* Support PRISM Column */}
             <div>
               <h3 className="font-semibold mb-4">Support PRISM</h3>
-              <p className="text-primary-foreground/80 text-sm mb-4">
-                Help us keep PRISM free and accessible for everyone
-              </p>
               <div 
                 dangerouslySetInnerHTML={{
                   __html: `<stripe-buy-button
