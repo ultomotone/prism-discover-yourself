@@ -39,22 +39,18 @@ export default function Roadmap() {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        // Total assessments
-        const { count: totalCount } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true });
-
-        // Completion rate
+        // Total completed assessments - count from completed sessions, not profiles
         const { count: completedCount } = await supabase
           .from('assessment_sessions')
           .select('*', { count: 'exact', head: true })
           .not('completed_at', 'is', null);
 
+        // Total started sessions for completion rate
         const { count: startedCount } = await supabase
           .from('assessment_sessions')
           .select('*', { count: 'exact', head: true });
 
-        // Confidence distribution
+        // Confidence distribution - get unique profiles by session_id to avoid duplicates
         const { data: confidenceData } = await supabase
           .from('profiles')
           .select('confidence')
@@ -67,7 +63,7 @@ export default function Roadmap() {
         }, {} as { [key: string]: number }) || {};
 
         setMetrics({
-          totalAssessments: totalCount || 0,
+          totalAssessments: completedCount || 0,
           completionRate: startedCount ? Math.round((completedCount || 0) / startedCount * 100) : 0,
           confidenceDistribution
         });
