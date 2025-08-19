@@ -56,6 +56,27 @@ export default function Results() {
           .eq('session_id', sessionId)
           .single();
 
+        // Check if we have an invalid UNK result and force re-scoring
+        if (profileData && !profileError && profileData.type_code === 'UNK') {
+          console.log('Detected UNK result, triggering re-score with updated algorithm');
+          
+          // Delete the invalid profile
+          await supabase.from('profiles').delete().eq('session_id', sessionId);
+          
+          // Force re-scoring with new algorithm
+          const { data, error } = await supabase.functions.invoke('score_prism', {
+            body: { session_id: sessionId },
+          });
+
+          if (error || !data || data.status !== 'success') {
+            setError(error?.message || data?.error || 'Failed to re-score results');
+          } else {
+            setScoring(data.profile);
+          }
+          setLoading(false);
+          return;
+        }
+
         if (profileData && !profileError) {
           setScoring(profileData);
           setLoading(false);
