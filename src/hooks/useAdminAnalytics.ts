@@ -159,11 +159,11 @@ export const useAdminAnalytics = () => {
       const completedSessions = sessionStats?.filter(s => s.status === 'completed').length || 0;
       const realCompletionRate = totalSessions > 0 ? (completedSessions / totalSessions) * 100 : 0;
 
-      // Calculate speeder/staller using v_sessions.duration_sec to avoid pause inflation
+      // Calculate speeder/staller using v_sessions_plus.duration_sec to avoid pause inflation
       const { data: sessionDurations } = await supabase
-        .from('v_sessions')
+        .from('v_sessions_plus')
         .select('duration_sec, started_at')
-        .eq('completed', true)
+        .not('completed_at', 'is', null)
         .gte('started_at', subDays(new Date(), 30).toISOString());
 
       let durationsMin = (sessionDurations || [])
