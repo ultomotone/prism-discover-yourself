@@ -565,6 +565,17 @@ export type Database = {
         }
         Relationships: []
       }
+      v_recent_assessments_safe: {
+        Row: {
+          country_display: string | null
+          created_at: string | null
+          fit_indicator: string | null
+          overlay: string | null
+          time_period: string | null
+          type_prefix: string | null
+        }
+        Relationships: []
+      }
       v_retest_deltas: {
         Row: {
           days_between: number | null
