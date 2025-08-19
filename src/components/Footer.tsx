@@ -112,6 +112,16 @@ const Footer = () => {
                     Resources
                   </a>
                 </li>
+                <li>
+                  <a href="/roadmap" className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
+                    Roadmap
+                  </a>
+                </li>
+                <li>
+                  <a href="/dashboard" className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
+                    Dashboard
+                  </a>
+                </li>
                 {popularLinks.support.map((link) => (
                   <li key={link.name}>
                     <a href={link.href} className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">

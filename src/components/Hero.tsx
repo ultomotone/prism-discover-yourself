@@ -41,7 +41,7 @@ const Hero = () => {
               <Button 
                 variant="outline-primary" 
                 size="lg" 
-                onClick={() => navigate('/assessment-methods')}
+                onClick={() => navigate('/roadmap')}
                 className="group"
               >
                 Assessment Roadmap
