@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, ArrowLeft } from "lucide-react";
+import { Download, ArrowLeft, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ResultsV2 } from "@/components/assessment/ResultsV2";
 import html2canvas from 'html2canvas';
@@ -80,6 +80,18 @@ export default function Results() {
 
     fetchResults();
   }, [sessionId]);
+
+  // Load Stripe script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://js.stripe.com/v3/buy-button.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   const downloadPDF = async () => {
     try {
@@ -209,6 +221,44 @@ export default function Results() {
         <div id="results-content" className="space-y-6">
           {/* Results */}
           <ResultsV2 profile={scoring} />
+
+          {/* Support Section */}
+          <Card className="max-w-4xl mx-auto">
+            <CardContent className="p-6 text-center">
+              <h2 className="text-2xl font-bold mb-4">Need More Support?</h2>
+              <p className="text-muted-foreground mb-6">
+                Get personalized coaching and deeper insights into your PRISM results
+              </p>
+              <div className="flex justify-center">
+                <div 
+                  dangerouslySetInnerHTML={{
+                    __html: `<stripe-buy-button
+                      buy-button-id="buy_btn_1RxsnID9AJFeFtOvkMbrRpMA"
+                      publishable-key="pk_live_q3JAuI9omI8O6TFmtfpQyq0p">
+                    </stripe-buy-button>`
+                  }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Next Steps Section */}
+          <Card className="max-w-4xl mx-auto">
+            <CardContent className="p-6 text-center">
+              <h2 className="text-2xl font-bold mb-4">Continue Your Journey</h2>
+              <p className="text-muted-foreground mb-6">
+                Use our AI Coach to dive deeper into your personality insights
+              </p>
+              <Button 
+                onClick={() => window.open('https://chatgpt.com/g/g-68a233600af0819182cfa8c558a63112-prism-personality-ai-coach', '_blank')}
+                size="lg"
+                className="flex items-center gap-2"
+              >
+                <ExternalLink className="h-4 w-4" />
+                PRISM AI Coach
+              </Button>
+            </CardContent>
+          </Card>
 
           {/* Action Buttons */}
           <Card className="max-w-4xl mx-auto">
