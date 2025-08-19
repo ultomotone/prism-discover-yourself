@@ -4,16 +4,17 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, CalendarIcon, RefreshCw, Download, TrendingUp, AlertTriangle, Users, Clock, Target, BarChart3 } from "lucide-react";
+import { Calendar, CalendarIcon, RefreshCw, Download, TrendingUp, AlertTriangle, Users, Clock, Target, BarChart3, Info, HelpCircle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format, subDays } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { useAdminAnalytics } from "@/hooks/useAdminAnalytics";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Cell, PieChart, Pie } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, Cell, PieChart, Pie } from "recharts";
 import Header from "@/components/Header";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -64,7 +65,7 @@ const Admin = () => {
   };
 
   return (
-    <>
+    <TooltipProvider>
       <Helmet
         title="PRISM Admin Dashboard v1.1"
         meta={[
@@ -223,6 +224,14 @@ const Admin = () => {
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     Completions
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Total number of PRISM assessments completed in the selected time period</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -244,6 +253,14 @@ const Admin = () => {
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
                     <Target className="h-4 w-4" />
                     Completion Rate
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Percentage of started assessments that were successfully completed. Green ≥70%, Amber 60-69%, Red &lt;60%</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -271,6 +288,14 @@ const Admin = () => {
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
                     <Clock className="h-4 w-4" />
                     Median Duration
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Typical time (in minutes) for users to complete the PRISM assessment</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -288,7 +313,17 @@ const Admin = () => {
 
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Speeders {'<12m'}</CardTitle>
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    Speeders {"<12m"}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Percentage of assessments completed in under 12 minutes. May indicate rushed or invalid responses</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-amber-600">{kpiData.speedersPercent.toFixed(1)}%</div>
@@ -305,7 +340,17 @@ const Admin = () => {
 
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Stallers {'>60m'}</CardTitle>
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    Stallers {">60m"}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Percentage of assessments taking over 60 minutes. May indicate abandonment or distraction</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-red-600">{kpiData.stallersPercent.toFixed(1)}%</div>
@@ -326,7 +371,17 @@ const Admin = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span>Quality Metrics</span>
+                    <span className="flex items-center gap-2">
+                      Quality Metrics
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Psychometric quality indicators for PRISM assessment validity and reliability</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -345,7 +400,17 @@ const Admin = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm">Top-1 Fit Median</span>
+                    <span className="text-sm flex items-center gap-1">
+                      Top-1 Fit Median
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Median fit score for users primary PRISM type. Green 55-75, Amber 45-54, Red &lt;45</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </span>
                     <span className={cn("font-semibold", getThresholdColor(kpiData.fitMedian, {
                       green: [55, 75],
                       amber: [45, 54],
@@ -355,11 +420,31 @@ const Admin = () => {
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm">Top-Gap Median</span>
+                    <span className="text-sm flex items-center gap-1">
+                      Top-Gap Median
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Median difference between 1st and 2nd highest type fit scores. Higher gaps indicate clearer type identification</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </span>
                     <span className="font-semibold">{kpiData.gapMedian.toFixed(1)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm">Close Calls %</span>
+                    <span className="text-sm flex items-center gap-1">
+                      Close Calls %
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Percentage where top 2 types are within 5 points. Green 20-35%, Amber 10-19%, Red &lt;10%</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </span>
                     <span className={cn("font-semibold", getThresholdColor(kpiData.closeCallsPercent, {
                       green: [20, 35],
                       amber: [10, 19],
@@ -369,7 +454,17 @@ const Admin = () => {
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm">Inconsistency Mean</span>
+                    <span className="text-sm flex items-center gap-1">
+                      Inconsistency Mean
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Average inconsistency in user responses. Green &lt;1.0, Amber 1.0-1.5, Red &gt;1.5</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </span>
                     <span className={cn("font-semibold", getThresholdColor(kpiData.inconsistencyMean, {
                       green: [0, 0.99],
                       amber: [1.0, 1.5],
@@ -379,7 +474,17 @@ const Admin = () => {
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm">SD Index Mean</span>
+                    <span className="text-sm flex items-center gap-1">
+                      SD Index Mean
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Social Desirability index - measures tendency to give socially acceptable answers rather than honest ones</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </span>
                     <span className="font-semibold">{kpiData.sdIndexMean.toFixed(2)}</span>
                   </div>
                 </CardContent>
@@ -388,7 +493,17 @@ const Admin = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span>Confidence Distribution</span>
+                    <span className="flex items-center gap-2">
+                      Confidence Distribution
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Distribution of confidence levels in PRISM type identification. Low confidence indicates unclear results</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -404,7 +519,7 @@ const Admin = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="confidence" />
                       <YAxis />
-                      <Tooltip />
+                       <RechartsTooltip />
                       <Bar dataKey="count" fill="#8884d8" />
                     </BarChart>
                   </ResponsiveContainer>
@@ -423,7 +538,17 @@ const Admin = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span>Overlay Distribution</span>
+                    <span className="flex items-center gap-2">
+                      Overlay Distribution
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Distribution of state overlays: Positive (+) vs Negative (–). Healthy balance is 35-65% for each</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -449,7 +574,7 @@ const Admin = () => {
                           <Cell key={`cell-${index}`} fill={index === 0 ? "#10b981" : "#ef4444"} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                       <RechartsTooltip />
                     </PieChart>
                   </ResponsiveContainer>
                   {/* Overlay balance threshold check */}
@@ -472,7 +597,17 @@ const Admin = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm">Test-Retest Correlation</CardTitle>
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    Test-Retest Correlation
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Consistency of PRISM results when users retake assessment. Green ≥0.80, Amber 0.70-0.79, Red &lt;0.70</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className={cn("text-2xl font-bold", getThresholdColor(retestData.strengthCorrelation, {
@@ -495,7 +630,17 @@ const Admin = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm">Type Stability %</CardTitle>
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    Type Stability %
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Percentage of users who get the same primary type on retest. Green ≥75%, Amber 65-74%, Red &lt;65%</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className={cn("text-2xl font-bold", getThresholdColor(retestData.typeStability, {
@@ -518,7 +663,17 @@ const Admin = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm">Containment %</CardTitle>
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    Containment %
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Percentage where previous top type appears in new top-2 results. Measures consistency of type identification</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{retestData.containment.toFixed(1)}%</div>
@@ -535,7 +690,17 @@ const Admin = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm">Median Stability Score</CardTitle>
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    Median Stability Score
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Overall stability measure (0-100) combining type consistency and strength correlation across retests</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{retestData.medianStabilityScore.toFixed(0)}</div>
@@ -556,7 +721,17 @@ const Admin = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span>Type Distribution Heatmap</span>
+                    <span className="flex items-center gap-2">
+                      Type Distribution Heatmap
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Distribution of PRISM types among completed assessments, ranked by frequency</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -572,7 +747,7 @@ const Admin = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis type="number" />
                       <YAxis dataKey="type" type="category" width={50} />
-                      <Tooltip />
+                       <RechartsTooltip />
                       <Bar dataKey="count" fill="#3b82f6" />
                     </BarChart>
                   </ResponsiveContainer>
@@ -582,7 +757,17 @@ const Admin = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span>Throughput Trend (14 days)</span>
+                    <span className="flex items-center gap-2">
+                      Throughput Trend (14 days)
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Daily completion trend over the last 14 days showing assessment volume patterns</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -598,7 +783,7 @@ const Admin = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="date" />
                       <YAxis />
-                      <Tooltip />
+                      <RechartsTooltip />
                       <Line type="monotone" dataKey="completions" stroke="#10b981" strokeWidth={2} />
                     </LineChart>
                   </ResponsiveContainer>
@@ -611,7 +796,17 @@ const Admin = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span>Slow Sections</span>
+                    <span className="flex items-center gap-2">
+                      Slow Sections
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Assessment sections ranked by median completion time. Identifies potential UX issues or complex content</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -644,7 +839,17 @@ const Admin = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span>Session Analytics</span>
+                    <span className="flex items-center gap-2">
+                      Session Analytics
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Overall session statistics including completion rates and average durations</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -842,7 +1047,7 @@ const Admin = () => {
           </div>
         </div>
       </div>
-    </>
+    </TooltipProvider>
   );
 };
 
