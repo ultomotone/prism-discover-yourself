@@ -14,8 +14,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import Header from "@/components/Header";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Admin = () => {
+  const { toast } = useToast();
   const {
     filters,
     setFilters,
@@ -681,21 +684,159 @@ const Admin = () => {
             {/* Export All */}
             <div className="flex justify-center">
               <Button
-                onClick={() => {
-                  // Export all data as ZIP would require additional library
-                  // For now, just export key metrics
-                  const allData = {
-                    kpi: kpiData,
-                    chart: chartData,
-                    session: sessionData,
-                    retest: retestData
-                  };
-                  exportToCSV([allData], 'prism-admin-dashboard-export.csv');
+                onClick={async () => {
+                  // Fetch all raw data for comprehensive export
+                  try {
+                    const [
+                      { data: qualityData },
+                      { data: throughputData },
+                      { data: sectionsData },
+                      { data: retestDeltasData },
+                      { data: profilesData },
+                      { data: recentAssessments }
+                    ] = await Promise.all([
+                      supabase.from('v_kpi_quality').select('*'),
+                      supabase.from('v_kpi_throughput').select('*'),
+                      supabase.from('v_section_time').select('*'),
+                      supabase.from('v_retest_deltas').select('*'),
+                      supabase.from('v_profiles_ext').select('confidence, type_top, overlay, fit_top, fit_2, fit_gap, inconsistency, sd_index, created_at').gte('created_at', filters.dateRange.from.toISOString()).lte('created_at', filters.dateRange.to.toISOString()),
+                      supabase.rpc('get_recent_assessments_safe')
+                    ]);
+
+                    // Create comprehensive export with multiple sheets worth of data
+                    const timestamp = new Date().toISOString().split('T')[0];
+                    
+                    // 1. KPI Summary
+                    exportToCSV([{
+                      export_date: timestamp,
+                      date_range_from: filters.dateRange.from.toISOString().split('T')[0],
+                      date_range_to: filters.dateRange.to.toISOString().split('T')[0],
+                      total_completions: kpiData.completions,
+                      completion_rate_pct: kpiData.completionRate,
+                      median_duration_min: kpiData.medianDuration,
+                      speeders_pct: kpiData.speedersPercent,
+                      stallers_pct: kpiData.stallersPercent,
+                      fit_median: kpiData.fitMedian,
+                      gap_median: kpiData.gapMedian,
+                      close_calls_pct: kpiData.closeCallsPercent,
+                      inconsistency_mean: kpiData.inconsistencyMean,
+                      sd_index_mean: kpiData.sdIndexMean,
+                      low_confidence_pct: kpiData.lowConfidencePercent,
+                      strength_correlation: retestData.strengthCorrelation,
+                      type_stability_pct: retestData.typeStability,
+                      containment_pct: retestData.containment,
+                      median_stability_score: retestData.medianStabilityScore
+                    }], `prism-kpi-summary-${timestamp}.csv`);
+
+                    // 2. Section Timing Analysis
+                    if (sectionsData?.length) {
+                      exportToCSV(sectionsData.map(section => ({
+                        section: section.section,
+                        median_seconds: section.median_seconds,
+                        median_minutes: section.median_seconds ? (section.median_seconds / 60).toFixed(2) : null,
+                        export_date: timestamp
+                      })), `prism-section-timing-${timestamp}.csv`);
+                    }
+
+                    // 3. Daily Throughput Data
+                    if (throughputData?.length) {
+                      exportToCSV(throughputData.map(day => ({
+                        date: day.d ? new Date(day.d).toISOString().split('T')[0] : null,
+                        completions: day.completions,
+                        median_minutes: day.median_minutes,
+                        export_date: timestamp
+                      })), `prism-daily-throughput-${timestamp}.csv`);
+                    }
+
+                    // 4. Individual Profile Data (anonymized)
+                    if (profilesData?.length) {
+                      exportToCSV(profilesData.map((profile, index) => ({
+                        profile_id: `ANON_${index + 1}`,
+                        assessment_date: profile.created_at ? new Date(profile.created_at).toISOString().split('T')[0] : null,
+                        confidence_level: profile.confidence,
+                        top_type: profile.type_top,
+                        overlay: profile.overlay,
+                        fit_score_top: profile.fit_top,
+                        fit_score_second: profile.fit_2,
+                        fit_gap: profile.fit_gap,
+                        inconsistency_score: profile.inconsistency,
+                        sd_index: profile.sd_index,
+                        export_date: timestamp
+                      })), `prism-profile-data-${timestamp}.csv`);
+                    }
+
+                    // 5. Recent Assessment Activity
+                    if (recentAssessments?.length) {
+                      exportToCSV(recentAssessments.map((assessment, index) => ({
+                        assessment_id: `RECENT_${index + 1}`,
+                        completed_at: assessment.created_at ? new Date(assessment.created_at).toISOString() : null,
+                        type_display: assessment.type_display,
+                        country: assessment.country_display,
+                        fit_score: assessment.fit_score,
+                        session_id: assessment.session_id,
+                        export_date: timestamp
+                      })), `prism-recent-assessments-${timestamp}.csv`);
+                    }
+
+                    // 6. Type Distribution Analysis
+                    exportToCSV(chartData.typeDistribution.map(type => ({
+                      type_code: type.type,
+                      count: type.count,
+                      percentage: ((type.count / chartData.typeDistribution.reduce((sum, t) => sum + t.count, 0)) * 100).toFixed(2),
+                      export_date: timestamp
+                    })), `prism-type-distribution-${timestamp}.csv`);
+
+                    // 7. Confidence & Overlay Analysis
+                    const confidenceData = chartData.confidenceDistribution.map(conf => ({
+                      confidence_level: conf.confidence,
+                      count: conf.count,
+                      percentage: ((conf.count / chartData.confidenceDistribution.reduce((sum, c) => sum + c.count, 0)) * 100).toFixed(2),
+                      metric_type: 'confidence',
+                      export_date: timestamp
+                    }));
+
+                    const overlayData = chartData.overlayDistribution.map(overlay => ({
+                      confidence_level: overlay.overlay,
+                      count: overlay.count,
+                      percentage: ((overlay.count / chartData.overlayDistribution.reduce((sum, o) => sum + o.count, 0)) * 100).toFixed(2),
+                      metric_type: 'overlay',
+                      export_date: timestamp
+                    }));
+
+                    exportToCSV([...confidenceData, ...overlayData], `prism-confidence-overlay-${timestamp}.csv`);
+
+                    // 8. Retest Analysis (if any data)
+                    if (retestDeltasData?.length) {
+                      exportToCSV(retestDeltasData.map((retest, index) => ({
+                        retest_id: `RETEST_${index + 1}`,
+                        days_between: retest.days_between,
+                        strength_delta: retest.strength_delta,
+                        dimension_changes: retest.dim_change_ct,
+                        type_same: retest.type_same === 1 ? 'Yes' : 'No',
+                        first_assessment: retest.t1 ? new Date(retest.t1).toISOString().split('T')[0] : null,
+                        second_assessment: retest.t2 ? new Date(retest.t2).toISOString().split('T')[0] : null,
+                        export_date: timestamp
+                      })), `prism-retest-analysis-${timestamp}.csv`);
+                    }
+
+                    toast({
+                      title: "Export Complete",
+                      description: `All PRISM admin data exported as separate CSV files (${timestamp})`,
+                    });
+
+                  } catch (error) {
+                    console.error('Export error:', error);
+                    toast({
+                      title: "Export Failed",
+                      description: "There was an error exporting the data. Please try again.",
+                      variant: "destructive"
+                    });
+                  }
                 }}
                 className="px-8"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Export All Data
+                Export All Data (Multiple Files)
               </Button>
             </div>
           </div>
