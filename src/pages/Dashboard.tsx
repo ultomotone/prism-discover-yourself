@@ -264,8 +264,8 @@ const Dashboard = () => {
           
           <div className="max-w-md mx-auto mb-6">
             <div className="flex items-center justify-between text-sm mb-2">
-              <span>{data?.totalAssessments || 0} / 1000</span>
-              <span>{progressPercentage}%</span>
+              <span>{data?.totalAssessments || 0}</span>
+              <span>100</span>
             </div>
             <MilestoneProgress 
               value={data?.totalAssessments || 0} 
