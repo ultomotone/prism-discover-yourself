@@ -8,7 +8,7 @@ const Consultants = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="pt-16">
+      <main className="pt-24">
         {/* Hero Section */}
         <section className="py-24 prism-container">
           <div className="max-w-4xl mx-auto text-center">

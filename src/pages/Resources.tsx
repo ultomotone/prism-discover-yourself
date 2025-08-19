@@ -44,7 +44,7 @@ const Resources = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="pt-20">
+      <main className="pt-24">
         {/* Hero Section */}
         <section className="py-20 bg-background">
           <div className="prism-container">
