@@ -395,12 +395,19 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 gap-6 mb-8">
           <Card className="prism-shadow-card">
             <CardHeader>
-              <CardTitle>Type Distribution</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Type Distribution</CardTitle>
+                {data?.typeDistribution.find(t => t.type === 'UNK')?.count && (
+                  <Badge variant="secondary" className="text-xs">
+                    {data.typeDistribution.find(t => t.type === 'UNK')?.count} Unclassified
+                  </Badge>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data?.typeDistribution}>
+                  <BarChart data={data?.typeDistribution.filter(t => t.type !== 'UNK')}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="type" />
                     <YAxis />
@@ -409,6 +416,11 @@ const Dashboard = () => {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+              {data?.typeDistribution.find(t => t.type === 'UNK')?.count && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Note: {data.typeDistribution.find(t => t.type === 'UNK')?.count} assessments are currently unclassified and not shown in chart
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
