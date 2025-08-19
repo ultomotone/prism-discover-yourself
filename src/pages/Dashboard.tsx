@@ -282,7 +282,7 @@ const Dashboard = () => {
           <Button 
             onClick={() => window.open('/roadmap', '_blank')}
             variant="outline"
-            className="border-white text-white hover:bg-white hover:text-primary"
+            className="border-white text-gray-800 hover:bg-white hover:text-primary"
           >
             Roadmap <ExternalLink className="ml-2 h-4 w-4" />
           </Button>
