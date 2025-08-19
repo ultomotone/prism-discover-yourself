@@ -41,10 +41,10 @@ const Hero = () => {
               <Button 
                 variant="outline-primary" 
                 size="lg" 
-                onClick={() => navigate('/history')}
+                onClick={() => navigate('/assessment-methods')}
                 className="group"
               >
-                View Your History
+                Assessment Roadmap
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
