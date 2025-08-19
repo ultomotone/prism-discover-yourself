@@ -483,9 +483,6 @@ const Dashboard = () => {
                   <Download className="h-4 w-4 mr-2" />
                   CSV
                 </Button>
-                <Button onClick={handleRescore} variant="outline" size="sm" className="bg-primary/10 border-primary hover:bg-primary/20">
-                  ↻ Rescore
-                </Button>
               </div>
             </div>
           </CardHeader>
