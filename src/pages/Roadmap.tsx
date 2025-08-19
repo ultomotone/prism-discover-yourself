@@ -45,10 +45,11 @@ export default function Roadmap() {
           .select('*', { count: 'exact', head: true })
           .not('completed_at', 'is', null);
 
-        // Total started sessions for completion rate
+        // Total started sessions with actual progress for completion rate
         const { count: startedCount } = await supabase
           .from('assessment_sessions')
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact', head: true })
+          .gt('completed_questions', 0); // Only sessions with at least 1 question answered
 
         // Confidence distribution - get unique profiles by session_id to avoid duplicates
         const { data: confidenceData } = await supabase
