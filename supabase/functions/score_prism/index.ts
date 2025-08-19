@@ -263,26 +263,47 @@ serve(async (req) => {
       const oppB = strengths[OPP[b]] || 0;
       const oppC = strengths[OPP[c]] || 0;
       let s = 0;
-      s += 0.60*sb + 0.40*sc;
-      s += 0.15*db + 0.10*dc;
-      s += 0.20*fcpB + 0.15*fcpC;
-      s -= 0.10*Math.max(0, oppB - sb);
-      s -= 0.05*Math.max(0, oppC - sc);
+      s += 0.60 * sb + 0.40 * sc;   // primary use (unchanged)
+      s += 0.18 * db + 0.12 * dc;   // ↑ dimensional mastery (was 0.15/0.10)
+      s += 0.15 * fcpB + 0.10 * fcpC; // ↓ FC influence (was 0.20/0.15)
+      s -= 0.10 * Math.max(0, oppB - sb);
+      s -= 0.05 * Math.max(0, oppC - sc);
       return s;
     }
     const rawScores: Record<string, number> = {};
     for (const code of Object.keys(TYPE_MAP)) rawScores[code] = scoreType(code);
+    // Map raw type score s (~1..6.5) to 0..100 without saturating
+    function mapFitAbs(s: number): number {
+      // Center near the top of typical range; slope tuned to avoid flatlining
+      const v = 100 / (1 + Math.exp(-(s - 5.2) * 1.35));
+      // Keep visible headroom so UI almost never shows 100
+      return Math.round(Math.min(99.4, Math.max(0, v)) * 10) / 10;
+    }
+
     const fitAbs: Record<string, number> = {};
     for (const [code, s] of Object.entries(rawScores)) {
-      const v = Math.max(0, Math.min(100, (s/6.5)*100));
-      fitAbs[code] = Math.round(v*10)/10;
+      fitAbs[code] = mapFitAbs(s);
     }
     const temp = 1.0;
     const exps = Object.fromEntries(Object.entries(rawScores).map(([k,v])=>[k, Math.exp(v/temp)]));
     const sumExp = Object.values(exps).reduce((a,b)=>a+b,0);
     const sharePct: Record<string, number> = {};
     for (const [k,v] of Object.entries(exps)) sharePct[k] = Math.round((v/sumExp)*1000)/10;
-    const top3 = Object.keys(TYPE_MAP).sort((a,b)=> fitAbs[b]-fitAbs[a]).slice(0,3);
+    function coherentCountFor(code: string) {
+      const t = TYPE_MAP[code];
+      let c = 0;
+      if ((dimensions[t.base] ?? 0) >= 3) c++;
+      if ((dimensions[t.creative] ?? 0) >= 3) c++;
+      return c;
+    }
+
+    const top3 = Object.keys(TYPE_MAP)
+      .sort((a, b) =>
+        (fitAbs[b] - fitAbs[a]) ||                 // 1) higher absolute fit first
+        (sharePct[b] - sharePct[a]) ||             // 2) then higher relative share
+        (coherentCountFor(b) - coherentCountFor(a))// 3) then more ≥3D on base/creative
+      )
+      .slice(0, 3);
     const type_scores: Record<string,{fit_abs:number; share_pct:number}> = {};
     for (const code of Object.keys(TYPE_MAP)) type_scores[code] = { fit_abs: fitAbs[code], share_pct: sharePct[code] };
 
@@ -307,7 +328,7 @@ serve(async (req) => {
 
     // ---- save & return ----
     const payload = {
-      version: "v2.3",
+      version: "v2.4",
       user_id, session_id,
       type_code: `${typeCode}${overlay}`,
       base_func: base, creative_func: creative, overlay,
