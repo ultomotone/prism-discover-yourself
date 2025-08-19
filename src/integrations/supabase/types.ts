@@ -65,6 +65,13 @@ export type Database = {
             referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
         ]
       }
       assessment_scoring_key: {
@@ -119,10 +126,13 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          ip_hash: string | null
           metadata: Json | null
           session_type: string
           started_at: string
+          status: string | null
           total_questions: number | null
+          ua_hash: string | null
           updated_at: string
           user_id: string | null
         }
@@ -132,10 +142,13 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          ip_hash?: string | null
           metadata?: Json | null
           session_type?: string
           started_at?: string
+          status?: string | null
           total_questions?: number | null
+          ua_hash?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -145,10 +158,13 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          ip_hash?: string | null
           metadata?: Json | null
           session_type?: string
           started_at?: string
+          status?: string | null
           total_questions?: number | null
+          ua_hash?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -239,18 +255,23 @@ export type Database = {
           dimensions: Json | null
           dims_highlights: Json | null
           email_mask: string | null
+          gap_minutes: number | null
           glossary_version: number | null
           id: string
+          ip_hash: string | null
           neuroticism: Json | null
           overlay: string | null
+          parent_session_id: string | null
           person_key: string | null
           prev_session_id: string | null
           run_index: number | null
           session_id: string
+          session_kind: string | null
           strengths: Json | null
           top_types: Json | null
           type_code: string | null
           type_scores: Json | null
+          ua_hash: string | null
           updated_at: string | null
           user_id: string | null
           validity: Json | null
@@ -268,18 +289,23 @@ export type Database = {
           dimensions?: Json | null
           dims_highlights?: Json | null
           email_mask?: string | null
+          gap_minutes?: number | null
           glossary_version?: number | null
           id?: string
+          ip_hash?: string | null
           neuroticism?: Json | null
           overlay?: string | null
+          parent_session_id?: string | null
           person_key?: string | null
           prev_session_id?: string | null
           run_index?: number | null
           session_id: string
+          session_kind?: string | null
           strengths?: Json | null
           top_types?: Json | null
           type_code?: string | null
           type_scores?: Json | null
+          ua_hash?: string | null
           updated_at?: string | null
           user_id?: string | null
           validity?: Json | null
@@ -297,18 +323,23 @@ export type Database = {
           dimensions?: Json | null
           dims_highlights?: Json | null
           email_mask?: string | null
+          gap_minutes?: number | null
           glossary_version?: number | null
           id?: string
+          ip_hash?: string | null
           neuroticism?: Json | null
           overlay?: string | null
+          parent_session_id?: string | null
           person_key?: string | null
           prev_session_id?: string | null
           run_index?: number | null
           session_id?: string
+          session_kind?: string | null
           strengths?: Json | null
           top_types?: Json | null
           type_code?: string | null
           type_scores?: Json | null
+          ua_hash?: string | null
           updated_at?: string | null
           user_id?: string | null
           validity?: Json | null
@@ -654,6 +685,13 @@ export type Database = {
             referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
         ]
       }
       v_section_time: {
@@ -680,10 +718,36 @@ export type Database = {
             referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
         ]
+      }
+      v_user_sessions_chrono: {
+        Row: {
+          email: string | null
+          gap_minutes: number | null
+          prev_session_id: string | null
+          session_id: string | null
+          started_at: string | null
+          user_id: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {
+      check_recent_completion: {
+        Args: { threshold_days?: number; user_email: string }
+        Returns: {
+          days_since_completion: number
+          has_recent_completion: boolean
+          last_completion_date: string
+        }[]
+      }
       get_recent_assessments_safe: {
         Args: Record<PropertyKey, never>
         Returns: {

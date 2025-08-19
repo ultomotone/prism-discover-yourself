@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { assessmentQuestions, Question } from "@/data/assessmentQuestions";
 import { QuestionComponent } from "./QuestionComponent";
 import { EmailSavePrompt } from "./EmailSavePrompt";
+import { SessionConflictModal } from "./SessionConflictModal";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Save } from "lucide-react";
@@ -33,6 +34,11 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
   const [isSaving, setIsSaving] = useState(false);
   const [isResumingSession, setIsResumingSession] = useState(false);
   const [showEmailPrompt, setShowEmailPrompt] = useState(false);
+  const [sessionConflict, setSessionConflict] = useState<{
+    type: 'resume' | 'recent_completion' | null;
+    email: string;
+    daysSinceCompletion?: number;
+  }>({ type: null, email: '' });
   const { toast } = useToast();
 
   const currentQuestion = assessmentQuestions[currentQuestionIndex];
@@ -498,17 +504,53 @@ try {
     console.log('Current sessionId:', sessionId);
     console.log('Current question index:', currentQuestionIndex);
     
-    if (!sessionId) {
-      console.log('No sessionId, cannot save');
-      toast({
-        title: "Save Failed",
-        description: "No active session to save. Please try again.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
+      // Check for session conflicts first
+      const { data, error } = await supabase.functions.invoke('start_assessment', {
+        body: { email, force_new: false }
+      });
+
+      if (error) {
+        console.error('❌ Error checking session conflicts:', error);
+        toast({
+          title: "Error",
+          description: "Failed to check existing sessions. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Handle different response scenarios
+      if (data.status === 'resumed') {
+        // User has an active session
+        setSessionConflict({
+          type: 'resume',
+          email: email
+        });
+        return;
+      }
+
+      if (data.has_recent_completion) {
+        // User has recent completion
+        setSessionConflict({
+          type: 'recent_completion',
+          email: email,
+          daysSinceCompletion: data.days_since_completion
+        });
+        return;
+      }
+
+      // No conflicts, proceed with normal save
+      if (!sessionId) {
+        console.log('No sessionId, cannot save');
+        toast({
+          title: "Save Failed",
+          description: "No active session to save. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setIsSaving(true);
       
       // Save current answer if there is one
@@ -572,11 +614,12 @@ try {
       if (onSaveAndExit) {
         onSaveAndExit();
       }
+
     } catch (error) {
-      console.error('Error saving assessment:', error);
+      console.error('Error in performSaveWithEmail:', error);
       toast({
-        title: "Save Failed",
-        description: "Could not save your progress. Please try again.",
+        title: "Error",
+        description: "Failed to save your progress. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -687,6 +730,29 @@ try {
           }
         }}
         onCancel={() => setShowEmailPrompt(false)}
+      />
+
+      <SessionConflictModal
+        isOpen={sessionConflict.type !== null}
+        onClose={() => setSessionConflict({ type: null, email: '' })}
+        conflictType={sessionConflict.type}
+        email={sessionConflict.email}
+        daysSinceCompletion={sessionConflict.daysSinceCompletion}
+        onResumeSession={() => {
+          setSessionConflict({ type: null, email: '' });
+          setShowEmailPrompt(false);
+        }}
+        onStartNew={() => {
+          setSessionConflict({ type: null, email: '' });
+          setShowEmailPrompt(false);
+        }}
+        onRetakeLater={() => {
+          setSessionConflict({ type: null, email: '' });
+          setShowEmailPrompt(false);
+          if (onSaveAndExit) {
+            onSaveAndExit();
+          }
+        }}
       />
     </div>
   );

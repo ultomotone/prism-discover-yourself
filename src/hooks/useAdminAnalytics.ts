@@ -171,12 +171,13 @@ export const useAdminAnalytics = () => {
 
   const fetchChartData = async () => {
     try {
-      // Confidence distribution
+      // Confidence distribution - exclude 'redo' sessions from analytics
       const { data: profilesData } = await supabase
-        .from('v_profiles_ext')
-        .select('confidence, type_top, overlay')
+        .from('profiles')
+        .select('confidence, type_code, overlay, session_kind, created_at')
         .gte('created_at', filters.dateRange.from.toISOString())
-        .lte('created_at', filters.dateRange.to.toISOString());
+        .lte('created_at', filters.dateRange.to.toISOString())
+        .neq('session_kind', 'redo'); // Exclude redo sessions from charts
 
       if (profilesData) {
         // Process confidence distribution
@@ -205,7 +206,7 @@ export const useAdminAnalytics = () => {
 
         // Process type distribution
         const typeCount = profilesData.reduce((acc: any, profile: any) => {
-          const type = profile.type_top || 'Unknown';
+          const type = profile.type_code ? profile.type_code.substring(0, 3) : 'Unknown';
           acc[type] = (acc[type] || 0) + 1;
           return acc;
         }, {});

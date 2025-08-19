@@ -366,7 +366,45 @@ serve(async (req) => {
 
     // blocks and blocks_norm already computed above
 
-    // ---- save & return ----
+    // ---- Session classification and save ----
+    // Mark session as completed
+    const { error: sessionUpdateError } = await supabase
+      .from('assessment_sessions')
+      .update({ status: 'completed', completed_at: new Date().toISOString() })
+      .eq('id', session_id);
+
+    if (sessionUpdateError) {
+      console.error('Error updating session status:', sessionUpdateError);
+    }
+
+    // Get session data for classification
+    const { data: currentSession } = await supabase
+      .from('assessment_sessions')
+      .select('email, user_id, started_at, ip_hash, ua_hash')
+      .eq('id', session_id)
+      .single();
+
+    // Find previous completed session for the same email
+    const { data: previousSession } = await supabase
+      .from('v_user_sessions_chrono')
+      .select('*')
+      .eq('email', currentSession?.email || '')
+      .eq('session_id', session_id)
+      .single();
+
+    // Classify session type
+    let sessionKind = 'initial';
+    let parentSessionId = null;
+    let gapMinutes = null;
+
+    if (previousSession && previousSession.prev_session_id) {
+      parentSessionId = previousSession.prev_session_id;
+      gapMinutes = Math.round(previousSession.gap_minutes || 0);
+      
+      // Less than 2 hours = redo, otherwise retest
+      sessionKind = gapMinutes < 120 ? 'redo' : 'retest';
+    }
+
     const primary = (top3 && top3.length) ? top3[0] : (typeCode !== "UNK" ? typeCode : null);
     const primaryBC = primary && TYPE_MAP[primary] ? TYPE_MAP[primary] : { base, creative };
     const finalTypeCode = primary || typeCode || "UNK";
@@ -382,7 +420,12 @@ serve(async (req) => {
       blocks, blocks_norm,
       neuroticism: { raw_mean: nMean, z },
       validity, confidence,
-      type_scores, top_types: top3, dims_highlights
+      type_scores, top_types: top3, dims_highlights,
+      session_kind: sessionKind,
+      parent_session_id: parentSessionId,
+      gap_minutes: gapMinutes,
+      ip_hash: currentSession?.ip_hash,
+      ua_hash: currentSession?.ua_hash
     };
     const { error: perr } = await supabase.from("profiles").upsert(payload);
     if (perr) {
