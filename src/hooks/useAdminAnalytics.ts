@@ -137,14 +137,53 @@ export const useAdminAnalytics = () => {
 
   const fetchKPIData = async () => {
     try {
+      // Get quality data
       const { data: qualityData } = await supabase
         .from('v_kpi_quality')
         .select('*')
         .single();
 
+      // Get throughput data
       const { data: throughputData } = await supabase
         .from('v_kpi_throughput')
         .select('*');
+
+      // Get real completion rate from assessment_sessions
+      const { data: sessionStats } = await supabase
+        .from('assessment_sessions')
+        .select('status, started_at, completed_at')
+        .gte('started_at', subDays(new Date(), 30).toISOString());
+
+      // Calculate real completion rate
+      const totalSessions = sessionStats?.length || 0;
+      const completedSessions = sessionStats?.filter(s => s.status === 'completed').length || 0;
+      const realCompletionRate = totalSessions > 0 ? (completedSessions / totalSessions) * 100 : 0;
+
+      // Calculate real speeder/staller percentages from session durations
+      const completedSessionsWithTimes = sessionStats?.filter(s => 
+        s.status === 'completed' && s.started_at && s.completed_at
+      ).map(s => {
+        const duration = (new Date(s.completed_at!).getTime() - new Date(s.started_at).getTime()) / (1000 * 60); // minutes
+        return duration;
+      }) || [];
+
+      const speedersPercent = completedSessionsWithTimes.length > 0 
+        ? (completedSessionsWithTimes.filter(d => d < 12).length / completedSessionsWithTimes.length) * 100 
+        : 0;
+
+      const stallersPercent = completedSessionsWithTimes.length > 0 
+        ? (completedSessionsWithTimes.filter(d => d > 60).length / completedSessionsWithTimes.length) * 100 
+        : 0;
+
+      // Get real confidence distribution from profiles
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('confidence')
+        .gte('created_at', subDays(new Date(), 30).toISOString());
+
+      const lowConfidenceCount = profiles?.filter(p => p.confidence === 'low').length || 0;
+      const totalProfiles = profiles?.length || 0;
+      const realLowConfidencePercent = totalProfiles > 0 ? (lowConfidenceCount / totalProfiles) * 100 : 0;
 
       if (qualityData && throughputData) {
         const totalCompletions = throughputData.reduce((sum: number, day: any) => sum + (day.completions || 0), 0);
@@ -156,20 +195,20 @@ export const useAdminAnalytics = () => {
         }, 0);
         
         const validDays = throughputData.filter((day: any) => day.median_minutes && !isNaN(day.median_minutes)).length;
-        const avgDuration = validDays > 0 ? durationSum / validDays : 25.5; // Use realistic default
+        const avgDuration = validDays > 0 ? durationSum / validDays : 25.5;
         
         setKpiData({
           completions: totalCompletions,
-          completionRate: 85.2, // Mock for now
+          completionRate: realCompletionRate,
           medianDuration: avgDuration,
-          speedersPercent: 12.3, // Mock for now
-          stallersPercent: 5.1, // Mock for now
+          speedersPercent: speedersPercent,
+          stallersPercent: stallersPercent,
           fitMedian: qualityData.fit_median || 0,
           gapMedian: qualityData.gap_median || 0,
           closeCallsPercent: (qualityData.close_calls_share || 0) * 100,
           inconsistencyMean: qualityData.inconsistency_mean || 0,
           sdIndexMean: qualityData.sd_index_mean || 0,
-          lowConfidencePercent: (qualityData.conf_low_share || 0) * 100
+          lowConfidencePercent: realLowConfidencePercent
         });
       }
     } catch (error) {
@@ -219,14 +258,23 @@ export const useAdminAnalytics = () => {
         }
       }
 
-      // For confidence distribution, use a mock distribution based on quality KPIs
-      // This provides realistic data until we have actual confidence data
-      const totalAssessments = (dashboardStats?.total_assessments || 10);
-      confidenceDistribution = [
-        { confidence: 'High', count: Math.round(totalAssessments * 0.6) },
-        { confidence: 'Moderate', count: Math.round(totalAssessments * 0.3) },
-        { confidence: 'Low', count: Math.round(totalAssessments * 0.1) }
-      ];
+      // Get real confidence distribution from profiles
+      const { data: profilesForConfidence } = await supabase
+        .from('profiles')
+        .select('confidence')
+        .gte('created_at', subDays(new Date(), 30).toISOString());
+
+      if (profilesForConfidence && profilesForConfidence.length > 0) {
+        const highCount = profilesForConfidence.filter(p => p.confidence === 'high').length;
+        const modCount = profilesForConfidence.filter(p => p.confidence === 'moderate').length;
+        const lowCount = profilesForConfidence.filter(p => p.confidence === 'low').length;
+        
+        confidenceDistribution = [
+          { confidence: 'High', count: highCount },
+          { confidence: 'Moderate', count: modCount },
+          { confidence: 'Low', count: lowCount }
+        ];
+      }
 
       // Throughput trend (last 14 days)
       const { data: throughputTrendData } = await supabase
