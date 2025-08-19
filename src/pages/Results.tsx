@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, ArrowLeft, ExternalLink } from "lucide-react";
+import { Download, ArrowLeft, ExternalLink, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ResultsV2 } from "@/components/assessment/ResultsV2";
+import { useToast } from "@/hooks/use-toast";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import Header from '@/components/Header';
@@ -12,6 +13,7 @@ import Header from '@/components/Header';
 export default function Results() {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [scoring, setScoring] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -249,14 +251,46 @@ export default function Results() {
               <p className="text-muted-foreground mb-6">
                 Use our AI Coach to dive deeper into your personality insights
               </p>
-              <Button 
-                onClick={() => window.open('https://chatgpt.com/g/g-68a233600af0819182cfa8c558a63112-prism-personality-ai-coach', '_blank')}
-                size="lg"
-                className="flex items-center gap-2"
-              >
-                <ExternalLink className="h-4 w-4" />
-                PRISM AI Coach
-              </Button>
+              <div className="flex flex-col items-center gap-4">
+                <Button 
+                  onClick={() => window.open('https://chatgpt.com/g/g-68a233600af0819182cfa8c558a63112-prism-personality-ai-coach', '_blank')}
+                  size="lg"
+                  className="flex items-center gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  PRISM AI Coach
+                </Button>
+                
+                <Button
+                  onClick={() => {
+                    const resultsUrl = window.location.href;
+                    navigator.clipboard.writeText(resultsUrl).then(() => {
+                      toast({
+                        title: "Results link copied!",
+                        description: "Save this link to return to your results anytime.",
+                      });
+                    }).catch(() => {
+                      // Fallback for browsers that don't support clipboard API
+                      const textArea = document.createElement('textarea');
+                      textArea.value = resultsUrl;
+                      document.body.appendChild(textArea);
+                      textArea.select();
+                      document.execCommand('copy');
+                      document.body.removeChild(textArea);
+                      toast({
+                        title: "Results link copied!",
+                        description: "Save this link to return to your results anytime.",
+                      });
+                    });
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 text-xs"
+                >
+                  <Copy className="h-3 w-3" />
+                  Save Results Link
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
