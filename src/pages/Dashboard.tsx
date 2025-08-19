@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
-import { Search, Download, ExternalLink, Calendar, Users, TrendingUp, Globe } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, ResponsiveContainer, LineChart, Line } from "recharts";
+import { Search, Download, ExternalLink, Calendar, Users, TrendingUp, Globe, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import Header from "@/components/Header";
 import CountryDistributionChart from "@/components/CountryDistributionChart";
 
@@ -398,8 +399,8 @@ const Dashboard = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="type" />
                     <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" />
+                     <ChartTooltip />
+                     <Bar dataKey="count" fill="hsl(var(--primary))" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -475,7 +476,23 @@ const Dashboard = () => {
                   <TableHead>When</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Country</TableHead>
-                  <TableHead>Type Fit Score</TableHead>
+                   <TableHead>
+                     <div className="flex items-center gap-2">
+                       Type Fit Score
+                       <TooltipProvider>
+                         <Tooltip>
+                           <TooltipTrigger asChild>
+                             <Info className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
+                           </TooltipTrigger>
+                           <TooltipContent>
+                             <p className="max-w-xs">
+                               The Type Fit Score measures how well someone aligns with their assigned PRISM type based on their responses, expressed as a percentage (0-100%).
+                             </p>
+                           </TooltipContent>
+                         </Tooltip>
+                       </TooltipProvider>
+                     </div>
+                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
