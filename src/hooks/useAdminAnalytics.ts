@@ -166,9 +166,22 @@ export const useAdminAnalytics = () => {
         .eq('completed', true)
         .gte('started_at', subDays(new Date(), 30).toISOString());
 
-      const durationsMin = (sessionDurations || [])
+      let durationsMin = (sessionDurations || [])
         .filter((s: any) => typeof s.duration_sec === 'number' && !isNaN(s.duration_sec))
         .map((s: any) => s.duration_sec / 60);
+
+      // Fallback: compute from assessment_sessions if v_sessions not accessible or empty
+      if (!durationsMin || durationsMin.length === 0) {
+        const { data: completedSessionsRaw } = await supabase
+          .from('assessment_sessions')
+          .select('started_at, completed_at, status')
+          .eq('status', 'completed')
+          .gte('started_at', subDays(new Date(), 30).toISOString());
+        durationsMin = (completedSessionsRaw || [])
+          .filter((s: any) => s.started_at && s.completed_at)
+          .map((s: any) => (new Date(s.completed_at).getTime() - new Date(s.started_at).getTime()) / 60000)
+          .filter((m: number) => isFinite(m) && m > 0);
+      }
 
       const speedersPercent = durationsMin.length > 0
         ? (durationsMin.filter((d: number) => d < 12).length / durationsMin.length) * 100
@@ -179,12 +192,21 @@ export const useAdminAnalytics = () => {
         : 0;
 
       // Get real confidence distribution from profiles
-      const { data: profiles } = await supabase
+      let { data: profiles } = await supabase
         .from('profiles')
         .select('confidence')
         .gte('created_at', subDays(new Date(), 30).toISOString());
 
-      const lowConfidenceCount = profiles?.filter(p => p.confidence === 'low').length || 0;
+      // Fallback to view if direct table is restricted
+      if (!profiles || profiles.length === 0) {
+        const { data: profilesExt } = await supabase
+          .from('v_profiles_ext')
+          .select('confidence')
+          .gte('created_at', subDays(new Date(), 30).toISOString());
+        profiles = profilesExt as any;
+      }
+
+      const lowConfidenceCount = (profiles || []).filter(p => p.confidence === 'low').length || 0;
       const totalProfiles = profiles?.length || 0;
       const realLowConfidencePercent = totalProfiles > 0 ? (lowConfidenceCount / totalProfiles) * 100 : 0;
 
@@ -261,11 +283,19 @@ export const useAdminAnalytics = () => {
         }
       }
 
-      // Get real confidence distribution from profiles
-      const { data: profilesForConfidence } = await supabase
+      // Get real confidence distribution from profiles (with fallback)
+      let { data: profilesForConfidence } = await supabase
         .from('profiles')
         .select('confidence')
         .gte('created_at', subDays(new Date(), 30).toISOString());
+
+      if (!profilesForConfidence || profilesForConfidence.length === 0) {
+        const { data: profilesExt } = await supabase
+          .from('v_profiles_ext')
+          .select('confidence')
+          .gte('created_at', subDays(new Date(), 30).toISOString());
+        profilesForConfidence = profilesExt as any;
+      }
 
       if (profilesForConfidence && profilesForConfidence.length > 0) {
         const highCount = profilesForConfidence.filter(p => p.confidence === 'high').length;
