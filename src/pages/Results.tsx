@@ -276,36 +276,6 @@ export default function Results() {
                   <ExternalLink className="h-4 w-4" />
                   PRISM AI Coach
                 </Button>
-                
-                <Button
-                  onClick={() => {
-                    const resultsUrl = window.location.href;
-                    navigator.clipboard.writeText(resultsUrl).then(() => {
-                      toast({
-                        title: "Results link copied!",
-                        description: "Save this link to return to your results anytime.",
-                      });
-                    }).catch(() => {
-                      // Fallback for browsers that don't support clipboard API
-                      const textArea = document.createElement('textarea');
-                      textArea.value = resultsUrl;
-                      document.body.appendChild(textArea);
-                      textArea.select();
-                      document.execCommand('copy');
-                      document.body.removeChild(textArea);
-                      toast({
-                        title: "Results link copied!",
-                        description: "Save this link to return to your results anytime.",
-                      });
-                    });
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2 text-xs"
-                >
-                  <Copy className="h-3 w-3" />
-                  Save Results Link
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -329,6 +299,56 @@ export default function Results() {
                   size="lg"
                 >
                   Take New Assessment
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    const resultsUrl = window.location.href;
+                    navigator.clipboard.writeText(resultsUrl).then(() => {
+                      toast({
+                        title: "Results link copied!",
+                        description: "Save this link to return to your results anytime.",
+                      });
+                    }).catch(() => {
+                      // Fallback for browsers that don't support clipboard API
+                      const textArea = document.createElement('textarea');
+                      textArea.value = resultsUrl;
+                      document.body.appendChild(textArea);
+                      textArea.select();
+                      document.execCommand('copy');
+                      document.body.removeChild(textArea);
+                      toast({
+                        title: "Results link copied!",
+                        description: "Save this link to return to your results anytime.",
+                      });
+                    });
+                  }}
+                  variant="outline"
+                  size="lg"
+                  className="flex items-center gap-2"
+                >
+                  <Copy className="h-4 w-4" />
+                  Save Results Link
+                </Button>
+
+                <Button 
+                  onClick={() => {
+                    const details = `Assessment Details:\n\nType: ${scoring?.type_code}${scoring?.overlay || ''}\nDate: ${new Date().toLocaleString()}\nCountry: Spain\nConfidence: ${scoring?.confidence || 'Unknown'}\nSession ID: ${sessionId}\n\nBase Function: ${scoring?.base_func || 'Unknown'}\nCreative Function: ${scoring?.creative_func || 'Unknown'}\n\nStrengths: ${JSON.stringify(scoring?.strengths, null, 2)}\n\nDimensions: ${JSON.stringify(scoring?.dimensions, null, 2)}`;
+                    
+                    navigator.clipboard.writeText(details).then(() => {
+                      toast({
+                        title: "Assessment details copied!",
+                        description: "Raw assessment data copied to clipboard for analysis.",
+                      });
+                    }).catch(() => {
+                      alert(`Assessment Details:\n\n${details}`);
+                    });
+                  }}
+                  variant="ghost" 
+                  size="lg"
+                  className="flex items-center gap-2"
+                >
+                  Assessment Details
                 </Button>
               </div>
             </CardContent>
