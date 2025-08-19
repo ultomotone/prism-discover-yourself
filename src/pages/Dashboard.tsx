@@ -90,7 +90,7 @@ const Dashboard = () => {
         .from('dashboard_statistics')
         .select('*')
         .eq('stat_date', new Date().toISOString().split('T')[0])
-        .single();
+        .maybeSingle();
 
       // Get weekly trend from aggregated view
       const { data: weeklyData } = await supabase

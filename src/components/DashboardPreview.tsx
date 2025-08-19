@@ -28,46 +28,72 @@ const DashboardPreview = () => {
           .from('dashboard_statistics')
           .select('*')
           .eq('stat_date', new Date().toISOString().split('T')[0])
-          .single();
+          .maybeSingle();
 
-        // Get recent weekly data
-        const { data: weeklyData } = await supabase
-          .from('dashboard_statistics')
-          .select('stat_date, daily_assessments')
-          .gte('stat_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-          .order('stat_date', { ascending: false })
-          .limit(7);
-
-        const totalAssessments = todayStats?.total_assessments || 0;
-        const todayCount = todayStats?.daily_assessments || 0;
-        const progressPercentage = Math.min(100, Math.round((totalAssessments / 1000) * 100));
-
-        // Get top type from distribution
-        const typeDistribution = todayStats?.type_distribution || {};
-        const topType = Object.entries(typeDistribution)
-          .sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] || null;
-
-        // Process overlay stats
-        const overlayStats = [];
-        if (todayStats?.overlay_positive) {
-          overlayStats.push({ overlay: 'N+', count: todayStats.overlay_positive });
-        }
-        if (todayStats?.overlay_negative) {
-          overlayStats.push({ overlay: 'N–', count: todayStats.overlay_negative });
+        // If no data for today, trigger the update function
+        if (!todayStats) {
+          await supabase.rpc('update_dashboard_statistics');
+          
+          // Try to fetch again after update
+          const { data: refreshedStats } = await supabase
+            .from('dashboard_statistics')
+            .select('*')
+            .eq('stat_date', new Date().toISOString().split('T')[0])
+            .maybeSingle();
+          
+          if (refreshedStats) {
+            processStatsData(refreshedStats);
+          } else {
+            setDefaultStats();
+          }
+          return;
         }
 
-        setStats({
-          totalAssessments,
-          todayCount,
-          progressPercentage,
-          topType,
-          overlayStats
-        });
+        processStatsData(todayStats);
       } catch (error) {
         console.error('Failed to fetch preview stats:', error);
+        setDefaultStats();
       } finally {
         setLoading(false);
       }
+    };
+
+    const processStatsData = (todayStats: any) => {
+      const totalAssessments = todayStats?.total_assessments || 0;
+      const todayCount = todayStats?.daily_assessments || 0;
+      const progressPercentage = Math.min(100, Math.round((totalAssessments / 1000) * 100));
+
+      // Get top type from distribution
+      const typeDistribution = todayStats?.type_distribution || {};
+      const topType = Object.entries(typeDistribution)
+        .sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] || null;
+
+      // Process overlay stats
+      const overlayStats = [];
+      if (todayStats?.overlay_positive) {
+        overlayStats.push({ overlay: 'N+', count: todayStats.overlay_positive });
+      }
+      if (todayStats?.overlay_negative) {
+        overlayStats.push({ overlay: 'N–', count: todayStats.overlay_negative });
+      }
+
+      setStats({
+        totalAssessments,
+        todayCount,
+        progressPercentage,
+        topType,
+        overlayStats
+      });
+    };
+
+    const setDefaultStats = () => {
+      setStats({
+        totalAssessments: 0,
+        todayCount: 0,
+        progressPercentage: 0,
+        topType: null,
+        overlayStats: []
+      });
     };
 
     fetchPreviewStats();
