@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import Header from "@/components/Header";
 import CountryDistributionChart from "@/components/CountryDistributionChart";
+import { rescoreAllUNKSessions } from "@/utils/rescoreUNKSessions";
 
 interface DashboardData {
   totalAssessments: number;
@@ -208,6 +209,33 @@ const Dashboard = () => {
     });
   }, [data, searchTerm, selectedType, selectedOverlay]);
 
+  const handleRescoreUNK = async () => {
+    setLoading(true);
+    toast({
+      title: "Rescoring UNK Sessions",
+      description: "Processing unknown type sessions...",
+    });
+    
+    const result = await rescoreAllUNKSessions();
+    
+    if (result.success) {
+      toast({
+        title: "Rescoring Complete",
+        description: `Successfully rescored ${result.successCount || 0} sessions`,
+      });
+      // Refresh dashboard data
+      fetchDashboardData();
+    } else {
+      toast({
+        title: "Rescoring Failed",
+        description: "Failed to rescore sessions. Check console for details.",
+        variant: "destructive",
+      });
+    }
+    
+    setLoading(false);
+  };
+
   const exportCSV = () => {
     if (!filteredAssessments.length) return;
     
@@ -397,11 +425,24 @@ const Dashboard = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Type Distribution</CardTitle>
-                {data?.typeDistribution.find(t => t.type === 'UNK')?.count && (
-                  <Badge variant="secondary" className="text-xs">
-                    {data.typeDistribution.find(t => t.type === 'UNK')?.count} Unclassified
-                  </Badge>
-                )}
+                <div className="flex items-center gap-2">
+                  {data?.typeDistribution.find(t => t.type === 'UNK')?.count && (
+                    <>
+                      <Badge variant="secondary" className="text-xs">
+                        {data.typeDistribution.find(t => t.type === 'UNK')?.count} Unclassified
+                      </Badge>
+                      <Button
+                        onClick={handleRescoreUNK}
+                        disabled={loading}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-7"
+                      >
+                        Rescore UNK
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent>
