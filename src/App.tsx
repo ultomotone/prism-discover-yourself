@@ -57,6 +57,7 @@ import OperationsSteward from "./pages/types/OperationsSteward";
 import PracticalOptimizer from "./pages/types/PracticalOptimizer";
 import PossibilityConnector from "./pages/types/PossibilityConnector";
 import IntegrityGuide from "./pages/types/IntegrityGuide";
+import Roadmap from "./pages/Roadmap";
 
 const queryClient = new QueryClient();
 
@@ -104,6 +105,7 @@ const App = () => (
               <Route path="/accessibility" element={<Accessibility />} />
               <Route path="/core-alignments" element={<CoreAlignments />} />
               <Route path="/resources" element={<Resources />} />
+              <Route path="/roadmap" element={<Roadmap />} />
               {/* PRISM Type Routes */}
               <Route path="/types/idea-catalyst" element={<IdeaCatalyst />} />
               <Route path="/types/framework-architect" element={<FrameworkArchitect />} />
