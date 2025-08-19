@@ -209,13 +209,16 @@ const Dashboard = () => {
     });
   }, [data, searchTerm, selectedType, selectedOverlay]);
 
-  // Automatically rescore on load
-  useEffect(() => {
-    const rescoreOnLoad = async () => {
-      await rescoreSpecificSessions();
-    };
-    rescoreOnLoad();
-  }, []);
+  const handleRescore = async () => {
+    try {
+      const result = await rescoreSpecificSessions();
+      console.log('Rescoring result:', result);
+      // Refresh data after rescoring
+      await fetchDashboardData();
+    } catch (error) {
+      console.error('Rescoring failed:', error);
+    }
+  };
 
   const exportCSV = () => {
     if (!filteredAssessments.length) return;
@@ -479,6 +482,9 @@ const Dashboard = () => {
                 <Button onClick={exportCSV} variant="outline" size="sm">
                   <Download className="h-4 w-4 mr-2" />
                   CSV
+                </Button>
+                <Button onClick={handleRescore} variant="outline" size="sm" className="bg-primary/10 border-primary hover:bg-primary/20">
+                  ↻ Rescore
                 </Button>
               </div>
             </div>
