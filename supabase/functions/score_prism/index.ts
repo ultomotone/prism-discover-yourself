@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ---------------- types & constants ----------------
-type ScaleType = 'LIKERT_1_7'|'LIKERT_1_5'|'STATE_1_7'|'FORCED_CHOICE_4'|string;
+type ScaleType = 'LIKERT_1_7'|'LIKERT_1_5'|'STATE_1_7'|'FORCED_CHOICE_4'|'AGREE_1_5'|'FREQ_1_7'|string;
 type Tag = string | null;
 interface ScoringKeyRecord {
   question_id: number | string;
@@ -13,6 +13,27 @@ interface ScoringKeyRecord {
   pair_group?: string | null;
   social_desirability?: boolean;
   fc_map?: Record<string,string>;
+}
+
+// Capability matrix presets
+type PresetKey = "AGREE_1_5" | "FREQ_1_7" | "STATE_1_7";
+
+const CAPABILITY_MAPS = {
+  AGREE_1_5: ["Strongly Disagree","Disagree","Neutral","Agree","Strongly Agree"],
+  FREQ_1_7: ["Never","Rarely","Sometimes","About half the time","Often","Very often","Always"],
+  STATE_1_7: ["Very Low","Low","Slightly Low","Neutral","Slightly High","High","Very High"],
+} as const;
+
+interface CapabilityConfig {
+  item_id: string;
+  capability_name: string;
+  ability_preset: PresetKey;
+  frequency_preset: PresetKey;
+  energy_preset: PresetKey;
+  w_ability: number;
+  w_frequency: number;
+  w_energy: number;
+  function_crosswalk?: string;
 }
 
 const FUNCS = ["Ti","Te","Fi","Fe","Ni","Ne","Si","Se"] as const;
@@ -114,6 +135,72 @@ function scoreType(
   return s; // ~1..6
 }
 
+// ---------------- capability scoring functions ----------------
+function codeFromLabel(preset: PresetKey, labelOrNumber: string | number): number | null {
+  if (typeof labelOrNumber === "number") return labelOrNumber;
+  const idx = CAPABILITY_MAPS[preset].findIndex(l => l.toLowerCase() === labelOrNumber.toLowerCase());
+  return idx >= 0 ? idx + 1 : null; // 1-based
+}
+
+function norm(value: number, min: number, max: number): number {
+  return (value - min) / (max - min);
+}
+
+function scoreGeneratingNovelOptions(input: {
+  ability: string | number;
+  frequency: string | number;
+  energy: string | number;
+  weights?: { ability?: number; frequency?: number; energy?: number };
+}) {
+  const wA = input.weights?.ability ?? 0.50;
+  const wF = input.weights?.frequency ?? 0.35;
+  const wE = input.weights?.energy ?? 0.15;
+
+  const aNum = codeFromLabel("AGREE_1_5", input.ability);
+  const fNum = codeFromLabel("FREQ_1_7", input.frequency);
+  const eNum = codeFromLabel("STATE_1_7", input.energy);
+
+  if ([aNum, fNum, eNum].some(v => v === null)) {
+    return { ok: false, error: "Missing or unmappable label." };
+  }
+
+  const A = norm(aNum!, 1, 5); // 0..1
+  const F = norm(fNum!, 1, 7); // 0..1
+  const E = norm(eNum!, 1, 7); // 0..1 (intensity)
+
+  const score = 100 * (wA * A + wF * F + wE * E);
+
+  // Optional valence (keep for interpretation)
+  const energyValence = (eNum! - 4) / 3; // -1..+1
+
+  // Simple completeness-based confidence
+  const answered = [aNum, fNum, eNum].filter(v => v !== null).length;
+  const confidence = answered === 3 ? "High" : answered === 2 ? "Medium" : "Low";
+
+  return {
+    ok: true,
+    score: Math.round(score * 10) / 10, // one decimal
+    parts: { ability: aNum, frequency: fNum, energy: eNum },
+    energyValence,
+    confidence
+  };
+}
+
+// Configuration for capability matrix questions
+const CAPABILITY_CONFIGS: Record<string, CapabilityConfig> = {
+  "247": { // Question ID for "Generating novel options"
+    item_id: "CAP_GNO",
+    capability_name: "Generating novel options",
+    ability_preset: "AGREE_1_5",
+    frequency_preset: "FREQ_1_7",
+    energy_preset: "STATE_1_7",
+    w_ability: 0.50,
+    w_frequency: 0.35,
+    w_energy: 0.15,
+    function_crosswalk: "Ne"
+  }
+};
+
 // ---------------- handler ----------------
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -156,7 +243,7 @@ serve(async (req) => {
       { data: skey, error: kerr },
       cfgs
     ] = await Promise.all([
-      supabase.from("assessment_responses").select("question_id, answer_value").eq("session_id", session_id),
+      supabase.from("assessment_responses").select("question_id, answer_value, answer_array").eq("session_id", session_id),
       supabase.from("assessment_scoring_key").select("*"),
       loadScoringConfigs(supabase)
     ]);
@@ -187,6 +274,9 @@ serve(async (req) => {
     const neuroVals: number[] = [];
     const pairs: Record<string, number[]> = {};
     let sdSum = 0, sdN = 0;
+    
+    // Capability matrix results storage
+    const capabilityResults: Record<string, any> = {};
 
     // Pass 1: aggregate
     for (const ans of answers) {
@@ -223,6 +313,36 @@ serve(async (req) => {
             blockCount[m as keyof typeof blockCount] = (blockCount[m as keyof typeof blockCount] || 0) + 1;
           } else if (FUNCS.includes(m as any)) {
             fcFuncCount[m] = (fcFuncCount[m] || 0) + 1;
+          }
+        }
+      }
+
+      // Process capability matrix questions
+      if (CAPABILITY_CONFIGS[qid] && ans.answer_array) {
+        const config = CAPABILITY_CONFIGS[qid];
+        const matrixAnswers = ans.answer_array as string[];
+        
+        if (matrixAnswers.length >= 3) {
+          const result = scoreGeneratingNovelOptions({
+            ability: matrixAnswers[0],
+            frequency: matrixAnswers[1], 
+            energy: matrixAnswers[2],
+            weights: {
+              ability: config.w_ability,
+              frequency: config.w_frequency,
+              energy: config.w_energy
+            }
+          });
+
+          if (result.ok) {
+            capabilityResults[config.item_id] = {
+              score: result.score,
+              parts_ability: result.parts.ability,
+              parts_frequency: result.parts.frequency,
+              parts_energy: result.parts.energy,
+              energy_valence: result.energyValence,
+              confidence: result.confidence
+            };
           }
         }
       }
@@ -484,6 +604,8 @@ const payload: any = {
   type_scores,
   top_types: top3,
   dims_highlights,
+  // capability matrix results
+  capabilities: capabilityResults,
   // new linkage fields
   ...(person_key ? { person_key } : {}),
   ...(email_mask ? { email_mask } : {}),
