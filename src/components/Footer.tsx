@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Mail, Phone, MapPin, Linkedin, Twitter, Facebook } from "lucide-react";
+import { Mail, Phone, Linkedin, Twitter, Facebook } from "lucide-react";
 
 const Footer = () => {
   const popularLinks = {
@@ -60,10 +60,6 @@ const Footer = () => {
                 <div className="flex items-center">
                   <Phone className="h-4 w-4 mr-3 text-primary-foreground/60" />
                   <span className="text-primary-foreground/80">+1 (555) 123-4567</span>
-                </div>
-                <div className="flex items-center">
-                  <MapPin className="h-4 w-4 mr-3 text-primary-foreground/60" />
-                  <span className="text-primary-foreground/80">San Francisco, CA</span>
                 </div>
               </div>
 
