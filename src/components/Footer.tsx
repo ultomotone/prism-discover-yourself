@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Mail, Phone, Linkedin, Twitter, Facebook, Heart } from "lucide-react";
+import { Mail, Phone, Linkedin, Twitter, Facebook } from "lucide-react";
 import { useEffect } from "react";
 
 const Footer = () => {
@@ -128,10 +128,7 @@ const Footer = () => {
 
             {/* Support PRISM Column */}
             <div>
-              <div className="mb-4">
-                <Heart className="h-5 w-5 text-red-400 mb-2" />
-                <h3 className="font-semibold">Support PRISM</h3>
-              </div>
+              <h3 className="font-semibold mb-4">Support PRISM</h3>
               <p className="text-primary-foreground/80 text-sm mb-4">
                 Help us keep PRISM free and accessible for everyone
               </p>
