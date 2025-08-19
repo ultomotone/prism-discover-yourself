@@ -35,6 +35,18 @@ function parseNum(raw: unknown): number | null {
   };
   return map[L] ?? null;
 }
+
+// Defensive value validation
+function isValidForScale(value: number, scale: string): boolean {
+  if (!Number.isFinite(value)) return false;
+  if (scale === "LIKERT_1_5" || scale === "CATEGORICAL_5" || scale === "FREQUENCY") {
+    return value >= 1 && value <= 5;
+  }
+  if (scale === "LIKERT_1_7" || scale === "STATE_1_7") {
+    return value >= 1 && value <= 7;
+  }
+  return true; // Allow others through
+}
 function reverseOnNative(v: number, scale: string): number {
   if (!Number.isFinite(v)) return v;
   if (scale === "LIKERT_1_7" || scale === "STATE_1_7") return 8 - v;
@@ -142,6 +154,9 @@ serve(async (req) => {
       const raw = parseNum(row.answer_value);
       if (raw == null) continue;
 
+      // Skip invalid values for scale type
+      if (!isValidForScale(raw, scale)) continue;
+
       // reverse on native, then normalize to 1..5
       const v5 = toCommon5(rec.reverse_scored ? reverseOnNative(raw, scale) : raw, scale);
 
@@ -154,9 +169,13 @@ serve(async (req) => {
       if (sd) { sdSum += v5; sdN += 1; }
       if (pair) (pairs[pair] ||= []).push(v5);
 
-      // forced-choice mapping (function or block counts)
+      // forced-choice mapping (function or block counts) with A/B/C/D/E support
       if (scale?.startsWith("FORCED_CHOICE")) {
-        const choice = String(row.answer_value).toUpperCase().trim();
+        const rawChoice = String(row.answer_value).trim().toUpperCase();
+        // Map numeric inputs to letters as fallback
+        const letterMap: Record<string, string> = {"1":"A","2":"B","3":"C","4":"D","5":"E"};
+        const choice = letterMap[rawChoice] || rawChoice;
+        
         const map = rec.fc_map ?? (scale === "FORCED_CHOICE_4" ? fcBlockDefault : null);
         if (map && map[choice]) {
           const m = map[choice];
