@@ -1,5 +1,6 @@
 import React from "react";
 import { ResponsiveContainer, BarChart, Bar as RechartsBar, XAxis, YAxis, Tooltip, ReferenceLine } from "recharts";
+import { Badge } from "@/components/ui/badge";
 
 // thresholds for labels (tune later)
 const LABEL_THRESH = {
@@ -12,8 +13,8 @@ function InfoTip({ title, children }:{
 }) {
   return (
     <span className="relative group inline-flex items-center">
-      <span className="ml-1 w-4 h-4 rounded-full border border-gray-400 text-[10px] flex items-center justify-center text-gray-600 cursor-default">?</span>
-      <div className="hidden group-hover:block absolute z-20 top-full mt-2 w-72 p-3 rounded-xl border bg-white shadow text-xs leading-5">
+      <span className="ml-1 w-4 h-4 rounded-full border border-gray-400 text-[10px] flex items-center justify-center text-gray-600 cursor-default hover:bg-gray-50">?</span>
+      <div className="hidden group-hover:block absolute z-20 top-full mt-2 w-80 p-3 rounded-xl border bg-white shadow-lg text-xs leading-5">
         <div className="font-medium mb-1">{title}</div>
         <div className="text-gray-700">{children}</div>
       </div>
@@ -21,34 +22,55 @@ function InfoTip({ title, children }:{
   );
 }
 
-// Fit interpretation component
-function FitInfo() {
+// Enhanced Fit interpretation component with close call tooltip
+function FitInfo({ profile }: { profile: Profile }) {
+  const topGap = profile.top_gap || 0;
+  const closeCall = profile.close_call || topGap < 5;
+  
   return (
     <div className="flex items-center gap-2 text-xs text-gray-700">
       <span><b>Absolute fit (0–100)</b> = invariant closeness to each type's prototype (uses strengths, dimensionality, FC support, opposite penalties).</span>
       <InfoTip title="How to read Fit">
-        <ul className="list-disc ml-5">
-          <li><b>75–100</b>: Very strong prototype match</li>
-          <li><b>55–74</b>: Strong match</li>
-          <li><b>35–54</b>: Moderate / partial match</li>
-          <li><b>0–34</b>: Weak match (retest or more data)</li>
-        </ul>
-        <p className="mt-2">This score is invariant (not affected by other types). <i>Share (%)</i> is relative among all 16 types.</p>
+        <div>
+          <p><b>Fit is your absolute pattern match to this type (0–100). Share is your relative likelihood among all types. A 'Close call' means your Top-2 are within 5 fit points—check both narratives.</b></p>
+          <ul className="list-disc ml-5 mt-2">
+            <li><b>75–100</b>: Very strong prototype match</li>
+            <li><b>55–74</b>: Strong match</li>
+            <li><b>35–54</b>: Moderate / partial match</li>
+            <li><b>0–34</b>: Weak match (retest or more data)</li>
+          </ul>
+          <p className="mt-2">This score is invariant (not affected by other types). <i>Share (%)</i> is relative among all 16 types.</p>
+        </div>
       </InfoTip>
+      {closeCall && (
+        <Badge variant="outline" className="ml-2 text-orange-600 border-orange-300">
+          Close Call (Gap: {topGap.toFixed(1)})
+        </Badge>
+      )}
     </div>
   );
 }
 
-function Top3FitChart({ data, primary }:{
+function Top3FitChart({ data, primary, profile }:{
   data: { code: string; fit: number; share: number }[];
   primary: string;
+  profile: Profile;
 }) {
   // emphasize primary bar
   const BAR = (code:string) => (code === primary ? "#111111" : "#bdbdbd");
+  const closeCall = profile.close_call || (profile.top_gap || 0) < 5;
+  
   return (
     <div className="mt-3 p-3 border rounded-xl bg-white">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-sm font-medium">Top-3 Fit comparison (0–100)</div>
+        <div className="text-sm font-medium flex items-center gap-2">
+          Top-3 Fit comparison (0–100)
+          {closeCall && (
+            <Badge variant="outline" className="text-orange-600 border-orange-300 text-xs">
+              Close Call
+            </Badge>
+          )}
+        </div>
         <div className="text-[11px] text-gray-500">Darker bar = selected type</div>
       </div>
       <div style={{ width: "100%", height: 160 }}>
@@ -91,12 +113,18 @@ type Profile = {
   neuroticism: { raw_mean:number; z:number };
   validity: { inconsistency:number; sd_index:number };
   confidence: "High"|"Moderate"|"Low";
+  validity_status?: string; // NEW v1.1
+  top_gap?: number; // NEW v1.1
+  close_call?: boolean; // NEW v1.1
+  fit_band?: string; // NEW v1.1
+  fc_answered_ct?: number; // NEW v1.1
+  top_3_fits?: Array<{ code: string; fit: number; share: number }>; // NEW v1.1
   type_scores: Record<string, { fit_abs:number; share_pct:number }>;
   top_types: string[]; // e.g., ["LIE","ILE","LSE"]
   dims_highlights: { coherent: Func[]; unique: Func[] };
 };
 
-// ---------- Glossary (inline; can be moved to DB later) --------------------
+// ---------- Enhanced Glossary (v1.1) with verbatim copy --------------------
 const GLOSSARY = {
   strength: {
     label: "Functional Strength",
@@ -122,6 +150,23 @@ const GLOSSARY = {
   states: {
     label: "States",
     text: "Context like stress, sleep, mood influences expression. We factor it for confidence and guidance; your core type remains."
+  },
+  // NEW v1.1 glossary entries (verbatim copy)
+  coherent: {
+    label: "Coherent",
+    text: "Strong + expected for this type/block."
+  },
+  unique: {
+    label: "Unique", 
+    text: "Strong but non-typical for this type; interesting differentiation, not an error."
+  },
+  suppressed: {
+    label: "Suppressed",
+    text: "Function falls >1 SD below user's own median → likely under-used or context-limited."
+  },
+  overlayDetailed: {
+    label: "Overlay ±",
+    text: "Day-state tint; '+' = more reactive; '–' = steadier. Core type doesn't change."
   }
 };
 
@@ -279,18 +324,40 @@ function Chip({ n=0 }:{ n:number }){
   return (<div className="flex gap-1">{Array.from({length:total}).map((_,i)=>(<span key={i} className={`w-2 h-2 rounded-full ${i<filled? 'bg-foreground':'bg-muted'}`}/>))}</div>);
 }
 
-function Bar({ label, value, max=5 }:{ label:string; value:number; max?:number }){
+function Bar({ label, value, max=5, suppressedThreshold }: { label:string; value:number; max?:number; suppressedThreshold?: number }){
   const w = Math.max(0, Math.min(100, Math.round((value/max)*100)));
+  const isSuppressed = suppressedThreshold && value <= suppressedThreshold;
+  
   return (
     <div className="mb-2">
-      <div className="flex justify-between text-sm"><span className="font-medium">{label}</span><span>{value?.toFixed ? value.toFixed(2) : value}</span></div>
-      <div className="h-2 bg-muted rounded-full overflow-hidden"><div className="h-2 bg-foreground" style={{width:`${w}%`}}/></div>
+      <div className="flex justify-between text-sm">
+        <span className="font-medium flex items-center gap-1">
+          {label}
+          {isSuppressed && (
+            <Badge variant="outline" className="text-xs text-gray-600 border-gray-400">
+              Suppressed
+              <InfoTip title="Suppressed Function">
+                <div>{GLOSSARY.suppressed.text}</div>
+              </InfoTip>
+            </Badge>
+          )}
+        </span>
+        <span>{value?.toFixed ? value.toFixed(2) : value}</span>
+      </div>
+      <div className="h-2 bg-muted rounded-full overflow-hidden">
+        <div className={`h-2 ${isSuppressed ? 'bg-gray-400' : 'bg-foreground'}`} style={{width:`${w}%`}}/>
+      </div>
     </div>
   );
 }
 
 function Top3({ p }:{ p:Profile }){
   const primary = p.top_types?.[0];
+  // Calculate user's median strength for suppressed detection
+  const strengthValues = Object.values(p.strengths);
+  const medianStrength = strengthValues.sort((a, b) => a - b)[Math.floor(strengthValues.length / 2)];
+  const suppressedThreshold = medianStrength - 1; // >1 SD below median (simplified)
+  
   return (
     <section className="p-5 border rounded-2xl bg-card">
       <div className="flex items-end gap-3 mb-3">
@@ -312,8 +379,18 @@ function Top3({ p }:{ p:Profile }){
               <div className="mt-2 text-sm"><b>Fit</b> {t.fit_abs}</div>
               {isMain && (
                 <div className="mt-2 text-xs">
-                  <div className="mb-1"><b>Coherent dims</b>: {p.dims_highlights.coherent.join(', ')||'—'}</div>
-                  <div><b>Unique dims</b>: <span className="text-primary">{p.dims_highlights.unique.join(', ')||'—'}</span></div>
+                  <div className="mb-1 flex items-center gap-1">
+                    <b>Coherent dims</b>: {p.dims_highlights.coherent.join(', ')||'—'}
+                    <InfoTip title="Coherent Functions">
+                      <div>{GLOSSARY.coherent.text}</div>
+                    </InfoTip>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <b>Unique dims</b>: <span className="text-primary">{p.dims_highlights.unique.join(', ')||'—'}</span>
+                    <InfoTip title="Unique Functions">
+                      <div>{GLOSSARY.unique.text}</div>
+                    </InfoTip>
+                  </div>
                 </div>
               )}
             </div>
@@ -321,248 +398,180 @@ function Top3({ p }:{ p:Profile }){
         })}
       </div>
       
-      <FitInfo />
+      <FitInfo profile={p} />
       
       <Top3FitChart
         primary={primary}
+        profile={p}
         data={p.top_types.map(code => ({
           code,
-          fit: p.type_scores?.[code]?.fit_abs ?? 0,
-          share: p.type_scores?.[code]?.share_pct ?? 0
+          fit: p.type_scores[code].fit_abs,
+          share: p.type_scores[code].share_pct
         }))}
       />
     </section>
   );
 }
 
-function Glossary(){
+function Strengths({ p }:{ p:Profile }){
+  // Calculate user's median strength for suppressed detection
+  const strengthValues = Object.values(p.strengths);
+  const medianStrength = strengthValues.sort((a, b) => a - b)[Math.floor(strengthValues.length / 2)];
+  const suppressedThreshold = medianStrength - 1; // >1 SD below median (simplified)
+  
   return (
     <section className="p-5 border rounded-2xl bg-card">
-      <h3 className="font-semibold mb-3">What your scores mean</h3>
-      <div className="grid md:grid-cols-2 gap-4 text-sm">
-        <div><b>{GLOSSARY.strength.label}</b><div className="text-muted-foreground">{GLOSSARY.strength.text}</div></div>
-        <div><b>{GLOSSARY.dimensionality.label}</b><div className="text-muted-foreground">{GLOSSARY.dimensionality.text}</div></div>
-        <div>
-          <b>{GLOSSARY.blocks.label}</b>
-          <ul className="list-disc ml-5 text-muted-foreground">{GLOSSARY.blocks.items.map(x=> <li key={x.k}><b>{x.k}:</b> {x.v}</li>)}</ul>
-        </div>
-        <div><b>{GLOSSARY.overlay.label}</b><div className="text-muted-foreground">{GLOSSARY.overlay.text}</div></div>
-        <div><b>Suppressed</b><div className="text-muted-foreground">Low usage (≤2.4/5) regardless of dimensionality; may indicate avoidance or being crowded out by stronger tools.</div></div>
-        <div className="md:col-span-2"><b>{GLOSSARY.states.label}</b><div className="text-muted-foreground">{GLOSSARY.states.text}</div></div>
-      </div>
-    </section>
-  );
-}
-
-function Narrative({ p }:{ p:Profile }){
-  const main = p.top_types?.[0] || p.type_code.slice(0,3);
-  const kb = TYPE_KB[main] || { title: main, p:["",""], flow:[], stress:[] };
-  const dims = p.dimensions;
-  const fTop = [...FUNCS].sort((a,b)=> (p.strengths[b]||0) - (p.strengths[a]||0)).slice(0,2);
-  const weak = [...FUNCS].sort((a,b)=> (p.strengths[a]||0) - (p.strengths[b]||0))[0];
-  return (
-    <section className="p-5 border rounded-2xl bg-card">
-      <div className="flex items-baseline gap-3 mb-3">
-        <h3 className="font-semibold">{kb.title} — {main}{p.overlay}</h3>
-        <span className="text-xs text-muted-foreground">
-          ({p.base_func}-{p.creative_func}) • Confidence: <span className={`font-semibold ${p.confidence === "Low" ? "text-red-600" : p.confidence === "Moderate" ? "text-amber-600" : "text-emerald-700"}`}>{p.confidence}</span>
-          {p.validity && (
-            <> · Inconsistency: {p.validity.inconsistency?.toFixed?.(2)} · SD: {p.validity.sd_index?.toFixed?.(2)}</>
-          )}
-        </span>
-      </div>
-      {kb.p.map((para, i)=> <p key={i} className="mb-3 text-sm leading-6">{para}</p>)}
-      <div className="grid md:grid-cols-2 gap-4 text-sm">
-        <div>
-          <h4 className="font-semibold mb-1">In flow</h4>
-          <ul className="list-disc ml-5 text-muted-foreground">{kb.flow.map((x,i)=><li key={i}>{x}</li>)}</ul>
-        </div>
-        <div>
-          <h4 className="font-semibold mb-1">Under stress</h4>
-          <ul className="list-disc ml-5 text-muted-foreground">{kb.stress.map((x,i)=><li key={i}>{x}</li>)}</ul>
-        </div>
-      </div>
-      <div className="mt-4 text-xs text-muted-foreground">Top functions: <b>{fTop.join(" + ")}</b> • Stretch: <b>{weak}</b></div>
-    </section>
-  );
-}
-
-function FunctionsAndDims({ p }:{
-  p: {
-    strengths: Record<string, number>;
-    dimensions: Record<string, number>; // 1..4
-    base_func: string; creative_func: string;
-    dims_highlights: { coherent: string[]; unique: string[] };
-  }
-}) {
-  const labelFor = (f:string)=>{
-    const str = p.strengths[f] ?? 0;
-    const dim = p.dimensions[f] ?? 0;
-    const isB = f === p.base_func;
-    const isC = f === p.creative_func;
-
-    if (dim >= LABEL_THRESH.dimHighlight && (isB || isC)) return { t:"type-coherent", cls:"bg-green-50", hint:
-      <>This function shows **high dimensionality (≥3D)** in your **core pair (Base/Creative)**. It's part of your native engine and flexes well across contexts.</> };
-
-    if (dim >= LABEL_THRESH.dimHighlight && !(isB || isC)) return { t:"unique", cls:"bg-blue-50", hint:
-      <>You've developed **high dimensionality (≥3D)** outside the core pair → **breadth** beyond typical for your type.</> };
-
-    if (str <= LABEL_THRESH.suppressedStrength) return { t:"suppressed", cls:"bg-gray-50", hint:
-      <>Low day-to-day **use** (≤{LABEL_THRESH.suppressedStrength.toFixed(1)} on 1–5). May be avoided or crowded out by stronger tools.</> };
-
-    return { t:"—", cls:"", hint: <>Neutral range. Neither highlighted nor suppressed.</> };
-  };
-
-  const Bar = ({ label, value, max=5 }:{ label:string; value:number; max?:number })=>{
-    const w = Math.max(0, Math.min(100, Math.round((value/max)*100)));
-    return (
-      <div className="mb-2">
-        <div className="flex justify-between text-sm"><span className="font-medium">{label}</span><span>{value?.toFixed ? value.toFixed(2) : value}</span></div>
-        <div className="h-2 bg-gray-200 rounded-full overflow-hidden"><div className="h-2 bg-black" style={{width:`${w}%`}}/></div>
-      </div>
-    );
-  };
-
-  const Chip = ({ n=0 }:{ n:number })=>{
-    const total=4, filled=Math.max(0,Math.min(total,n));
-    return (<div className="flex gap-1">{Array.from({length:total}).map((_,i)=>(<span key={i} className={`w-2 h-2 rounded-full ${i<filled? 'bg-black':'bg-gray-300'}`}/>))}</div>);
-  };
-
-  return (
-    <section className="p-5 border rounded-2xl bg-white">
       <div className="flex items-center gap-2 mb-3">
-        <h3 className="font-semibold">Functions</h3>
-        <InfoTip title="How to read this">
-          <p className="mb-2"><b>Strength</b> = usage (1–5). <b>Dimensionality</b> = depth/flexibility (1–4).</p>
-          <ul className="list-disc ml-5">
-            <li><b>type-coherent</b>: ≥3D on Base/Creative → native engine</li>
-            <li><b>unique</b>: ≥3D outside Base/Creative → developed breadth</li>
-            <li><b>suppressed</b>: strength ≤{LABEL_THRESH.suppressedStrength.toFixed(1)} → under-used</li>
-          </ul>
+        <h3 className="font-semibold">Functional strengths (1–5)</h3>
+        <InfoTip title={GLOSSARY.strength.label}>
+          <div>{GLOSSARY.strength.text}</div>
         </InfoTip>
       </div>
-
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-3">
         <div>
-          {FUNCS.map(f=> <Bar key={f} label={f} value={p.strengths[f]||0}/>) }
+          <div className="text-sm text-muted-foreground mb-2">Judging (J)</div>
+          <Bar label="Ti" value={p.strengths.Ti || 0} suppressedThreshold={suppressedThreshold} />
+          <Bar label="Te" value={p.strengths.Te || 0} suppressedThreshold={suppressedThreshold} />
+          <Bar label="Fi" value={p.strengths.Fi || 0} suppressedThreshold={suppressedThreshold} />
+          <Bar label="Fe" value={p.strengths.Fe || 0} suppressedThreshold={suppressedThreshold} />
         </div>
+        <div>
+          <div className="text-sm text-muted-foreground mb-2">Perceiving (P)</div>
+          <Bar label="Ni" value={p.strengths.Ni || 0} suppressedThreshold={suppressedThreshold} />
+          <Bar label="Ne" value={p.strengths.Ne || 0} suppressedThreshold={suppressedThreshold} />
+          <Bar label="Si" value={p.strengths.Si || 0} suppressedThreshold={suppressedThreshold} />
+          <Bar label="Se" value={p.strengths.Se || 0} suppressedThreshold={suppressedThreshold} />
+        </div>
+      </div>
+    </section>
+  );
+}
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {FUNCS.map(f=>{
-            const L = labelFor(f);
-            return (
-              <div key={f} className={`p-3 border rounded-xl ${L.cls}`}>
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">{f}</span>
-                  <Chip n={p.dimensions[f]||0}/>
-                </div>
-                <div className="text-[10px] mt-1 text-gray-600 flex items-center">
-                  {L.t}
-                  <InfoTip title={f}>{L.hint}</InfoTip>
-                </div>
+function Dimensions({ p }:{ p:Profile }){
+  return (
+    <section className="p-5 border rounded-2xl bg-card">
+      <div className="flex items-center gap-2 mb-3">
+        <h3 className="font-semibold">Dimensionality (1–4)</h3>
+        <InfoTip title={GLOSSARY.dimensionality.label}>
+          <div>{GLOSSARY.dimensionality.text}</div>
+        </InfoTip>
+      </div>
+      <div className="grid md:grid-cols-2 gap-3">
+        <div>
+          <div className="text-sm text-muted-foreground mb-2">Judging (J)</div>
+          {(['Ti','Te','Fi','Fe'] as const).map(f=><div key={f} className="flex justify-between items-center mb-1"><span className="text-sm font-medium">{f}</span><Chip n={p.dimensions[f]||0}/></div>)}
+        </div>
+        <div>
+          <div className="text-sm text-muted-foreground mb-2">Perceiving (P)</div>
+          {(['Ni','Ne','Si','Se'] as const).map(f=><div key={f} className="flex justify-between items-center mb-1"><span className="text-sm font-medium">{f}</span><Chip n={p.dimensions[f]||0}/></div>)}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Blocks({ p }:{ p:Profile }){
+  const colorMap = { Core:'bg-green-500', Hidden:'bg-blue-500', Critic:'bg-red-500', Instinct:'bg-purple-500' };
+  return (
+    <section className="p-5 border rounded-2xl bg-card">
+      <div className="flex items-center gap-2 mb-3">
+        <h3 className="font-semibold">Blocks (%)</h3>
+        <InfoTip title={GLOSSARY.blocks.label}>
+          <div className="space-y-2">
+            {GLOSSARY.blocks.items.map(({k,v})=>(
+              <div key={k}>
+                <b>{k}</b>: {v}
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        </InfoTip>
       </div>
-
-      <div className="mt-3 text-xs text-gray-600">
-        <b>Legend:</b> green = type-coherent, blue = unique, gray = suppressed.  
-        Thresholds live in <code>LABEL_THRESH</code>.
+      <div className="grid grid-cols-2 gap-3">
+        {(['Core','Hidden','Critic','Instinct'] as const).map(b=>(
+          <div key={b} className="text-center p-3 border rounded-lg">
+            <div className="font-medium">{b}</div>
+            <div className="text-2xl font-bold">{p.blocks_norm[b]?.toFixed(1)||'0.0'}%</div>
+            <div className={`h-2 rounded mt-2 ${colorMap[b]}`} style={{width:`${p.blocks_norm[b]||0}%`}}/>
+          </div>
+        ))}
       </div>
     </section>
   );
 }
 
-function BlocksAndNeuro({ p }:{
-  p: {
-    blocks: { Core:number; Critic:number; Hidden:number; Instinct:number };
-    blocks_norm?: { Core:number; Critic:number; Hidden:number; Instinct:number };
-    neuroticism: { raw_mean:number; z:number };
-    overlay: "+"|"–";
-  }
-}) {
-  const Bar = ({ label, value, max=100 }:{ label:string; value:number; max?:number })=>{
-    const w = Math.max(0, Math.min(100, Math.round((value/max)*100)));
-    return (
-      <div className="mb-2">
-        <div className="flex justify-between text-sm"><span className="font-medium">{label}</span><span>{value.toFixed(2)}</span></div>
-        <div className="h-2 bg-gray-200 rounded-full overflow-hidden"><div className="h-2 bg-black" style={{width:`${w}%`}}/></div>
-      </div>
-    );
-  };
-
-  const percentile = (z:number)=>{ const t=1/(1+0.2316419*Math.abs(z)); const d=0.3989423*Math.exp(-z*z/2); let s=1 - d*(1.330274*t - 1.821256*t**2 + 1.781478*t**3 - 0.356564*t**4 + 0.3193815*t**5); if(z<0) s=1-s; return Math.round(s*100); };
-
-  const bn = p.blocks_norm ?? (() => {
-    const s = p.blocks.Core + p.blocks.Critic + p.blocks.Hidden + p.blocks.Instinct || 1;
-    return {
-      Core: Math.round((p.blocks.Core/s)*1000)/10,
-      Critic: Math.round((p.blocks.Critic/s)*1000)/10,
-      Hidden: Math.round((p.blocks.Hidden/s)*1000)/10,
-      Instinct: Math.round((p.blocks.Instinct/s)*1000)/10
-    };
-  })();
-
-  const overlayText = p.overlay === "+"
-    ? "More reactive baseline (higher neuroticism). Under pressure, signals intensify faster; we lean more on forced-choice and scenarios."
-    : "Steadier baseline (lower neuroticism). Day-to-day ratings are usually reliable; reactivity spikes are rarer and shorter.";
-
-  const mix = (()=> {
-    const entries = Object.entries(bn).sort((a,b)=> b[1]-a[1]);
-    const [top, second] = entries;
-    return `Your block mix today leans ${top[0]} (${top[1]}%) with ${second[0]} next (${second[1]}%).`;
-  })();
-
+function TypeNarrative({ typeCode }:{ typeCode:string }){
+  const kb = TYPE_KB[typeCode]; if(!kb) return null;
   return (
-    <section className="p-5 border rounded-2xl bg-white">
+    <section className="p-5 border rounded-2xl bg-card">
+      <h3 className="text-xl font-bold mb-3">{kb.title}</h3>
+      {kb.p.map((para,i)=><p key={i} className="mb-3 leading-relaxed">{para}</p>)}
+      <div className="grid md:grid-cols-2 gap-4 mt-4 text-sm">
+        <div>
+          <div className="font-medium text-green-700 mb-2">Flow states</div>
+          <ul className="space-y-1 text-muted-foreground">{kb.flow.map((x,i)=><li key={i}>• {x}</li>)}</ul>
+        </div>
+        <div>
+          <div className="font-medium text-red-700 mb-2">Stress patterns</div>
+          <ul className="space-y-1 text-muted-foreground">{kb.stress.map((x,i)=><li key={i}>• {x}</li>)}</ul>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MetaInfo({ p }:{ p:Profile }){
+  const validityColor = p.validity_status === "pass" ? "text-green-600" : 
+                       p.validity_status === "warning" ? "text-orange-600" : "text-red-600";
+  
+  return (
+    <section className="p-5 border rounded-2xl bg-card">
       <div className="flex items-center gap-2 mb-3">
-        <h3 className="font-semibold">Blocks & Overlay</h3>
-        <InfoTip title="What are blocks?">
-          <ul className="list-disc ml-5">
-            <li><b>Core</b> (Base+Creative): native engine; where you prefer to operate.</li>
-            <li><b>Critic</b> (Role+Vulnerable): effortful/sensitive; handle with care.</li>
-            <li><b>Hidden</b> (Suggestive+Mobilizing): yearned-for abilities; grow with support.</li>
-            <li><b>Instinct</b> (Ignoring+Demonstrative): strong but undervalued or on autopilot.</li>
-          </ul>
+        <h3 className="font-semibold">Profile quality & context</h3>
+        <InfoTip title="Quality Metrics">
+          <div>
+            <p><b>Confidence</b>: Overall reliability based on consistency and attention.</p>
+            <p><b>Validity Status</b>: Pass/Warning/Fail based on response quality.</p>
+            <p><b>Fit Band</b>: High (60-100), Moderate (40-59), Low (&lt;40).</p>
+          </div>
         </InfoTip>
       </div>
-
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <Bar label="Core" value={p.blocks.Core} max={100}/>
-          <Bar label="Critic" value={p.blocks.Critic} max={100}/>
-          <Bar label="Hidden" value={p.blocks.Hidden} max={100}/>
-          <Bar label="Instinct" value={p.blocks.Instinct} max={100}/>
-          <div className="text-[10px] text-gray-500 mt-1">Normalized mix: Core {bn.Core}% · Critic {bn.Critic}% · Hidden {bn.Hidden}% · Instinct {bn.Instinct}%</div>
+      <div className="grid md:grid-cols-2 gap-4 text-sm">
+        <div className="space-y-2">
+          <div><b>Confidence</b>: {p.confidence}</div>
+          <div className={validityColor}><b>Validity Status</b>: {p.validity_status || 'pass'}</div>
+          <div><b>Fit Band</b>: {p.fit_band || 'Unknown'}</div>
+          {p.close_call && <div className="text-orange-600"><b>Close Call</b>: Top-gap = {p.top_gap?.toFixed(1)}</div>}
         </div>
-
-        <div className="text-sm">
-          <div className="mb-2">{mix}</div>
-          <div>
-            Neuro mean: <b>{p.neuroticism.raw_mean.toFixed(2)}</b> · z <b>{p.neuroticism.z.toFixed(2)}</b>
-            (~{percentile(p.neuroticism.z)}th percentile) → Overlay <b>{p.overlay}</b>
-            <InfoTip title="What does ± mean?">
-              <p className="mb-1"><b>'+'</b> = more reactive baseline; <b>'–'</b> = steadier baseline.</p>
-              <p>We separate **trait** from **state**. Higher reactivity → we down-weight some Likert and lean more on forced-choice/scenario evidence.</p>
+        <div className="space-y-2">
+          <div><b>Inconsistency</b>: {p.validity.inconsistency}</div>
+          <div><b>Social desirability</b>: {p.validity.sd_index}</div>
+          {p.fc_answered_ct && <div><b>FC Answered</b>: {p.fc_answered_ct}</div>}
+          <div className="flex items-center gap-1">
+            <b>Overlay</b>: {p.overlay} 
+            <InfoTip title="Overlay ±">
+              <div>{GLOSSARY.overlayDetailed.text}</div>
             </InfoTip>
           </div>
-          <div className="text-xs text-gray-600 mt-2">{overlayText}</div>
         </div>
       </div>
     </section>
   );
 }
 
-export function ResultsV2({ profile }:{ profile: Profile }){
-  const p = profile;
+// ---------- Main export -----------------------------------------------------
+export const ResultsV2: React.FC<{ profile: Profile }> = ({ profile: p }) => {
+  const primary = p.top_types?.[0] || p.type_code;
+  
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <Top3 p={p}/>
-      <Glossary/>
-      <Narrative p={p}/>
-      <FunctionsAndDims p={p}/>
-      <BlocksAndNeuro p={p}/>
+      <Top3 p={p} />
+      <TypeNarrative typeCode={primary} />
+      <div className="grid md:grid-cols-2 gap-6">
+        <Strengths p={p} />
+        <Dimensions p={p} />
+      </div>
+      <Blocks p={p} />
+      <MetaInfo p={p} />
     </div>
   );
-}
+};

@@ -27,6 +27,7 @@ export type Database = {
           question_text: string
           question_type: string
           response_time_ms: number | null
+          section_id: string | null
           session_id: string
         }
         Insert: {
@@ -41,6 +42,7 @@ export type Database = {
           question_text: string
           question_type: string
           response_time_ms?: number | null
+          section_id?: string | null
           session_id: string
         }
         Update: {
@@ -55,6 +57,7 @@ export type Database = {
           question_text?: string
           question_type?: string
           response_time_ms?: number | null
+          section_id?: string | null
           session_id?: string
         }
         Relationships: [
@@ -248,6 +251,7 @@ export type Database = {
           baseline_session_id: string | null
           blocks: Json | null
           blocks_norm: Json | null
+          close_call: boolean | null
           confidence: string | null
           created_at: string | null
           creative_func: string | null
@@ -255,6 +259,9 @@ export type Database = {
           dimensions: Json | null
           dims_highlights: Json | null
           email_mask: string | null
+          fc_answered_ct: number | null
+          fit_band: string | null
+          fit_explainer: Json | null
           gap_minutes: number | null
           glossary_version: number | null
           id: string
@@ -268,6 +275,8 @@ export type Database = {
           session_id: string
           session_kind: string | null
           strengths: Json | null
+          top_3_fits: Json | null
+          top_gap: number | null
           top_types: Json | null
           type_code: string | null
           type_scores: Json | null
@@ -275,6 +284,7 @@ export type Database = {
           updated_at: string | null
           user_id: string | null
           validity: Json | null
+          validity_status: string | null
           version: string | null
         }
         Insert: {
@@ -282,6 +292,7 @@ export type Database = {
           baseline_session_id?: string | null
           blocks?: Json | null
           blocks_norm?: Json | null
+          close_call?: boolean | null
           confidence?: string | null
           created_at?: string | null
           creative_func?: string | null
@@ -289,6 +300,9 @@ export type Database = {
           dimensions?: Json | null
           dims_highlights?: Json | null
           email_mask?: string | null
+          fc_answered_ct?: number | null
+          fit_band?: string | null
+          fit_explainer?: Json | null
           gap_minutes?: number | null
           glossary_version?: number | null
           id?: string
@@ -302,6 +316,8 @@ export type Database = {
           session_id: string
           session_kind?: string | null
           strengths?: Json | null
+          top_3_fits?: Json | null
+          top_gap?: number | null
           top_types?: Json | null
           type_code?: string | null
           type_scores?: Json | null
@@ -309,6 +325,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
           validity?: Json | null
+          validity_status?: string | null
           version?: string | null
         }
         Update: {
@@ -316,6 +333,7 @@ export type Database = {
           baseline_session_id?: string | null
           blocks?: Json | null
           blocks_norm?: Json | null
+          close_call?: boolean | null
           confidence?: string | null
           created_at?: string | null
           creative_func?: string | null
@@ -323,6 +341,9 @@ export type Database = {
           dimensions?: Json | null
           dims_highlights?: Json | null
           email_mask?: string | null
+          fc_answered_ct?: number | null
+          fit_band?: string | null
+          fit_explainer?: Json | null
           gap_minutes?: number | null
           glossary_version?: number | null
           id?: string
@@ -336,6 +357,8 @@ export type Database = {
           session_id?: string
           session_kind?: string | null
           strengths?: Json | null
+          top_3_fits?: Json | null
+          top_gap?: number | null
           top_types?: Json | null
           type_code?: string | null
           type_scores?: Json | null
@@ -343,6 +366,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
           validity?: Json | null
+          validity_status?: string | null
           version?: string | null
         }
         Relationships: []

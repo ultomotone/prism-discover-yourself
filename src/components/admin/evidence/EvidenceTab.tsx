@@ -4,6 +4,7 @@ import { TestRetestReliabilityCard } from './TestRetestReliabilityCard';
 import { TypeStabilityCard } from './TypeStabilityCard';
 import { ConfidenceCalibrationCard } from './ConfidenceCalibrationCard';
 import { MethodAgreementCard } from './MethodAgreementCard';
+import { StateTraitSeparationCard, OverlayInvarianceCard, DimensionalityReliabilityCard } from './EnhancedEvidenceCards';
 import { AdminFilters } from '../AdminFilters';
 import { useToast } from '@/hooks/use-toast';
 
