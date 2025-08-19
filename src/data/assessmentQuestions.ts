@@ -2103,133 +2103,36 @@ export const assessmentQuestions: Question[] = [
       }
     ]
   },
+  
+  // Reading & retuning the room (unfamiliar groups) - Capability Matrix
   {
     id: 248,
-    text: "Capability Matrix: Reading & retuning the room (unfamiliar groups)",
+    text: 'Reading & retuning the room (unfamiliar groups)',
     type: 'matrix',
     required: true,
     section: 'Advanced Capability',
-    subQuestions: [
+    parts: [
       {
-        id: 'A',
-        text: 'Part A (ability):',
-        type: 'likert-1-5',
-        options: ['1', '2', '3', '4', '5']
+        label: 'Ability level',
+        options: ['Novice', 'Emerging', 'Competent', 'Strong', 'Expert']
       },
       {
-        id: 'B',
-        text: 'Part B (frequency, last 12 months):',
-        type: 'multiple-choice',
-        options: ['0', '1', '2–3', '4–6', '7+']
+        label: 'Frequency',
+        options: ['Never', 'Rarely', 'Sometimes', 'About half the time', 'Often', 'Very often', 'Always']
       },
       {
-        id: 'C',
-        text: 'Part C (energy cost):',
-        type: 'multiple-choice',
-        options: ['None', 'Low', 'Moderate', 'High', 'Very high']
+        label: 'Energy / Effort',
+        options: ['Very draining', 'Draining', 'Slightly draining', 'Neutral', 'Slightly energizing', 'Energizing', 'Very energizing']
+      },
+      {
+        label: 'Retuning approach',
+        options: [
+          'A. Affective tuning (warmth, tone, emotional pacing, reading nonverbals)',
+          'B. Structural tuning (ground rules, agenda, roles, environment tweaks)'
+        ]
       }
     ]
-  },
-  {
-    id: 249,
-    text: "High-stakes, no precedents, 48h deadline. Best first move?",
-    type: 'forced-choice-5',
-    options: [
-      'A) Draft one coherent path, list 5 risks/assumptions, commit.',
-      'B) Generate 6 options, test 2 fast, decide from feedback.',
-      'C) Poll the room to align tone before content.',
-      'D) Wait for examples/data to avoid rework.',
-      'E) Build a formal taxonomy before picking a path.'
-    ],
-    required: true,
-    section: 'Advanced Capability'
-  },
-  {
-    id: 250,
-    text: "New audience goes cold mid-pitch; you're behind schedule.",
-    type: 'forced-choice-5',
-    options: [
-      'A) Mirror concerns, retune pacing/tone, continue.',
-      'B) Keep tone consistent; address later offline.',
-      'C) Push to data; tone is noise.',
-      'D) Pause the talk and run a quick vote.',
-      'E) Abandon talk; send a detailed memo.'
-    ],
-    required: true,
-    section: 'Advanced Capability'
-  },
-  {
-    id: 251,
-    text: "Unfamiliar topic; you must create structure.",
-    type: 'forced-choice-5',
-    options: [
-      'A) Translate goals into measurable constraints; sequence work.',
-      'B) Define objects & relations precisely; test with toy cases first.',
-      'C) Collect examples from similar domains before structuring.',
-      'D) Crowdsource possible frames; decide later.',
-      'E) Pick one likely frame; prune edge-cases.'
-    ],
-    required: true,
-    section: 'Advanced Capability'
-  },
-  {
-    id: 252,
-    text: "A brand-new, important problem with no examples. You need to move.",
-    type: 'forced-choice-2',
-    options: [
-      'A) Come up with several different ways first, try a couple quickly, then choose.',
-      'B) Pick one promising path fast, list key risks/assumptions, and commit.'
-    ],
-    required: true,
-    section: 'Advanced Capability'
-  },
-  {
-    id: 253,
-    text: "Given multiple promising options under time pressure, your first instinct is to…",
-    type: 'forced-choice-2',
-    options: [
-      'A) Pick one and commit.',
-      'B) Keep two alive and test both.'
-    ],
-    required: true,
-    section: 'Advanced Capability'
-  },
-  {
-    id: 254,
-    text: "You have to make a call now with limited information.",
-    type: 'forced-choice-2',
-    options: [
-      'A) Decide now and adjust as you learn more.',
-      'B) Wait until the pattern is clearer, even if it delays the decision.'
-    ],
-    required: true,
-    section: 'Advanced Capability'
-  },
-  {
-    id: 255,
-    text: "I need examples before I can generate useful options.",
-    type: 'forced-choice-2',
-    options: ['Agree', 'Disagree'],
-    required: true,
-    section: 'Advanced Capability'
-  },
-  {
-    id: 256,
-    text: "You must organize a topic you don't know well.",
-    type: 'forced-choice-2',
-    options: [
-      'A) Start by defining the pieces and how they fit; make a simple model and test it with small examples.',
-      'B) Start by turning the goal into clear metrics and steps; set milestones and order the work.'
-    ],
-    required: true,
-    section: 'Advanced Capability'
-  },
-  {
-    id: 257,
-    text: "With few examples, I can generate several plausible models/approaches to try.",
-    type: 'likert-1-5',
-    options: ['Strongly Disagree', '2', '3', '4', 'Strongly Agree'],
-    required: true,
-    section: 'Advanced Capability'
   }
 ];
+
+export default assessmentQuestions;

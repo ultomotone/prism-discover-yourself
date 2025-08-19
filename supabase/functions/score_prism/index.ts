@@ -22,6 +22,8 @@ const CAPABILITY_MAPS = {
   AGREE_1_5: ["Strongly Disagree","Disagree","Neutral","Agree","Strongly Agree"],
   FREQ_1_7: ["Never","Rarely","Sometimes","About half the time","Often","Very often","Always"],
   STATE_1_7: ["Very Low","Low","Slightly Low","Neutral","Slightly High","High","Very High"],
+  // Alternative STATE_1_7 mapping for energy valence
+  STATE_1_7_VALENCE: ["Very draining","Draining","Slightly draining","Neutral","Slightly energizing","Energizing","Very energizing"],
 } as const;
 
 interface CapabilityConfig {
@@ -136,8 +138,15 @@ function scoreType(
 }
 
 // ---------------- capability scoring functions ----------------
-function codeFromLabel(preset: PresetKey, labelOrNumber: string | number): number | null {
+function codeFromLabel(preset: PresetKey, labelOrNumber: string | number, useValence = false): number | null {
   if (typeof labelOrNumber === "number") return labelOrNumber;
+  
+  // For energy/effort questions, use valence mapping if specified
+  if (preset === "STATE_1_7" && useValence) {
+    const idx = CAPABILITY_MAPS.STATE_1_7_VALENCE.findIndex(l => l.toLowerCase() === labelOrNumber.toLowerCase());
+    return idx >= 0 ? idx + 1 : null;
+  }
+  
   const idx = CAPABILITY_MAPS[preset].findIndex(l => l.toLowerCase() === labelOrNumber.toLowerCase());
   return idx >= 0 ? idx + 1 : null; // 1-based
 }
@@ -186,6 +195,54 @@ function scoreGeneratingNovelOptions(input: {
   };
 }
 
+function scoreReadingRetuningUnfamiliar(input: {
+  ability: string | number;
+  frequency: string | number;
+  energy: string | number;
+  retuningChoice?: "A" | "B";
+  weights?: { ability?: number; frequency?: number; energy?: number };
+}) {
+  const wA = input.weights?.ability ?? 0.45;
+  const wF = input.weights?.frequency ?? 0.35;
+  const wE = input.weights?.energy ?? 0.20;
+
+  const aNum = codeFromLabel("AGREE_1_5", input.ability);
+  const fNum = codeFromLabel("FREQ_1_7", input.frequency);
+  const eNum = codeFromLabel("STATE_1_7", input.energy, true); // Use valence mapping
+
+  if ([aNum, fNum, eNum].some(v => v === null)) {
+    return { ok: false, error: "Missing or unmappable label." };
+  }
+
+  const A = norm(aNum!, 1, 5); // 0..1
+  const F = norm(fNum!, 1, 7); // 0..1
+  const E = norm(eNum!, 1, 7); // 0..1
+
+  const score = 100 * (wA * A + wF * F + wE * E);
+
+  // Energy valence (draining ↔ energizing)
+  const energyValence = (eNum! - 4) / 3; // -1..+1
+
+  // Ipsative (forced-choice) contribution
+  const ipsative: Record<string, number> = { Fe: 0, Se: 0, Te: 0, Si: 0 };
+  if (input.retuningChoice === "A") { ipsative.Fe += 1; ipsative.Se += 1; }
+  if (input.retuningChoice === "B") { ipsative.Te += 1; ipsative.Si += 1; }
+
+  // Simple completeness-based confidence
+  const answered = [aNum, fNum, eNum].filter(v => v !== null).length;
+  const confidence = answered === 3 ? "High" : answered === 2 ? "Medium" : "Low";
+
+  return {
+    ok: true,
+    score: Math.round(score * 10) / 10, // one decimal
+    parts: { ability: aNum, frequency: fNum, energy: eNum },
+    energyValence,
+    retuningChoice: input.retuningChoice ?? null,
+    ipsative,
+    confidence
+  };
+}
+
 // Configuration for capability matrix questions
 const CAPABILITY_CONFIGS: Record<string, CapabilityConfig> = {
   "247": { // Question ID for "Generating novel options"
@@ -198,6 +255,17 @@ const CAPABILITY_CONFIGS: Record<string, CapabilityConfig> = {
     w_frequency: 0.35,
     w_energy: 0.15,
     function_crosswalk: "Ne"
+  },
+  "248": { // Question ID for "Reading & retuning the room (unfamiliar groups)"
+    item_id: "CAP_RTR_U",
+    capability_name: "Reading & retuning the room (unfamiliar groups)",
+    ability_preset: "AGREE_1_5",
+    frequency_preset: "FREQ_1_7",
+    energy_preset: "STATE_1_7",
+    w_ability: 0.45,
+    w_frequency: 0.35,
+    w_energy: 0.20,
+    function_crosswalk: "Fe;Se"
   }
 };
 
@@ -323,26 +391,67 @@ serve(async (req) => {
         const matrixAnswers = ans.answer_array as string[];
         
         if (matrixAnswers.length >= 3) {
-          const result = scoreGeneratingNovelOptions({
-            ability: matrixAnswers[0],
-            frequency: matrixAnswers[1], 
-            energy: matrixAnswers[2],
-            weights: {
-              ability: config.w_ability,
-              frequency: config.w_frequency,
-              energy: config.w_energy
-            }
-          });
+          if (config.item_id === "CAP_GNO") {
+            // Generating novel options (3 parts)
+            const result = scoreGeneratingNovelOptions({
+              ability: matrixAnswers[0],
+              frequency: matrixAnswers[1], 
+              energy: matrixAnswers[2],
+              weights: {
+                ability: config.w_ability,
+                frequency: config.w_frequency,
+                energy: config.w_energy
+              }
+            });
 
-          if (result.ok) {
-            capabilityResults[config.item_id] = {
-              score: result.score,
-              parts_ability: result.parts.ability,
-              parts_frequency: result.parts.frequency,
-              parts_energy: result.parts.energy,
-              energy_valence: result.energyValence,
-              confidence: result.confidence
-            };
+            if (result.ok) {
+              capabilityResults[config.item_id] = {
+                score: result.score,
+                parts_ability: result.parts.ability,
+                parts_frequency: result.parts.frequency,
+                parts_energy: result.parts.energy,
+                energy_valence: result.energyValence,
+                confidence: result.confidence
+              };
+            }
+          } else if (config.item_id === "CAP_RTR_U" && matrixAnswers.length >= 4) {
+            // Reading & retuning the room (4 parts including forced choice)
+            const retuningChoice = matrixAnswers[3]?.startsWith('A') ? "A" : 
+                                 matrixAnswers[3]?.startsWith('B') ? "B" : undefined;
+                                 
+            const result = scoreReadingRetuningUnfamiliar({
+              ability: matrixAnswers[0],
+              frequency: matrixAnswers[1], 
+              energy: matrixAnswers[2],
+              retuningChoice,
+              weights: {
+                ability: config.w_ability,
+                frequency: config.w_frequency,
+                energy: config.w_energy
+              }
+            });
+
+            if (result.ok) {
+              capabilityResults[config.item_id] = {
+                score: result.score,
+                parts_ability: result.parts.ability,
+                parts_frequency: result.parts.frequency,
+                parts_energy: result.parts.energy,
+                energy_valence: result.energyValence,
+                retuning_choice: result.retuningChoice,
+                ipsative: result.ipsative,
+                confidence: result.confidence
+              };
+              
+              // Add ipsative contributions to forced choice function counts
+              if (result.ipsative) {
+                for (const [func, count] of Object.entries(result.ipsative)) {
+                  if (FUNCS.includes(func as any) && count > 0) {
+                    fcFuncCount[func] = (fcFuncCount[func] || 0) + count;
+                  }
+                }
+              }
+            }
           }
         }
       }
