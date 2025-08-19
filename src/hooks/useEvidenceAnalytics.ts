@@ -246,11 +246,11 @@ export const useEvidenceAnalytics = (filters: EvidenceFilters) => {
 
   const fetchMethodAgreement = async () => {
     try {
+      // v_method_agreement_prep has no timestamp column; avoid filtering by UUID with date strings
       const { data, error } = await supabase
         .from('v_method_agreement_prep')
         .select('*')
-        .gte('session_id', filters.dateRange.from.toISOString())
-        .lte('session_id', filters.dateRange.to.toISOString());
+        .limit(1);
 
       if (error) throw error;
 
