@@ -272,6 +272,16 @@ serve(async (req) => {
     if (validity.inconsistency >= 1.5 || validity.sd_index >= 4.6) confidence = "Low";
     else if (validity.inconsistency >= 1.0 || validity.sd_index >= 4.3) confidence = "Moderate";
 
+    // ---- blocks (early for likelihood scoring) ----
+    const blocks = { ...blockCount };
+    const bSum = (blocks.Core||0)+(blocks.Critic||0)+(blocks.Hidden||0)+(blocks.Instinct||0);
+    const blocks_norm = bSum > 0 ? {
+      Core: Math.round(blocks.Core / bSum * 1000)/10,
+      Critic: Math.round(blocks.Critic / bSum * 1000)/10,
+      Hidden: Math.round(blocks.Hidden / bSum * 1000)/10,
+      Instinct: Math.round(blocks.Instinct / bSum * 1000)/10
+    } : { Core:0, Critic:0, Hidden:0, Instinct:0 };
+
     // ---- type likelihoods ----
     function scoreType(code:string){
       const { base: b, creative: c } = TYPE_MAP[code];
@@ -354,14 +364,7 @@ serve(async (req) => {
     }
     const dims_highlights = { coherent, unique };
 
-    const blocks = { ...blockCount };
-    const bSum = (blocks.Core||0)+(blocks.Critic||0)+(blocks.Hidden||0)+(blocks.Instinct||0);
-    const blocks_norm = bSum > 0 ? {
-      Core: Math.round(blocks.Core / bSum * 1000)/10,
-      Critic: Math.round(blocks.Critic / bSum * 1000)/10,
-      Hidden: Math.round(blocks.Hidden / bSum * 1000)/10,
-      Instinct: Math.round(blocks.Instinct / bSum * 1000)/10
-    } : { Core:0, Critic:0, Hidden:0, Instinct:0 };
+    // blocks and blocks_norm already computed above
 
     // ---- save & return ----
     const primary = (top3 && top3.length) ? top3[0] : (typeCode !== "UNK" ? typeCode : null);
