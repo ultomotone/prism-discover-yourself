@@ -390,6 +390,7 @@ export type Database = {
         | "matrix"
         | "select-all"
         | "ranking"
+        | "META"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -529,6 +530,7 @@ export const Constants = {
         "matrix",
         "select-all",
         "ranking",
+        "META",
       ],
     },
   },
