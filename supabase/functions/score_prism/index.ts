@@ -275,20 +275,37 @@ serve(async (req) => {
     // ---- type likelihoods ----
     function scoreType(code:string){
       const { base: b, creative: c } = TYPE_MAP[code];
+
       const sb = strengths[b] || 0, sc = strengths[c] || 0;
       const db = (dimensions[b]||0), dc = (dimensions[c]||0);
-      const fcTotalLocal = Object.values(fcFuncCount).reduce((a,b)=>a+b,0) || 0;
-      const fcpB = fcTotalLocal ? ((fcFuncCount[b]||0)/fcTotalLocal) : 0;
-      const fcpC = fcTotalLocal ? ((fcFuncCount[c]||0)/fcTotalLocal) : 0;
+
+      // Existing FC support from direct function hits
+      const fcTotalLocal = Object.values(fcFuncCount).reduce((a:any,b:any)=>a as number + (b as number),0) || 0;
+      const fcpB_raw = fcTotalLocal ? ((fcFuncCount[b]||0)/fcTotalLocal) : 0;
+      const fcpC_raw = fcTotalLocal ? ((fcFuncCount[c]||0)/fcTotalLocal) : 0;
+
+      // NEW: convert block distribution into soft support for B/C
+      const blockSum = (blocks.Core||0)+(blocks.Hidden||0)+(blocks.Critic||0)+(blocks.Instinct||0) || 1;
+      const coreP   = (blocks.Core   || 0) / blockSum;   // aligns with Base+Creative
+      const hiddenP = (blocks.Hidden || 0) / blockSum;   // yearning → mild support
+      const criticP = (blocks.Critic || 0) / blockSum;   // pain points → slight penalty
+
+      // weights: tuneable; keep small so direct FC still leads
+      const fcpB = Math.max(0, Math.min(1, fcpB_raw + 0.50*coreP + 0.25*hiddenP - 0.20*criticP));
+      const fcpC = Math.max(0, Math.min(1, fcpC_raw + 0.50*coreP + 0.25*hiddenP - 0.20*criticP));
+
+      // Opposite-function conflict
       const oppB = strengths[OPP[b]] || 0;
       const oppC = strengths[OPP[c]] || 0;
+
       let s = 0;
-      s += 0.60 * sb + 0.40 * sc;   // primary use (unchanged)
-      s += 0.18 * db + 0.12 * dc;   // ↑ dimensional mastery (was 0.15/0.10)
-      s += 0.15 * fcpB + 0.10 * fcpC; // ↓ FC influence (was 0.20/0.15)
-      s -= 0.10 * Math.max(0, oppB - sb);
+      s += 0.60 * sb + 0.40 * sc; // primary use
+      s += 0.15 * db + 0.10 * dc; // dimensional mastery
+      s += 0.20 * fcpB + 0.15 * fcpC; // FC + block-derived support (clamped 0..1)
+      s -= 0.10 * Math.max(0, oppB - sb); // conflict penalty vs opposite
       s -= 0.05 * Math.max(0, oppC - sc);
-      return s;
+
+      return s; // ~1..6 range before fit mapping
     }
     const rawScores: Record<string, number> = {};
     for (const code of Object.keys(TYPE_MAP)) rawScores[code] = scoreType(code);
@@ -347,11 +364,17 @@ serve(async (req) => {
     } : { Core:0, Critic:0, Hidden:0, Instinct:0 };
 
     // ---- save & return ----
+    const primary = (top3 && top3.length) ? top3[0] : (typeCode !== "UNK" ? typeCode : null);
+    const primaryBC = primary && TYPE_MAP[primary] ? TYPE_MAP[primary] : { base, creative };
+    const finalTypeCode = primary || typeCode || "UNK";
+    const finalBase = primaryBC.base;
+    const finalCreative = primaryBC.creative;
+
     const payload = {
-      version: "v2.5",
+      version: "v2.6",
       user_id, session_id,
-      type_code: `${typeCode}${overlay}`,
-      base_func: base, creative_func: creative, overlay,
+      type_code: `${finalTypeCode}${overlay}`,
+      base_func: finalBase, creative_func: finalCreative, overlay,
       strengths, dimensions,
       blocks, blocks_norm,
       neuroticism: { raw_mean: nMean, z },
@@ -366,9 +389,16 @@ serve(async (req) => {
     
     // Telemetry for debugging
     console.log(JSON.stringify({
+      evt:"v2.6_smoke",
+      primary_from_top_types: top3 && top3[0],
+      final_type_code: finalTypeCode,
+      final_base: finalBase,
+      final_creative: finalCreative
+    }));
+    console.log(JSON.stringify({
       evt:"score_summary",
       session_id,
-      version:"v2.5",
+      version:"v2.6",
       maxStrength: Math.max(...Object.values(strengths)),
       fitAbsMax: Math.max(...Object.values(type_scores).map(x=>x.fit_abs)),
       incons: validity.inconsistency,
