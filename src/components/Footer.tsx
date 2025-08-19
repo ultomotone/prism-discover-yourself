@@ -16,8 +16,8 @@ const Footer = () => {
       { name: "Dimensionality", href: "/dimensionality" },
       { name: "Block Dynamics", href: "/blocks" },
       { name: "State Overlay", href: "/state-overlay" },
-      { name: "Assessment Methods", href: "/assessment-methods" },
-      { name: "Accuracy & Privacy", href: "/accuracy-privacy" },
+      { name: "Dashboard", href: "/dashboard" },
+      { name: "Roadmap", href: "/roadmap" },
     ],
     support: [
       { name: "FAQ", href: "/faq" },
@@ -110,16 +110,6 @@ const Footer = () => {
                 <li>
                   <a href="/resources" className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
                     Resources
-                  </a>
-                </li>
-                <li>
-                  <a href="/roadmap" className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
-                    Roadmap
-                  </a>
-                </li>
-                <li>
-                  <a href="/dashboard" className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
-                    Dashboard
                   </a>
                 </li>
                 {popularLinks.support.map((link) => (

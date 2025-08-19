@@ -35,8 +35,8 @@ const Header = () => {
     { name: "Dimensionality", href: "/dimensionality" },
     { name: "Block Dynamics", href: "/blocks" },
     { name: "State Overlay", href: "/state-overlay" },
-    { name: "Assessment Methods", href: "/assessment-methods" },
-    { name: "Accuracy & Privacy", href: "/accuracy-privacy" },
+    { name: "Dashboard", href: "/dashboard" },
+    { name: "Roadmap", href: "/roadmap" },
   ];
 
   return (

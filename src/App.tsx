@@ -22,8 +22,6 @@ import Se from "./pages/Se";
 import Dimensionality from "./pages/Dimensionality";
 import Blocks from "./pages/Blocks";
 import StateOverlay from "./pages/StateOverlay";
-import AssessmentMethods from "./pages/AssessmentMethods";
-import AccuracyPrivacy from "./pages/AccuracyPrivacy";
 import HowItWorks from "./pages/HowItWorks";
 import Profiles from "./pages/Profiles";
 import Individuals from "./pages/Individuals";
@@ -88,8 +86,6 @@ const App = () => (
               <Route path="/dimensionality" element={<Dimensionality />} />
               <Route path="/blocks" element={<Blocks />} />
               <Route path="/state-overlay" element={<StateOverlay />} />
-              <Route path="/assessment-methods" element={<AssessmentMethods />} />
-              <Route path="/accuracy-privacy" element={<AccuracyPrivacy />} />
               <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/profiles" element={<Profiles />} />
               <Route path="/individuals" element={<Individuals />} />
