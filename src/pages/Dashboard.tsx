@@ -545,7 +545,7 @@ const Dashboard = () => {
                   <TableHead>When</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Country</TableHead>
-                  <TableHead>Person</TableHead>
+                  <TableHead>Type Fit Score</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

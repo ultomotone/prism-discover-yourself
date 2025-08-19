@@ -128,7 +128,7 @@ const GLOSSARY = {
 // ---------- Type KB (2+ paragraphs each) -----------------------------------
 const TYPE_KB: Record<string, { title:string; p:string[]; flow:string[]; stress:string[] } > = {
   LIE: {
-    title: "Entrepreneur‑Strategist (Te–Ni)",
+    title: "Strategic Executor (Te–Ni)",
     p: [
       "You prefer motion with measurement. When a goal appears, you translate it into metrics, milestones, and a workable path. Your mind trims noise; you don't need perfect information to commit. Patterns and timing matter – you read where things are heading and prune dead ends early.",
       "People experience you as decisive and candid. You're at your best when the scoreboard is visible and ownership is clear. Sometimes pace outruns buy‑in or tone; watch the drift between 'what works' and 'why it matters to people'. When you slow down to narrate purpose, teams align behind you."
@@ -137,7 +137,7 @@ const TYPE_KB: Record<string, { title:string; p:string[]; flow:string[]; stress:
     stress:["Do‑more‑faster loop; ignores tone","Over‑optimize near KPIs; misses weak signals"]
   },
   ILI: {
-    title: "Forecaster (Ni–Te)",
+    title: "Foresight Analyst (Ni–Te)",
     p: [
       "You think in trajectories. From sparse signals you form a coherent line and test it against reality. You'd rather cut three bad options than pursue one lukewarm idea. When you speak, it's to steer timing, scope, and risk.",
       "Others rely on your calm read of what matters next. But analysis can outrun action if you lack an operator partner. Share the model visually and set decision windows – your foresight lands when the path to execution is explicit."
@@ -146,7 +146,7 @@ const TYPE_KB: Record<string, { title:string; p:string[]; flow:string[]; stress:
     stress:["Over‑analysis; late operational handoff","Narrowing to edge‑cases; avoids commitment"]
   },
   ESE: {
-    title: "Catalyst (Fe–Si)",
+    title: "Atmosphere Host (Fe–Si)",
     p: [
       "You tune a room instantly. Energy, morale, and care are your raw materials. You build rhythms people can sustain and enjoy. When teams wobble, you reset tone and make progress feel human again.",
       "Your optimism is a force, but hard trade‑offs can feel harsh. Anchor the story to two or three concrete outcomes so momentum compounds, not just mood. With regular recovery, your stamina lifts the whole system."
@@ -155,7 +155,7 @@ const TYPE_KB: Record<string, { title:string; p:string[]; flow:string[]; stress:
     stress:["Tone over metrics; avoids conflict","Energy drain in low‑feedback or cold rooms"]
   },
   SEI: {
-    title: "Stabilizer (Si–Fe)",
+    title: "Comfort Harmonizer (Si–Fe)",
     p: [
       "You create calm, livable environments. You notice small sensory shifts and adjust pace to keep quality high. People trust your steady presence and the way you remember what makes things feel right.",
       "You're most effective when standards are clear and time horizons are reasonable. Escalation or conflict can feel jarring; pair with a driver for pushes. Your consistency is a quiet superpower – protect it."
@@ -164,7 +164,7 @@ const TYPE_KB: Record<string, { title:string; p:string[]; flow:string[]; stress:
     stress:["Avoids confrontation; under‑pushes change","Retreats when rushed or tone turns sharp"]
   },
   LII: {
-    title: "Architect (Ti–Ne)",
+    title: "Framework Architect (Ti–Ne)",
     p: [
       "You refine concepts until they cohere. Clean definitions, mechanisms, and edge‑cases are your canvas. You prefer 'why it works' before 'how to do it'. Novel inputs spark elegant re‑frames rather than chaos.",
       "The trap is perfection – models can stall delivery. Timebox drafts and show the minimal working mechanism early. Pairing with a communicator amplifies your clarity into shared momentum."
@@ -173,7 +173,7 @@ const TYPE_KB: Record<string, { title:string; p:string[]; flow:string[]; stress:
     stress:["Endless refinement; avoids shipping","Detaches from tone; hard edges in debate"]
   },
   ILE: {
-    title: "Explorer (Ne–Ti)",
+    title: "Idea Catalyst (Ne–Ti)",
     p: [
       "You connect dots others don't see. Options emerge quickly and you enjoy testing unconventional angles. You thrive in zero‑to‑one ambiguity, especially with a few constraints to bounce against.",
       "Energy scatters if everything stays open. Limit WIP and appoint a finisher per idea. Your curiosity is catalytic when channeled into tight learning loops that retire weak options quickly."
@@ -182,7 +182,7 @@ const TYPE_KB: Record<string, { title:string; p:string[]; flow:string[]; stress:
     stress:["Pivoting before signal; fragmentation","Neglects cadence/maintenance"]
   },
   ESI: {
-    title: "Guardian (Fi–Se)",
+    title: "Boundary Guardian (Fi–Se)",
     p: [
       "You stand for people and principles. Boundaries are clear, and your loyalty is the bedrock others feel. When action is needed, you move decisively to protect what matters.",
       "Polarity can rise under pressure – right vs wrong eclipses nuance. Invite possibility (Ne) early to widen options, then commit. Your steadiness becomes leadership when paired with measured boldness."
@@ -191,7 +191,7 @@ const TYPE_KB: Record<string, { title:string; p:string[]; flow:string[]; stress:
     stress:["All‑or‑nothing judgments; hard lines","Over‑forceful pushes when ignored"]
   },
   SEE: {
-    title: "Driver (Se–Fi)",
+    title: "Relational Driver (Se–Fi)",
     p: [
       "You move reality. Constraints, timing, presence – these are levers you pull instinctively. People feel progress around you because you remove obstacles and set a direction others can follow.",
       "Impatience can cut corners or relationships. Bring a strategist to stress‑test arcs (Ni) so your decisive action composes into bigger wins."
@@ -200,7 +200,7 @@ const TYPE_KB: Record<string, { title:string; p:string[]; flow:string[]; stress:
     stress:["Pushy cuts; short‑termism","Relational blowback after hard pushes"]
   },
   LSE: {
-    title: "Operator (Te–Si)",
+    title: "Operations Steward (Te–Si)",
     p: [
       "You build reliable systems. Metrics, SOPs, and quality control are your language. Scaling what works is satisfying – small improvements compound in your hands.",
       "Rigidity is the risk. Keep a small exploration lane open to catch weak signals early. Your credibility soars when you mix process with a dash of narrative and foresight."
@@ -209,7 +209,7 @@ const TYPE_KB: Record<string, { title:string; p:string[]; flow:string[]; stress:
     stress:["Over‑process; slow on novelty","Tone drift during change periods"]
   },
   SLI: {
-    title: "Craftsman (Si–Te)",
+    title: "Practical Optimizer (Si–Te)",
     p: [
       "You perfect the tangible. Practical details and comfort matter; you sense constraints early and design around them. People trust the polish and smoothness you deliver.",
       "You may under‑sell the vision. Partner with a storyteller for lift‑off moments. Keep one improvement focus per week to avoid local maxima."
@@ -218,7 +218,7 @@ const TYPE_KB: Record<string, { title:string; p:string[]; flow:string[]; stress:
     stress:["Withdraws from conflict; avoids spotlight","Resists change that risks quality"]
   },
   EIE: {
-    title: "Orchestrator (Fe–Ni)",
+    title: "Inspiration Orchestrator (Fe–Ni)",
     p: [
       "You move hearts with meaning. Narrative, timing, and pattern give you a conductor's wand. You rally groups by naming what matters and where we're going.",
       "Story can outrun scaffolding. Pair with an operator (Te/Si) to peg the vision to milestones. Your impact multiplies when emotion and mechanism arrive together."
@@ -227,7 +227,7 @@ const TYPE_KB: Record<string, { title:string; p:string[]; flow:string[]; stress:
     stress:["Emotional overdrive; burnout risk","Detail drop; promises outrun ops"]
   },
   IEI: {
-    title: "Visioneer (Ni–Fe)",
+    title: "Vision Muse (Ni–Fe)",
     p: [
       "You find the through‑line beneath chaos. With quiet timing sense, you help groups choose which future to feed. You value depth, symbolism, and the right moment more than speed.",
       "Action can lag unless anchored. Share the line as a simple visual and assign the first two moves; your calm guidance becomes momentum when the path is visible."
@@ -236,7 +236,7 @@ const TYPE_KB: Record<string, { title:string; p:string[]; flow:string[]; stress:
     stress:["Delay cycles; self‑doubt","Over‑focusing on meaning, skipping ops"]
   },
   LSI: {
-    title: "Marshal (Ti–Se)",
+    title: "Systems Marshal (Ti–Se)",
     p: [
       "You set clean rules and get them done. Precision plus presence makes you formidable in execution. People feel safe when standards are clear and consistently enforced.",
       "Rigidity and harsh tone are risks. Schedule exploration windows (Ne) to loosen early; clarity turns collaborative when curiosity is visible."
@@ -245,7 +245,7 @@ const TYPE_KB: Record<string, { title:string; p:string[]; flow:string[]; stress:
     stress:["Over‑control; low flexibility","Dismisses new options too fast"]
   },
   SLE: {
-    title: "Commander (Se–Ti)",
+    title: "Tactical Commander (Se–Ti)",
     p: [
       "You thrive on decisive progress. You test reality in motion and make calls that others avoid. Constraints energize you; momentum is the game.",
       "Impulses can skip nuance. Borrow foresight (Ni) weekly to align force with arc. When you pace aggression, your teams win big and stay with you."
@@ -254,7 +254,7 @@ const TYPE_KB: Record<string, { title:string; p:string[]; flow:string[]; stress:
     stress:["Premature cuts; collateral tone damage","Short‑term wins that cost strategy"]
   },
   EII: {
-    title: "Advisor (Fi–Ne)",
+    title: "Integrity Guide (Fi–Ne)",
     p: [
       "You read people's inner threads and possibilities. Integrity and growth matter; you prefer good fits to quick wins. You are trusted for judgment and care.",
       "Conflict and deadlines can pinch. Light structure (Te) and timeboxed decisions keep your empathy moving outcomes."
@@ -263,7 +263,7 @@ const TYPE_KB: Record<string, { title:string; p:string[]; flow:string[]; stress:
     stress:["Decision drift; over‑empathizing","Avoids conflict; loses momentum"]
   },
   IEE: {
-    title: "Connector (Ne–Fi)",
+    title: "Possibility Connector (Ne–Fi)",
     p: [
       "You sense opportunities in people and ideas. Networks, reframes, and openings appear to you before others notice them. You love to spark and link.",
       "Boundaries and follow‑through are the work. Pair curiosity with clear commitments and an operator partner; your serendipity becomes compound progress."
