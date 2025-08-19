@@ -361,11 +361,11 @@ const Dashboard = () => {
             Take the PRISM Assessment <ExternalLink className="ml-2 h-4 w-4" />
           </Button>
           <Button 
-            onClick={() => window.open('/history', '_blank')}
+            onClick={() => window.open('/roadmap', '_blank')}
             variant="outline"
             className="border-white text-white hover:bg-white hover:text-primary"
           >
-            View Your History
+            Roadmap <ExternalLink className="ml-2 h-4 w-4" />
           </Button>
         </div>
       </section>
