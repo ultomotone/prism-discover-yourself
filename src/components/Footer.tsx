@@ -1,8 +1,23 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Mail, Phone, Linkedin, Twitter, Facebook } from "lucide-react";
+import { Mail, Phone, Linkedin, Twitter, Facebook, Heart } from "lucide-react";
+import { useEffect } from "react";
 
 const Footer = () => {
+  // Load Stripe script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://js.stripe.com/v3/buy-button.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
+
   const popularLinks = {
     main: [
       { name: "Take Assessment", href: "/assessment" },
@@ -129,6 +144,29 @@ const Footer = () => {
                 ))}
               </ul>
             </div>
+          </div>
+        </div>
+
+        <Separator className="bg-primary-foreground/20" />
+
+        {/* Donation Section */}
+        <div className="py-8 text-center">
+          <div className="mb-4">
+            <Heart className="h-6 w-6 text-red-400 mx-auto mb-3" />
+            <h3 className="text-xl font-semibold mb-2">Support PRISM</h3>
+            <p className="text-primary-foreground/80 text-sm max-w-md mx-auto">
+              Help us keep PRISM free and accessible for everyone
+            </p>
+          </div>
+          <div className="flex justify-center">
+            <div 
+              dangerouslySetInnerHTML={{
+                __html: `<stripe-buy-button
+                  buy-button-id="buy_btn_1RxsnID9AJFeFtOvkMbrRpMA"
+                  publishable-key="pk_live_q3JAuI9omI8O6TFmtfpQyq0p">
+                </stripe-buy-button>`
+              }}
+            />
           </div>
         </div>
 
