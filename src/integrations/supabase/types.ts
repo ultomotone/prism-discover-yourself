@@ -652,8 +652,8 @@ export type Database = {
         Returns: {
           country_display: string
           created_at: string
-          fit_indicator: string
-          time_period: string
+          fit_score: number
+          session_id: string
           type_display: string
         }[]
       }

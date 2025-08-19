@@ -27,6 +27,7 @@ interface DashboardData {
     overlay: string;
     country?: string;
     email?: string;
+    fit_score?: number; // Add fit_score property here too
   }>;
 }
 
@@ -38,6 +39,7 @@ interface AssessmentDetail {
   overlay: string;
   country?: string;
   email?: string;
+  fit_score?: number; // Add fit_score property
 }
 
 const Dashboard = () => {
@@ -122,7 +124,7 @@ const Dashboard = () => {
           count: count as number 
         })).sort((a, b) => b.count - a.count) : [];
 
-      // Get recent assessments using secure function that returns anonymized data
+      // Get recent assessments using secure function that returns country and fit score data
       const { data: recentAssessments } = await supabase
         .rpc('get_recent_assessments_safe');
 
@@ -133,7 +135,8 @@ const Dashboard = () => {
         country: assessment.country_display,
         email: undefined, // Never show email for privacy
         top_types: undefined,
-        type_scores: undefined
+        type_scores: undefined,
+        fit_score: assessment.fit_score // Store fit score in the new property
       }));
 
       setData({
@@ -479,7 +482,7 @@ const Dashboard = () => {
                      </TableCell>
                      <TableCell>{assessment.country || 'Unknown'}</TableCell>
                      <TableCell>
-                       Privacy Protected
+                       {assessment.fit_score ? Math.round(assessment.fit_score) : 'N/A'}
                      </TableCell>
                   </TableRow>
                 ))}
