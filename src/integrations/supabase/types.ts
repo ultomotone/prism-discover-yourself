@@ -22,6 +22,7 @@ export type Database = {
           answer_value: string | null
           created_at: string
           id: string
+          pair_group: string | null
           question_id: number
           question_section: string
           question_text: string
@@ -29,6 +30,8 @@ export type Database = {
           response_time_ms: number | null
           section_id: string | null
           session_id: string
+          valid_bool: boolean | null
+          value_coded: string | null
         }
         Insert: {
           answer_array?: string[] | null
@@ -37,6 +40,7 @@ export type Database = {
           answer_value?: string | null
           created_at?: string
           id?: string
+          pair_group?: string | null
           question_id: number
           question_section: string
           question_text: string
@@ -44,6 +48,8 @@ export type Database = {
           response_time_ms?: number | null
           section_id?: string | null
           session_id: string
+          valid_bool?: boolean | null
+          value_coded?: string | null
         }
         Update: {
           answer_array?: string[] | null
@@ -52,6 +58,7 @@ export type Database = {
           answer_value?: string | null
           created_at?: string
           id?: string
+          pair_group?: string | null
           question_id?: number
           question_section?: string
           question_text?: string
@@ -59,6 +66,8 @@ export type Database = {
           response_time_ms?: number | null
           section_id?: string | null
           session_id?: string
+          valid_bool?: boolean | null
+          value_coded?: string | null
         }
         Relationships: [
           {
@@ -260,6 +269,8 @@ export type Database = {
           dims_highlights: Json | null
           email_mask: string | null
           fc_answered_ct: number | null
+          fc_count: number | null
+          fc_coverage_bucket: string | null
           fit_band: string | null
           fit_explainer: Json | null
           gap_minutes: number | null
@@ -301,6 +312,8 @@ export type Database = {
           dims_highlights?: Json | null
           email_mask?: string | null
           fc_answered_ct?: number | null
+          fc_count?: number | null
+          fc_coverage_bucket?: string | null
           fit_band?: string | null
           fit_explainer?: Json | null
           gap_minutes?: number | null
@@ -342,6 +355,8 @@ export type Database = {
           dims_highlights?: Json | null
           email_mask?: string | null
           fc_answered_ct?: number | null
+          fc_count?: number | null
+          fc_coverage_bucket?: string | null
           fit_band?: string | null
           fit_explainer?: Json | null
           gap_minutes?: number | null
@@ -606,10 +621,20 @@ export type Database = {
         }
         Relationships: []
       }
+      v_fc_analytics: {
+        Row: {
+          fc_coverage_bucket: string | null
+          percentage: number | null
+          session_count: number | null
+        }
+        Relationships: []
+      }
       v_fc_coverage: {
         Row: {
           answered_count: number | null
           fc_count: number | null
+          fc_coverage_bucket: string | null
+          fc_total_questions: number | null
           session_id: string | null
         }
         Relationships: [
