@@ -76,6 +76,7 @@ export type Database = {
           question_type: string | null
           reverse_scored: boolean
           scale_type: Database["public"]["Enums"]["assessment_scale_type"]
+          section: string | null
           social_desirability: boolean
           tag: string | null
           updated_at: string
@@ -89,6 +90,7 @@ export type Database = {
           question_type?: string | null
           reverse_scored?: boolean
           scale_type: Database["public"]["Enums"]["assessment_scale_type"]
+          section?: string | null
           social_desirability?: boolean
           tag?: string | null
           updated_at?: string
@@ -102,6 +104,7 @@ export type Database = {
           question_type?: string | null
           reverse_scored?: boolean
           scale_type?: Database["public"]["Enums"]["assessment_scale_type"]
+          section?: string | null
           social_desirability?: boolean
           tag?: string | null
           updated_at?: string
@@ -372,7 +375,206 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_item_stats: {
+        Row: {
+          mean_val: number | null
+          n: number | null
+          question_id: number | null
+          reverse_scored: boolean | null
+          scale_type:
+            | Database["public"]["Enums"]["assessment_scale_type"]
+            | null
+          sd_val: number | null
+          section: string | null
+          social_desirability: boolean | null
+          tag: string | null
+        }
+        Relationships: []
+      }
+      v_item_total_te: {
+        Row: {
+          question_id: number | null
+          r_item_total_te: number | null
+        }
+        Relationships: []
+      }
+      v_profiles_ext: {
+        Row: {
+          base_func: string | null
+          baseline_session_id: string | null
+          blocks: Json | null
+          blocks_norm: Json | null
+          confidence: string | null
+          created_at: string | null
+          creative_func: string | null
+          deltas: Json | null
+          dimensions: Json | null
+          dims_highlights: Json | null
+          email_mask: string | null
+          fit_2: number | null
+          fit_gap: number | null
+          fit_top: number | null
+          glossary_version: number | null
+          id: string | null
+          inconsistency: number | null
+          neuroticism: Json | null
+          overlay: string | null
+          person_key: string | null
+          prev_session_id: string | null
+          run_index: number | null
+          sd_index: number | null
+          session_id: string | null
+          strengths: Json | null
+          top_types: Json | null
+          type_code: string | null
+          type_scores: Json | null
+          type_top: string | null
+          updated_at: string | null
+          user_id: string | null
+          validity: Json | null
+          version: string | null
+        }
+        Insert: {
+          base_func?: string | null
+          baseline_session_id?: string | null
+          blocks?: Json | null
+          blocks_norm?: Json | null
+          confidence?: string | null
+          created_at?: string | null
+          creative_func?: string | null
+          deltas?: Json | null
+          dimensions?: Json | null
+          dims_highlights?: Json | null
+          email_mask?: string | null
+          fit_2?: never
+          fit_gap?: never
+          fit_top?: never
+          glossary_version?: number | null
+          id?: string | null
+          inconsistency?: never
+          neuroticism?: Json | null
+          overlay?: string | null
+          person_key?: string | null
+          prev_session_id?: string | null
+          run_index?: number | null
+          sd_index?: never
+          session_id?: string | null
+          strengths?: Json | null
+          top_types?: Json | null
+          type_code?: string | null
+          type_scores?: Json | null
+          type_top?: never
+          updated_at?: string | null
+          user_id?: string | null
+          validity?: Json | null
+          version?: string | null
+        }
+        Update: {
+          base_func?: string | null
+          baseline_session_id?: string | null
+          blocks?: Json | null
+          blocks_norm?: Json | null
+          confidence?: string | null
+          created_at?: string | null
+          creative_func?: string | null
+          deltas?: Json | null
+          dimensions?: Json | null
+          dims_highlights?: Json | null
+          email_mask?: string | null
+          fit_2?: never
+          fit_gap?: never
+          fit_top?: never
+          glossary_version?: number | null
+          id?: string | null
+          inconsistency?: never
+          neuroticism?: Json | null
+          overlay?: string | null
+          person_key?: string | null
+          prev_session_id?: string | null
+          run_index?: number | null
+          sd_index?: never
+          session_id?: string | null
+          strengths?: Json | null
+          top_types?: Json | null
+          type_code?: string | null
+          type_scores?: Json | null
+          type_top?: never
+          updated_at?: string | null
+          user_id?: string | null
+          validity?: Json | null
+          version?: string | null
+        }
+        Relationships: []
+      }
+      v_retest_deltas: {
+        Row: {
+          days_between: number | null
+          dim_change_ct: number | null
+          session_id_1: string | null
+          session_id_2: string | null
+          strength_delta: number | null
+          t1: string | null
+          t2: string | null
+          type_changed: boolean | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      v_retest_pairs: {
+        Row: {
+          blocks_1: Json | null
+          blocks_2: Json | null
+          dimensions_1: Json | null
+          dimensions_2: Json | null
+          overlay_1: string | null
+          overlay_2: string | null
+          session_id_1: string | null
+          session_id_2: string | null
+          strengths_1: Json | null
+          strengths_2: Json | null
+          t1: string | null
+          t2: string | null
+          type_1: string | null
+          type_2: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      v_section_progress: {
+        Row: {
+          answered: number | null
+          section: string | null
+          session_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_sessions: {
+        Row: {
+          completed: boolean | null
+          duration_sec: number | null
+          last_event_at: string | null
+          session_id: string | null
+          started_at: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never
