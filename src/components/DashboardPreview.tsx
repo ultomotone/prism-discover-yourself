@@ -23,49 +23,42 @@ const DashboardPreview = () => {
   useEffect(() => {
     const fetchPreviewStats = async () => {
       try {
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
+        // Use secure aggregated statistics instead of direct profile access
+        const { data: todayStats } = await supabase
+          .from('dashboard_statistics')
+          .select('*')
+          .eq('stat_date', new Date().toISOString().split('T')[0])
+          .single();
 
-        // Fetch basic stats
-        const [
-          { count: totalAssessments },
-          { count: todayCount },
-          { data: typeData },
-          { data: overlayData }
-        ] = await Promise.all([
-          supabase.from('profiles').select('*', { count: 'exact' }),
-          supabase
-            .from('profiles')
-            .select('*', { count: 'exact' })
-            .gte('created_at', todayStart.toISOString()),
-          supabase.from('profiles').select('type_code').limit(50),
-          supabase.from('profiles').select('overlay').limit(50)
-        ]);
+        // Get recent weekly data
+        const { data: weeklyData } = await supabase
+          .from('dashboard_statistics')
+          .select('stat_date, daily_assessments')
+          .gte('stat_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+          .order('stat_date', { ascending: false })
+          .limit(7);
 
-        // Get top type
-        const typeCount = (typeData || []).reduce((acc: any, profile: any) => {
-          const type = profile.type_code?.substring(0, 3) || 'Unknown';
-          acc[type] = (acc[type] || 0) + 1;
-          return acc;
-        }, {});
-        const topType = Object.entries(typeCount).sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] || null;
+        const totalAssessments = todayStats?.total_assessments || 0;
+        const todayCount = todayStats?.daily_assessments || 0;
+        const progressPercentage = Math.min(100, Math.round((totalAssessments / 1000) * 100));
+
+        // Get top type from distribution
+        const typeDistribution = todayStats?.type_distribution || {};
+        const topType = Object.entries(typeDistribution)
+          .sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] || null;
 
         // Process overlay stats
-        const overlayCount = (overlayData || []).reduce((acc: any, profile: any) => {
-          const overlay = profile.overlay === '+' ? 'N+' : profile.overlay === '–' ? 'N–' : 'Unknown';
-          acc[overlay] = (acc[overlay] || 0) + 1;
-          return acc;
-        }, {});
-        const overlayStats = Object.entries(overlayCount).map(([overlay, count]) => ({
-          overlay,
-          count: count as number
-        }));
-
-        const progressPercentage = Math.min(100, Math.round(((totalAssessments || 0) / 1000) * 100));
+        const overlayStats = [];
+        if (todayStats?.overlay_positive) {
+          overlayStats.push({ overlay: 'N+', count: todayStats.overlay_positive });
+        }
+        if (todayStats?.overlay_negative) {
+          overlayStats.push({ overlay: 'N–', count: todayStats.overlay_negative });
+        }
 
         setStats({
-          totalAssessments: totalAssessments || 0,
-          todayCount: todayCount || 0,
+          totalAssessments,
+          todayCount,
           progressPercentage,
           topType,
           overlayStats
@@ -79,11 +72,11 @@ const DashboardPreview = () => {
 
     fetchPreviewStats();
 
-    // Set up real-time subscription
+    // Set up real-time subscription to dashboard_statistics instead of profiles
     const channel = supabase
       .channel('preview-updates')
       .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'profiles' },
+        { event: '*', schema: 'public', table: 'dashboard_statistics' },
         () => {
           fetchPreviewStats();
         }

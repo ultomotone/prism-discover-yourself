@@ -82,166 +82,58 @@ const Dashboard = () => {
       setCountryQId(countryId);
       setEmailQId(emailId);
 
-      // Calculate date range
-      const daysAgo = parseInt(dateRange);
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - daysAgo);
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
+      // Use secure aggregated statistics instead of direct profile access
+      const { data: stats } = await supabase
+        .from('dashboard_statistics')
+        .select('*')
+        .eq('stat_date', new Date().toISOString().split('T')[0])
+        .single();
 
-      // Fetch all data in parallel
-      const [
-        totalResult,
-        todayResult,
-        weeklyResult,
-        overlayResult,
-        typeResult,
-        countryResult,
-        latestResult
-      ] = await Promise.all([
-        // Total assessments
-        supabase.from('profiles').select('id', { count: 'exact' }),
-
-        // Today's assessments
-        supabase
-          .from('profiles')
-          .select('id', { count: 'exact' })
-          .gte('created_at', todayStart.toISOString()),
-
-        // Weekly trend
-        supabase
-          .from('profiles')
-          .select('created_at')
-          .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-          .order('created_at', { ascending: true }),
-
-        // Overlay distribution
-        supabase
-          .from('profiles')
-          .select('overlay')
-          .gte('created_at', startDate.toISOString()),
-
-        // Type distribution
-        supabase
-          .from('profiles')
-          .select('type_code')
-          .gte('created_at', startDate.toISOString()),
-
-        // Country distribution (if config exists) - simplified approach
-        Promise.resolve({ data: [], error: null }),
-
-        // Latest assessments with details  
-        supabase
-          .from('profiles')
-          .select('created_at, type_code, top_types, type_scores, overlay, session_id')
-          .gte('created_at', startDate.toISOString())
-          .order('created_at', { ascending: false })
-          .limit(50)
-      ]);
+      // Get weekly trend from aggregated view
+      const { data: weeklyData } = await supabase
+        .from('dashboard_statistics')
+        .select('stat_date, daily_assessments')
+        .gte('stat_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+        .order('stat_date', { ascending: true });
 
       // Process weekly trend
       const weeklyTrend = Array.from({ length: 7 }, (_, i) => {
         const date = new Date();
         date.setDate(date.getDate() - (6 - i));
+        const dateStr = date.toISOString().split('T')[0];
+        const dayData = weeklyData?.find(d => d.stat_date === dateStr);
         return {
           day: date.toLocaleDateString('en', { weekday: 'short' }),
-          count: 0
+          count: dayData?.daily_assessments || 0
         };
       });
 
-      weeklyResult.data?.forEach((profile: any) => {
-        const createdDate = new Date(profile.created_at);
-        const dayIndex = Math.floor((Date.now() - createdDate.getTime()) / (24 * 60 * 60 * 1000));
-        if (dayIndex >= 0 && dayIndex < 7) {
-          weeklyTrend[6 - dayIndex].count++;
-        }
-      });
-
-      // Process overlay stats
-      const overlayCount = overlayResult.data?.reduce((acc: any, profile: any) => {
-        const overlay = profile.overlay || 'Unknown';
-        acc[overlay] = (acc[overlay] || 0) + 1;
-        return acc;
-      }, {});
-      const overlayStats = Object.entries(overlayCount || {}).map(([overlay, count]) => ({
-        overlay: overlay === '+' ? 'N+' : overlay === '–' ? 'N–' : overlay,
-        count: count as number
-      }));
-
-      // Process type distribution
-      const typeCount = typeResult.data?.reduce((acc: any, profile: any) => {
-        const type = profile.type_code?.substring(0, 3) || 'Unknown';
-        acc[type] = (acc[type] || 0) + 1;
-        return acc;
-      }, {});
-      const typeDistribution = Object.entries(typeCount || {})
-        .map(([type, count]) => ({ type, count: count as number }))
-        .sort((a, b) => b.count - a.count);
-
-      // Process country distribution - fetch separately
-      let countryDistribution: Array<{ country: string; count: number }> = [];
-      if (countryId && latestResult.data) {
-        const sessionIds = latestResult.data.map((p: any) => p.session_id).slice(0, 50);
-        if (sessionIds.length > 0) {
-          const { data: countryResponses } = await supabase
-            .from('assessment_responses')
-            .select('answer_value')
-            .eq('question_id', countryId)
-            .in('session_id', sessionIds);
-
-          const countryCount = (countryResponses || []).reduce((acc: any, resp: any) => {
-            const country = resp.answer_value || 'Unknown';
-            acc[country] = (acc[country] || 0) + 1;
-            return acc;
-          }, {});
-
-          countryDistribution = Object.entries(countryCount)
-            .map(([country, count]) => ({ country, count: count as number }))
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 10);
-        }
+      // Process overlay stats from aggregated data
+      const overlayStats = [];
+      if (stats) {
+        if (stats.overlay_positive > 0) overlayStats.push({ overlay: 'N+', count: stats.overlay_positive });
+        if (stats.overlay_negative > 0) overlayStats.push({ overlay: 'N–', count: stats.overlay_negative });
       }
 
-      // Get additional details for latest assessments
-      const latestWithDetails = await Promise.all(
-        (latestResult.data || []).map(async (profile: any) => {
-          const details: AssessmentDetail = {
-            created_at: profile.created_at,
-            type_code: profile.type_code,
-            top_types: profile.top_types,
-            type_scores: profile.type_scores,
-            overlay: profile.overlay
-          };
+      // Process type distribution from aggregated data
+      const typeDistribution = stats?.type_distribution ? 
+        Object.entries(stats.type_distribution).map(([type, count]) => ({ 
+          type, 
+          count: count as number 
+        })).sort((a, b) => b.count - a.count) : [];
 
-          if (countryId && emailId) {
-            const { data: responses } = await supabase
-              .from('assessment_responses')
-              .select('question_id, answer_value')
-              .eq('session_id', profile.session_id)
-              .in('question_id', [countryId, emailId]);
-
-            responses?.forEach((resp: any) => {
-              if (resp.question_id === countryId) {
-                details.country = resp.answer_value;
-              }
-              if (resp.question_id === emailId) {
-                details.email = resp.answer_value;
-              }
-            });
-          }
-
-          return details;
-        })
-      );
+      // For latest assessments, we need a different approach since we can't access individual profiles
+      // We'll show aggregate data instead
+      const latestAssessments: AssessmentDetail[] = [];
 
       setData({
-        totalAssessments: totalResult.count || 0,
-        todayCount: todayResult.count || 0,
+        totalAssessments: stats?.total_assessments || 0,
+        todayCount: stats?.daily_assessments || 0,
         weeklyTrend,
         overlayStats,
         typeDistribution,
-        countryDistribution,
-        latestAssessments: latestWithDetails
+        countryDistribution: [], // Not available in aggregated data for privacy
+        latestAssessments // Empty for privacy
       });
 
     } catch (error) {

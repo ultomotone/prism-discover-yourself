@@ -81,14 +81,19 @@ export const useAdminAnalytics = () => {
     const { from, to } = filters.dateRange;
     
     try {
-      // Total assessments
-      const { count: totalAssessments } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', from)
-        .lte('created_at', to);
+      // Get stats from secure aggregated data
+      const { data: statsData } = await supabase
+        .from('dashboard_statistics')
+        .select('*')
+        .gte('stat_date', from)
+        .lte('stat_date', to)
+        .order('stat_date', { ascending: false });
 
-      // Completion rate - calculate manually instead of using RPC
+      // Calculate totals from aggregated data
+      const totalAssessments = statsData?.[0]?.total_assessments || 0;
+      const todayAssessments = statsData?.[0]?.daily_assessments || 0;
+
+      // Completion rate - use v_sessions view which respects RLS
       const { count: startedSessions } = await supabase
         .from('v_sessions')
         .select('*', { count: 'exact', head: true })
@@ -98,7 +103,7 @@ export const useAdminAnalytics = () => {
       const completionRate = totalAssessments && startedSessions ? 
         (totalAssessments / startedSessions) : 0;
 
-      // Confidence mix
+      // Use v_profiles_ext which has security_invoker set and respects user permissions
       const { data: confidenceData } = await supabase
         .from('v_profiles_ext')
         .select('confidence')
@@ -110,7 +115,7 @@ export const useAdminAnalytics = () => {
       ).length || 0;
       const total = confidenceData?.length || 1;
 
-      // Validity metrics
+      // Validity metrics from secure view
       const { data: validityData } = await supabase
         .from('v_profiles_ext')
         .select('inconsistency, fit_gap')
@@ -120,22 +125,17 @@ export const useAdminAnalytics = () => {
       const avgInconsistency = validityData?.reduce((sum, d) => sum + (d.inconsistency || 0), 0) / (validityData?.length || 1);
       const avgFitGap = validityData?.reduce((sum, d) => sum + (d.fit_gap || 0), 0) / (validityData?.length || 1);
 
-      // Overlay mix
-      const { data: overlayData } = await supabase
-        .from('profiles')
-        .select('overlay')
-        .gte('created_at', from)
-        .lte('created_at', to);
-
-      const overlayMix = overlayData?.reduce((acc: any[], d) => {
-        const existing = acc.find(item => item.overlay === d.overlay);
-        if (existing) {
-          existing.count++;
-        } else {
-          acc.push({ overlay: d.overlay || 'Unknown', count: 1 });
+      // Overlay mix from aggregated data
+      const overlayMix = [];
+      if (statsData?.[0]) {
+        const latest = statsData[0];
+        if (latest.overlay_positive > 0) {
+          overlayMix.push({ overlay: 'N+', count: latest.overlay_positive });
         }
-        return acc;
-      }, []) || [];
+        if (latest.overlay_negative > 0) {
+          overlayMix.push({ overlay: 'N–', count: latest.overlay_negative });
+        }
+      }
 
       // Assessments per day
       const daysDiff = Math.max(1, Math.ceil((new Date(to).getTime() - new Date(from).getTime()) / (1000 * 60 * 60 * 24)));

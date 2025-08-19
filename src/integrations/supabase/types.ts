@@ -154,6 +154,39 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_statistics: {
+        Row: {
+          daily_assessments: number
+          id: string
+          overlay_negative: number
+          overlay_positive: number
+          stat_date: string
+          total_assessments: number
+          type_distribution: Json | null
+          updated_at: string
+        }
+        Insert: {
+          daily_assessments?: number
+          id?: string
+          overlay_negative?: number
+          overlay_positive?: number
+          stat_date?: string
+          total_assessments?: number
+          type_distribution?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          daily_assessments?: number
+          id?: string
+          overlay_negative?: number
+          overlay_positive?: number
+          stat_date?: string
+          total_assessments?: number
+          type_distribution?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       kb_definitions: {
         Row: {
           content: Json
@@ -375,6 +408,32 @@ export type Database = {
       }
     }
     Views: {
+      v_dashboard_stats: {
+        Row: {
+          assessment_date: string | null
+          daily_count: number | null
+          overlay_negative: number | null
+          overlay_positive: number | null
+          overlay_unknown: number | null
+          type_eie: number | null
+          type_eii: number | null
+          type_ese: number | null
+          type_esi: number | null
+          type_iee: number | null
+          type_iei: number | null
+          type_ile: number | null
+          type_ili: number | null
+          type_lie: number | null
+          type_lii: number | null
+          type_lse: number | null
+          type_lsi: number | null
+          type_see: number | null
+          type_sei: number | null
+          type_sle: number | null
+          type_sli: number | null
+        }
+        Relationships: []
+      }
       v_item_stats: {
         Row: {
           mean_val: number | null
@@ -577,7 +636,10 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      update_dashboard_statistics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       assessment_scale_type:
