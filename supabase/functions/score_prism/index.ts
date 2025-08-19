@@ -4,6 +4,61 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const FUNCS = ["Ti","Te","Fi","Fe","Ni","Ne","Si","Se"] as const;
 const OPP: Record<string,string> = { Ti:"Fe", Fe:"Ti", Te:"Fi", Fi:"Te", Ni:"Se", Se:"Ni", Ne:"Si", Si:"Ne" };
+
+// Type prototypes with 8-function Model A positions
+type TypeCode = "LIE"|"ILI"|"ESE"|"SEI"|"LII"|"ILE"|"ESI"|"SEE"|"LSE"|"SLI"|"EIE"|"IEI"|"LSI"|"SLE"|"EII"|"IEE";
+type Func = "Ti"|"Te"|"Fi"|"Fe"|"Ni"|"Ne"|"Si"|"Se";
+type Block = "base"|"creative"|"role"|"vulnerable"|"mobilizing"|"suggestive"|"ignoring"|"demonstrative";
+
+const TYPE_PROTOTYPES: Record<TypeCode, Record<Func, Block>> = {
+  LIE: { Te:"base", Ni:"creative", Se:"role", Fi:"vulnerable", Ti:"mobilizing", Ne:"suggestive", Si:"ignoring", Fe:"demonstrative" },
+  ILI: { Ni:"base", Te:"creative", Fi:"role", Se:"vulnerable", Ne:"mobilizing", Ti:"suggestive", Fe:"ignoring", Si:"demonstrative" },
+  ESE: { Fe:"base", Si:"creative", Ne:"role", Ti:"vulnerable", Fi:"mobilizing", Ni:"suggestive", Te:"ignoring", Se:"demonstrative" },
+  SEI: { Si:"base", Fe:"creative", Ti:"role", Ne:"vulnerable", Ni:"mobilizing", Fi:"suggestive", Se:"ignoring", Te:"demonstrative" },
+  LII: { Ti:"base", Ne:"creative", Ni:"role", Fe:"vulnerable", Te:"mobilizing", Si:"suggestive", Fi:"ignoring", Se:"demonstrative" },
+  ILE: { Ne:"base", Ti:"creative", Fe:"role", Ni:"vulnerable", Si:"mobilizing", Te:"suggestive", Se:"ignoring", Fi:"demonstrative" },
+  ESI: { Fi:"base", Se:"creative", Ni:"role", Te:"vulnerable", Fe:"mobilizing", Ne:"suggestive", Ti:"ignoring", Si:"demonstrative" },
+  SEE: { Se:"base", Fi:"creative", Te:"role", Ni:"vulnerable", Ne:"mobilizing", Fe:"suggestive", Si:"ignoring", Ti:"demonstrative" },
+  LSE: { Te:"base", Si:"creative", Se:"role", Fi:"vulnerable", Ti:"mobilizing", Ne:"suggestive", Ni:"ignoring", Fe:"demonstrative" },
+  SLI: { Si:"base", Te:"creative", Fi:"role", Se:"vulnerable", Ni:"mobilizing", Ti:"suggestive", Fe:"ignoring", Ne:"demonstrative" },
+  EIE: { Fe:"base", Ni:"creative", Ne:"role", Ti:"vulnerable", Fi:"mobilizing", Si:"suggestive", Te:"ignoring", Se:"demonstrative" },
+  IEI: { Ni:"base", Fe:"creative", Ti:"role", Ne:"vulnerable", Si:"mobilizing", Fi:"suggestive", Se:"ignoring", Te:"demonstrative" },
+  LSI: { Ti:"base", Se:"creative", Ni:"role", Fe:"vulnerable", Te:"mobilizing", Ne:"suggestive", Fi:"ignoring", Si:"demonstrative" },
+  SLE: { Se:"base", Ti:"creative", Fe:"role", Ni:"vulnerable", Ne:"mobilizing", Te:"suggestive", Si:"ignoring", Fi:"demonstrative" },
+  EII: { Fi:"base", Ne:"creative", Ni:"role", Te:"vulnerable", Fe:"mobilizing", Si:"suggestive", Se:"ignoring", Ti:"demonstrative" },
+  IEE: { Ne:"base", Fi:"creative", Te:"role", Ni:"vulnerable", Si:"mobilizing", Fe:"suggestive", Se:"ignoring", Ti:"demonstrative" }
+};
+
+// Block weights for prototype scoring
+const BLOCK_WEIGHTS: Record<Block, number> = {
+  base: 1.00,
+  creative: 0.70,
+  demonstrative: 0.45,
+  ignoring: 0.35,
+  role: 0.25,
+  mobilizing: 0.25,
+  suggestive: 0.20,
+  vulnerable: 0.10
+};
+
+const SCORING_WEIGHTS = {
+  dim: 0.10,
+  fc: 0.10,
+  penaltyOpp: 0.20
+};
+
+// Valid base-creative combinations (Model A enforcement)
+const VALID_CREATIVES_BY_BASE: Record<Func, Func[]> = {
+  Ne: ["Ti", "Fi"],
+  Ni: ["Te", "Fe"],
+  Se: ["Ti", "Fi"],
+  Si: ["Te", "Fe"],
+  Ti: ["Ne", "Se"],
+  Te: ["Ni", "Si"],
+  Fi: ["Ne", "Se"],
+  Fe: ["Ni", "Si"]
+};
+
 const TYPE_MAP: Record<string,{ base:string, creative:string }> = {
   LIE:{ base:"Te", creative:"Ni" }, ILI:{ base:"Ni", creative:"Te" },
   ESE:{ base:"Fe", creative:"Si" }, SEI:{ base:"Si", creative:"Fe" },
@@ -277,19 +332,97 @@ serve(async (req) => {
       dimensions[f] = avg5 ? mapDim(avg5) : 0;
     }
 
-    // ---- base & creative ----
-    const sorted = [...FUNCS].sort((a,b)=>(strengths[b]||0)-(strengths[a]||0));
-    let base = sorted[0];
-    let creative = sorted.find(f => (isJ(f)&&isP(base)) || (isP(f)&&isJ(base))) || sorted[1];
-    if ((dimensions[base]||0) < 3 && (dimensions[creative]||0) === 4) { const tmp = base; base = creative; creative = tmp; }
+    // ---- PROTOTYPE-BASED TYPE SCORING (v2) ----
+    
+    // Helper to normalize dimensionality (1-4 -> 0-1)
+    function normDim(d: number): number {
+      return Math.max(0, (d - 1) / 3);
+    }
 
-    const socMap: Record<string,string> = {
-      "Te_Ni":"LIE","Ni_Te":"ILI","Fe_Si":"ESE","Si_Fe":"SEI",
-      "Ti_Ne":"LII","Ne_Ti":"ILE","Fi_Se":"ESI","Se_Fi":"SEE",
-      "Te_Si":"LSE","Si_Te":"SLI","Fe_Ni":"EIE","Ni_Fe":"IEI",
-      "Ti_Se":"LSI","Se_Ti":"SLE","Fi_Ne":"EII","Ne_Fi":"IEE"
-    };
-    const typeCode = socMap[`${base}_${creative}`] ?? "UNK";
+    // Helper to get opposite function penalty
+    function oppositePenalty(typeCode: TypeCode, S: Record<Func, number>): number {
+      const prototype = TYPE_PROTOTYPES[typeCode];
+      let penalty = 0;
+      
+      // Penalize if opposite functions have higher strength than valued functions
+      for (const func of FUNCS) {
+        const block = prototype[func];
+        if (["base", "creative"].includes(block)) {
+          const opp = OPP[func] as Func;
+          const oppBlock = prototype[opp];
+          // If opposite function is in unvalued block and stronger, penalize
+          if (["vulnerable", "ignoring"].includes(oppBlock) && S[opp] > S[func]) {
+            penalty += S[opp] - S[func];
+          }
+        }
+      }
+      
+      return penalty;
+    }
+
+    // Score each type using prototype-based method
+    function scoreType(typeCode: TypeCode, S: Record<Func, number>, D: Record<Func, number>, FC: Record<Func, number>): number {
+      const prototype = TYPE_PROTOTYPES[typeCode];
+      let score = 0;
+      
+      for (const func of FUNCS) {
+        const block = prototype[func];
+        const weight = BLOCK_WEIGHTS[block] ?? 0;
+        
+        // Base score from strength
+        score += weight * S[func];
+        
+        // Dimensionality bonus
+        score += SCORING_WEIGHTS.dim * weight * normDim(D[func]);
+        
+        // Forced-choice support
+        score += SCORING_WEIGHTS.fc * weight * FC[func];
+      }
+      
+      // Apply opposite penalty
+      score -= SCORING_WEIGHTS.penaltyOpp * oppositePenalty(typeCode, S);
+      
+      return score;
+    }
+
+    // Prepare FC support data
+    const fcSupport: Record<Func, number> = {};
+    const fcTotalCount = Object.values(fcFuncCount).reduce((a, b) => a + b, 0) || 1;
+    for (const func of FUNCS) {
+      fcSupport[func] = (fcFuncCount[func] || 0) / fcTotalCount;
+    }
+
+    // Score all 16 types
+    const typeScores: Record<TypeCode, number> = {} as Record<TypeCode, number>;
+    let invalidComboAttempts = 0;
+    
+    for (const typeCode of Object.keys(TYPE_PROTOTYPES) as TypeCode[]) {
+      // Validate base-creative combination
+      const { base: baseFunc, creative: creativeFunc } = TYPE_MAP[typeCode];
+      const validCreatives = VALID_CREATIVES_BY_BASE[baseFunc as Func];
+      
+      if (!validCreatives || !validCreatives.includes(creativeFunc as Func)) {
+        console.log(`evt:invalid_combo_blocked,session_id:${session_id},type:${typeCode},base:${baseFunc},creative:${creativeFunc}`);
+        invalidComboAttempts++;
+        continue; // Skip invalid combinations
+      }
+      
+      typeScores[typeCode] = scoreType(typeCode, strengths, dimensions, fcSupport);
+    }
+
+    // Find the best valid type
+    const validTypes = Object.entries(typeScores).filter(([_, score]) => score > 0);
+    if (validTypes.length === 0) {
+      console.error(`evt:no_valid_types,session_id:${session_id},invalid_attempts:${invalidComboAttempts}`);
+      // Fallback - this should not happen
+      const sorted = [...FUNCS].sort((a,b)=>(strengths[b]||0)-(strengths[a]||0));
+      const base = sorted[0];
+      const creative = sorted[1];
+      console.log(`evt:fallback_type,session_id:${session_id},base:${base},creative:${creative}`);
+    }
+
+    const [typeCode] = validTypes.sort(([, a], [, b]) => b - a)[0];
+    const { base, creative } = TYPE_MAP[typeCode];
 
     // ---- neuro overlay ----
     const nMean = neuroVals.length ? neuroVals.reduce((a,b)=>a+b,0)/neuroVals.length : 0; // 1..5
@@ -337,43 +470,12 @@ serve(async (req) => {
       Instinct: Math.round(blocks.Instinct / bSum * 1000)/10
     } : { Core:0, Critic:0, Hidden:0, Instinct:0 };
 
-    // ---- type likelihoods ----
-    function scoreType(code:string){
-      const { base: b, creative: c } = TYPE_MAP[code];
-
-      const sb = strengths[b] || 0, sc = strengths[c] || 0;
-      const db = (dimensions[b]||0), dc = (dimensions[c]||0);
-
-      // Existing FC support from direct function hits
-      const fcTotalLocal = Object.values(fcFuncCount).reduce((a:any,b:any)=>a as number + (b as number),0) || 0;
-      const fcpB_raw = fcTotalLocal ? ((fcFuncCount[b]||0)/fcTotalLocal) : 0;
-      const fcpC_raw = fcTotalLocal ? ((fcFuncCount[c]||0)/fcTotalLocal) : 0;
-
-      // NEW: convert block distribution into soft support for B/C
-      const blockSum = (blocks.Core||0)+(blocks.Hidden||0)+(blocks.Critic||0)+(blocks.Instinct||0) || 1;
-      const coreP   = (blocks.Core   || 0) / blockSum;   // aligns with Base+Creative
-      const hiddenP = (blocks.Hidden || 0) / blockSum;   // yearning → mild support
-      const criticP = (blocks.Critic || 0) / blockSum;   // pain points → slight penalty
-
-      // weights: tuneable; keep small so direct FC still leads
-      const fcpB = Math.max(0, Math.min(1, fcpB_raw + 0.50*coreP + 0.25*hiddenP - 0.20*criticP));
-      const fcpC = Math.max(0, Math.min(1, fcpC_raw + 0.50*coreP + 0.25*hiddenP - 0.20*criticP));
-
-      // Opposite-function conflict
-      const oppB = strengths[OPP[b]] || 0;
-      const oppC = strengths[OPP[c]] || 0;
-
-      let s = 0;
-      s += 0.60 * sb + 0.40 * sc; // primary use
-      s += 0.15 * db + 0.10 * dc; // dimensional mastery
-      s += 0.20 * fcpB + 0.15 * fcpC; // FC + block-derived support (clamped 0..1)
-      s -= 0.10 * Math.max(0, oppB - sb); // conflict penalty vs opposite
-      s -= 0.05 * Math.max(0, oppC - sc);
-
-      return s; // ~1..6 range before fit mapping
-    }
+    // ---- type likelihoods (removed - now using prototype-based scoring above) ----
+    // Calculate fit scores for all types using the new scoring system
     const rawScores: Record<string, number> = {};
-    for (const code of Object.keys(TYPE_MAP)) rawScores[code] = scoreType(code);
+    for (const code of Object.keys(typeScores)) {
+      rawScores[code] = typeScores[code as TypeCode];
+    }
     
     // Map raw type score s (~1..6.5) to 0..100 without saturating
     function mapFitAbs(s: number): number {
@@ -425,7 +527,7 @@ serve(async (req) => {
       share: sharePct[code]
     }));
 
-    console.log(`evt:fit_calculation,session_id:${session_id},top_fit:${topFit},top_gap:${topGap},close_call:${closeCall},fit_band:${fitBand}`);
+    console.log(`evt:fit_calculation,session_id:${session_id},top_fit:${topFit},top_gap:${topGap},close_call:${closeCall},fit_band:${fitBand},invalid_combo_attempts:${invalidComboAttempts}`);
 
     // ---- highlights & blocks ----
     const coherent: string[] = []; const unique: string[] = [];
@@ -470,10 +572,22 @@ serve(async (req) => {
       fit_band: fitBand, // NEW
       fc_answered_ct: fcAnsweredCount, // NEW
       top_3_fits: top3Fits, // NEW
-      fit_explainer: { // NEW
-        dynamic_weights: { likert: w_likert, fc: w_fc },
-        quality_metrics: { inconsistency: inconsIdx, sd_index: sdIndex },
-        state_impact: wLikertState !== 1.0 || wFCState !== 1.0
+      fit_explainer: { // NEW v1.1 enhanced fit explanations
+        top_3_comparison: top3Fits,
+        interpretation: {
+          fit_band: fitBand,
+          close_call: closeCall,
+          top_gap: topGap
+        }
+      },
+      // NEW v2 diagnostics
+      diagnostics: {
+        invalid_combo_attempts: invalidComboAttempts,
+        top_gap: topGap,
+        considered: Object.keys(rawScores).map(code => ({
+          type: code,
+          fit: fitAbs[code] || 0
+        })).sort((a, b) => b.fit - a.fit).slice(0, 5)
       },
       strengths: strengths,
       dimensions: dimensions,

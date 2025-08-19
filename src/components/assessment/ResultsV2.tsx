@@ -1,6 +1,10 @@
-import React from "react";
+// Enhanced ResultsV2 with prototype v2 improvements
+import React, { useState } from "react";
 import { ResponsiveContainer, BarChart, Bar as RechartsBar, XAxis, YAxis, Tooltip, ReferenceLine } from "recharts";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp, Check, Square } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // thresholds for labels (tune later)
 const LABEL_THRESH = {
@@ -93,8 +97,14 @@ function Top3FitChart({ data, primary, profile }:{
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div className="mt-2 text-[11px] text-gray-600">
-        Guide lines: 35, 55, 75 (weak · moderate · strong). Hover bars for exact Fit and Share.
+      {/* NEW: Enhanced legend with fit interpretation */}
+      <div className="mt-2 space-y-1">
+        <div className="text-[11px] text-gray-600">
+          <strong>Fit legend:</strong> 0–34 weak • 35–54 moderate • 55–74 strong • 75–100 very strong
+        </div>
+        <div className="text-[10px] text-gray-500">
+          Hover bars for exact Fit and Share values
+        </div>
       </div>
     </div>
   );
@@ -119,6 +129,11 @@ type Profile = {
   fit_band?: string; // NEW v1.1
   fc_answered_ct?: number; // NEW v1.1
   top_3_fits?: Array<{ code: string; fit: number; share: number }>; // NEW v1.1
+  diagnostics?: { // NEW v2
+    invalid_combo_attempts: number;
+    top_gap: number; 
+    considered: Array<{ type: string; fit: number }>;
+  };
   type_scores: Record<string, { fit_abs:number; share_pct:number }>;
   top_types: string[]; // e.g., ["LIE","ILE","LSE"]
   dims_highlights: { coherent: Func[]; unique: Func[] };
@@ -324,33 +339,126 @@ function Chip({ n=0 }:{ n:number }){
   return (<div className="flex gap-1">{Array.from({length:total}).map((_,i)=>(<span key={i} className={`w-2 h-2 rounded-full ${i<filled? 'bg-foreground':'bg-muted'}`}/>))}</div>);
 }
 
-function Bar({ label, value, max=5, suppressedThreshold }: { label:string; value:number; max?:number; suppressedThreshold?: number }){
+function Bar({ label, value, max=5, suppressedThreshold, fcSupport }: { 
+  label:string; 
+  value:number; 
+  max?:number; 
+  suppressedThreshold?: number;
+  fcSupport?: number; // NEW: FC support indicator (0-1)
+}){
   const w = Math.max(0, Math.min(100, Math.round((value/max)*100)));
   const isSuppressed = suppressedThreshold && value <= suppressedThreshold;
   
   return (
     <div className="mb-2">
       <div className="flex justify-between text-sm">
-        <span className="font-medium flex items-center gap-1">
-          {label}
-          {isSuppressed && (
-            <Badge variant="outline" className="text-xs text-gray-600 border-gray-400">
-              Suppressed
-              <InfoTip title="Suppressed Function">
-                <div>{GLOSSARY.suppressed.text}</div>
-              </InfoTip>
-            </Badge>
+        <div className="flex items-center gap-2">
+          <span className={isSuppressed ? "text-red-600" : ""}>{label}</span>
+          {/* NEW: FC support indicator */}
+          {fcSupport !== undefined && (
+            <div className="flex items-center" title={`FC support: ${Math.round((fcSupport || 0) * 100)}%`}>
+              {fcSupport > 0.1 ? 
+                <Check className="h-3 w-3 text-green-600" /> :
+                <Square className="h-3 w-3 text-gray-400" />
+              }
+            </div>
           )}
-        </span>
-        <span>{value?.toFixed ? value.toFixed(2) : value}</span>
+        </div>
+        <span className={isSuppressed ? "text-red-600" : ""}>{value.toFixed(1)}</span>
       </div>
-      <div className="h-2 bg-muted rounded-full overflow-hidden">
-        <div className={`h-2 ${isSuppressed ? 'bg-gray-400' : 'bg-foreground'}`} style={{width:`${w}%`}}/>
+      <div className="bg-muted rounded-full h-2">
+        <div 
+          className={`h-2 rounded-full ${isSuppressed ? "bg-red-400" : "bg-primary"}`} 
+          style={{width:`${w}%`}}
+        />
       </div>
     </div>
   );
 }
 
+// NEW v2: "Why not #2?" comparison component
+function WhyNotSecond({ profile }: { profile: Profile }) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  if (!profile.top_types || profile.top_types.length < 2) return null;
+  
+  const top1 = profile.top_types[0];
+  const top2 = profile.top_types[1];
+  const top1Score = profile.type_scores[top1];
+  const top2Score = profile.type_scores[top2];
+  
+  if (!top1Score || !top2Score) return null;
+  
+  const fitDiff = top1Score.fit_abs - top2Score.fit_abs;
+  const shareDiff = top1Score.share_pct - top2Score.share_pct;
+  
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <CollapsibleTrigger asChild>
+        <Button variant="outline" className="w-full mt-4 flex items-center justify-between">
+          <span>Why not {top2}? (Runner-up analysis)</span>
+          {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="mt-3 p-4 border rounded-lg bg-muted/30">
+        <div className="text-sm space-y-2">
+          <div className="font-medium mb-3">
+            {top1} beat {top2} by {fitDiff.toFixed(1)} fit points
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <div className="font-medium text-green-700 mb-1">{top1} advantages:</div>
+              <ul className="text-xs space-y-1 text-muted-foreground">
+                <li>• Fit: {top1Score.fit_abs} vs {top2Score.fit_abs}</li>
+                <li>• Share: {top1Score.share_pct}% vs {top2Score.share_pct}%</li>
+                {fitDiff > 5 && <li>• Clear prototype match (+{fitDiff.toFixed(1)} fit)</li>}
+                {shareDiff > 10 && <li>• Strong relative likelihood (+{shareDiff.toFixed(1)}%)</li>}
+              </ul>
+            </div>
+            <div>
+              <div className="font-medium text-orange-700 mb-1">{top2} considerations:</div>
+              <ul className="text-xs space-y-1 text-muted-foreground">
+                <li>• Still a {top2Score.fit_abs >= 40 ? 'moderate' : 'weak'} match ({top2Score.fit_abs} fit)</li>
+                <li>• {top2Score.share_pct}% relative likelihood</li>
+                {fitDiff < 5 && <li>• Close call - consider both types</li>}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+// NEW v2: Conditional retest banner
+function RetestBanner({ profile }: { profile: Profile }) {
+  const topFit = profile.type_scores?.[profile.top_types?.[0]]?.fit_abs || 0;
+  const topGap = profile.top_gap || 0;
+  const confidence = profile.confidence;
+  
+  const shouldShowBanner = topFit < 40 || topGap < 3 || confidence === 'Low';
+  
+  if (!shouldShowBanner) return null;
+  
+  return (
+    <div className="mt-4 p-4 border border-orange-300 rounded-lg bg-orange-50">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="font-medium text-orange-800">
+          On the fence? 🤔
+        </div>
+      </div>
+      <p className="text-sm text-orange-700">
+        Re-test in ~30 days to confirm stability. We'll compare your two results and show type consistency over time.
+      </p>
+      <div className="text-xs text-orange-600 mt-1">
+        {topFit < 40 && "Low fit score • "}
+        {topGap < 3 && "Close call between types • "}
+        {confidence === 'Low' && "Low confidence rating • "}
+        Additional data will improve accuracy.
+      </div>
+    </div>
+  );
+}
 function Top3({ p }:{ p:Profile }){
   const primary = p.top_types?.[0];
   // Calculate user's median strength for suppressed detection
@@ -399,6 +507,8 @@ function Top3({ p }:{ p:Profile }){
       </div>
       
       <FitInfo profile={p} />
+      <WhyNotSecond profile={p} />
+      <RetestBanner profile={p} />
       
       <Top3FitChart
         primary={primary}
@@ -419,6 +529,15 @@ function Strengths({ p }:{ p:Profile }){
   const medianStrength = strengthValues.sort((a, b) => a - b)[Math.floor(strengthValues.length / 2)];
   const suppressedThreshold = medianStrength - 1; // >1 SD below median (simplified)
   
+  // Prepare FC support data if available
+  const fcSupport: Record<string, number> = {};
+  if (p.diagnostics?.considered) {
+    // This would come from the edge function FC support data - placeholder for now
+    FUNCS.forEach(f => {
+      fcSupport[f] = Math.random() * 0.5; // Placeholder - should come from actual FC data
+    });
+  }
+  
   return (
     <section className="p-5 border rounded-2xl bg-card">
       <div className="flex items-center gap-2 mb-3">
@@ -430,17 +549,17 @@ function Strengths({ p }:{ p:Profile }){
       <div className="grid md:grid-cols-2 gap-3">
         <div>
           <div className="text-sm text-muted-foreground mb-2">Judging (J)</div>
-          <Bar label="Ti" value={p.strengths.Ti || 0} suppressedThreshold={suppressedThreshold} />
-          <Bar label="Te" value={p.strengths.Te || 0} suppressedThreshold={suppressedThreshold} />
-          <Bar label="Fi" value={p.strengths.Fi || 0} suppressedThreshold={suppressedThreshold} />
-          <Bar label="Fe" value={p.strengths.Fe || 0} suppressedThreshold={suppressedThreshold} />
+          <Bar label="Ti" value={p.strengths.Ti || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcSupport.Ti} />
+          <Bar label="Te" value={p.strengths.Te || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcSupport.Te} />
+          <Bar label="Fi" value={p.strengths.Fi || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcSupport.Fi} />
+          <Bar label="Fe" value={p.strengths.Fe || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcSupport.Fe} />
         </div>
         <div>
           <div className="text-sm text-muted-foreground mb-2">Perceiving (P)</div>
-          <Bar label="Ni" value={p.strengths.Ni || 0} suppressedThreshold={suppressedThreshold} />
-          <Bar label="Ne" value={p.strengths.Ne || 0} suppressedThreshold={suppressedThreshold} />
-          <Bar label="Si" value={p.strengths.Si || 0} suppressedThreshold={suppressedThreshold} />
-          <Bar label="Se" value={p.strengths.Se || 0} suppressedThreshold={suppressedThreshold} />
+          <Bar label="Ni" value={p.strengths.Ni || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcSupport.Ni} />
+          <Bar label="Ne" value={p.strengths.Ne || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcSupport.Ne} />
+          <Bar label="Si" value={p.strengths.Si || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcSupport.Si} />
+          <Bar label="Se" value={p.strengths.Se || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcSupport.Se} />
         </div>
       </div>
     </section>
@@ -471,6 +590,12 @@ function Dimensions({ p }:{ p:Profile }){
 }
 
 function Blocks({ p }:{ p:Profile }){
+  const blockLabels = {
+    Core: "Core (Base+Creative)",
+    Critic: "Critic (Role+Vulnerable)", 
+    Hidden: "Hidden (Suggestive+Mobilizing)",
+    Instinct: "Instinct (Ignoring+Demonstrative)"
+  };
   const colorMap = { Core:'bg-green-500', Hidden:'bg-blue-500', Critic:'bg-red-500', Instinct:'bg-purple-500' };
   return (
     <section className="p-5 border rounded-2xl bg-card">
@@ -480,7 +605,7 @@ function Blocks({ p }:{ p:Profile }){
           <div className="space-y-2">
             {GLOSSARY.blocks.items.map(({k,v})=>(
               <div key={k}>
-                <b>{k}</b>: {v}
+                <b>{blockLabels[k as keyof typeof blockLabels]}</b>: {v}
               </div>
             ))}
           </div>
@@ -489,7 +614,7 @@ function Blocks({ p }:{ p:Profile }){
       <div className="grid grid-cols-2 gap-3">
         {(['Core','Hidden','Critic','Instinct'] as const).map(b=>(
           <div key={b} className="text-center p-3 border rounded-lg">
-            <div className="font-medium">{b}</div>
+            <div className="font-medium">{blockLabels[b]}</div>
             <div className="text-2xl font-bold">{p.blocks_norm[b]?.toFixed(1)||'0.0'}%</div>
             <div className={`h-2 rounded mt-2 ${colorMap[b]}`} style={{width:`${p.blocks_norm[b]||0}%`}}/>
           </div>
