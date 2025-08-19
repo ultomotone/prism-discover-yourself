@@ -439,6 +439,27 @@ export type Database = {
       }
     }
     Views: {
+      v_calibration_confidence: {
+        Row: {
+          conf_bin: string | null
+          hit_rate: number | null
+          n: number | null
+        }
+        Relationships: []
+      }
+      v_close_call_resolution: {
+        Row: {
+          session_id_1: string | null
+          session_id_2: string | null
+          t1: string | null
+          t2: string | null
+          top_gap_1: number | null
+          top_gap_2: number | null
+          user_id: string | null
+          was_close_call: boolean | null
+        }
+        Relationships: []
+      }
       v_conf_dist: {
         Row: {
           confidence: string | null
@@ -495,10 +516,69 @@ export type Database = {
           },
         ]
       }
+      v_dim_reliability_prep: {
+        Row: {
+          fe_dim_1: number | null
+          fe_dim_1_retest: number | null
+          fi_dim_1: number | null
+          fi_dim_1_retest: number | null
+          ne_dim_1: number | null
+          ne_dim_1_retest: number | null
+          ni_dim_1: number | null
+          ni_dim_1_retest: number | null
+          se_dim_1: number | null
+          se_dim_1_retest: number | null
+          session_id_1: string | null
+          session_id_2: string | null
+          si_dim_1: number | null
+          si_dim_1_retest: number | null
+          t1: string | null
+          t2: string | null
+          te_dim_1: number | null
+          te_dim_1_retest: number | null
+          ti_dim_1: number | null
+          ti_dim_1_retest: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       v_duplicates: {
         Row: {
           sessions_ct: number | null
           user_id: string | null
+        }
+        Relationships: []
+      }
+      v_fairness_demographics: {
+        Row: {
+          confidence: string | null
+          country: string | null
+          created_at: string | null
+          fit_abs_top1: number | null
+          is_low_confidence: number | null
+          overlay: string | null
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          confidence?: string | null
+          country?: never
+          created_at?: string | null
+          fit_abs_top1?: never
+          is_low_confidence?: never
+          overlay?: string | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          confidence?: string | null
+          country?: never
+          created_at?: string | null
+          fit_abs_top1?: never
+          is_low_confidence?: never
+          overlay?: string | null
+          session_id?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -588,11 +668,63 @@ export type Database = {
         }
         Relationships: []
       }
+      v_method_agreement_prep: {
+        Row: {
+          answer_array: string[] | null
+          answer_numeric: number | null
+          function_name: string | null
+          question_id: number | null
+          scale_type:
+            | Database["public"]["Enums"]["assessment_scale_type"]
+            | null
+          session_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
       v_overlay_conf: {
         Row: {
           confidence: string | null
           n: number | null
           overlay: string | null
+        }
+        Relationships: []
+      }
+      v_overlay_invariance: {
+        Row: {
+          confidence: string | null
+          created_at: string | null
+          fit_abs_top1: number | null
+          overlay: string | null
+          session_id: string | null
+        }
+        Insert: {
+          confidence?: string | null
+          created_at?: string | null
+          fit_abs_top1?: never
+          overlay?: string | null
+          session_id?: string | null
+        }
+        Update: {
+          confidence?: string | null
+          created_at?: string | null
+          fit_abs_top1?: never
+          overlay?: string | null
+          session_id?: string | null
         }
         Relationships: []
       }
@@ -896,10 +1028,104 @@ export type Database = {
         }
         Relationships: []
       }
+      v_state_index: {
+        Row: {
+          session_id: string | null
+          state_items_count: number | null
+          state_mean: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      v_state_trait_sep: {
+        Row: {
+          confidence: string | null
+          created_at: string | null
+          overlay: string | null
+          session_id: string | null
+          state_items_count: number | null
+          state_mean: number | null
+          strengths_mean: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      v_test_retest_strength_r: {
+        Row: {
+          adjacent_flip: boolean | null
+          days_apart: number | null
+          r_strengths: number | null
+          session_id_1: string | null
+          session_id_2: string | null
+          stable: boolean | null
+          t1: string | null
+          t2: string | null
+          top1_a: string | null
+          top1_b: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       v_throughput: {
         Row: {
           d: string | null
           sessions: number | null
+        }
+        Relationships: []
+      }
+      v_type_distinctiveness_prep: {
+        Row: {
+          base_dim: number | null
+          base_func: string | null
+          base_strength: number | null
+          confidence: string | null
+          created_at: string | null
+          creative_dim: number | null
+          creative_func: string | null
+          creative_strength: number | null
+          overlay: string | null
+          session_id: string | null
+          type_code: string | null
+        }
+        Insert: {
+          base_dim?: never
+          base_func?: string | null
+          base_strength?: never
+          confidence?: string | null
+          created_at?: string | null
+          creative_dim?: never
+          creative_func?: string | null
+          creative_strength?: never
+          overlay?: string | null
+          session_id?: string | null
+          type_code?: string | null
+        }
+        Update: {
+          base_dim?: never
+          base_func?: string | null
+          base_strength?: never
+          confidence?: string | null
+          created_at?: string | null
+          creative_dim?: never
+          creative_func?: string | null
+          creative_strength?: never
+          overlay?: string | null
+          session_id?: string | null
+          type_code?: string | null
         }
         Relationships: []
       }
