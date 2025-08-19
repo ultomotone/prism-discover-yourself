@@ -88,11 +88,15 @@ export const useAdminAnalytics = () => {
         .gte('created_at', from)
         .lte('created_at', to);
 
-      // Completion rate
-      const { data: completionData } = await supabase.rpc('get_completion_rate', {
-        from_date: from,
-        to_date: to
-      });
+      // Completion rate - calculate manually instead of using RPC
+      const { count: startedSessions } = await supabase
+        .from('v_sessions')
+        .select('*', { count: 'exact', head: true })
+        .gte('started_at', from)
+        .lte('started_at', to);
+
+      const completionRate = totalAssessments && startedSessions ? 
+        (totalAssessments / startedSessions) : 0;
 
       // Confidence mix
       const { data: confidenceData } = await supabase
@@ -139,7 +143,7 @@ export const useAdminAnalytics = () => {
 
       setKpiData({
         totalAssessments: totalAssessments || 0,
-        completionRate: completionData?.[0]?.completion_rate || 0,
+        completionRate: completionRate,
         highModerateConfidence: (highModerate / total) * 100,
         avgInconsistency: avgInconsistency || 0,
         avgFitGap: avgFitGap || 0,
@@ -203,7 +207,8 @@ export const useAdminAnalytics = () => {
           .lte('created_at', to);
 
         const avgStrength = funcData?.reduce((sum, d) => {
-          const value = parseFloat(d.strengths || '0');
+          const fieldName = `strengths->${func}`;
+          const value = parseFloat(d[fieldName as keyof typeof d] as string || '0');
           return sum + (isNaN(value) ? 0 : value);
         }, 0) / (funcData?.length || 1);
 
