@@ -19,12 +19,6 @@ const Footer = () => {
   }, []);
 
   const popularLinks = {
-    main: [
-      { name: "Take Assessment", href: "/assessment" },
-      { name: "For Individuals", href: "/individuals" },
-      { name: "For Teams", href: "/teams" },
-      { name: "About PRISM", href: "/about" },
-    ],
     components: [
       { name: "Information Elements", href: "/signals" },
       { name: "Core Alignments", href: "/core-alignments" },
@@ -49,30 +43,29 @@ const Footer = () => {
       <div className="prism-container">
         {/* Main Footer Content */}
         <div className="py-16">
-          <div className="grid lg:grid-cols-6 gap-8">
+          <div className="grid lg:grid-cols-4 gap-8">
             {/* Brand Column */}
-            <div className="lg:col-span-2">
+            <div>
               <div className="flex items-center mb-4">
                 <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center mr-3">
                   <span className="text-primary font-bold text-lg">P</span>
                 </div>
                 <span className="text-2xl font-bold">PRISM</span>
               </div>
-              <p className="text-primary-foreground/80 mb-6 max-w-md">
+              <p className="text-primary-foreground/80 mb-6">
                 Empowering individuals and teams through scientifically-backed 
-                personality insights. Discover your authentic self and unlock 
-                your full potential.
+                personality insights.
               </p>
               
               {/* Contact Info */}
               <div className="space-y-3 mb-6">
                 <div className="flex items-center">
                   <Mail className="h-4 w-4 mr-3 text-primary-foreground/60" />
-                  <span className="text-primary-foreground/80">daniel.joseph.speiss@gmail.com</span>
+                  <span className="text-primary-foreground/80 text-sm">daniel.joseph.speiss@gmail.com</span>
                 </div>
                 <div className="flex items-center">
                   <Phone className="h-4 w-4 mr-3 text-primary-foreground/60" />
-                  <span className="text-primary-foreground/80">631-745-8686</span>
+                  <span className="text-primary-foreground/80 text-sm">631-745-8686</span>
                 </div>
               </div>
 
@@ -90,20 +83,7 @@ const Footer = () => {
               </div>
             </div>
 
-            {/* Popular Link Columns */}
-            <div>
-              <h3 className="font-semibold mb-4">Popular</h3>
-              <ul className="space-y-2">
-                {popularLinks.main.map((link) => (
-                  <li key={link.name}>
-                    <a href={link.href} className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
-                      {link.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
+            {/* PRISM Components Column */}
             <div>
               <h3 className="font-semibold mb-4">PRISM Components</h3>
               <ul className="space-y-2">
@@ -117,6 +97,7 @@ const Footer = () => {
               </ul>
             </div>
 
+            {/* Resources Column */}
             <div>
               <h3 className="font-semibold mb-4">Resources</h3>
               <ul className="space-y-2">
@@ -144,29 +125,25 @@ const Footer = () => {
                 ))}
               </ul>
             </div>
-          </div>
-        </div>
 
-        <Separator className="bg-primary-foreground/20" />
-
-        {/* Donation Section */}
-        <div className="py-8 text-center">
-          <div className="mb-4">
-            <Heart className="h-6 w-6 text-red-400 mx-auto mb-3" />
-            <h3 className="text-xl font-semibold mb-2">Support PRISM</h3>
-            <p className="text-primary-foreground/80 text-sm max-w-md mx-auto">
-              Help us keep PRISM free and accessible for everyone
-            </p>
-          </div>
-          <div className="flex justify-center">
-            <div 
-              dangerouslySetInnerHTML={{
-                __html: `<stripe-buy-button
-                  buy-button-id="buy_btn_1RxsnID9AJFeFtOvkMbrRpMA"
-                  publishable-key="pk_live_q3JAuI9omI8O6TFmtfpQyq0p">
-                </stripe-buy-button>`
-              }}
-            />
+            {/* Support PRISM Column */}
+            <div>
+              <div className="mb-4">
+                <Heart className="h-5 w-5 text-red-400 mb-2" />
+                <h3 className="font-semibold">Support PRISM</h3>
+              </div>
+              <p className="text-primary-foreground/80 text-sm mb-4">
+                Help us keep PRISM free and accessible for everyone
+              </p>
+              <div 
+                dangerouslySetInnerHTML={{
+                  __html: `<stripe-buy-button
+                    buy-button-id="buy_btn_1RxsnID9AJFeFtOvkMbrRpMA"
+                    publishable-key="pk_live_q3JAuI9omI8O6TFmtfpQyq0p">
+                  </stripe-buy-button>`
+                }}
+              />
+            </div>
           </div>
         </div>
 
