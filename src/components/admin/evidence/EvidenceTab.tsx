@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useEvidenceAnalytics, type EvidenceFilters } from '@/hooks/useEvidenceAnalytics';
 import { TestRetestReliabilityCard } from './TestRetestReliabilityCard';
 import { TypeStabilityCard } from './TypeStabilityCard';
@@ -17,25 +17,29 @@ export const EvidenceTab: React.FC = () => {
     device: 'all'
   });
 
-  // Convert admin filters to evidence filters
-  const filters: EvidenceFilters = {
-    dateRange: {
-      from: (() => {
-        const now = new Date();
-        switch (adminFilters.dateRange.preset) {
-          case '7d': return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          case '30d': return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          case '90d': return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-          case '1y': return new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-          default: return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        }
-      })(),
-      to: new Date()
-    },
-    overlay: adminFilters.overlay === 'all' ? undefined : adminFilters.overlay,
-    confidence: adminFilters.confidence === 'all' ? undefined : adminFilters.confidence,
-    type: adminFilters.primaryType === 'all' ? undefined : adminFilters.primaryType
-  };
+  // Convert admin filters to evidence filters (memoized to prevent infinite re-renders)
+  const filters: EvidenceFilters = useMemo(() => {
+    const now = new Date();
+    const getDateRange = () => {
+      switch (adminFilters.dateRange.preset) {
+        case '7d': return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        case '30d': return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        case '90d': return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        case '1y': return new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        default: return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      }
+    };
+
+    return {
+      dateRange: {
+        from: getDateRange(),
+        to: now
+      },
+      overlay: adminFilters.overlay === 'all' ? undefined : adminFilters.overlay,
+      confidence: adminFilters.confidence === 'all' ? undefined : adminFilters.confidence,
+      type: adminFilters.primaryType === 'all' ? undefined : adminFilters.primaryType
+    };
+  }, [adminFilters]);
 
   const { data, loading, error, refetch } = useEvidenceAnalytics(filters);
 
