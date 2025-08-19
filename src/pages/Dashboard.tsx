@@ -22,7 +22,8 @@ interface DashboardData {
   latestAssessments: Array<{
     created_at: string;
     type_code: string;
-    top_types?: any;
+    top_types?: string[];
+    type_scores?: Record<string, { fit_abs?: number; share_pct?: number }>;
     overlay: string;
     country?: string;
     email?: string;
@@ -32,7 +33,8 @@ interface DashboardData {
 interface AssessmentDetail {
   created_at: string;
   type_code: string;
-  top_types?: Array<{ code: string; fit_abs?: number; share_pct?: number }>;
+  top_types?: string[];
+  type_scores?: Record<string, { fit_abs?: number; share_pct?: number }>;
   overlay: string;
   country?: string;
   email?: string;
@@ -128,10 +130,10 @@ const Dashboard = () => {
         // Country distribution (if config exists) - simplified approach
         Promise.resolve({ data: [], error: null }),
 
-        // Latest assessments with details
+        // Latest assessments with details  
         supabase
           .from('profiles')
-          .select('created_at, type_code, top_types, overlay, session_id')
+          .select('created_at, type_code, top_types, type_scores, overlay, session_id')
           .gte('created_at', startDate.toISOString())
           .order('created_at', { ascending: false })
           .limit(50)
@@ -207,6 +209,7 @@ const Dashboard = () => {
             created_at: profile.created_at,
             type_code: profile.type_code,
             top_types: profile.top_types,
+            type_scores: profile.type_scores,
             overlay: profile.overlay
           };
 
@@ -564,7 +567,12 @@ const Dashboard = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>{assessment.country || 'Unknown'}</TableCell>
-                    <TableCell>{maskEmail(assessment.email || 'Anonymous')}</TableCell>
+                    <TableCell>
+                      {assessment.top_types?.[0] && assessment.type_scores?.[assessment.top_types[0]] ? 
+                        `${Math.round(assessment.type_scores[assessment.top_types[0]].fit_abs || 0)}` : 
+                        'N/A'
+                      }
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
