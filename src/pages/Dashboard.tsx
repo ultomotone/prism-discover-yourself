@@ -25,10 +25,12 @@ interface DashboardData {
   latestAssessments: Array<{
     created_at: string;
     type_code: string;
+    type_display?: string;
     top_types?: string[];
     type_scores?: Record<string, { fit_abs?: number; share_pct?: number }>;
     overlay: string;
     country?: string;
+    country_display?: string;
     email?: string;
     fit_score?: number; // Add fit_score property here too
   }>;
@@ -37,10 +39,12 @@ interface DashboardData {
 interface AssessmentDetail {
   created_at: string;
   type_code: string;
+  type_display?: string;
   top_types?: string[];
   type_scores?: Record<string, { fit_abs?: number; share_pct?: number }>;
   overlay: string;
   country?: string;
+  country_display?: string;
   email?: string;
   fit_score?: number; // Add fit_score property
 }
@@ -201,10 +205,16 @@ const Dashboard = () => {
     if (!data) return [];
     return data.latestAssessments.filter(assessment => {
       const matchesSearch = !searchTerm || 
+        assessment.type_display?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         assessment.type_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        assessment.country_display?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         assessment.country?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesType = selectedType === 'all' || assessment.type_code?.substring(0, 3) === selectedType;
-      const matchesOverlay = selectedOverlay === 'all' || assessment.overlay === selectedOverlay;
+      const matchesType = selectedType === 'all' || 
+        assessment.type_display?.substring(0, 3) === selectedType ||
+        assessment.type_code?.substring(0, 3) === selectedType;
+      const matchesOverlay = selectedOverlay === 'all' || 
+        assessment.overlay === selectedOverlay ||
+        (assessment.type_display && (assessment.type_display.includes('+') || assessment.type_display.includes('–')));
       return matchesSearch && matchesType && matchesOverlay;
     });
   }, [data, searchTerm, selectedType, selectedOverlay]);
@@ -522,12 +532,12 @@ const Dashboard = () => {
                     <TableCell>
                       {new Date(assessment.created_at).toLocaleString()}
                     </TableCell>
-                     <TableCell>
-                       <Badge variant="outline">
-                         {assessment.type_code}
-                       </Badge>
-                     </TableCell>
-                     <TableCell>{assessment.country || 'Unknown'}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {assessment.type_display || assessment.type_code}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{assessment.country_display || assessment.country || 'Unknown'}</TableCell>
                      <TableCell>
                        {assessment.fit_score ? Math.round(assessment.fit_score) : 'N/A'}
                      </TableCell>
