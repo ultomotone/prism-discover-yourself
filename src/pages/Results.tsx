@@ -82,29 +82,49 @@ export default function Results() {
   }, [sessionId]);
 
   const downloadPDF = async () => {
-    const node = document.getElementById('results-content');
-    if (!node) return;
-    
-    const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#ffffff" });
-    const img = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pageWidth = 210, pageHeight = 297;
-    const imgProps = pdf.getImageProperties(img);
-    const imgWidth = pageWidth, imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-    
-    pdf.addImage(img, "PNG", 0, 0, imgWidth, Math.min(imgHeight, pageHeight));
-    
-    // If content taller than one page, slice and add more pages
-    let remaining = imgHeight - pageHeight;
-    let y = 0;
-    while (remaining > 0) {
-      pdf.addPage();
-      y += pageHeight;
-      pdf.addImage(img, "PNG", 0, -y, imgWidth, imgHeight);
-      remaining -= pageHeight;
+    try {
+      const node = document.getElementById('results-content');
+      if (!node) {
+        console.error('Results content not found');
+        return;
+      }
+      
+      // More robust canvas options for various browsers
+      const canvas = await html2canvas(node, { 
+        scale: 2, 
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width: node.scrollWidth,
+        height: node.scrollHeight
+      });
+      
+      const img = canvas.toDataURL("image/png", 0.95);
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = 210, pageHeight = 297;
+      const imgProps = pdf.getImageProperties(img);
+      const imgWidth = pageWidth;
+      const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+      
+      pdf.addImage(img, "PNG", 0, 0, imgWidth, Math.min(imgHeight, pageHeight));
+      
+      // If content taller than one page, slice and add more pages
+      let remaining = imgHeight - pageHeight;
+      let y = 0;
+      while (remaining > 0) {
+        pdf.addPage();
+        y += pageHeight;
+        pdf.addImage(img, "PNG", 0, -y, imgWidth, imgHeight);
+        remaining -= pageHeight;
+      }
+      
+      const fileName = scoring?.type_code ? `PRISM_Profile_${scoring.type_code}.pdf` : "PRISM_Profile.pdf";
+      pdf.save(fileName);
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      alert('PDF generation failed. Please try again or use a different browser.');
     }
-    
-    pdf.save("PRISM_Profile.pdf");
   };
 
   if (loading) {
