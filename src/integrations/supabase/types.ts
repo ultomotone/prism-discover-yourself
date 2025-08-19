@@ -439,6 +439,13 @@ export type Database = {
       }
     }
     Views: {
+      v_conf_dist: {
+        Row: {
+          confidence: string | null
+          n: number | null
+        }
+        Relationships: []
+      }
       v_dashboard_stats: {
         Row: {
           assessment_date: string | null
@@ -462,6 +469,69 @@ export type Database = {
           type_sei: number | null
           type_sle: number | null
           type_sli: number | null
+        }
+        Relationships: []
+      }
+      v_dim_coverage: {
+        Row: {
+          d_items: number | null
+          func: string | null
+          session_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      v_duplicates: {
+        Row: {
+          sessions_ct: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      v_fc_coverage: {
+        Row: {
+          answered_count: number | null
+          fc_count: number | null
+          session_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      v_fit_ranks: {
+        Row: {
+          session_id: string | null
+          top_gap: number | null
+          top1_code: string | null
+          top1_fit: number | null
+          top2_fit: number | null
         }
         Relationships: []
       }
@@ -515,6 +585,14 @@ export type Database = {
           completions: number | null
           d: string | null
           median_minutes: number | null
+        }
+        Relationships: []
+      }
+      v_overlay_conf: {
+        Row: {
+          confidence: string | null
+          n: number | null
+          overlay: string | null
         }
         Relationships: []
       }
@@ -626,6 +704,18 @@ export type Database = {
         }
         Relationships: []
       }
+      v_quality: {
+        Row: {
+          func_balance: number | null
+          inconsistency: number | null
+          sd_index: number | null
+          session_id: string | null
+          top_gap: number | null
+          top1_fit: number | null
+          top2_fit: number | null
+        }
+        Relationships: []
+      }
       v_recent_assessments_safe: {
         Row: {
           country_display: string | null
@@ -701,14 +791,12 @@ export type Database = {
         }
         Relationships: []
       }
-      v_sessions: {
+      v_section_times: {
         Row: {
-          completed: boolean | null
-          duration_sec: number | null
-          last_event_at: string | null
+          drop_rate: number | null
+          median_sec: number | null
+          section: string | null
           session_id: string | null
-          started_at: string | null
-          user_id: string | null
         }
         Relationships: [
           {
@@ -727,6 +815,94 @@ export type Database = {
           },
         ]
       }
+      v_sessions: {
+        Row: {
+          confidence: string | null
+          created_at: string | null
+          d: string | null
+          dimensions: Json | null
+          inconsistency: number | null
+          overlay: string | null
+          sd_index: number | null
+          session_id: string | null
+          strengths: Json | null
+          top_types: Json | null
+          type_code: string | null
+          type_scores: Json | null
+          type3: string | null
+          user_id: string | null
+        }
+        Insert: {
+          confidence?: string | null
+          created_at?: string | null
+          d?: never
+          dimensions?: Json | null
+          inconsistency?: never
+          overlay?: string | null
+          sd_index?: never
+          session_id?: string | null
+          strengths?: Json | null
+          top_types?: Json | null
+          type_code?: string | null
+          type_scores?: Json | null
+          type3?: never
+          user_id?: string | null
+        }
+        Update: {
+          confidence?: string | null
+          created_at?: string | null
+          d?: never
+          dimensions?: Json | null
+          inconsistency?: never
+          overlay?: string | null
+          sd_index?: never
+          session_id?: string | null
+          strengths?: Json | null
+          top_types?: Json | null
+          type_code?: string | null
+          type_scores?: Json | null
+          type3?: never
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      v_sessions_plus: {
+        Row: {
+          completed_at: string | null
+          confidence: string | null
+          created_at: string | null
+          d: string | null
+          device: string | null
+          dimensions: Json | null
+          duration_sec: number | null
+          inconsistency: number | null
+          overlay: string | null
+          sd_index: number | null
+          session_id: string | null
+          started_at: string | null
+          strengths: Json | null
+          top_types: Json | null
+          type_code: string | null
+          type_scores: Json | null
+          type3: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      v_share_entropy: {
+        Row: {
+          session_id: string | null
+          share_entropy: number | null
+        }
+        Relationships: []
+      }
+      v_throughput: {
+        Row: {
+          d: string | null
+          sessions: number | null
+        }
+        Relationships: []
+      }
       v_user_sessions_chrono: {
         Row: {
           email: string | null
@@ -735,6 +911,13 @@ export type Database = {
           session_id: string | null
           started_at: string | null
           user_id: string | null
+        }
+        Relationships: []
+      }
+      v_validity: {
+        Row: {
+          pass_validity: boolean | null
+          session_id: string | null
         }
         Relationships: []
       }
