@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Footer from "./components/Footer";
 import Index from "./pages/Index";
 import Assessment from "./pages/Assessment";
+import Results from "./pages/Results";
 import History from "./pages/History";
 import Dashboard from "./pages/Dashboard";
 import About from "./pages/About";
@@ -70,6 +71,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/assessment" element={<Assessment />} />
+              <Route path="/results/:sessionId" element={<Results />} />
               <Route path="/history" element={<History />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/about" element={<About />} />

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle, Download, RotateCcw } from "lucide-react";
+import { CheckCircle, Download, RotateCcw, Link, Copy } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import { AssessmentResponse } from "./AssessmentForm";
 import { supabase } from "@/integrations/supabase/client";
 import { ResultsV2 } from "./ResultsV2";
@@ -40,6 +41,30 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
     };
     run();
   }, [sessionId]);
+
+  const resultsUrl = `${window.location.origin}/results/${sessionId}`;
+
+  const copyResultsLink = async () => {
+    try {
+      await navigator.clipboard.writeText(resultsUrl);
+      toast({
+        title: "Link copied!",
+        description: "The results link has been copied to your clipboard.",
+      });
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = resultsUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      toast({
+        title: "Link copied!",
+        description: "The results link has been copied to your clipboard.",
+      });
+    }
+  };
 
   const downloadPDF = async () => {
     const node = document.getElementById('results-content');
@@ -135,6 +160,32 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
               </CardContent>
             </Card>
           )}
+
+          {/* Shareable Link */}
+          <Card className="max-w-4xl mx-auto">
+            <CardContent className="p-6">
+              <div className="text-center mb-4">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Link className="h-4 w-4" />
+                  <h3 className="font-semibold">Save Your Results</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Bookmark this link to access your results anytime
+                </p>
+                <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                  <code className="text-sm flex-1 truncate">{resultsUrl}</code>
+                  <Button 
+                    onClick={copyResultsLink} 
+                    variant="ghost" 
+                    size="sm"
+                    className="shrink-0"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Action Buttons */}
           <Card className="max-w-4xl mx-auto">
