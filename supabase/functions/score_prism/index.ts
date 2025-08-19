@@ -180,22 +180,23 @@ serve(async (req) => {
       wFCState     = 1.15;   // up-weight FC/scenario support
     }
 
-    // ---- strengths: dynamic Likert/FC blending with state ----
+    // ---- strengths: dynamic Likert/FC blending with state (normalized 1..5) ----
     const strengths: Record<string, number> = {};
     const fcTotal = Object.values(fcFuncCount).reduce((a,b)=>a+b,0) || 0;
-    const w_fc_base = Math.min(0.5, (fcTotal / 12) * 0.5);
+    const w_fc_base  = Math.min(0.5, (fcTotal / 12) * 0.5);
     const w_lik_base = 1 - w_fc_base;
 
-    const w_fc = w_fc_base * wFCState;
+    const w_fc     = w_fc_base * wFCState;
     const w_likert = w_lik_base * wLikertState;
-    const norm = w_fc + w_likert || 1;
+    const norm     = (w_fc + w_likert) || 1;
 
     for (const f of FUNCS) {
-      const L = likert[f] || [];
-      const meanL = L.length ? (L.reduce((a,b)=>a+b,0)/L.length) : 0; // 1..5
-      const fcPct = fcTotal ? (fcFuncCount[f] || 0) / fcTotal : 0;    // 0..1
-      const fcScaled = 1 + fcPct * 4;                                  // 1..5
-      strengths[f] = (w_likert * meanL + w_fc * fcScaled) / norm;
+      const L       = likert[f] || [];
+      const meanL   = L.length ? (L.reduce((a,b)=>a+b,0)/L.length) : 0;   // 1..5
+      const fcPct   = fcTotal ? ((fcFuncCount[f] || 0) / fcTotal) : 0;    // 0..1
+      const fcScaled= 1 + fcPct * 4;                                      // 1..5
+      const blended = (w_likert * meanL + w_fc * fcScaled) / norm;        // normalize
+      strengths[f]  = Math.max(1, Math.min(5, Number.isFinite(blended) ? blended : 0)); // clamp 1..5
     }
 
     // ---- dimensions: map 1..5 avg -> 1..4 ----
@@ -328,7 +329,7 @@ serve(async (req) => {
 
     // ---- save & return ----
     const payload = {
-      version: "v2.4",
+      version: "v2.5",
       user_id, session_id,
       type_code: `${typeCode}${overlay}`,
       base_func: base, creative_func: creative, overlay,
@@ -343,6 +344,18 @@ serve(async (req) => {
       console.error("Error saving profile", perr);
       return new Response(JSON.stringify({ status:"error", error:"Failed to save profile" }), { status:500, headers:{...corsHeaders,"Content-Type":"application/json"}});
     }
+    
+    // Telemetry for debugging
+    console.log(JSON.stringify({
+      evt:"score_summary",
+      session_id,
+      version:"v2.5",
+      maxStrength: Math.max(...Object.values(strengths)),
+      fitAbsMax: Math.max(...Object.values(type_scores).map(x=>x.fit_abs)),
+      incons: validity.inconsistency,
+      sd: validity.sd_index
+    }));
+    
     return new Response(JSON.stringify({ status:"success", profile: payload }), { headers:{...corsHeaders,"Content-Type":"application/json"}});
   } catch (err) {
     console.error("score_prism error", err);

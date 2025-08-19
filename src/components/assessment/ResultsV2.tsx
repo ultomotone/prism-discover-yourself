@@ -9,6 +9,7 @@ type Profile = {
   strengths: Record<Func, number>;
   dimensions: Record<Func, number>; // 1..4
   blocks: { Core:number; Critic:number; Hidden:number; Instinct:number };
+  blocks_norm: { Core:number; Critic:number; Hidden:number; Instinct:number };
   neuroticism: { raw_mean:number; z:number };
   validity: { inconsistency:number; sd_index:number };
   confidence: "High"|"Moderate"|"Low";
@@ -273,7 +274,12 @@ function Narrative({ p }:{ p:Profile }){
     <section className="p-5 border rounded-2xl bg-card">
       <div className="flex items-baseline gap-3 mb-3">
         <h3 className="font-semibold">{kb.title} — {main}{p.overlay}</h3>
-        <span className="text-xs text-muted-foreground">({p.base_func}-{p.creative_func}) • Confidence: <b>{p.confidence}</b></span>
+        <span className="text-xs text-muted-foreground">
+          ({p.base_func}-{p.creative_func}) • Confidence: <span className={`font-semibold ${p.confidence === "Low" ? "text-red-600" : p.confidence === "Moderate" ? "text-amber-600" : "text-emerald-700"}`}>{p.confidence}</span>
+          {p.validity && (
+            <> · Inconsistency: {p.validity.inconsistency?.toFixed?.(2)} · SD: {p.validity.sd_index?.toFixed?.(2)}</>
+          )}
+        </span>
       </div>
       {kb.p.map((para, i)=> <p key={i} className="mb-3 text-sm leading-6">{para}</p>)}
       <div className="grid md:grid-cols-2 gap-4 text-sm">
@@ -297,7 +303,7 @@ function FunctionsAndDims({ p }:{ p:Profile }){
       <h3 className="font-semibold mb-3">Functions</h3>
       <div className="grid md:grid-cols-2 gap-6">
         <div>
-          {FUNCS.map(f=> <Bar key={f} label={f} value={p.strengths[f]||0}/>) }
+          {FUNCS.map(f=> <Bar key={f} label={f} value={Math.max(0, Math.min(5, p.strengths[f] || 0))}/>) }
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {FUNCS.map(f=> (
@@ -319,10 +325,13 @@ function BlocksAndNeuro({ p }:{ p:Profile }){
       <h3 className="font-semibold mb-3">Blocks & Overlay</h3>
       <div className="grid md:grid-cols-2 gap-6">
         <div>
-          <Bar label="Core" value={p.blocks.Core} max={100}/>
-          <Bar label="Critic" value={p.blocks.Critic} max={100}/>
-          <Bar label="Hidden" value={p.blocks.Hidden} max={100}/>
-          <Bar label="Instinct" value={p.blocks.Instinct} max={100}/>
+          <Bar label="Core" value={p.blocks_norm?.Core || 0} max={100}/>
+          <Bar label="Critic" value={p.blocks_norm?.Critic || 0} max={100}/>
+          <Bar label="Hidden" value={p.blocks_norm?.Hidden || 0} max={100}/>
+          <Bar label="Instinct" value={p.blocks_norm?.Instinct || 0} max={100}/>
+          <div className="text-[11px] text-gray-500 mt-1">
+            Raw counts: {p.blocks?.Core || 0}/{p.blocks?.Critic || 0}/{p.blocks?.Hidden || 0}/{p.blocks?.Instinct || 0}
+          </div>
         </div>
         <div className="text-sm">
           <div>Neuro mean: <b>{p.neuroticism.raw_mean.toFixed(2)}</b> · z <b>{p.neuroticism.z.toFixed(2)}</b> (~{percentile(p.neuroticism.z)}th percentile) → Overlay <b>{p.overlay}</b></div>
