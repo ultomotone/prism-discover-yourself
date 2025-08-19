@@ -2088,23 +2088,17 @@ export const assessmentQuestions: Question[] = [
     type: 'matrix',
     required: true,
     section: 'Advanced Capability',
-    subQuestions: [
+    parts: [
       {
-        id: 'A',
-        text: 'Ability level',
-        type: 'multiple-choice',
+        label: 'Ability level',
         options: ['Novice', 'Emerging', 'Competent', 'Strong', 'Expert']
       },
       {
-        id: 'B',
-        text: 'Frequency',
-        type: 'multiple-choice',
+        label: 'Frequency',
         options: ['Never', 'Rarely', 'Sometimes', 'About half the time', 'Often', 'Usually', 'Always']
       },
       {
-        id: 'C',
-        text: 'Energy / Effort',
-        type: 'multiple-choice',
+        label: 'Energy / Effort',
         options: ['Very Low', 'Low', 'Slightly Low', 'Neutral', 'Slightly High', 'High', 'Very High']
       }
     ]
