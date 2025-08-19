@@ -17,11 +17,11 @@ const FAQ = () => {
   const faqItems = [
     {
       q: "What does PRISM measure?",
-      a: "Your information processing style, dimensionality (1D–4D), block dynamics, and a calm/reactive overlay."
+      a: "Your information processing style (8 information elements), dimensionality (1D–4D), block dynamics (Core/Critic/Hidden/Instinct), and a light state overlay (±) that explains calm vs. reactive expression."
     },
     {
       q: "Is PRISM the same as MBTI/Enneagram/Big Five?",
-      a: "No. PRISM is compatible with ideas from these systems but uses its own model and methods."
+      a: "No. PRISM is compatible with ideas from these systems but uses its own model and methods (multi-method measurement, ipsative trade-offs, dimensionality, and confidence-based type calls)."
     },
     {
       q: "How long is the assessment?",
@@ -29,71 +29,83 @@ const FAQ = () => {
     },
     {
       q: "Can I game the test?",
-      a: "We use multiple item types and quality checks to reduce bias. Honest answers work best."
+      a: "We use multiple item types (Likert + forced-choice + scenarios) and quality checks (attention, inconsistency pairs, social desirability, state). Honest, intuitive answers produce the best results."
     },
     {
       q: "What is the ± overlay?",
-      a: "A state indicator of calm/reactive expression that modifies behavior, not core wiring."
+      a: "A state indicator: \"+\" = more reactive baseline (arousal rises faster under pressure), \"–\" = steadier baseline. It tints expression, not core wiring. We adjust interpretation accordingly."
     },
     {
       q: "What's dimensionality?",
-      a: "A 1D–4D capability lens: from narrow to broadly adaptable and time-savvy."
+      a: "A capability lens (1D–4D) showing the breadth, portability, and time-awareness of each function: 1D personal/narrow • 2D role/limited • 3D broad/context-aware • 4D expert-level, highly adaptable."
     },
     {
       q: "What if I'm between two types?",
-      a: "We show probabilities and confidence. If it's close, you'll see that."
+      a: "We show your Top-3 with Fit (0–100) and Share (%), plus an Accuracy band (High/Moderate/Low) that reflects separation from the runner-up and data quality. If it's close, we say so and suggest a short micro-retest."
     },
     {
       q: "How often should I retake PRISM?",
-      a: "After major changes or development work, or annually if you're tracking growth."
+      a: "After major life or role changes, significant development work, or annually if you're tracking growth. We also support micro-retests to clarify close calls."
     },
     {
       q: "Is PRISM a clinical test?",
-      a: "No—it's a personal development tool."
+      a: "No—it's a personal development and team communication tool. It is not a diagnostic instrument and is not for hiring decisions."
     },
     {
       q: "Will you share my data?",
-      a: "No personal data is shared. Research is aggregate and anonymized."
+      a: "No. Your personal data is not sold or shared. Research is aggregate and anonymized. Data is stored securely; you can request deletion."
     },
     {
       q: "Can teams use PRISM?",
-      a: "Yes—there's a team report and workshop."
+      a: "Yes. Team reports map cognitive diversity, clarify handoffs, and help navigate stress dynamics. (Not for hiring selection.)"
     },
     {
       q: "Do you offer coaching?",
-      a: "Contact us to discuss coaching options and availability."
+      a: "Yes—coaching and workshops are available. Contact us for options."
     },
     {
       q: "Can I get my raw scores?",
-      a: "Yes—your report summarizes scales; ask for a raw export if needed."
+      a: "Yes. Your report summarizes scales; you can request a raw export (functions, dimensionality, blocks, fit/accuracy metrics)."
     },
     {
       q: "How accurate is PRISM?",
-      a: "We provide confidence with each result and validity flags."
+      a: "Each result includes: Fit (0–100) per type (invariant closeness to prototype), Share (%) relative among all 16 types, Accuracy (margin + coherence + quality) with High/Moderate/Low band. Validity flags highlight noisy data."
     },
     {
       q: "Does mood affect results?",
-      a: "It can, which is why we capture state and adjust interpretation."
+      a: "State matters, which is why we capture stress/mood/sleep/time-pressure/focus and adjust weighting (lean more on forced-choice/scenarios when state is \"hot\")."
     },
     {
       q: "Is there a free version?",
-      a: "You can take the assessment; advanced features/reports may be paid later."
+      a: "You can take the assessment; some advanced features/reports may be paid."
     },
     {
       q: "Can I use PRISM with students?",
-      a: "Yes, with appropriate guidance and non-clinical framing."
+      a: "Yes, with non-clinical framing and appropriate guidance/consent. Results focus on strengths, learning fit, and communication."
     },
     {
       q: "Can PRISM change over time?",
-      a: "Patterns are stable, but expression and dimensionality can grow."
+      a: "Your core pattern tends to be stable. Dimensionality and expression can grow with practice and context; PRISM tracks these changes."
     },
     {
       q: "How is PRISM scored?",
-      a: "Multi-method scales, normalization, and probabilistic type matching."
+      a: "Multi-method evidence → functional strength (1–5) and dimensionality (1–4), plus forced-choice support and opposite-function penalties. We compute Fit (0–100), Share (%), and an Accuracy index; results are adjusted for state and validity."
     },
     {
       q: "Where do I start?",
-      a: "Take the assessment and read your one-page plan."
+      a: "Take the assessment and review your one-page plan in the report. From there, explore your type overview, flow/stress guidance, and next-step practices."
+    },
+    {
+      q: "What do \"type-coherent\", \"unique\", and \"suppressed\" mean?",
+      a: "Type-coherent: ≥3D on your Base/Creative functions (native engine). Unique: ≥3D on non-core functions (developed breadth). Suppressed: low usage (strength ≤ ~2.4/5), even if you understand it—often crowded out by stronger tools."
+    },
+    {
+      q: "What's the difference between Fit, Share, and Accuracy?",
+      a: "Fit (0–100): invariant closeness to a type's prototype. Share (%): relative weight among all 16 types. Accuracy: how confident we are in the top call vs #2, factoring margin, dimensional coherence, opposite-pressure, and validity."
+    },
+    {
+      q: "What are \"blocks\"?",
+      a: "Four functional clusters that reconfigure with context: Core (Base+Creative), Critic (Role+Vulnerable), Hidden (Suggestive+Mobilizing), Instinct (Ignoring+Demonstrative). Your report shows raw and normalized mix."
     }
   ];
 
