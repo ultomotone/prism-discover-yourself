@@ -1,5 +1,25 @@
 import React from "react";
 
+// thresholds for labels (tune later)
+const LABEL_THRESH = {
+  dimHighlight: 3,          // ≥3D dims gets highlighted
+  suppressedStrength: 2.4,  // ≤2.4 strength shows "suppressed"
+};
+
+function InfoTip({ title, children }:{
+  title: string; children: React.ReactNode;
+}) {
+  return (
+    <span className="relative group inline-flex items-center">
+      <span className="ml-1 w-4 h-4 rounded-full border border-gray-400 text-[10px] flex items-center justify-center text-gray-600 cursor-default">?</span>
+      <div className="hidden group-hover:block absolute z-20 top-full mt-2 w-72 p-3 rounded-xl border bg-white shadow text-xs leading-5">
+        <div className="font-medium mb-1">{title}</div>
+        <div className="text-gray-700">{children}</div>
+      </div>
+    </span>
+  );
+}
+
 const FUNCS = ["Ti","Te","Fi","Fe","Ni","Ne","Si","Se"] as const;
 
 type Func = typeof FUNCS[number];
@@ -258,6 +278,7 @@ function Glossary(){
           <ul className="list-disc ml-5 text-muted-foreground">{GLOSSARY.blocks.items.map(x=> <li key={x.k}><b>{x.k}:</b> {x.v}</li>)}</ul>
         </div>
         <div><b>{GLOSSARY.overlay.label}</b><div className="text-muted-foreground">{GLOSSARY.overlay.text}</div></div>
+        <div><b>Suppressed</b><div className="text-muted-foreground">Low usage (≤2.4/5) regardless of dimensionality; may indicate avoidance or being crowded out by stronger tools.</div></div>
         <div className="md:col-span-2"><b>{GLOSSARY.states.label}</b><div className="text-muted-foreground">{GLOSSARY.states.text}</div></div>
       </div>
     </section>
@@ -297,45 +318,167 @@ function Narrative({ p }:{ p:Profile }){
   );
 }
 
-function FunctionsAndDims({ p }:{ p:Profile }){
+function FunctionsAndDims({ p }:{
+  p: {
+    strengths: Record<string, number>;
+    dimensions: Record<string, number>; // 1..4
+    base_func: string; creative_func: string;
+    dims_highlights: { coherent: string[]; unique: string[] };
+  }
+}) {
+  const labelFor = (f:string)=>{
+    const str = p.strengths[f] ?? 0;
+    const dim = p.dimensions[f] ?? 0;
+    const isB = f === p.base_func;
+    const isC = f === p.creative_func;
+
+    if (dim >= LABEL_THRESH.dimHighlight && (isB || isC)) return { t:"type-coherent", cls:"bg-green-50", hint:
+      <>This function shows **high dimensionality (≥3D)** in your **core pair (Base/Creative)**. It's part of your native engine and flexes well across contexts.</> };
+
+    if (dim >= LABEL_THRESH.dimHighlight && !(isB || isC)) return { t:"unique", cls:"bg-blue-50", hint:
+      <>You've developed **high dimensionality (≥3D)** outside the core pair → **breadth** beyond typical for your type.</> };
+
+    if (str <= LABEL_THRESH.suppressedStrength) return { t:"suppressed", cls:"bg-gray-50", hint:
+      <>Low day-to-day **use** (≤{LABEL_THRESH.suppressedStrength.toFixed(1)} on 1–5). May be avoided or crowded out by stronger tools.</> };
+
+    return { t:"—", cls:"", hint: <>Neutral range. Neither highlighted nor suppressed.</> };
+  };
+
+  const Bar = ({ label, value, max=5 }:{ label:string; value:number; max?:number })=>{
+    const w = Math.max(0, Math.min(100, Math.round((value/max)*100)));
+    return (
+      <div className="mb-2">
+        <div className="flex justify-between text-sm"><span className="font-medium">{label}</span><span>{value?.toFixed ? value.toFixed(2) : value}</span></div>
+        <div className="h-2 bg-gray-200 rounded-full overflow-hidden"><div className="h-2 bg-black" style={{width:`${w}%`}}/></div>
+      </div>
+    );
+  };
+
+  const Chip = ({ n=0 }:{ n:number })=>{
+    const total=4, filled=Math.max(0,Math.min(total,n));
+    return (<div className="flex gap-1">{Array.from({length:total}).map((_,i)=>(<span key={i} className={`w-2 h-2 rounded-full ${i<filled? 'bg-black':'bg-gray-300'}`}/>))}</div>);
+  };
+
   return (
-    <section className="p-5 border rounded-2xl bg-card">
-      <h3 className="font-semibold mb-3">Functions</h3>
+    <section className="p-5 border rounded-2xl bg-white">
+      <div className="flex items-center gap-2 mb-3">
+        <h3 className="font-semibold">Functions</h3>
+        <InfoTip title="How to read this">
+          <p className="mb-2"><b>Strength</b> = usage (1–5). <b>Dimensionality</b> = depth/flexibility (1–4).</p>
+          <ul className="list-disc ml-5">
+            <li><b>type-coherent</b>: ≥3D on Base/Creative → native engine</li>
+            <li><b>unique</b>: ≥3D outside Base/Creative → developed breadth</li>
+            <li><b>suppressed</b>: strength ≤{LABEL_THRESH.suppressedStrength.toFixed(1)} → under-used</li>
+          </ul>
+        </InfoTip>
+      </div>
+
       <div className="grid md:grid-cols-2 gap-6">
         <div>
-          {FUNCS.map(f=> <Bar key={f} label={f} value={Math.max(0, Math.min(5, p.strengths[f] || 0))}/>) }
+          {FUNCS.map(f=> <Bar key={f} label={f} value={p.strengths[f]||0}/>) }
         </div>
+
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {FUNCS.map(f=> (
-            <div key={f} className={`p-3 border rounded-xl ${p.dims_highlights.coherent.includes(f) ? 'bg-green-50 dark:bg-green-950' : p.dims_highlights.unique.includes(f) ? 'bg-blue-50 dark:bg-blue-950' : ''}`}>
-              <div className="flex justify-between"><span className="font-medium">{f}</span><Chip n={p.dimensions[f]||0}/></div>
-              <div className="text-[10px] mt-1 text-muted-foreground">{p.dims_highlights.coherent.includes(f) ? 'type‑coherent' : p.dims_highlights.unique.includes(f) ? 'unique' : '—'}</div>
-            </div>
-          ))}
+          {FUNCS.map(f=>{
+            const L = labelFor(f);
+            return (
+              <div key={f} className={`p-3 border rounded-xl ${L.cls}`}>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">{f}</span>
+                  <Chip n={p.dimensions[f]||0}/>
+                </div>
+                <div className="text-[10px] mt-1 text-gray-600 flex items-center">
+                  {L.t}
+                  <InfoTip title={f}>{L.hint}</InfoTip>
+                </div>
+              </div>
+            );
+          })}
         </div>
+      </div>
+
+      <div className="mt-3 text-xs text-gray-600">
+        <b>Legend:</b> green = type-coherent, blue = unique, gray = suppressed.  
+        Thresholds live in <code>LABEL_THRESH</code>.
       </div>
     </section>
   );
 }
 
-function BlocksAndNeuro({ p }:{ p:Profile }){
+function BlocksAndNeuro({ p }:{
+  p: {
+    blocks: { Core:number; Critic:number; Hidden:number; Instinct:number };
+    blocks_norm?: { Core:number; Critic:number; Hidden:number; Instinct:number };
+    neuroticism: { raw_mean:number; z:number };
+    overlay: "+"|"–";
+  }
+}) {
+  const Bar = ({ label, value, max=100 }:{ label:string; value:number; max?:number })=>{
+    const w = Math.max(0, Math.min(100, Math.round((value/max)*100)));
+    return (
+      <div className="mb-2">
+        <div className="flex justify-between text-sm"><span className="font-medium">{label}</span><span>{value.toFixed(2)}</span></div>
+        <div className="h-2 bg-gray-200 rounded-full overflow-hidden"><div className="h-2 bg-black" style={{width:`${w}%`}}/></div>
+      </div>
+    );
+  };
+
   const percentile = (z:number)=>{ const t=1/(1+0.2316419*Math.abs(z)); const d=0.3989423*Math.exp(-z*z/2); let s=1 - d*(1.330274*t - 1.821256*t**2 + 1.781478*t**3 - 0.356564*t**4 + 0.3193815*t**5); if(z<0) s=1-s; return Math.round(s*100); };
+
+  const bn = p.blocks_norm ?? (() => {
+    const s = p.blocks.Core + p.blocks.Critic + p.blocks.Hidden + p.blocks.Instinct || 1;
+    return {
+      Core: Math.round((p.blocks.Core/s)*1000)/10,
+      Critic: Math.round((p.blocks.Critic/s)*1000)/10,
+      Hidden: Math.round((p.blocks.Hidden/s)*1000)/10,
+      Instinct: Math.round((p.blocks.Instinct/s)*1000)/10
+    };
+  })();
+
+  const overlayText = p.overlay === "+"
+    ? "More reactive baseline (higher neuroticism). Under pressure, signals intensify faster; we lean more on forced-choice and scenarios."
+    : "Steadier baseline (lower neuroticism). Day-to-day ratings are usually reliable; reactivity spikes are rarer and shorter.";
+
+  const mix = (()=> {
+    const entries = Object.entries(bn).sort((a,b)=> b[1]-a[1]);
+    const [top, second] = entries;
+    return `Your block mix today leans ${top[0]} (${top[1]}%) with ${second[0]} next (${second[1]}%).`;
+  })();
+
   return (
-    <section className="p-5 border rounded-2xl bg-card">
-      <h3 className="font-semibold mb-3">Blocks & Overlay</h3>
+    <section className="p-5 border rounded-2xl bg-white">
+      <div className="flex items-center gap-2 mb-3">
+        <h3 className="font-semibold">Blocks & Overlay</h3>
+        <InfoTip title="What are blocks?">
+          <ul className="list-disc ml-5">
+            <li><b>Core</b> (Base+Creative): native engine; where you prefer to operate.</li>
+            <li><b>Critic</b> (Role+Vulnerable): effortful/sensitive; handle with care.</li>
+            <li><b>Hidden</b> (Suggestive+Mobilizing): yearned-for abilities; grow with support.</li>
+            <li><b>Instinct</b> (Ignoring+Demonstrative): strong but undervalued or on autopilot.</li>
+          </ul>
+        </InfoTip>
+      </div>
+
       <div className="grid md:grid-cols-2 gap-6">
         <div>
-          <Bar label="Core" value={p.blocks_norm?.Core || 0} max={100}/>
-          <Bar label="Critic" value={p.blocks_norm?.Critic || 0} max={100}/>
-          <Bar label="Hidden" value={p.blocks_norm?.Hidden || 0} max={100}/>
-          <Bar label="Instinct" value={p.blocks_norm?.Instinct || 0} max={100}/>
-          <div className="text-[11px] text-gray-500 mt-1">
-            Raw counts: {p.blocks?.Core || 0}/{p.blocks?.Critic || 0}/{p.blocks?.Hidden || 0}/{p.blocks?.Instinct || 0}
-          </div>
+          <Bar label="Core" value={p.blocks.Core} max={100}/>
+          <Bar label="Critic" value={p.blocks.Critic} max={100}/>
+          <Bar label="Hidden" value={p.blocks.Hidden} max={100}/>
+          <Bar label="Instinct" value={p.blocks.Instinct} max={100}/>
+          <div className="text-[10px] text-gray-500 mt-1">Normalized mix: Core {bn.Core}% · Critic {bn.Critic}% · Hidden {bn.Hidden}% · Instinct {bn.Instinct}%</div>
         </div>
+
         <div className="text-sm">
-          <div>Neuro mean: <b>{p.neuroticism.raw_mean.toFixed(2)}</b> · z <b>{p.neuroticism.z.toFixed(2)}</b> (~{percentile(p.neuroticism.z)}th percentile) → Overlay <b>{p.overlay}</b></div>
-          <div className="text-xs text-muted-foreground mt-2">'+' more reactive; '–' steadier. Tints how your type expresses under pressure.</div>
+          <div className="mb-2">{mix}</div>
+          <div>
+            Neuro mean: <b>{p.neuroticism.raw_mean.toFixed(2)}</b> · z <b>{p.neuroticism.z.toFixed(2)}</b>
+            (~{percentile(p.neuroticism.z)}th percentile) → Overlay <b>{p.overlay}</b>
+            <InfoTip title="What does ± mean?">
+              <p className="mb-1"><b>'+'</b> = more reactive baseline; <b>'–'</b> = steadier baseline.</p>
+              <p>We separate **trait** from **state**. Higher reactivity → we down-weight some Likert and lean more on forced-choice/scenario evidence.</p>
+            </InfoTip>
+          </div>
+          <div className="text-xs text-gray-600 mt-2">{overlayText}</div>
         </div>
       </div>
     </section>
