@@ -22,7 +22,7 @@ const buttonVariants = cva(
         hero: "prism-gradient-hero text-white hover:scale-105 prism-transition-bounce prism-shadow-primary font-semibold",
         assessment: "prism-gradient-warm text-white hover:scale-105 prism-transition-bounce prism-shadow-warm font-semibold",
         accent: "prism-gradient-accent text-white hover:scale-105 prism-transition-bounce prism-shadow-accent",
-        "outline-primary": "border-2 border-blue-600 bg-white text-blue-600 hover:bg-blue-600 hover:text-white transition-colors duration-200",
+        "outline-primary": "border-2 border-blue-600 bg-white !text-blue-800 hover:bg-blue-600 hover:!text-white transition-colors duration-200 font-semibold",
         "outline-secondary": "border-2 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground prism-transition",
       },
       size: {
