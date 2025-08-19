@@ -40,64 +40,50 @@ const CustomTooltip = ({ active, payload }: any) => {
 
 const CustomContent = ({ root, depth, x, y, width, height, index, payload }: any) => {
   const ROUNDING = 8;
+  const node = payload ?? {};
+  const color = COLORS[(Number.isFinite(index) ? index : 0) % COLORS.length];
   
-  // Guard against undefined payload
-  if (!payload) {
-    return (
-      <rect
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        rx={ROUNDING}
-        ry={ROUNDING}
-        style={{
-          fill: COLORS[index % COLORS.length],
-          stroke: 'hsl(var(--border))',
-          strokeWidth: 2,
-        }}
-        className="transition-all duration-300 hover:opacity-80"
-      />
-    );
-  }
-  
+  // Guard against undefined dimensions
+  const w = Number(width) || 0;
+  const h = Number(height) || 0;
+
   return (
     <g>
       <rect
         x={x}
         y={y}
-        width={width}
-        height={height}
+        width={w}
+        height={h}
         rx={ROUNDING}
         ry={ROUNDING}
         style={{
-          fill: COLORS[index % COLORS.length],
+          fill: color,
           stroke: 'hsl(var(--border))',
           strokeWidth: 2,
         }}
         className="transition-all duration-300 hover:opacity-80"
       />
-      {width > 80 && height > 40 && payload.country && (
+      {w > 80 && h > 40 && node.country && (
         <text
-          x={x + width / 2}
-          y={y + height / 2 - 8}
+          x={x + w / 2}
+          y={y + h / 2 - 8}
           textAnchor="middle"
           fill="hsl(var(--primary-foreground))"
           fontSize="14"
           fontWeight="600"
         >
-          {payload.country}
+          {node.country}
         </text>
       )}
-      {width > 80 && height > 40 && payload.count && (
+      {w > 80 && h > 40 && typeof node.count === 'number' && (
         <text
-          x={x + width / 2}
-          y={y + height / 2 + 8}
+          x={x + w / 2}
+          y={y + h / 2 + 8}
           textAnchor="middle"
           fill="hsl(var(--primary-foreground) / 0.8)"
           fontSize="12"
         >
-          {payload.count}
+          {node.count}
         </text>
       )}
     </g>
@@ -127,7 +113,7 @@ export default function CountryDistributionChart({ data }: CountryDistributionCh
           dataKey="size"
           aspectRatio={4/3}
           stroke="hsl(var(--border))"
-          content={<CustomContent />}
+          content={(props) => <CustomContent {...props} />}
         >
           <Tooltip content={<CustomTooltip />} />
         </Treemap>
