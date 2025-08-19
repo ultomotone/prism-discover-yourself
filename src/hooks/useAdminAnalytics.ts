@@ -159,20 +159,23 @@ export const useAdminAnalytics = () => {
       const completedSessions = sessionStats?.filter(s => s.status === 'completed').length || 0;
       const realCompletionRate = totalSessions > 0 ? (completedSessions / totalSessions) * 100 : 0;
 
-      // Calculate real speeder/staller percentages from session durations
-      const completedSessionsWithTimes = sessionStats?.filter(s => 
-        s.status === 'completed' && s.started_at && s.completed_at
-      ).map(s => {
-        const duration = (new Date(s.completed_at!).getTime() - new Date(s.started_at).getTime()) / (1000 * 60); // minutes
-        return duration;
-      }) || [];
+      // Calculate speeder/staller using v_sessions.duration_sec to avoid pause inflation
+      const { data: sessionDurations } = await supabase
+        .from('v_sessions')
+        .select('duration_sec, started_at')
+        .eq('completed', true)
+        .gte('started_at', subDays(new Date(), 30).toISOString());
 
-      const speedersPercent = completedSessionsWithTimes.length > 0 
-        ? (completedSessionsWithTimes.filter(d => d < 12).length / completedSessionsWithTimes.length) * 100 
+      const durationsMin = (sessionDurations || [])
+        .filter((s: any) => typeof s.duration_sec === 'number' && !isNaN(s.duration_sec))
+        .map((s: any) => s.duration_sec / 60);
+
+      const speedersPercent = durationsMin.length > 0
+        ? (durationsMin.filter((d: number) => d < 12).length / durationsMin.length) * 100
         : 0;
 
-      const stallersPercent = completedSessionsWithTimes.length > 0 
-        ? (completedSessionsWithTimes.filter(d => d > 60).length / completedSessionsWithTimes.length) * 100 
+      const stallersPercent = durationsMin.length > 0
+        ? (durationsMin.filter((d: number) => d > 60).length / durationsMin.length) * 100
         : 0;
 
       // Get real confidence distribution from profiles
