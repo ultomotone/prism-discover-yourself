@@ -129,14 +129,14 @@ const Contact = () => {
                       <Mail className="h-5 w-5 text-secondary mr-3" />
                       <div>
                         <p className="font-medium text-primary">Email</p>
-                        <p className="text-muted-foreground">hello@prismassessment.com</p>
+                        <p className="text-muted-foreground">daniel.joseph.speiss@gmail.com</p>
                       </div>
                     </div>
                     <div className="flex items-center">
                       <Phone className="h-5 w-5 text-secondary mr-3" />
                       <div>
                         <p className="font-medium text-primary">Phone</p>
-                        <p className="text-muted-foreground">+1 (555) 123-4567</p>
+                        <p className="text-muted-foreground">631-745-8686</p>
                       </div>
                     </div>
                     <div className="flex items-center">

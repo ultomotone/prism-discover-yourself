@@ -22,7 +22,7 @@ const Consultants = () => {
             <Button 
               size="lg" 
               variant="hero"
-              onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLScVFSAWRNUZT10hEoziD1oMXeS_FyCVP9NFTWD61eR8xDQaDA/viewform', '_blank')}
+              onClick={() => window.location.href = 'mailto:daniel.joseph.speiss@gmail.com?subject=PRISM Consultant Interest'}
             >
               Get Started with PRISM
             </Button>
@@ -116,7 +116,7 @@ const Consultants = () => {
               <Button 
                 size="lg" 
                 variant="hero"
-                onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLScVFSAWRNUZT10hEoziD1oMXeS_FyCVP9NFTWD61eR8xDQaDA/viewform', '_blank')}
+                onClick={() => window.location.href = 'mailto:daniel.joseph.speiss@gmail.com?subject=PRISM Consultant Interest'}
               >
                 Start Your Journey
               </Button>

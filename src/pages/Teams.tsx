@@ -93,8 +93,8 @@ const Teams = () => {
 
           {/* CTA */}
           <div className="text-center">
-            <Button variant="hero" size="lg" asChild>
-              <a href="/contact">Talk to Us</a>
+            <Button variant="hero" size="lg" onClick={() => window.location.href = 'mailto:daniel.joseph.speiss@gmail.com?subject=Team Inquiry'}>
+              Talk to Us
             </Button>
             <p className="text-muted-foreground mt-4">Contact form available for team inquiries</p>
           </div>

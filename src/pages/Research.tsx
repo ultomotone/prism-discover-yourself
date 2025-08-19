@@ -81,7 +81,11 @@ const Research = () => {
                 <p className="text-white/90 mb-6 max-w-2xl mx-auto">
                   Contribute anonymized data to help improve norms and thresholds. Your participation helps make PRISM more accurate for everyone.
                 </p>
-                <Button variant="assessment" className="bg-white text-primary hover:bg-white/90">
+                <Button 
+                  variant="assessment" 
+                  className="bg-white text-primary hover:bg-white/90"
+                  onClick={() => window.location.href = 'mailto:daniel.joseph.speiss@gmail.com?subject=PRISM Research Participation'}
+                >
                   Join the Research List
                 </Button>
               </CardContent>
