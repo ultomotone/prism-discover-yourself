@@ -351,7 +351,7 @@ const Dashboard = () => {
           </div>
           
           <p className="text-sm text-white/70 mb-6">
-            This dashboard updates live • {1000 - (data?.totalAssessments || 0)} left to reach our goal
+            This dashboard updates live • {Math.max(0, 1000 - (data?.totalAssessments || 0))} left to reach our goal
           </p>
 
           <Button 
@@ -387,6 +387,15 @@ const Dashboard = () => {
               </SelectContent>
             </Select>
           </div>
+          <Button 
+            onClick={fetchDashboardData} 
+            variant="outline"
+            disabled={loading}
+            className="flex items-center gap-2"
+          >
+            <TrendingUp className="h-4 w-4" />
+            {loading ? 'Refreshing...' : 'Refresh Data'}
+          </Button>
         </div>
 
         {/* KPI Cards */}
