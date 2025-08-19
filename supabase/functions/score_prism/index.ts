@@ -311,7 +311,7 @@ serve(async (req) => {
       { data: skey, error: kerr },
       cfgs
     ] = await Promise.all([
-      supabase.from("assessment_responses").select("question_id, answer_value, answer_array").eq("session_id", session_id),
+      supabase.from("assessment_responses").select("question_id, answer_value, answer_array, answer_object").eq("session_id", session_id),
       supabase.from("assessment_scoring_key").select("*"),
       loadScoringConfigs(supabase)
     ]);
@@ -349,13 +349,13 @@ serve(async (req) => {
     // Pass 1: aggregate
     for (const ans of answers) {
       const qid = String(ans.question_id);
-      const rec = keyByQ[qid]; if (!rec) continue;
+      const rec = keyByQ[qid];
 
-      const scale = String(rec.scale_type);
-      const tag = rec.tag as Tag;
-      const reverse = !!rec.reverse_scored;
-      const pgroup = rec.pair_group as (string | null);
-      const sd = !!rec.social_desirability;
+      const scale = String(rec?.scale_type || "");
+      const tag = (rec?.tag as Tag) ?? null;
+      const reverse = !!rec?.reverse_scored;
+      const pgroup = (rec?.pair_group as (string | null)) ?? null;
+      const sd = !!rec?.social_desirability;
       const atext = String(ans.answer_value).trim();
 
       if (scale.startsWith("LIKERT") || scale === "STATE_1_7") {
@@ -386,16 +386,24 @@ serve(async (req) => {
       }
 
       // Process capability matrix questions
-      if (CAPABILITY_CONFIGS[qid] && ans.answer_array) {
+      if (CAPABILITY_CONFIGS[qid]) {
+        const obj = (ans as any).answer_object;
+        const arr = (ans as any).answer_array;
+        const matrixAnswers: string[] | null = Array.isArray(obj?.matrix_answers)
+          ? obj.matrix_answers
+          : Array.isArray(arr)
+            ? arr
+            : null;
+
+        if (!matrixAnswers) continue;
+
         const config = CAPABILITY_CONFIGS[qid];
-        const matrixAnswers = ans.answer_array as string[];
-        
         if (matrixAnswers.length >= 3) {
           if (config.item_id === "CAP_GNO") {
             // Generating novel options (3 parts)
             const result = scoreGeneratingNovelOptions({
               ability: matrixAnswers[0],
-              frequency: matrixAnswers[1], 
+              frequency: matrixAnswers[1],
               energy: matrixAnswers[2],
               weights: {
                 ability: config.w_ability,
@@ -416,12 +424,12 @@ serve(async (req) => {
             }
           } else if (config.item_id === "CAP_RTR_U" && matrixAnswers.length >= 4) {
             // Reading & retuning the room (4 parts including forced choice)
-            const retuningChoice = matrixAnswers[3]?.startsWith('A') ? "A" : 
+            const retuningChoice = matrixAnswers[3]?.startsWith('A') ? "A" :
                                  matrixAnswers[3]?.startsWith('B') ? "B" : undefined;
-                                 
+
             const result = scoreReadingRetuningUnfamiliar({
               ability: matrixAnswers[0],
-              frequency: matrixAnswers[1], 
+              frequency: matrixAnswers[1],
               energy: matrixAnswers[2],
               retuningChoice,
               weights: {
@@ -442,7 +450,7 @@ serve(async (req) => {
                 ipsative: result.ipsative,
                 confidence: result.confidence
               };
-              
+
               // Add ipsative contributions to forced choice function counts
               if (result.ipsative) {
                 for (const [func, count] of Object.entries(result.ipsative)) {
@@ -713,8 +721,6 @@ const payload: any = {
   type_scores,
   top_types: top3,
   dims_highlights,
-  // capability matrix results
-  capabilities: capabilityResults,
   // new linkage fields
   ...(person_key ? { person_key } : {}),
   ...(email_mask ? { email_mask } : {}),
