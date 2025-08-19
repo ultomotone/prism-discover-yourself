@@ -457,6 +457,36 @@ export type Database = {
         }
         Relationships: []
       }
+      v_kpi_overlay: {
+        Row: {
+          n: number | null
+          overlay: string | null
+        }
+        Relationships: []
+      }
+      v_kpi_quality: {
+        Row: {
+          close_calls_share: number | null
+          conf_hi_mod_share: number | null
+          conf_low_share: number | null
+          fit_median: number | null
+          gap_median: number | null
+          incons_ge_1_5: number | null
+          inconsistency_mean: number | null
+          n: number | null
+          sd_ge_4_6: number | null
+          sd_index_mean: number | null
+        }
+        Relationships: []
+      }
+      v_kpi_throughput: {
+        Row: {
+          completions: number | null
+          d: string | null
+          median_minutes: number | null
+        }
+        Relationships: []
+      }
       v_profiles_ext: {
         Row: {
           base_func: string | null
@@ -585,7 +615,7 @@ export type Database = {
           strength_delta: number | null
           t1: string | null
           t2: string | null
-          type_changed: boolean | null
+          type_same: number | null
           user_id: string | null
         }
         Relationships: []
@@ -625,6 +655,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      v_section_time: {
+        Row: {
+          median_seconds: number | null
+          section: string | null
+        }
+        Relationships: []
       }
       v_sessions: {
         Row: {

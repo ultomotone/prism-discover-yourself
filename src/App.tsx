@@ -56,6 +56,7 @@ import PracticalOptimizer from "./pages/types/PracticalOptimizer";
 import PossibilityConnector from "./pages/types/PossibilityConnector";
 import IntegrityGuide from "./pages/types/IntegrityGuide";
 import Roadmap from "./pages/Roadmap";
+import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const App = () => (
               <Route path="/results/:sessionId" element={<Results />} />
               <Route path="/history" element={<History />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/admin" element={<Admin />} />
               <Route path="/about" element={<About />} />
               <Route path="/signals" element={<Signals />} />
               <Route path="/ti" element={<Ti />} />
