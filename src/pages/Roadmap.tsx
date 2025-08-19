@@ -51,17 +51,26 @@ export default function Roadmap() {
           .select('*', { count: 'exact', head: true })
           .gt('completed_questions', 0); // Only sessions with at least 1 question answered
 
-        // Confidence distribution - get unique profiles by session_id to avoid duplicates
+        // Confidence distribution - get unique profiles per session to avoid duplicates
         const { data: confidenceData } = await supabase
           .from('profiles')
-          .select('confidence')
+          .select('confidence, session_id')
           .not('confidence', 'is', null);
 
-        const confidenceDistribution = confidenceData?.reduce((acc, item) => {
-          const confidence = item.confidence || 'Unknown';
+        // Remove duplicates by session_id, keeping the most recent entry
+        const uniqueConfidenceData = confidenceData?.reduce((acc, item) => {
+          if (!acc[item.session_id] || !acc[item.session_id]) {
+            acc[item.session_id] = item.confidence;
+          }
+          return acc;
+        }, {} as { [sessionId: string]: string }) || {};
+
+        const confidenceDistribution = Object.values(uniqueConfidenceData).reduce((acc, confidence) => {
           acc[confidence] = (acc[confidence] || 0) + 1;
           return acc;
-        }, {} as { [key: string]: number }) || {};
+        }, {} as { [key: string]: number });
+
+        const totalUniqueAssessments = Object.values(confidenceDistribution).reduce((sum, count) => sum + count, 0);
 
         setMetrics({
           totalAssessments: completedCount || 0,
@@ -80,8 +89,9 @@ export default function Roadmap() {
     .filter(([key]) => key === 'High' || key === 'Moderate')
     .reduce((sum, [_, count]) => sum + count, 0);
 
-  const confidencePercentage = metrics.totalAssessments ? 
-    Math.round(highModerateConfidence / metrics.totalAssessments * 100) : 0;
+  const totalConfidenceAssessments = Object.values(metrics.confidenceDistribution).reduce((sum, count) => sum + count, 0);
+  const confidencePercentage = totalConfidenceAssessments ? 
+    Math.round(highModerateConfidence / totalConfidenceAssessments * 100) : 0;
 
   return (
     <div className="min-h-screen bg-background">
