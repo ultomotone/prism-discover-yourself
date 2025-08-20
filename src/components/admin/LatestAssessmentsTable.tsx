@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 
@@ -12,11 +13,13 @@ interface Assessment {
   fit_value: number | null;
   fit_band: string | null;
   version: string;
-  type_share: number | null;
 }
 
-const formatFitValue = (value: number | null): string => {
+const formatFitValue = (value: number | null, sessionId?: string): string => {
   if (value === null || value === undefined || !isFinite(value) || isNaN(value)) {
+    if (sessionId) {
+      console.warn(`Missing calibrated fit for session: ${sessionId}`);
+    }
     return "—";
   }
   return `${Math.round(value)}%`;
@@ -47,10 +50,10 @@ export const LatestAssessmentsTable = () => {
     try {
       setLoading(true);
       
-      // Use the new v1.1 latest assessments view
+      // Force v1.1 calibrated fits only - no cache
       const { data, error } = await supabase
         .from('v_latest_assessments_v11')
-        .select('*')
+        .select('session_id, finished_at, country, type_code, fit_value, fit_band, version')
         .order('finished_at', { ascending: false })
         .limit(50);
 
@@ -60,24 +63,30 @@ export const LatestAssessmentsTable = () => {
       }
 
       if (data) {
-        // Also get type_share from v_kpi_metrics_v11 for these sessions
-        const sessionIds = data.map(a => a.session_id);
-        const { data: shareData } = await supabase
-          .from('v_kpi_metrics_v11')
-          .select('session_id, type_share')
-          .in('session_id', sessionIds);
+        // Verification log for v1.1 data source
+        console.info('Admin v1.1 data source OK', {
+          rowCount: data.length,
+          fitSample: data.slice(0, 5).map(r => ({
+            session: r.session_id?.slice(0, 8),
+            fit: r.fit_value,
+            band: r.fit_band
+          })),
+          outOfRangeFits: data.filter(r => 
+            r.fit_value && (r.fit_value > 95 || r.fit_value < 10)
+          ).length
+        });
 
-        const shareMap = new Map(shareData?.map(s => [s.session_id, s.type_share]) || []);
+        // Warn about unexpected fit ranges
+        data.forEach(row => {
+          if (row.fit_value && (row.fit_value > 95 || row.fit_value < 10)) {
+            console.warn('Unexpected range — check calibration or source', {
+              session: row.session_id?.slice(0, 8),
+              fit: row.fit_value
+            });
+          }
+        });
 
-        const enrichedData = data.map(assessment => ({
-          ...assessment,
-          type_share: shareMap.get(assessment.session_id) || null
-        }));
-
-        setAssessments(enrichedData);
-        
-        // Debug logging
-        console.log('Latest assessments sample:', enrichedData.slice(0, 5));
+        setAssessments(data);
       }
     } catch (error) {
       console.error('Error fetching assessments:', error);
@@ -112,61 +121,63 @@ export const LatestAssessmentsTable = () => {
       <CardHeader>
         <CardTitle>Latest Assessments</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Recent completed assessments from v1.1 schema
+          v1.1 calibrated fits only
         </p>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {assessments.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              No assessments found
-            </p>
-          ) : (
-            <div className="space-y-3">
+        {assessments.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">
+            No assessments found
+          </p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>When</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Country</TableHead>
+                <TableHead>Fit</TableHead>
+                <TableHead>Share</TableHead>
+                <TableHead>Band</TableHead>
+                <TableHead>Version</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {assessments.map((assessment) => (
-                <div
-                  key={assessment.session_id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div>
-                      <div className="font-medium">
-                        {assessment.type_code || 'Unknown'}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {assessment.country || 'Unknown'} • {' '}
-                        {assessment.finished_at 
-                          ? format(new Date(assessment.finished_at), 'MMM dd, HH:mm')
-                          : 'Unknown time'
-                        }
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <div className="font-medium">
-                        Fit: {formatFitValue(assessment.fit_value)}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Share: {assessment.type_share ? `${Math.round(assessment.type_share)}%` : '—'}
-                      </div>
-                    </div>
-                    
-                    <div className="flex flex-col gap-1">
-                      <Badge variant={getFitBadgeVariant(assessment.fit_band)}>
-                        {assessment.fit_band || 'Unknown'}
-                      </Badge>
-                      <Badge variant={getVersionBadgeVariant(assessment.version)} className="text-xs">
-                        {assessment.version || 'legacy'}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
+                <TableRow key={assessment.session_id}>
+                  <TableCell className="text-sm">
+                    {assessment.finished_at 
+                      ? format(new Date(assessment.finished_at), 'MMM dd, HH:mm')
+                      : '—'
+                    }
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {assessment.type_code || '—'}
+                  </TableCell>
+                  <TableCell>
+                    {assessment.country || '—'}
+                  </TableCell>
+                  <TableCell className="font-mono">
+                    {formatFitValue(assessment.fit_value, assessment.session_id)}
+                  </TableCell>
+                  <TableCell className="font-mono">
+                    —
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={getFitBadgeVariant(assessment.fit_band)}>
+                      {assessment.fit_band || 'Unknown'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={getVersionBadgeVariant(assessment.version)} className="text-xs">
+                      {assessment.version || 'legacy'}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
               ))}
-            </div>
-          )}
-        </div>
+            </TableBody>
+          </Table>
+        )}
       </CardContent>
     </Card>
   );

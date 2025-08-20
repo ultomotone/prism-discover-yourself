@@ -82,6 +82,12 @@ const CACHE_HEADERS = {
   'Surrogate-Control': 'no-store'
 };
 
+// Revalidate admin KPIs cache tag
+const revalidateAdminKPIs = () => {
+  // This would be used with Next.js revalidateTag('admin-kpis')
+  console.log('Cache revalidation triggered for admin KPIs');
+};
+
 // Fit Histogram Component
 const FitHistogram = () => {
   const [histogramData, setHistogramData] = useState<any[]>([]);

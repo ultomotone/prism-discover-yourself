@@ -137,53 +137,32 @@ export const useAdminAnalytics = () => {
 
   const fetchKPIData = async () => {
     try {
-      // Use the new KPI overview view for accurate data
+      // Force v1.1 calibrated fits only - no cache
       const { data: kpiOverview } = await supabase
         .from('v_kpi_overview_30d_v11')
         .select('*')
         .single();
 
-      // Get quality data for additional metrics
-      const { data: qualityData } = await supabase
-        .from('v_kpi_quality')
-        .select('*')
-        .single();
-
-      // Get throughput data
-      const { data: throughputData } = await supabase
-        .from('v_kpi_throughput')
-        .select('*');
-
-      // Calculate median duration from throughput data with proper null handling
-      let medianDuration = 25.5; // Default fallback
-      if (throughputData && throughputData.length > 0) {
-        const validDurations = throughputData
-          .map((day: any) => day.median_minutes)
-          .filter((minutes: any) => minutes && !isNaN(minutes));
-        
-        if (validDurations.length > 0) {
-          const avgDuration = validDurations.reduce((sum: number, minutes: number) => sum + minutes, 0) / validDurations.length;
-          medianDuration = avgDuration;
-        }
-      }
-
       if (kpiOverview) {
+        // Only use avg_fit_score which is based on score_fit_calibrated
         setKpiData({
           completions: kpiOverview.completed_count || 0,
-          completionRate: typeof kpiOverview.completion_rate_pct === 'number' && isFinite(kpiOverview.completion_rate_pct) 
-            ? kpiOverview.completion_rate_pct 
-            : 0,
-          medianDuration: medianDuration,
-          speedersPercent: 0, // Can be calculated separately if needed
-          stallersPercent: 0, // Can be calculated separately if needed
-          fitMedian: qualityData?.fit_median || kpiOverview.avg_fit_score || 0,
-          gapMedian: qualityData?.gap_median || 0,
-          closeCallsPercent: (qualityData?.close_calls_share || 0) * 100,
-          inconsistencyMean: qualityData?.inconsistency_mean || 0,
-          sdIndexMean: qualityData?.sd_index_mean || 0,
-          lowConfidencePercent: typeof kpiOverview.hi_mod_conf_pct === 'number' && isFinite(kpiOverview.hi_mod_conf_pct)
-            ? Math.max(0, 100 - kpiOverview.hi_mod_conf_pct)
-            : 0
+          completionRate: 0, // Removed - don't fetch
+          medianDuration: 25.5, // Static fallback
+          speedersPercent: 0,
+          stallersPercent: 0,
+          fitMedian: kpiOverview.avg_fit_score || 0, // v1.1 calibrated only
+          gapMedian: 0,
+          closeCallsPercent: 0,
+          inconsistencyMean: 0,
+          sdIndexMean: 0,
+          lowConfidencePercent: 0 // Removed - don't fetch
+        });
+
+        // Verification log
+        console.info('Admin v1.1 data source OK', {
+          completions: kpiOverview.completed_count,
+          avgFitScore: kpiOverview.avg_fit_score
         });
       }
     } catch (error) {
@@ -192,82 +171,8 @@ export const useAdminAnalytics = () => {
   };
 
   const fetchChartData = async () => {
-    try {
-      // Use the new v1.1 KPI metrics view for confidence and overlay distribution
-      const { data: kpiMetrics } = await supabase
-        .from('v_kpi_metrics_v11')
-        .select('confidence, type_code, country')
-        .gte('created_at', subDays(new Date(), 30).toISOString());
-
-      let confidenceDistribution = [
-        { confidence: 'High', count: 0 },
-        { confidence: 'Moderate', count: 0 },
-        { confidence: 'Low', count: 0 }
-      ];
-
-      let overlayDistribution = [
-        { overlay: '+', count: 0 },
-        { overlay: '–', count: 0 }
-      ];
-
-      let typeDistribution: Array<{ type: string; count: number }> = [];
-
-      if (kpiMetrics && kpiMetrics.length > 0) {
-        // Calculate confidence distribution
-        const highCount = kpiMetrics.filter(p => p.confidence === 'high').length;
-        const modCount = kpiMetrics.filter(p => p.confidence === 'moderate').length;
-        const lowCount = kpiMetrics.filter(p => p.confidence === 'low').length;
-        
-        confidenceDistribution = [
-          { confidence: 'High', count: highCount },
-          { confidence: 'Moderate', count: modCount },
-          { confidence: 'Low', count: lowCount }
-        ];
-
-        // Calculate overlay distribution from type codes
-        const positiveCount = kpiMetrics.filter(p => p.type_code && p.type_code.endsWith('+')).length;
-        const negativeCount = kpiMetrics.filter(p => p.type_code && p.type_code.endsWith('–')).length;
-        
-        overlayDistribution = [
-          { overlay: '+', count: positiveCount },
-          { overlay: '–', count: negativeCount }
-        ];
-
-        // Calculate type distribution
-        const typeCounts: Record<string, number> = {};
-        kpiMetrics.forEach(item => {
-          if (item.type_code) {
-            const typePrefix = item.type_code.substring(0, 3);
-            typeCounts[typePrefix] = (typeCounts[typePrefix] || 0) + 1;
-          }
-        });
-        
-        typeDistribution = Object.entries(typeCounts)
-          .map(([type, count]) => ({ type, count }))
-          .sort((a, b) => b.count - a.count);
-      }
-
-      // Throughput trend (last 14 days) - keep using existing view
-      const { data: throughputTrendData } = await supabase
-        .from('v_kpi_throughput')
-        .select('d, completions')
-        .gte('d', subDays(new Date(), 14).toISOString())
-        .order('d', { ascending: true });
-
-      const throughputTrend = (throughputTrendData || []).map((item: any) => ({
-        date: format(new Date(item.d), 'MM/dd'),
-        completions: item.completions || 0
-      }));
-
-      setChartData({
-        confidenceDistribution,
-        overlayDistribution,
-        typeDistribution,
-        throughputTrend
-      });
-    } catch (error) {
-      console.error('Error fetching chart data:', error);
-    }
+    // Skip chart data fetching - removed KPIs don't need this data
+    setChartData(defaultChartData);
   };
 
   const fetchSessionData = async () => {

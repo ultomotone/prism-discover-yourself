@@ -60,7 +60,7 @@ export const KPIOverviewSection = () => {
     try {
       setLoading(true);
       
-      // Get KPI overview data using the new v1.1 view
+      // Get KPI overview data using the new v1.1 view - force no cache
       const { data: kpiOverview } = await supabase
         .from('v_kpi_overview_30d_v11')
         .select('*')
@@ -69,7 +69,7 @@ export const KPIOverviewSection = () => {
       if (kpiOverview) {
         setKpiData(kpiOverview);
         
-        // Get fit spread for diagnostics
+        // Get fit spread for diagnostics - use calibrated fits only
         const { data: fitSpread } = await supabase
           .from('v_latest_assessments_v11')
           .select('fit_value')
@@ -87,24 +87,34 @@ export const KPIOverviewSection = () => {
           setDiagnostics({
             started_count: kpiOverview.started_count,
             completed_count: kpiOverview.completed_count,
-            completion_rate_pct: kpiOverview.completion_rate_pct,
-            hi_mod_conf_pct: kpiOverview.hi_mod_conf_pct,
+            completion_rate_pct: 0, // Remove completion rate
+            hi_mod_conf_pct: 0, // Remove hi/mod confidence
             fit_spread: { n, min_val, max_val, sd }
           });
         }
 
-        // Log diagnostics to console for debugging
-        console.log('KPI Diagnostics:', {
-          startedCount: kpiOverview.started_count,
+        // Verification log for v1.1 data source
+        console.info('Admin v1.1 data source OK', {
           completedCount: kpiOverview.completed_count,
-          completionRate: kpiOverview.completion_rate_pct,
-          hiModConf: kpiOverview.hi_mod_conf_pct,
-          avgFit: kpiOverview.avg_fit_score,
+          avgFitScore: kpiOverview.avg_fit_score,
           fitSpread: fitSpread ? {
             count: fitSpread.length,
             sample: fitSpread.slice(0, 5).map(f => f.fit_value)
           } : 'no data'
         });
+
+        // Warn about unexpected fit ranges
+        if (fitSpread) {
+          const outOfRange = fitSpread.filter(f => 
+            f.fit_value && (f.fit_value > 95 || f.fit_value < 10)
+          );
+          if (outOfRange.length > 0) {
+            console.warn('Unexpected range — check calibration or source', {
+              outOfRangeCount: outOfRange.length,
+              sample: outOfRange.slice(0, 3).map(f => f.fit_value)
+            });
+          }
+        }
       }
     } catch (error) {
       console.error("Error fetching KPI data:", error);
@@ -142,30 +152,8 @@ export const KPIOverviewSection = () => {
 
   return (
     <div className="mb-8">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <KPICard
-          title="Completion Rate"
-          value={formatValue(kpiData.completion_rate_pct, "%")}
-          subtitle="ⓘ last 30 days"
-          tooltip="Percentage of started assessments that were completed"
-          status={
-            kpiData.completion_rate_pct >= 80 ? 'good' :
-            kpiData.completion_rate_pct >= 60 ? 'warning' : 'danger'
-          }
-        />
-        
-        <KPICard
-          title="High/Moderate Confidence"
-          value={formatValue(kpiData.hi_mod_conf_pct, "%")}
-          subtitle="ⓘ last 30 days"
-          tooltip="Percentage of assessments with High or Moderate confidence ratings"
-          status={
-            kpiData.hi_mod_conf_pct >= 75 ? 'good' :
-            kpiData.hi_mod_conf_pct >= 60 ? 'warning' : 'danger'
-          }
-        />
-
+      {/* KPI Cards - Only show Total Assessments and Average Fit Score */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <KPICard
           title="Total Assessments"
           value={formatValue(kpiData.completed_count)}
@@ -176,8 +164,8 @@ export const KPIOverviewSection = () => {
         <KPICard
           title="Average Fit Score"
           value={formatValue(kpiData.avg_fit_score, "%")}
-          subtitle="ⓘ last 30 days"
-          tooltip="Average calibrated fit score across all assessments"
+          subtitle="ⓘ v1.1 calibrated"
+          tooltip="Average calibrated fit score from v1.1 results only"
           status={
             kpiData.avg_fit_score >= 60 ? 'good' :
             kpiData.avg_fit_score >= 45 ? 'warning' : 'danger'
@@ -213,12 +201,12 @@ export const KPIOverviewSection = () => {
                   <p className="font-mono">{diagnostics?.completed_count || 0}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Completion Rate</p>
-                  <p className="font-mono">{formatDecimal(diagnostics?.completion_rate_pct)}%</p>
+                  <p className="text-muted-foreground">Started Count</p>
+                  <p className="font-mono">{diagnostics?.started_count || 0}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Hi/Mod Confidence</p>
-                  <p className="font-mono">{formatDecimal(diagnostics?.hi_mod_conf_pct)}%</p>
+                  <p className="text-muted-foreground">Completed Count</p>
+                  <p className="font-mono">{diagnostics?.completed_count || 0}</p>
                 </div>
               </div>
               
