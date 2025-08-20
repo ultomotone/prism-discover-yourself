@@ -80,6 +80,43 @@ const CACHE_HEADERS = {
   'Surrogate-Control': 'no-store'
 };
 
+// Fit Histogram Component
+const FitHistogram = () => {
+  const [histogramData, setHistogramData] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const fetchHistogram = async () => {
+      const { data } = await supabase.from('v_fit_histogram').select('*');
+      if (data) {
+        const formattedData = data.map(d => ({
+          bin: `${Math.floor(d.bin_min)}-${Math.ceil(d.bin_max)}`,
+          count: d.count,
+          range: `${d.bin_min}-${d.bin_max}`
+        }));
+        setHistogramData(formattedData);
+      }
+    };
+    fetchHistogram();
+  }, []);
+
+  return (
+    <div className="h-48">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={histogramData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="bin" fontSize={10} />
+          <YAxis />
+          <ChartTooltip 
+            formatter={(value, name) => [value, 'Count']}
+            labelFormatter={(label) => `Fit Score: ${label}%`}
+          />
+          <Bar dataKey="count" fill="hsl(var(--primary))" />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
 const Dashboard = () => {
   const { toast } = useToast();
   const [data, setData] = useState<DashboardData | null>(null);
@@ -552,7 +589,7 @@ const Dashboard = () => {
         </div>
 
         {/* Type Distribution Chart */}
-        <div className="grid grid-cols-1 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <Card className="prism-shadow-card">
             <CardHeader>
               <CardTitle>Type Distribution</CardTitle>
@@ -569,6 +606,22 @@ const Dashboard = () => {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+            </CardContent>
+          </Card>
+          
+          {/* Fit Score Distribution */}
+          <Card className="prism-shadow-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Fit Score Distribution
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Distribution of calibrated fit scores (v1.1)
+              </p>
+            </CardHeader>
+            <CardContent>
+              <FitHistogram />
             </CardContent>
           </Card>
         </div>

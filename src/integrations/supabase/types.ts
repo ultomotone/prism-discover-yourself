@@ -677,6 +677,15 @@ export type Database = {
           },
         ]
       }
+      v_fit_histogram: {
+        Row: {
+          bin: number | null
+          bin_max: number | null
+          bin_min: number | null
+          count: number | null
+        }
+        Relationships: []
+      }
       v_fit_ranks: {
         Row: {
           session_id: string | null
