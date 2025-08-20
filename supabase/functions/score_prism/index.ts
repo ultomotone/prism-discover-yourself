@@ -481,8 +481,8 @@ serve(async (req) => {
     function mapFitAbs(s: number): number {
       // Center near the top of typical range; slope tuned to avoid flatlining
       const v = 100 / (1 + Math.exp(-(s - 5.2) * 1.35));
-      // Keep visible headroom so UI almost never shows 100
-      return Math.round(Math.min(99.4, Math.max(0, v)) * 10) / 10;
+      // Allow natural range from 0-100, just round to 1 decimal
+      return Math.round(Math.max(0, v) * 10) / 10;
     }
 
     const fitAbs: Record<string, number> = {};
