@@ -182,7 +182,25 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
         // Get current user (null if anonymous)
         const { data: { user } } = await supabase.auth.getUser();
         
-        const newId = crypto.randomUUID();
+        // Generate UUIDs with fallback for browser compatibility
+        const generateUUID = () => {
+          if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+          }
+          // Fallback for browsers without crypto.randomUUID
+          return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          });
+        };
+        
+        const newId = generateUUID();
+        const shareToken = generateUUID();
+        
+        console.log('Generated session ID:', newId);
+        console.log('Generated share token:', shareToken);
+        
         const { error } = await supabase
           .from('assessment_sessions')
           .insert({
@@ -190,7 +208,7 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
             user_id: user?.id || null,
             session_type: 'prism',
             total_questions: assessmentQuestions.length,
-            share_token: crypto.randomUUID(), // Add required share_token
+            share_token: shareToken,
             metadata: {
               browser: navigator.userAgent,
               timestamp: new Date().toISOString(),
