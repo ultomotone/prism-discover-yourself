@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.backfill_profiles]
 verify_jwt = false
+
+[functions.chatgpt-gateway]
+verify_jwt = false
