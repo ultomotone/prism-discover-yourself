@@ -69,8 +69,11 @@ interface AssessmentDetail {
   invalid_combo_flag?: boolean;
 }
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Force no-cache for all dashboard data fetches
+const CACHE_HEADERS = {
+  'Cache-Control': 'no-store, must-revalidate',
+  'Surrogate-Control': 'no-store'
+};
 
 const Dashboard = () => {
   const { toast } = useToast();
@@ -669,18 +672,18 @@ const Dashboard = () => {
                         }`}>
                           {assessment.results_version || assessment.version || 'legacy'}
                         </span>
-                        {/* Show "needs backfill" only when truly not on v1.1 */}
-                        {(assessment.results_version !== 'v1.1' || assessment.score_fit_calibrated == null) && (
-                          <Badge variant="destructive" className="text-xs">
-                            Needs backfill
-                          </Badge>
-                        )}
-                        {/* Show grey "legacy" tag for true legacy rows */}
-                        {!assessment.results_version && assessment.version && (
-                          <Badge variant="secondary" className="text-xs">
-                            legacy
-                          </Badge>
-                        )}
+                         {/* Show "needs backfill" only when truly not on v1.1 */}
+                         {!(assessment.results_version === 'v1.1' && assessment.score_fit_calibrated != null) && (
+                           assessment.results_version !== 'v1.1' ? (
+                             <Badge variant="destructive" className="text-xs">
+                               needs backfill
+                             </Badge>
+                           ) : (
+                             <Badge variant="secondary" className="text-xs">
+                               legacy
+                             </Badge>
+                           )
+                         )}
                       </div>
                     </TableCell>
                   </TableRow>
