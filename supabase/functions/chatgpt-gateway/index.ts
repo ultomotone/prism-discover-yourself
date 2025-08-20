@@ -173,6 +173,67 @@ serve(async (req) => {
         });
       }
 
+      // PUT|POST /config-set/:key/:value - Update single configuration via URL (no body)
+      case path.startsWith('/config-set/') && (method === 'PUT' || method === 'POST'): {
+        const parts = path.split('/').filter(Boolean); // ['config-set', ':key', ':value']
+        const key = decodeURIComponent(parts[1] || '');
+        const raw = decodeURIComponent(parts[2] || '');
+
+        if (!key || raw === undefined || raw === '') {
+          return new Response(JSON.stringify({ 
+            error: "Provide key and value in URL: /config-set/:key/:value",
+            example: "/config-set/flag_duration_threshold_minutes/60"
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        let value: any = raw;
+        // Coerce common primitives
+        if (raw === 'null') value = null;
+        else if (raw === 'true' || raw === 'false') value = raw === 'true';
+        else if (!Number.isNaN(Number(raw)) && raw.trim() !== '') value = Number(raw);
+        else {
+          // Try JSON if looks like an object/array
+          if ((raw.startsWith('{') && raw.endsWith('}')) || (raw.startsWith('[') && raw.endsWith(']'))) {
+            try { value = JSON.parse(raw); } catch (_) { /* keep as string */ }
+          }
+        }
+
+        const { data, error } = await supabase
+          .from('scoring_config')
+          .upsert({ key, value, updated_at: new Date().toISOString() })
+          .select()
+          .single();
+
+        if (error) throw error;
+        console.log(`URL-set scoring config: ${key}=${JSON.stringify(value)}`);
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // GET /config/:key - Fetch single scoring configuration
+      case path.startsWith('/config/') && method === 'GET': {
+        const key = decodeURIComponent(path.replace('/config/', ''));
+        if (!key) {
+          return new Response(JSON.stringify({ error: 'Missing key in path' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        const { data, error } = await supabase
+          .from('scoring_config')
+          .select('*')
+          .eq('key', key)
+          .single();
+        if (error) throw error;
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       // PUT /config/:key - Update single scoring configuration
       case path.startsWith('/config/') && method === 'PUT': {
         const key = decodeURIComponent(path.replace('/config/', ''));
@@ -294,8 +355,10 @@ serve(async (req) => {
             'GET /metrics': 'Detailed metrics from v_kpi_metrics_v11',
             'GET /quality': 'Quality metrics (v_quality or fallback to v_kpi_quality)',
             'GET /config': 'Get all scoring configuration',
+            'GET /config/:key': 'Get a single scoring configuration key',
             'PUT /config': 'Bulk update scoring configuration (JSON object of key:value)',
-            'PUT /config/:key': 'Update a single scoring configuration key',
+            'PUT /config/:key': 'Update a single scoring configuration key from JSON body',
+            'PUT|POST /config-set/:key/:value': 'Update a single key via URL (accepts numeric, boolean, null, JSON)',
             'POST /recompute': 'Trigger profile recomputation',
             'GET /profiles': 'Recent profiles (add ?limit=N to control count)',
             'GET /country-stats': 'Country activity statistics'
