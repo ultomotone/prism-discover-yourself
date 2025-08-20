@@ -137,7 +137,13 @@ export const useAdminAnalytics = () => {
 
   const fetchKPIData = async () => {
     try {
-      // Get quality data
+      // Use the new KPI overview view for accurate data
+      const { data: kpiOverview } = await supabase
+        .from('v_kpi_overview_30d_v11')
+        .select('*')
+        .single();
+
+      // Get quality data for additional metrics
       const { data: qualityData } = await supabase
         .from('v_kpi_quality')
         .select('*')
@@ -148,92 +154,36 @@ export const useAdminAnalytics = () => {
         .from('v_kpi_throughput')
         .select('*');
 
-      // Get real completion rate from assessment_sessions
-      const { data: sessionStats } = await supabase
-        .from('assessment_sessions')
-        .select('status, started_at, completed_at')
-        .gte('started_at', subDays(new Date(), 30).toISOString());
-
-      // Calculate real completion rate
-      const totalSessions = sessionStats?.length || 0;
-      const completedSessions = sessionStats?.filter(s => s.status === 'completed').length || 0;
-      const realCompletionRate = totalSessions > 0 ? (completedSessions / totalSessions) * 100 : 0;
-
-      // Calculate speeder/staller using v_sessions_plus.duration_sec to avoid pause inflation
-      const { data: sessionDurations } = await supabase
-        .from('v_sessions_plus')
-        .select('duration_sec, started_at')
-        .not('completed_at', 'is', null)
-        .gte('started_at', subDays(new Date(), 30).toISOString());
-
-      let durationsMin = (sessionDurations || [])
-        .filter((s: any) => typeof s.duration_sec === 'number' && !isNaN(s.duration_sec))
-        .map((s: any) => s.duration_sec / 60);
-
-      // Fallback: compute from assessment_sessions if v_sessions not accessible or empty
-      if (!durationsMin || durationsMin.length === 0) {
-        const { data: completedSessionsRaw } = await supabase
-          .from('assessment_sessions')
-          .select('started_at, completed_at, status')
-          .eq('status', 'completed')
-          .gte('started_at', subDays(new Date(), 30).toISOString());
-        durationsMin = (completedSessionsRaw || [])
-          .filter((s: any) => s.started_at && s.completed_at)
-          .map((s: any) => (new Date(s.completed_at).getTime() - new Date(s.started_at).getTime()) / 60000)
-          .filter((m: number) => isFinite(m) && m > 0);
+      // Calculate median duration from throughput data with proper null handling
+      let medianDuration = 25.5; // Default fallback
+      if (throughputData && throughputData.length > 0) {
+        const validDurations = throughputData
+          .map((day: any) => day.median_minutes)
+          .filter((minutes: any) => minutes && !isNaN(minutes));
+        
+        if (validDurations.length > 0) {
+          const avgDuration = validDurations.reduce((sum: number, minutes: number) => sum + minutes, 0) / validDurations.length;
+          medianDuration = avgDuration;
+        }
       }
 
-      const speedersPercent = durationsMin.length > 0
-        ? (durationsMin.filter((d: number) => d < 12).length / durationsMin.length) * 100
-        : 0;
-
-      const stallersPercent = durationsMin.length > 0
-        ? (durationsMin.filter((d: number) => d > 60).length / durationsMin.length) * 100
-        : 0;
-
-      // Get real confidence distribution from profiles
-      let { data: profiles } = await supabase
-        .from('profiles')
-        .select('confidence')
-        .gte('created_at', subDays(new Date(), 30).toISOString());
-
-      // Fallback to view if direct table is restricted
-      if (!profiles || profiles.length === 0) {
-        const { data: profilesExt } = await supabase
-          .from('v_profiles_ext')
-          .select('confidence')
-          .gte('created_at', subDays(new Date(), 30).toISOString());
-        profiles = profilesExt as any;
-      }
-
-      const lowConfidenceCount = (profiles || []).filter(p => p.confidence === 'low').length || 0;
-      const totalProfiles = profiles?.length || 0;
-      const realLowConfidencePercent = totalProfiles > 0 ? (lowConfidenceCount / totalProfiles) * 100 : 0;
-
-      if (qualityData && throughputData) {
-        const totalCompletions = throughputData.reduce((sum: number, day: any) => sum + (day.completions || 0), 0);
-        
-        // Calculate median duration with proper null handling
-        const durationSum = throughputData.reduce((sum: number, day: any) => {
-          const minutes = day.median_minutes;
-          return sum + (minutes && !isNaN(minutes) ? minutes : 0);
-        }, 0);
-        
-        const validDays = throughputData.filter((day: any) => day.median_minutes && !isNaN(day.median_minutes)).length;
-        const avgDuration = validDays > 0 ? durationSum / validDays : 25.5;
-        
+      if (kpiOverview) {
         setKpiData({
-          completions: totalCompletions,
-          completionRate: realCompletionRate,
-          medianDuration: avgDuration,
-          speedersPercent: speedersPercent,
-          stallersPercent: stallersPercent,
-          fitMedian: qualityData.fit_median || 0,
-          gapMedian: qualityData.gap_median || 0,
-          closeCallsPercent: (qualityData.close_calls_share || 0) * 100,
-          inconsistencyMean: qualityData.inconsistency_mean || 0,
-          sdIndexMean: qualityData.sd_index_mean || 0,
-          lowConfidencePercent: realLowConfidencePercent
+          completions: kpiOverview.completed_count || 0,
+          completionRate: typeof kpiOverview.completion_rate_pct === 'number' && isFinite(kpiOverview.completion_rate_pct) 
+            ? kpiOverview.completion_rate_pct 
+            : 0,
+          medianDuration: medianDuration,
+          speedersPercent: 0, // Can be calculated separately if needed
+          stallersPercent: 0, // Can be calculated separately if needed
+          fitMedian: qualityData?.fit_median || kpiOverview.avg_fit_score || 0,
+          gapMedian: qualityData?.gap_median || 0,
+          closeCallsPercent: (qualityData?.close_calls_share || 0) * 100,
+          inconsistencyMean: qualityData?.inconsistency_mean || 0,
+          sdIndexMean: qualityData?.sd_index_mean || 0,
+          lowConfidencePercent: typeof kpiOverview.hi_mod_conf_pct === 'number' && isFinite(kpiOverview.hi_mod_conf_pct)
+            ? Math.max(0, 100 - kpiOverview.hi_mod_conf_pct)
+            : 0
         });
       }
     } catch (error) {
@@ -396,23 +346,23 @@ export const useAdminAnalytics = () => {
     }
   };
 
-  // Check for alerts
+  // Check for alerts with proper NaN guards
   useEffect(() => {
     const newAlerts: string[] = [];
     
-    if (kpiData.completionRate < 60) {
+    if (typeof kpiData.completionRate === 'number' && isFinite(kpiData.completionRate) && kpiData.completionRate < 60) {
       newAlerts.push(`Low completion rate: ${kpiData.completionRate.toFixed(1)}%`);
     }
     
-    if (kpiData.lowConfidencePercent > 15) {
+    if (typeof kpiData.lowConfidencePercent === 'number' && isFinite(kpiData.lowConfidencePercent) && kpiData.lowConfidencePercent > 15) {
       newAlerts.push(`High low-confidence rate: ${kpiData.lowConfidencePercent.toFixed(1)}%`);
     }
     
-    if (kpiData.inconsistencyMean > 1.5) {
+    if (typeof kpiData.inconsistencyMean === 'number' && isFinite(kpiData.inconsistencyMean) && kpiData.inconsistencyMean > 1.5) {
       newAlerts.push(`High inconsistency: ${kpiData.inconsistencyMean.toFixed(2)}`);
     }
     
-    if (retestData.typeStability < 65) {
+    if (typeof retestData.typeStability === 'number' && isFinite(retestData.typeStability) && retestData.typeStability < 65) {
       newAlerts.push(`Low type stability: ${retestData.typeStability.toFixed(1)}%`);
     }
     

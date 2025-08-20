@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import Header from "@/components/Header";
 import CountryDistributionChart from "@/components/CountryDistributionChart";
 import { rescoreSpecificSessions } from "@/utils/rescoreUNKSessions";
+import { KPIOverviewSection } from "@/components/admin/KPIOverviewSection";
 
 interface DashboardData {
   totalAssessments: number;
@@ -199,60 +200,54 @@ const Dashboard = () => {
           count: count as number 
         })).sort((a, b) => b.count - a.count) : [];
 
-      // Get recent assessments using canonical v1.1 view with no-cache headers  
-      const versionParam = `?v=${Date.now()}`;
+      // Get recent assessments using new v1.1 view with proper fit values
       const { data: recentAssessments } = await supabase
         .from('v_latest_assessments_v11')
-        .select('created_at, session_id, country, type_code, fit_display, share_pct, fit_band_display, results_version, is_legacy_fit, invalid_combo_flag, top_gap, confidence, type_display')
+        .select('finished_at, session_id, country, type_code, fit_value, share_pct, fit_band, version, confidence, overlay, invalid_combo_flag')
         .range(0, 49);
 
-      // Verification log for v1.1 backfill (temporary)
-      console.table((recentAssessments || []).slice(0, 5).map(r => ({
+      // Verification log for fit distribution
+      console.log('Fit distribution check:', (recentAssessments || []).slice(0, 10).map(r => ({
         session: r.session_id?.toString().slice(0, 8) || 'unknown',
-        ver: r.results_version,
-        fit_cal: r.fit_display,
-        band: r.fit_band_display,
-        gap: r.top_gap
+        fit: r.fit_value,
+        band: r.fit_band,
+        version: r.version
       })));
 
       const latestAssessments: AssessmentDetail[] = (recentAssessments || []).map((assessment: any) => {        
         return {
-          created_at: assessment.created_at,
-          type_code: assessment.type_display || assessment.type_code,
-          overlay: '', // Already included in type_display
+          created_at: assessment.finished_at,
+          type_code: `${assessment.type_code}${assessment.overlay || ''}`,
+          overlay: assessment.overlay || '',
           country: assessment.country,
           country_display: assessment.country,
           email: undefined, // Never show email for privacy
           top_types: undefined,
           type_scores: undefined,
-          fit_score: typeof assessment.fit_display === 'number' ? `${assessment.fit_display.toFixed(1)}%` : assessment.fit_display, // Use one decimal place with % symbol
+          fit_score: typeof assessment.fit_value === 'number' && !isNaN(assessment.fit_value) 
+            ? Math.round(assessment.fit_value) 
+            : null, // Use rounded numeric value, null if invalid
           share_pct: assessment.share_pct,
-          fit_band: assessment.fit_band_display, // Use server-computed band
+          fit_band: assessment.fit_band,
           confidence: assessment.confidence,
-          version: assessment.results_version || 'legacy',
-          // Add new v1.1 fields for proper backfill detection
-          results_version: assessment.results_version,
-          score_fit_calibrated: assessment.is_legacy_fit ? null : assessment.fit_display, // Infer from flag
-          score_fit_raw: null, // Not needed from view
-          top_gap: assessment.top_gap,
+          version: assessment.version || 'legacy',
+          // Add new v1.1 fields 
+          results_version: assessment.version,
+          score_fit_calibrated: assessment.fit_value,
+          score_fit_raw: null,
+          top_gap: null,
           invalid_combo_flag: assessment.invalid_combo_flag
         };
       });
 
-      // Extract country distribution from recent assessments for the heatmap
-      const countryDistribution = (recentAssessments || []).reduce((acc: any[], assessment: any) => {
-        // Use 'country' field directly since it's available in the view
-        const countryName = assessment.country || assessment.country_display;
-        if (countryName && countryName !== 'Unknown' && countryName.trim() !== '') {
-          const existing = acc.find(item => item.country === countryName);
-          if (existing) {
-            existing.count++;
-          } else {
-            acc.push({ country: countryName, count: 1 });
-          }
-        }
-        return acc;
-      }, []);
+      // Get country distribution using the secure dashboard function
+      const { data: countryStats } = await supabase
+        .rpc('get_dashboard_country_stats', { days_back: 30 });
+
+      const countryDistribution = (countryStats || []).map(stat => ({
+        country: stat.country_name,
+        count: stat.session_count
+      }));
 
       // Debug log to verify country data is being passed
       console.log('Country distribution for activity map:', countryDistribution);
@@ -593,6 +588,9 @@ const Dashboard = () => {
           </Card>
         </div>
 
+        {/* V1.1 KPI Overview Cards with NaN Guards */}
+        <KPIOverviewSection />
+
         {/* Type Distribution Chart */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <Card className="prism-shadow-card">
@@ -724,7 +722,7 @@ const Dashboard = () => {
                     </TableCell>
                     <TableCell>{assessment.country_display || assessment.country || 'Unknown'}</TableCell>
                      <TableCell>
-                       {assessment.fit_score ? (
+                       {typeof assessment.fit_score === 'number' && !isNaN(assessment.fit_score) ? (
                          <TooltipProvider>
                            <Tooltip>
                              <TooltipTrigger asChild>
@@ -736,6 +734,7 @@ const Dashboard = () => {
                              </TooltipTrigger>
                              <TooltipContent>
                                <p>Calibrated PRISM Fit • ~35 weak • ~55 solid • ~75 strong</p>
+                               <p className="text-xs mt-1">Raw value: {assessment.fit_score.toFixed(1)}</p>
                                {assessment.results_version !== 'v1.1' && (
                                  <p className="text-orange-600 text-xs mt-1">Legacy fit - run "Recompute v1.1" to update</p>
                                )}
@@ -746,13 +745,13 @@ const Dashboard = () => {
                          <span className="text-muted-foreground text-sm">—</span>
                        )}
                      </TableCell>
-                    <TableCell>
-                      {assessment.share_pct ? (
-                        <span className="text-sm">{Math.round(assessment.share_pct)}%</span>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
-                      )}
-                    </TableCell>
+                     <TableCell>
+                       {typeof assessment.share_pct === 'number' && !isNaN(assessment.share_pct) ? (
+                         <span className="text-sm">{Math.round(assessment.share_pct)}%</span>
+                       ) : (
+                         <span className="text-muted-foreground text-sm">—</span>
+                       )}
+                     </TableCell>
                     <TableCell>
                       {assessment.fit_band ? (
                         <Badge 

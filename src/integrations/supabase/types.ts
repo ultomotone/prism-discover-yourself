@@ -726,6 +726,18 @@ export type Database = {
         }
         Relationships: []
       }
+      v_kpi_overview_30d_v11: {
+        Row: {
+          avg_fit_score: number | null
+          completed_count: number | null
+          completion_rate_pct: number | null
+          hi_mod_conf_pct: number | null
+          overlay_negative: number | null
+          overlay_positive: number | null
+          started_count: number | null
+        }
+        Relationships: []
+      }
       v_kpi_quality: {
         Row: {
           close_calls_share: number | null
@@ -753,50 +765,41 @@ export type Database = {
         Row: {
           confidence: string | null
           country: string | null
-          created_at: string | null
-          fit_band_display: string | null
-          fit_display: number | null
+          finished_at: string | null
+          fit_band: string | null
+          fit_value: number | null
           invalid_combo_flag: boolean | null
-          is_legacy_fit: boolean | null
-          results_version: string | null
+          overlay: string | null
           session_id: string | null
           share_pct: number | null
-          top_gap: number | null
           type_code: string | null
-          type_display: string | null
-          user_id: string | null
+          version: string | null
         }
         Insert: {
           confidence?: string | null
           country?: never
-          created_at?: string | null
-          fit_band_display?: never
-          fit_display?: never
-          invalid_combo_flag?: never
-          is_legacy_fit?: never
-          results_version?: never
+          finished_at?: string | null
+          fit_band?: never
+          fit_value?: never
+          invalid_combo_flag?: boolean | null
+          overlay?: string | null
           session_id?: string | null
           share_pct?: never
-          top_gap?: number | null
           type_code?: string | null
-          type_display?: never
-          user_id?: string | null
+          version?: string | null
         }
         Update: {
           confidence?: string | null
           country?: never
-          created_at?: string | null
-          fit_band_display?: never
-          fit_display?: never
-          invalid_combo_flag?: never
-          is_legacy_fit?: never
-          results_version?: never
+          finished_at?: string | null
+          fit_band?: never
+          fit_value?: never
+          invalid_combo_flag?: boolean | null
+          overlay?: string | null
           session_id?: string | null
           share_pct?: never
-          top_gap?: number | null
           type_code?: string | null
-          type_display?: never
-          user_id?: string | null
+          version?: string | null
         }
         Relationships: []
       }
