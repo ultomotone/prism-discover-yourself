@@ -498,6 +498,28 @@ export const useAdvancedAdminAnalytics = () => {
     refreshData();
   }, [filters]);
 
+  // Realtime: refresh on new completions and stats updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, () => {
+        refreshData();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'assessment_sessions' }, (payload: any) => {
+        // If a session just completed, refresh
+        const newStatus = (payload?.new as any)?.status;
+        if (newStatus === 'completed') refreshData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'dashboard_statistics' }, () => {
+        refreshData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   return {
     filters,
     setFilters,

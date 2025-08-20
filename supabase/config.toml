@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.cleanup_profiles]
 verify_jwt = false
+
+[functions.backfill_profiles]
+verify_jwt = false

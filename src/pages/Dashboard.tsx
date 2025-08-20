@@ -185,10 +185,31 @@ const Dashboard = () => {
   useEffect(() => {
     fetchDashboardData();
 
+    // One-time backfill to ensure all completed sessions have profiles
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('backfill_profiles', { body: {} });
+        if (error) {
+          console.error('Backfill error:', error);
+        } else if (data && (data.created || 0) > 0) {
+          // Refresh after backfill creates new profiles
+          await fetchDashboardData();
+        }
+      } catch (e) {
+        console.error('Backfill exception:', e);
+      }
+    })();
+
     const channel = supabase
       .channel('profiles-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'profiles' },
+        () => {
+          fetchDashboardData();
+        }
+      )
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'dashboard_statistics' },
         () => {
           fetchDashboardData();
         }
