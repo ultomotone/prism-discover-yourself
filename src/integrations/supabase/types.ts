@@ -493,6 +493,14 @@ export type Database = {
       }
     }
     Views: {
+      v_activity_country_30d: {
+        Row: {
+          country_label: string | null
+          iso2: string | null
+          sessions: number | null
+        }
+        Relationships: []
+      }
       v_calibration_confidence: {
         Row: {
           conf_bin: string | null

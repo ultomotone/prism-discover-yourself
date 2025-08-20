@@ -169,13 +169,13 @@ const Dashboard = () => {
         .select('created_at, session_id, country, type_code, fit_display, share_pct, fit_band_display, results_version, is_legacy_fit, invalid_combo_flag, top_gap, confidence, type_display')
         .range(0, 49);
 
-      // Verification logging for admin (temporary)
-      console.info('[AdminList] sample rows:', (recentAssessments || []).slice(0, 3).map(r => ({
+      // Verification log for v1.1 backfill (temporary)
+      console.table((recentAssessments || []).slice(0, 5).map(r => ({
         session: r.session_id?.toString().slice(0, 8) || 'unknown',
-        fit_display: r.fit_display,
-        calibrated: !r.is_legacy_fit,
+        ver: r.results_version,
+        fit_cal: r.fit_display,
         band: r.fit_band_display,
-        version: r.results_version
+        gap: r.top_gap
       })));
 
       const latestAssessments: AssessmentDetail[] = (recentAssessments || []).map((assessment: any) => {        
