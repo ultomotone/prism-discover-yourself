@@ -46,7 +46,11 @@ interface AssessmentDetail {
   country?: string;
   country_display?: string;
   email?: string;
-  fit_score?: number; // Add fit_score property
+  fit_score?: number;
+  share_pct?: number;
+  fit_band?: string;
+  confidence?: string;
+  version?: string;
 }
 
 const Dashboard = () => {
@@ -143,7 +147,11 @@ const Dashboard = () => {
         email: undefined, // Never show email for privacy
         top_types: undefined,
         type_scores: undefined,
-        fit_score: assessment.fit_score // Store fit score in the new property
+        fit_score: assessment.fit_score, // Read from type_scores->fit_abs
+        share_pct: assessment.share_pct, // Read from type_scores->share_pct
+        fit_band: assessment.fit_band,
+        confidence: assessment.confidence,
+        version: assessment.version
       }));
 
       // Extract country distribution from recent assessments for the heatmap

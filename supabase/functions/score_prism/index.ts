@@ -664,24 +664,28 @@ serve(async (req) => {
       updated_at: new Date().toISOString()
     };
 
-    // Insert or update profile
-    const { data: existingProfile } = await supabase
+    // Insert or update profile using ON CONFLICT for proper upsert
+    const { error: upsertError } = await supabase
       .from('profiles')
-      .select('id')
-      .eq('session_id', session_id)
-      .single();
+      .upsert({
+        ...profileData,
+        session_id: session_id,
+        version: "v1.1",
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'session_id',
+        ignoreDuplicates: false
+      });
 
-    if (existingProfile) {
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update(profileData)
-        .eq('session_id', session_id);
-      if (updateError) console.error('Error updating profile:', updateError);
-    } else {
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert(profileData);
-      if (insertError) console.error('Error inserting profile:', insertError);
+    if (upsertError) {
+      console.error('Error upserting profile:', upsertError);
+      return new Response(JSON.stringify({ 
+        status: "error", 
+        error: upsertError.message 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
     console.log(`evt:scoring_complete,session_id:${session_id},type:${typeCode}${overlay},confidence:${confidence},validity:${validityStatus},top_gap:${topGap}`);

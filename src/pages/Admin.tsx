@@ -10,9 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, AlertTriangle, Users, Clock, RefreshCw, Percent, CheckCircle } from "lucide-react";
+import { Download, AlertTriangle, Users, Clock, RefreshCw, Percent, CheckCircle, Database } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { manualRescoreLatest } from "@/utils/manualRescore";
+import { supabase } from "@/integrations/supabase/client";
 
 const Admin: React.FC = () => {
   const { 
@@ -96,6 +97,40 @@ const Admin: React.FC = () => {
     await refreshData();
   };
 
+  const handleBackfillV11 = async () => {
+    toast({
+      title: "Backfill Started",
+      description: "Running v1.1 backfill for all profiles...",
+    });
+
+    try {
+      const { data, error } = await supabase.functions.invoke('backfill_rescore_v11');
+      
+      if (error) {
+        toast({
+          title: "Backfill Failed",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Backfill Complete",
+        description: `Updated ${data.updated}/${data.processed} profiles. Refreshing...`
+      });
+      
+      await refreshData();
+      
+    } catch (err) {
+      toast({
+        title: "Backfill Error", 
+        description: "Unexpected error during backfill",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
@@ -124,9 +159,9 @@ const Admin: React.FC = () => {
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <Button onClick={handleRescoreLatest} variant="secondary" className="flex items-center gap-2">
-              <Percent className="h-4 w-4" />
-              Rescore Latest
+            <Button onClick={handleBackfillV11} variant="destructive" className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              Run v1.1 Backfill
             </Button>
           </div>
 
