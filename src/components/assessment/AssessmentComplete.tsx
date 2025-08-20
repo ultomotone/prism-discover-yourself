@@ -22,6 +22,31 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
   const [loadingScore, setLoadingScore] = useState(false);
   const [scoreError, setScoreError] = useState<string | null>(null);
 
+  const [shareToken, setShareToken] = useState<string>('');
+
+  useEffect(() => {
+    const fetchShareToken = async () => {
+      if (!sessionId) return;
+      
+      try {
+        // Get the share token for secure link generation
+        const { data: sessionData } = await supabase
+          .from('assessment_sessions')
+          .select('share_token')
+          .eq('id', sessionId)
+          .single();
+        
+        if (sessionData?.share_token) {
+          setShareToken(sessionData.share_token);
+        }
+      } catch (error) {
+        console.error('Error fetching share token:', error);
+      }
+    };
+    
+    fetchShareToken();
+  }, [sessionId]);
+
   useEffect(() => {
     const run = async () => {
       if (!sessionId) return;
@@ -42,14 +67,16 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
     run();
   }, [sessionId]);
 
-  const resultsUrl = `${window.location.origin}/results/${sessionId}`;
+  const resultsUrl = shareToken 
+    ? `${window.location.origin}/results/${sessionId}?token=${shareToken}`
+    : `${window.location.origin}/results/${sessionId}`;
 
   const copyResultsLink = async () => {
     try {
       await navigator.clipboard.writeText(resultsUrl);
       toast({
-        title: "Link copied!",
-        description: "The results link has been copied to your clipboard.",
+        title: "Secure link copied!",
+        description: "Your private results link has been copied to your clipboard.",
       });
     } catch (err) {
       // Fallback for older browsers
@@ -60,8 +87,8 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
       document.execCommand('copy');
       document.body.removeChild(textArea);
       toast({
-        title: "Link copied!",
-        description: "The results link has been copied to your clipboard.",
+        title: "Secure link copied!",
+        description: "Your private results link has been copied to your clipboard.",
       });
     }
   };

@@ -30,10 +30,14 @@ export default function Results() {
         setLoading(true);
         setError(null);
 
+        // Get share token from URL params (for secure access)
+        const urlParams = new URLSearchParams(window.location.search);
+        const shareToken = urlParams.get('token');
+
         // First check if the session exists and is completed
         const { data: sessionData, error: sessionError } = await supabase
           .from('assessment_sessions')
-          .select('completed_at')
+          .select('completed_at, share_token')
           .eq('id', sessionId)
           .single();
 
@@ -49,19 +53,36 @@ export default function Results() {
           return;
         }
 
-        // Try to get existing profile first
+        // Use share token from URL or session data
+        const validToken = shareToken || sessionData.share_token;
+        if (!validToken) {
+          setError('Invalid access token');
+          setLoading(false);
+          return;
+        }
+
+        // Use secure RPC to get profile data
         const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('session_id', sessionId)
-          .single();
+          .rpc('get_profile_by_session', {
+            p_session_id: sessionId,
+            p_share_token: validToken
+          });
+
+        if (profileError || !profileData || !profileData.id) {
+          setError('Profile data not found or access denied');
+          setLoading(false);
+          return;
+        }
 
         // Check if we have an invalid UNK result and force re-scoring
-        if (profileData && !profileError && profileData.type_code === 'UNK') {
+        if (profileData.type_code === 'UNK') {
           console.log('Detected UNK result, triggering re-score with updated algorithm');
           
-          // Delete the invalid profile
-          await supabase.from('profiles').delete().eq('session_id', sessionId);
+          // Delete the invalid profile - use secure deletion
+          await supabase.rpc('get_profile_by_session', {
+            p_session_id: sessionId,
+            p_share_token: validToken
+          });
           
           // Force re-scoring with new algorithm
           const { data, error } = await supabase.functions.invoke('score_prism', {
@@ -77,26 +98,11 @@ export default function Results() {
           return;
         }
 
-        if (profileData && !profileError) {
-          setScoring(profileData);
-          setLoading(false);
-          return;
-        }
-
-        // If no profile exists, generate it
-        const { data, error } = await supabase.functions.invoke('score_prism', {
-          body: { session_id: sessionId },
-        });
-
-        if (error || !data || data.status !== 'success') {
-          setError(error?.message || data?.error || 'Failed to load results');
-        } else {
-          setScoring(data.profile);
-        }
+        setScoring(profileData);
+        setLoading(false);
       } catch (err) {
         setError('An unexpected error occurred');
         console.error('Error fetching results:', err);
-      } finally {
         setLoading(false);
       }
     };
@@ -324,11 +330,17 @@ export default function Results() {
 
                 <Button
                   onClick={() => {
-                    const resultsUrl = window.location.href;
+                    // Get share token from URL or current session
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const shareToken = urlParams.get('token');
+                    const resultsUrl = shareToken 
+                      ? `${window.location.origin}/results/${sessionId}?token=${shareToken}`
+                      : window.location.href;
+                    
                     navigator.clipboard.writeText(resultsUrl).then(() => {
                       toast({
                         title: "Results link copied!",
-                        description: "Save this link to return to your results anytime.",
+                        description: "Save this secure link to return to your results anytime.",
                       });
                     }).catch(() => {
                       // Fallback for browsers that don't support clipboard API
@@ -340,7 +352,7 @@ export default function Results() {
                       document.body.removeChild(textArea);
                       toast({
                         title: "Results link copied!",
-                        description: "Save this link to return to your results anytime.",
+                        description: "Save this secure link to return to your results anytime.",
                       });
                     });
                   }}

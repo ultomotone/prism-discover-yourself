@@ -141,6 +141,7 @@ export type Database = {
           ip_hash: string | null
           metadata: Json | null
           session_type: string
+          share_token: string
           started_at: string
           status: string | null
           total_questions: number | null
@@ -157,6 +158,7 @@ export type Database = {
           ip_hash?: string | null
           metadata?: Json | null
           session_type?: string
+          share_token: string
           started_at?: string
           status?: string | null
           total_questions?: number | null
@@ -173,6 +175,7 @@ export type Database = {
           ip_hash?: string | null
           metadata?: Json | null
           session_type?: string
+          share_token?: string
           started_at?: string
           status?: string | null
           total_questions?: number | null
@@ -1205,6 +1208,52 @@ export type Database = {
           has_recent_completion: boolean
           last_completion_date: string
         }[]
+      }
+      get_profile_by_session: {
+        Args: { p_session_id: string; p_share_token: string }
+        Returns: {
+          base_func: string | null
+          baseline_session_id: string | null
+          blocks: Json | null
+          blocks_norm: Json | null
+          close_call: boolean | null
+          confidence: string | null
+          created_at: string | null
+          creative_func: string | null
+          deltas: Json | null
+          dimensions: Json | null
+          dims_highlights: Json | null
+          email_mask: string | null
+          fc_answered_ct: number | null
+          fc_count: number | null
+          fc_coverage_bucket: string | null
+          fit_band: string | null
+          fit_explainer: Json | null
+          gap_minutes: number | null
+          glossary_version: number | null
+          id: string
+          ip_hash: string | null
+          neuroticism: Json | null
+          overlay: string | null
+          parent_session_id: string | null
+          person_key: string | null
+          prev_session_id: string | null
+          run_index: number | null
+          session_id: string
+          session_kind: string | null
+          strengths: Json | null
+          top_3_fits: Json | null
+          top_gap: number | null
+          top_types: Json | null
+          type_code: string | null
+          type_scores: Json | null
+          ua_hash: string | null
+          updated_at: string | null
+          user_id: string | null
+          validity: Json | null
+          validity_status: string | null
+          version: string | null
+        }
       }
       get_recent_assessments_safe: {
         Args: Record<PropertyKey, never>

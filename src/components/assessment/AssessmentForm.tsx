@@ -190,6 +190,7 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
             user_id: user?.id || null,
             session_type: 'prism',
             total_questions: assessmentQuestions.length,
+            share_token: crypto.randomUUID(), // Add required share_token
             metadata: {
               browser: navigator.userAgent,
               timestamp: new Date().toISOString(),
