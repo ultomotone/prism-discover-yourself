@@ -449,13 +449,12 @@ serve(async (req) => {
       console.error(`evt:no_valid_types,session_id:${session_id},invalid_attempts:${invalidComboAttempts}`);
       // Fallback - this should not happen
       const sorted = [...FUNCS].sort((a,b)=>(strengths[b]||0)-(strengths[a]||0));
-      const base = sorted[0];
-      const creative = sorted[1];
-      console.log(`evt:fallback_type,session_id:${session_id},base:${base},creative:${creative}`);
+      const baseGuess = sorted[0];
+      const creativeGuess = sorted[1];
+      console.log(`evt:fallback_type,session_id:${session_id},base:${baseGuess},creative:${creativeGuess}`);
     }
 
-    const [typeCode] = validTypes.sort(([, a], [, b]) => b - a)[0];
-    const { base, creative } = TYPE_MAP[typeCode];
+    // Defer type selection until after distance-based scoring
 
     // ---- neuro overlay ----
     const nMean = neuroVals.length ? neuroVals.reduce((a,b)=>a+b,0)/neuroVals.length : 0; // 1..5
@@ -511,21 +510,46 @@ serve(async (req) => {
       Instinct: Math.round((blocks_fc.Instinct / bFCSum) * 1000)/10,
     } : { Core:0, Critic:0, Hidden:0, Instinct:0 };
 
-    // ---- type likelihoods (removed - now using prototype-based scoring above) ----
-    // Calculate fit scores for all types using the new scoring system
-    const rawScores: Record<string, number> = {};
-    for (const code of Object.keys(typeScores)) {
-      rawScores[code] = typeScores[code as TypeCode];
+    // ---- Distance-based type matching (PRISM Scoring 6.18) ----
+    // Build numeric prototype targets (1..5) from block weights
+    const MIN_W = Math.min(...Object.values(BLOCK_WEIGHTS));
+    const MAX_W = Math.max(...Object.values(BLOCK_WEIGHTS));
+    const MAX_DIST = Math.sqrt(FUNCS.length * Math.pow(4, 2)); // worst-case distance across 8 funcs (1..5)
+    const protoTargets: Record<string, Record<Func, number>> = {};
+    for (const code of Object.keys(TYPE_MAP)) {
+      const proto = TYPE_PROTOTYPES[code as TypeCode];
+      const targets: Record<Func, number> = {} as Record<Func, number>;
+      for (const f of FUNCS) {
+        const w = BLOCK_WEIGHTS[proto[f]];
+        const t = 1 + 4 * ((w - MIN_W) / (MAX_W - MIN_W)); // map weight -> 1..5
+        targets[f] = t;
+      }
+      protoTargets[code] = targets;
     }
     
-    // Raw type scores usually fall ~1..6.5; clamp and map linearly for raw fit
+    // Calculate match scores from Euclidean distance
+    const rawScores: Record<string, number> = {};
+    for (const code of Object.keys(typeScores)) {
+      const targets = protoTargets[code];
+      let sumSq = 0;
+      for (const f of FUNCS) {
+        const diff = (strengths[f] || 0) - (targets[f] || 0);
+        sumSq += diff * diff;
+      }
+      const dist = Math.sqrt(sumSq);
+      const match = Math.max(0, 1 - dist / MAX_DIST); // 0..1
+      // Scale to legacy 0..6.5 range so downstream calibration stays consistent
+      rawScores[code] = match * 6.5;
+    }
+    
+    // Raw type scores usually fall ~0..6.5; clamp and map linearly for raw fit
     function mapFitRaw(s: number): number {
       const sClamped = Math.max(0, Math.min(6.5, s));
       const v = (sClamped / 6.5) * 100;
       return Math.round(v * 10) / 10;
     }
 
-    // Calculate raw fit scores (unbounded by cohort)
+    // Calculate raw fit scores (percentage)
     const fitRaw: Record<string, number> = {};
     for (const [code, s] of Object.entries(rawScores)) {
       fitRaw[code] = mapFitRaw(s);
@@ -690,6 +714,10 @@ serve(async (req) => {
       .select('email, user_id, started_at, ip_hash, ua_hash')
       .eq('id', session_id)
       .single();
+
+    // Determine final type selection after distance-based scoring
+    const typeCode = top3[0];
+    const { base, creative } = TYPE_MAP[typeCode];
 
     // Enhanced profile data with v1.1 fields
     const profileData = {
