@@ -106,8 +106,8 @@ export const MethodHealthSection: React.FC<MethodHealthSectionProps> = ({ data, 
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.dimensionalCoverage.map((row) => (
-                  <TableRow key={row.func}>
+                {data.dimensionalCoverage.map((row, index) => (
+                  <TableRow key={`${row.func}-${index}`}>
                     <TableCell className="font-medium">{row.func}</TableCell>
                     <TableCell className="text-right">{row.min_d_items}</TableCell>
                     <TableCell className="text-right">{row.median_d_items}</TableCell>
@@ -145,8 +145,8 @@ export const MethodHealthSection: React.FC<MethodHealthSectionProps> = ({ data, 
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.sectionTimes.slice(0, 10).map((row) => (
-                  <TableRow key={row.section}>
+                {data.sectionTimes.slice(0, 10).map((row, index) => (
+                  <TableRow key={`${row.section}-${index}`}>
                     <TableCell className="font-medium">{row.section}</TableCell>
                     <TableCell className="text-right">
                       {Math.round(row.median_sec || 0).toLocaleString()}

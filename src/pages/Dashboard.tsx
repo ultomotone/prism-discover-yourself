@@ -151,8 +151,8 @@ const Dashboard = () => {
         email: undefined, // Never show email for privacy
         top_types: undefined,
         type_scores: undefined,
-        fit_score: assessment.fit_score, // Read from type_scores->fit_abs
-        share_pct: assessment.share_pct, // Read from type_scores->share_pct
+        fit_score: assessment.fit_score, // This is already calibrated from get_recent_assessments_safe
+        share_pct: assessment.share_pct,
         fit_band: assessment.fit_band,
         confidence: assessment.confidence,
         version: assessment.version
@@ -568,7 +568,7 @@ const Dashboard = () => {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline">{assessment.type_code}</Badge>
-                        {(assessment.version !== 'v1.1' || (assessment.fit_score && assessment.fit_score >= 95)) && (
+                        {(assessment.version !== 'v1.1' || !assessment.fit_score || (assessment.fit_score && assessment.fit_score >= 95)) && (
                           <Badge variant="destructive" className="text-xs">
                             ⚠ needs backfill
                           </Badge>
@@ -578,20 +578,29 @@ const Dashboard = () => {
                     <TableCell>{assessment.country_display || assessment.country || 'Unknown'}</TableCell>
                     <TableCell>
                       {assessment.fit_score ? (
-                        <Badge 
-                          variant={
-                            assessment.fit_score >= 60 ? "default" :
-                            assessment.fit_score >= 40 ? "secondary" :
-                            "outline"
-                          }
-                          className={
-                            assessment.fit_score >= 60 ? "bg-green-100 text-green-800" :
-                            assessment.fit_score >= 40 ? "bg-yellow-100 text-yellow-800" :
-                            "bg-red-100 text-red-800"
-                          }
-                        >
-                          {Math.round(assessment.fit_score)}%
-                        </Badge>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Badge 
+                                variant={
+                                  assessment.fit_score >= 60 ? "default" :
+                                  assessment.fit_score >= 40 ? "secondary" :
+                                  "outline"
+                                }
+                                className={
+                                  assessment.fit_score >= 60 ? "bg-green-100 text-green-800" :
+                                  assessment.fit_score >= 40 ? "bg-yellow-100 text-yellow-800" :
+                                  "bg-red-100 text-red-800"
+                                }
+                              >
+                                {Math.round(assessment.fit_score)}%
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Calibrated to typical PRISM ranges: ~35 weak, ~55 solid, ~75 strong</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       ) : (
                         <span className="text-muted-foreground text-sm">—</span>
                       )}
@@ -620,9 +629,16 @@ const Dashboard = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      <span className={`text-xs ${assessment.version === 'v1.1' ? 'text-green-600' : 'text-orange-600'}`}>
-                        {assessment.version || 'pre-v1.1'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs ${assessment.version === 'v1.1' ? 'text-green-600' : 'text-orange-600'}`}>
+                          {assessment.version || 'legacy'}
+                        </span>
+                        {(assessment.version !== 'v1.1' || !assessment.fit_score || (assessment.fit_score && assessment.fit_score >= 95)) && (
+                          <Badge variant="destructive" className="text-xs">
+                            Needs backfill
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

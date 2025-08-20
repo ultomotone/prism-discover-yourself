@@ -50,14 +50,19 @@ serve(async (req) => {
         ? `/results/${session_id}?token=${sessionData.share_token}&v=${existingProfile.results_version || 'v1.1'}`
         : `/results/${session_id}?v=${existingProfile.results_version || 'v1.1'}`;
 
-      return new Response(JSON.stringify({
-        status: 'success',
-        profile: existingProfile,
-        results_url: resultsUrl,
-        cached: true
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    return new Response(JSON.stringify({
+      status: 'success',
+      profile: existingProfile,
+      results_url: resultsUrl,
+      cached: true
+    }), {
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store, must-revalidate',
+        'Surrogate-Control': 'no-store'
+      }
+    });
     }
 
     // Check if session exists and is valid
@@ -147,7 +152,12 @@ serve(async (req) => {
       results_url: resultsUrl,
       cached: false
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store, must-revalidate',
+        'Surrogate-Control': 'no-store'
+      }
     });
 
   } catch (error) {

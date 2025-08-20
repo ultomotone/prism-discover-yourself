@@ -57,7 +57,9 @@ export default function Results() {
         // Use share token from URL or session data for access
         const validToken = shareToken || sessionData.share_token;
 
-        // Try to get profile data using secure RPC
+        // Try to get profile data using secure RPC with versioned URL to break cache
+        const version = urlParams.get('v') || 'v1.1';
+        
         const { data: profileData, error: profileError } = await supabase
           .rpc('get_profile_by_session', {
             p_session_id: sessionId,

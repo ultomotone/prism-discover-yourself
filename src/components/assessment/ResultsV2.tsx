@@ -430,13 +430,15 @@ function WhyNotSecond({ profile }: { profile: Profile }) {
   );
 }
 
-// NEW v2: Conditional retest banner
+// NEW v2: Enhanced retest banner with calibrated thresholds
 function RetestBanner({ profile }: { profile: Profile }) {
   const topFit = profile.type_scores?.[profile.top_types?.[0]]?.fit_abs || 0;
   const topGap = profile.top_gap || 0;
   const confidence = profile.confidence;
+  const fitBand = profile.fit_band;
   
-  const shouldShowBanner = topFit < 40 || topGap < 3 || confidence === 'Low';
+  // Show banner for low fit band or close calls
+  const shouldShowBanner = fitBand === 'Low' || topGap < 3 || topFit < 45;
   
   if (!shouldShowBanner) return null;
   
@@ -451,7 +453,7 @@ function RetestBanner({ profile }: { profile: Profile }) {
         Re-test in ~30 days to confirm stability. We'll compare your two results and show type consistency over time.
       </p>
       <div className="text-xs text-orange-600 mt-1">
-        {topFit < 40 && "Low fit score • "}
+        {fitBand === 'Low' && "Low fit band • "}
         {topGap < 3 && "Close call between types • "}
         {confidence === 'Low' && "Low confidence rating • "}
         Additional data will improve accuracy.
