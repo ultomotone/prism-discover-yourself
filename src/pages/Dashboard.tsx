@@ -32,7 +32,11 @@ interface DashboardData {
     country?: string;
     country_display?: string;
     email?: string;
-    fit_score?: number; // Add fit_score property here too
+    fit_score?: number;
+    share_pct?: number;
+    fit_band?: string;
+    confidence?: string;
+    version?: string;
   }>;
 }
 
@@ -543,62 +547,82 @@ const Dashboard = () => {
                   <TableHead>When</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Country</TableHead>
-                   <TableHead>
-                     <div className="flex items-center gap-2">
-                       Type Fit Score
-                       <TooltipProvider>
-                         <Tooltip>
-                           <TooltipTrigger asChild>
-                             <Info className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
-                           </TooltipTrigger>
-                           <TooltipContent>
-                             <p className="max-w-xs">
-                               The Type Fit Score measures how well someone aligns with their assigned PRISM type based on their responses, expressed as a percentage (0-100%).
-                             </p>
-                           </TooltipContent>
-                         </Tooltip>
-                       </TooltipProvider>
-                     </div>
-                   </TableHead>
+                  <TableHead>Fit</TableHead>
+                  <TableHead>Share</TableHead>
+                  <TableHead>Band</TableHead>
+                  <TableHead>Version</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredAssessments.slice(page * 10, (page + 1) * 10).map((assessment, index) => (
                   <TableRow 
-                    key={index}
+                    key={`${assessment.created_at}-${index}`} 
                     className="cursor-pointer hover:bg-muted/50"
                     onClick={() => setSelectedAssessment(assessment)}
                   >
                     <TableCell>
-                      {new Date(assessment.created_at).toLocaleString()}
+                      <span className="text-sm text-muted-foreground">
+                        {new Date(assessment.created_at).toLocaleString()}
+                      </span>
                     </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {assessment.type_display || assessment.type_code}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{assessment.country_display || assessment.country || 'Unknown'}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{assessment.type_code}</Badge>
+                        {(assessment.version !== 'v1.1' || (assessment.fit_score && assessment.fit_score >= 95)) && (
+                          <Badge variant="destructive" className="text-xs">
+                            ⚠ needs backfill
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{assessment.country_display || assessment.country || 'Unknown'}</TableCell>
                     <TableCell>
                       {assessment.fit_score ? (
-                        <div className="flex items-center gap-2">
-                          <Badge 
-                            variant={
-                              assessment.fit_score >= 70 ? "default" :
-                              assessment.fit_score >= 40 ? "secondary" :
-                              "outline"
-                            }
-                            className={
-                              assessment.fit_score >= 70 ? "bg-green-100 text-green-800 hover:bg-green-200" :
-                              assessment.fit_score >= 40 ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200" :
-                              "bg-red-100 text-red-800 hover:bg-red-200"
-                            }
-                          >
-                            {Math.round(assessment.fit_score)}%
-                          </Badge>
-                        </div>
+                        <Badge 
+                          variant={
+                            assessment.fit_score >= 60 ? "default" :
+                            assessment.fit_score >= 40 ? "secondary" :
+                            "outline"
+                          }
+                          className={
+                            assessment.fit_score >= 60 ? "bg-green-100 text-green-800" :
+                            assessment.fit_score >= 40 ? "bg-yellow-100 text-yellow-800" :
+                            "bg-red-100 text-red-800"
+                          }
+                        >
+                          {Math.round(assessment.fit_score)}%
+                        </Badge>
                       ) : (
-                        <span className="text-muted-foreground text-sm">Processing...</span>
+                        <span className="text-muted-foreground text-sm">—</span>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      {assessment.share_pct ? (
+                        <span className="text-sm">{Math.round(assessment.share_pct)}%</span>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {assessment.fit_band ? (
+                        <Badge 
+                          variant="outline"
+                          className={
+                            assessment.fit_band === 'High' ? "border-green-500 text-green-700" :
+                            assessment.fit_band === 'Moderate' ? "border-yellow-500 text-yellow-700" :
+                            "border-red-500 text-red-700"
+                          }
+                        >
+                          {assessment.fit_band}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`text-xs ${assessment.version === 'v1.1' ? 'text-green-600' : 'text-orange-600'}`}>
+                        {assessment.version || 'pre-v1.1'}
+                      </span>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -1258,11 +1258,15 @@ export type Database = {
       get_recent_assessments_safe: {
         Args: Record<PropertyKey, never>
         Returns: {
+          confidence: string
           country_display: string
           created_at: string
+          fit_band: string
           fit_score: number
           session_id: string
+          share_pct: number
           type_display: string
+          version: string
         }[]
       }
       update_dashboard_statistics: {

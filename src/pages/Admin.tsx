@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, AlertTriangle, Users, Clock, RefreshCw, Percent, CheckCircle, Database } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { manualRescoreLatest } from "@/utils/manualRescore";
 import { supabase } from "@/integrations/supabase/client";
 
 const Admin: React.FC = () => {
@@ -79,22 +78,6 @@ const Admin: React.FC = () => {
         variant: "destructive",
       });
     }
-  };
-
-  const handleRescoreLatest = async () => {
-    toast({
-      title: "Rescoring Started",
-      description: "Updating latest fit scores (v1.1)...",
-    });
-
-    const result = await manualRescoreLatest(50);
-    if ('error' in result && result.error) {
-      toast({ title: "Rescore Failed", description: `${result.error}`, variant: "destructive" });
-      return;
-    }
-
-    toast({ title: "Rescore Complete", description: 'Refreshing analytics...' });
-    await refreshData();
   };
 
   const handleBackfillV11 = async () => {
