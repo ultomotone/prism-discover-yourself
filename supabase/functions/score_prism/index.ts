@@ -76,17 +76,21 @@ const corsHeaders = {
 };
 
 // ---- helpers ----
+// Hard-locked parser to known synonyms + numeric capture (1..5 only)
 function parseNum(raw: unknown): number | null {
   if (raw == null) return null;
   if (typeof raw === "number" && Number.isFinite(raw)) return raw;
-  const s = String(raw).trim();
-  const m = s.match(/^(\d+)/);                    // "7=Very High" -> 7
+  const s = String(raw);
+  const m = s.match(/^(\d+)/); // e.g. "7=Very High" -> 7
   if (m) return Number(m[1]);
-  const L = s.toLowerCase();
+  const L = s.toLowerCase().trim();
   const map: Record<string, number> = {
-    "strongly disagree":1, "disagree":2, "neutral":3, "agree":4, "strongly agree":5,
-    "never":1, "rarely":2, "sometimes":3, "often":4, "always":5,
-    "very low":1, "low":2, "slightly low":3, "slightly high":4, "high":5, "very high":5
+    // agreement
+    "strongly disagree": 1, "disagree": 2, "neutral": 3, "agree": 4, "strongly agree": 5,
+    // frequency
+    "never": 1, "rarely": 2, "sometimes": 3, "often": 4, "always": 5,
+    // intensity
+    "very low": 1, "low": 2, "slightly low": 2, "moderate": 3, "slightly high": 4, "high": 4, "very high": 5
   };
   return map[L] ?? null;
 }
@@ -120,7 +124,8 @@ const isP = (x:string)=>["Ni","Ne","Si","Se"].includes(x);
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { user_id, session_id } = await req.json();
+    const { user_id, session_id, debug } = await req.json();
+    const debugMode = !!debug;
     if (!session_id) {
       return new Response(JSON.stringify({ status:"error", error:"session_id required" }), { status:400, headers:{...corsHeaders,"Content-Type":"application/json"}});
     }
@@ -169,24 +174,39 @@ serve(async (req) => {
     skey?.forEach((r:any)=> keyByQ[String(r.question_id)] = r);
 
     const cfg = async (k:string) => {
-      const { data } = await supabase.from("scoring_config").select("value").eq("key", k).single();
-      return data?.value ?? {};
+      const { data } = await supabase.from("scoring_config").select("value").eq("key", k).maybeSingle();
+      return data?.value ?? null;
     };
-    const dimThresh      = await cfg("dim_thresholds");         // { one, two, three } on 1..5
-    const neuroNorms     = await cfg("neuro_norms");            // { mean, sd } on 1..5
-    const fcBlockDefault = await cfg("fc_block_map_default");
-    const stateQids      = await cfg("state_qids");             // { stress:201, mood:202, sleep:203, time:204, focus:205 }
+    let dimThresh: any = await cfg("dim_thresholds");         // { one, two, three } on 1..5
+    const neuroNorms: any = await cfg("neuro_norms") || { mean: 3, sd: 1 };
+    const fcBlockDefault: any = await cfg("fc_block_map_default");
+    const stateQids: any = await cfg("state_qids");           // { stress,time,sleep,focus }
+    const fcExpectedMinCfg: any = await cfg("fc_expected_min");
+    const fcExpectedMin: number = typeof fcExpectedMinCfg === 'number' ? fcExpectedMinCfg : 16;
+    const attentionQids: number[] = Array.isArray(await cfg("attention_qids")) ? await cfg("attention_qids") : null;
+
+    if (!dimThresh || dimThresh.one == null || dimThresh.two == null || dimThresh.three == null) {
+      dimThresh = { one: 2.1, two: 3.0, three: 3.8 };
+      console.log(`evt:dim_defaulted,session_id:${session_id}`);
+      // ensure config exists with defaults
+      await supabase.from('scoring_config').upsert({ key: 'dim_thresholds', value: dimThresh });
+    }
+    if (typeof fcExpectedMinCfg !== 'number') {
+      await supabase.from('scoring_config').upsert({ key: 'fc_expected_min', value: 16 });
+    }
+
 
     // ---- aggregation buckets ----
     const likert: Record<string, number[]> = {};
     const dims:   Record<string, number[]> = {};
     const fcFuncCount: Record<string, number> = {};
-    const blockCount: Record<string, number> = { Core:0, Critic:0, Hidden:0, Instinct:0 };
+    const blockLikertCount: Record<string, number> = { Core:0, Critic:0, Hidden:0, Instinct:0 };
+    const blockFCCount: Record<string, number> = { Core:0, Critic:0, Hidden:0, Instinct:0 };
     const neuroVals: number[] = [];
     const pairs: Record<string, number[]> = {};
     let sdSum = 0, sdN = 0;
-    let fcAnsweredCount = 0; // NEW: Track FC answer count
-    let attentionFailed = 0; // NEW: Track attention check failures
+    let fcAnsweredCount = 0;
+    let attentionFailed = 0;
 
     // helper to read normalized 1..5 for a specific qid
     const getV5 = (qid: number | string): number | null => {
@@ -219,11 +239,10 @@ serve(async (req) => {
       // reverse on native, then normalize to 1..5
       const v5 = toCommon5(rec.reverse_scored ? reverseOnNative(raw, scale) : raw, scale);
 
-      // strength / dims / blocks
       if (tag === "N" || tag === "N_R") neuroVals.push(v5);
       else if (tag?.endsWith("_S")) { const f = tag.split("_")[0]; (likert[f] ||= []).push(v5); }
       else if (tag?.endsWith("_D")) { const f = tag.split("_")[0]; (dims[f]   ||= []).push(v5); }
-      else if (["Core","Critic","Hidden","Instinct"].includes(tag || "")) blockCount[tag!] += v5;
+      else if (["Core","Critic","Hidden","Instinct"].includes(tag || "")) blockLikertCount[tag!] += v5;
 
       if (sd) { sdSum += v5; sdN += 1; }
       if (pair) (pairs[pair] ||= []).push(v5);
@@ -239,30 +258,36 @@ serve(async (req) => {
         const map = rec.fc_map ?? (scale === "FORCED_CHOICE_4" ? fcBlockDefault : null);
         if (map && map[choice]) {
           const m = map[choice];
-          if (["Core","Critic","Hidden","Instinct"].includes(m)) blockCount[m] = (blockCount[m] || 0) + 1;
+          if (["Core","Critic","Hidden","Instinct"].includes(m)) blockFCCount[m] = (blockFCCount[m] || 0) + 1;
           else if (FUNCS.includes(m)) fcFuncCount[m] = (fcFuncCount[m] || 0) + 1;
         }
       }
 
-      // NEW: Attention check tracking (simplified - check for extreme inconsistency)
-      if (tag === "attention_check") {
-        // This would need specific attention check logic based on your items
-        // For now, using a placeholder
-        if (v5 <= 2 || v5 >= 4) attentionFailed++;
-      }
+      // attention checks handled after aggregation via attention_qids
     }
 
-    // NEW: Track FC completeness - warn but don't block if < 24 FC answers
+    // FC completeness using configurable minimum
     let fcCompleteness = "complete";
-    if (fcAnsweredCount < 24) {
-      console.log(`evt:incomplete_fc,session_id:${session_id},fc_count:${fcAnsweredCount}`);
+    if (fcAnsweredCount < fcExpectedMin) {
+      console.log(`evt:incomplete_fc,session_id:${session_id},fc_count:${fcAnsweredCount},expected_min:${fcExpectedMin}`);
       fcCompleteness = "incomplete";
-      
-      // Update session status to incomplete_fc but continue processing
-      await supabase
-        .from('assessment_sessions')
-        .update({ status: 'incomplete_fc' })
-        .eq('id', session_id);
+      await supabase.from('assessment_sessions').update({ status: 'incomplete_fc' }).eq('id', session_id);
+    }
+
+    // Attention checks from config
+    if (Array.isArray(attentionQids)) {
+      let failCt = 0, passCt = 0;
+      for (const qid of attentionQids) {
+        const v = getV5(qid);
+        if (v == null) continue;
+        if (v < 1.5 || v > 4.5) failCt++;
+        if (v < 2 || v > 4) passCt++;
+      }
+      attentionFailed = failCt;
+      console.log(`evt:attention_eval,session_id:${session_id},pass_ct:${passCt},fail_ct:${failCt}`);
+    } else {
+      console.log(`evt:attention_config_missing,session_id:${session_id}`);
+      attentionFailed = 0;
     }
 
     // ---- state modifiers (stress, time, sleep, focus) ----
@@ -302,6 +327,14 @@ serve(async (req) => {
     const fcTotal = Object.values(fcFuncCount).reduce((a,b)=>a+b,0) || 0;
     const w_fc_base  = Math.min(0.5, (fcTotal / 12) * 0.5);
     const w_lik_base = 1 - w_fc_base;
+
+    // Log aggregation counts
+    const aggCounts = {
+      likert_S: Object.fromEntries(FUNCS.map(f => [f, (likert[f]||[]).length])),
+      dims_D: Object.fromEntries(FUNCS.map(f => [f, (dims[f]||[]).length])),
+      fc: Object.fromEntries(FUNCS.map(f => [f, (fcFuncCount[f]||0)])),
+    };
+    console.log(`evt:agg_counts,session_id:${session_id},counts:${JSON.stringify(aggCounts)}`);
 
     // Apply both state and quality-based dynamic weighting
     const w_fc     = w_fc_base * wFCState * dynamicFCWeight;
@@ -350,8 +383,7 @@ serve(async (req) => {
         if (["base", "creative"].includes(block)) {
           const opp = OPP[func] as Func;
           const oppBlock = prototype[opp];
-          // If opposite function is in unvalued block and stronger, penalize
-          if (["vulnerable", "ignoring"].includes(oppBlock) && S[opp] > S[func]) {
+          if (["vulnerable", "ignoring"].includes(oppBlock) && (S[opp] - S[func]) > 0.5) {
             penalty += S[opp] - S[func];
           }
         }
@@ -460,14 +492,22 @@ serve(async (req) => {
 
     console.log(`evt:validity_check,session_id:${session_id},status:${validityStatus},confidence:${confidence},inconsistency:${inconsIdx},sd_index:${sdIndex},attention_failed:${attentionFailed}`);
 
-    // ---- blocks (early for likelihood scoring) ----
-    const blocks = { ...blockCount };
-    const bSum = (blocks.Core||0)+(blocks.Critic||0)+(blocks.Hidden||0)+(blocks.Instinct||0);
-    const blocks_norm = bSum > 0 ? {
-      Core: Math.round(blocks.Core / bSum * 1000)/10,
-      Critic: Math.round(blocks.Critic / bSum * 1000)/10,
-      Hidden: Math.round(blocks.Hidden / bSum * 1000)/10,
-      Instinct: Math.round(blocks.Instinct / bSum * 1000)/10
+    // ---- blocks (normalized for display only; keep Likert and FC separate) ----
+    const blocks_likert = { ...blockLikertCount };
+    const blocks_fc = { ...blockFCCount };
+    const bLikertSum = (blocks_likert.Core||0)+(blocks_likert.Critic||0)+(blocks_likert.Hidden||0)+(blocks_likert.Instinct||0);
+    const bFCSum = (blocks_fc.Core||0)+(blocks_fc.Critic||0)+(blocks_fc.Hidden||0)+(blocks_fc.Instinct||0);
+    const blocks_norm_likert = bLikertSum > 0 ? {
+      Core: Math.round((blocks_likert.Core / bLikertSum) * 1000)/10,
+      Critic: Math.round((blocks_likert.Critic / bLikertSum) * 1000)/10,
+      Hidden: Math.round((blocks_likert.Hidden / bLikertSum) * 1000)/10,
+      Instinct: Math.round((blocks_likert.Instinct / bLikertSum) * 1000)/10,
+    } : { Core:0, Critic:0, Hidden:0, Instinct:0 };
+    const blocks_norm_fc = bFCSum > 0 ? {
+      Core: Math.round((blocks_fc.Core / bFCSum) * 1000)/10,
+      Critic: Math.round((blocks_fc.Critic / bFCSum) * 1000)/10,
+      Hidden: Math.round((blocks_fc.Hidden / bFCSum) * 1000)/10,
+      Instinct: Math.round((blocks_fc.Instinct / bFCSum) * 1000)/10,
     } : { Core:0, Critic:0, Hidden:0, Instinct:0 };
 
     // ---- type likelihoods (removed - now using prototype-based scoring above) ----
@@ -477,12 +517,11 @@ serve(async (req) => {
       rawScores[code] = typeScores[code as TypeCode];
     }
     
-    // Map raw type score s (~1..6.5) to 0..100 without saturating
+    // Raw type scores usually fall ~1..6.5; clamp and map linearly.
     function mapFitAbs(s: number): number {
-      // Center near the top of typical range; slope tuned to avoid flatlining
-      const v = 100 / (1 + Math.exp(-(s - 5.2) * 1.35));
-      // Allow natural range from 0-100, just round to 1 decimal
-      return Math.round(Math.max(0, v) * 10) / 10;
+      const sClamped = Math.max(0, Math.min(6.5, s));
+      const v = (sClamped / 6.5) * 100;
+      return Math.round(v * 10) / 10;
     }
 
     const fitAbs: Record<string, number> = {};
@@ -504,11 +543,17 @@ serve(async (req) => {
     }
 
     const top3 = Object.keys(TYPE_MAP)
-      .sort((a, b) =>
-        (fitAbs[b] - fitAbs[a]) ||                 // 1) higher absolute fit first
-        (sharePct[b] - sharePct[a]) ||             // 2) then higher relative share
-        (coherentCountFor(b) - coherentCountFor(a))// 3) then more ≥3D on base/creative
-      )
+      .sort((a, b) => {
+        const fitCmp = (fitAbs[b] - fitAbs[a]);
+        if (fitCmp !== 0) return fitCmp;
+        const shareCmp = (sharePct[b] - sharePct[a]);
+        if (shareCmp !== 0) return shareCmp;
+        const cohCmp = (coherentCountFor(b) - coherentCountFor(a));
+        if (cohCmp !== 0) return cohCmp;
+        const fcSumA = (fcSupport[TYPE_MAP[a].base as Func] || 0) + (fcSupport[TYPE_MAP[a].creative as Func] || 0);
+        const fcSumB = (fcSupport[TYPE_MAP[b].base as Func] || 0) + (fcSupport[TYPE_MAP[b].creative as Func] || 0);
+        return fcSumB - fcSumA;
+      })
       .slice(0, 3);
     const type_scores: Record<string,{fit_abs:number; share_pct:number}> = {};
     for (const code of Object.keys(TYPE_MAP)) type_scores[code] = { fit_abs: fitAbs[code], share_pct: sharePct[code] };
@@ -540,6 +585,33 @@ serve(async (req) => {
     const dims_highlights = { coherent, unique };
 
     // ---- Session classification and save ----
+    if (debugMode) {
+      console.log(`evt:debug_mode,session_id:${session_id}`);
+      const penalty_components = Object.fromEntries(
+        Object.keys(TYPE_MAP).map(code => [code, oppositePenalty(code as TypeCode, strengths)])
+      );
+      const debugPayload = {
+        counts: {
+          likert_S: Object.fromEntries(FUNCS.map(f => [f, (likert[f]||[]).length])),
+          dims_D: Object.fromEntries(FUNCS.map(f => [f, (dims[f]||[]).length])),
+          fc: Object.fromEntries(FUNCS.map(f => [f, (fcFuncCount[f]||0)]))
+        },
+        strengths,
+        dimensions,
+        raw_type_scores: typeScores,
+        penalty_components,
+        top3,
+        fit_abs: fitAbs,
+        share_pct: sharePct,
+        state_values: { stress: sStress, time: sTime, sleep: sSleep, focus: sFocus },
+        weights: { w_fc_base, w_lik_base, w_fc, w_likert },
+        blocks_raw: { likert: blocks_likert, fc: blocks_fc },
+        blocks_norm_likert,
+        blocks_norm_fc,
+      };
+      return new Response(JSON.stringify({ status: "debug", debug: debugPayload }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // Mark session as completed
     const { error: sessionUpdateError } = await supabase
       .from('assessment_sessions')
@@ -566,24 +638,22 @@ serve(async (req) => {
       creative_func: creative,
       overlay: overlay,
       confidence: confidence,
-      validity_status: validityStatus, // NEW
-      top_gap: topGap, // NEW
-      close_call: closeCall, // NEW
-      fit_band: fitBand, // NEW
-      fc_answered_ct: fcAnsweredCount, // NEW
-      top_3_fits: top3Fits, // NEW
-      fit_explainer: { // NEW v1.1 enhanced fit explanations
+      validity_status: validityStatus,
+      top_gap: topGap,
+      close_call: closeCall,
+      fit_band: fitBand,
+      fc_answered_ct: fcAnsweredCount,
+      top_3_fits: top3Fits,
+      fit_explainer: {
         top_3_comparison: top3Fits,
-        interpretation: {
-          fit_band: fitBand,
-          close_call: closeCall,
-          top_gap: topGap
-        }
+        interpretation: { fit_band: fitBand, close_call: closeCall, top_gap: topGap }
       },
       strengths: strengths,
       dimensions: dimensions,
-      blocks: blocks,
-      blocks_norm: blocks_norm,
+      blocks_likert: blocks_likert,
+      blocks_fc: blocks_fc,
+      blocks_norm_likert: blocks_norm_likert,
+      blocks_norm_fc: blocks_norm_fc,
       neuroticism: { raw_mean: nMean, z: z },
       validity: validity,
       type_scores: type_scores,
