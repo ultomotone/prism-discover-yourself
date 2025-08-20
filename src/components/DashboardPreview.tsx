@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { backfillMissingProfiles } from "@/utils/backfillProfiles";
 import { rescoreBrokenProfiles } from "@/utils/rescoreBrokenProfiles";
-import { rescoreAllProfiles } from "@/utils/rescoreAllProfiles";
+import { manualRescoreLatest } from "@/utils/manualRescore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MilestoneProgress } from "@/components/ui/milestone-progress";
@@ -24,10 +24,10 @@ const DashboardPreview = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Trigger backfill, rescore, and full v1.1 rescore on component mount
+    // Trigger backfill, rescore broken profiles, and manual rescore latest
     backfillMissingProfiles();
     rescoreBrokenProfiles();
-    rescoreAllProfiles();
+    manualRescoreLatest(30); // Rescore latest 30 profiles
 
     const fetchPreviewStats = async () => {
       try {
