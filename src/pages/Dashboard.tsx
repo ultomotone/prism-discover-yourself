@@ -225,7 +225,7 @@ const Dashboard = () => {
           email: undefined, // Never show email for privacy
           top_types: undefined,
           type_scores: undefined,
-          fit_score: typeof assessment.fit_display === 'number' ? assessment.fit_display.toFixed(1) : assessment.fit_display, // Use one decimal place
+          fit_score: typeof assessment.fit_display === 'number' ? `${assessment.fit_display.toFixed(1)}%` : assessment.fit_display, // Use one decimal place with % symbol
           share_pct: assessment.share_pct,
           fit_band: assessment.fit_band_display, // Use server-computed band
           confidence: assessment.confidence,

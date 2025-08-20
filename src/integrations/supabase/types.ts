@@ -1289,6 +1289,13 @@ export type Database = {
           last_completion_date: string
         }[]
       }
+      get_dashboard_country_stats: {
+        Args: { days_back?: number }
+        Returns: {
+          country_name: string
+          session_count: number
+        }[]
+      }
       get_profile_by_session: {
         Args: { p_session_id: string; p_share_token: string }
         Returns: {
