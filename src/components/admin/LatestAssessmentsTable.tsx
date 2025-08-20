@@ -25,27 +25,26 @@ const formatFitValue = (
   showRawFit: boolean, 
   sessionId?: string
 ): string => {
-  const fitCal = calibratedFit;
-  const fitRaw = rawFit;
-  
   if (showRawFit) {
-    if (fitRaw === null || fitRaw === undefined || !isFinite(fitRaw) || isNaN(fitRaw)) {
+    // Show raw fit (0-100 scale)
+    if (rawFit === null || rawFit === undefined || !isFinite(rawFit) || isNaN(rawFit)) {
       if (sessionId) {
         console.warn(`Missing raw fit for session: ${sessionId}`);
       }
       return "—";
     }
-    return `${Math.round(fitRaw)}%`;
+    return `${Math.round(rawFit)}%`;
   } else {
-    if (fitCal === null || fitCal === undefined || !isFinite(fitCal) || isNaN(fitCal)) {
+    // Show calibrated fit scaled to 1-100 look
+    if (calibratedFit === null || calibratedFit === undefined || !isFinite(calibratedFit) || isNaN(calibratedFit)) {
       if (sessionId) {
         console.warn(`Missing calibrated fit for session: ${sessionId}`);
       }
       return "—";
     }
     // Convert calibrated (~20..85) to 1..100 look
-    const fitForUI = Math.round((fitCal - 20) * (100 / 65));
-    return `${fitForUI}%`;
+    const fitForUI = Math.round((calibratedFit - 20) * (100 / 65));
+    return `${Math.max(1, fitForUI)}%`;
   }
 };
 
@@ -87,14 +86,14 @@ export const LatestAssessmentsTable = () => {
       }
 
       if (data) {
-        // Transform data to match our interface
+        // Transform data to match our interface  
         const transformedData = data.map(row => ({
           session_id: row.session_id,
           finished_at: row.finished_at,
           country: row.country,
           type_code: row.type_code,
-          fit_value: row.fit_value, // This is the calibrated fit from the view
-          score_fit_raw: null, // Will need to fetch separately if needed
+          fit_value: row.score_fit_calibrated, // Use calibrated as the primary value
+          score_fit_raw: row.score_fit_raw,
           share_pct: row.share_pct,
           fit_band: row.fit_band,
           version: row.version

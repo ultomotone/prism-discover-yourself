@@ -809,6 +809,8 @@ export type Database = {
           fit_value: number | null
           invalid_combo_flag: boolean | null
           overlay: string | null
+          score_fit_calibrated: number | null
+          score_fit_raw: number | null
           session_id: string | null
           share_pct: number | null
           type_code: string | null
@@ -822,6 +824,8 @@ export type Database = {
           fit_value?: never
           invalid_combo_flag?: boolean | null
           overlay?: string | null
+          score_fit_calibrated?: number | null
+          score_fit_raw?: number | null
           session_id?: string | null
           share_pct?: never
           type_code?: never
@@ -835,6 +839,8 @@ export type Database = {
           fit_value?: never
           invalid_combo_flag?: boolean | null
           overlay?: string | null
+          score_fit_calibrated?: number | null
+          score_fit_raw?: number | null
           session_id?: string | null
           share_pct?: never
           type_code?: never
