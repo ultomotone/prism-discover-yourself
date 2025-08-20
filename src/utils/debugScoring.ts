@@ -16,16 +16,4 @@ export async function debugScoreSession(sessionId: string) {
   return data;
 }
 
-// Auto-run debug on latest session
-(async () => {
-  const { data: latestProfile } = await supabase
-    .from('profiles')
-    .select('session_id')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
-
-  if (latestProfile) {
-    await debugScoreSession(latestProfile.session_id);
-  }
-})();
+// Removed auto-run to prevent loading issues

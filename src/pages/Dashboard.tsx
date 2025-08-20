@@ -331,9 +331,51 @@ const Dashboard = () => {
           <Button 
             onClick={() => window.open('/roadmap', '_blank')}
             variant="outline"
-            className="border-white text-gray-800 hover:bg-white hover:text-primary"
+            className="border-white text-gray-800 hover:bg-white hover:text-primary mr-4"
           >
             Roadmap <ExternalLink className="ml-2 h-4 w-4" />
+          </Button>
+          <Button 
+            onClick={async () => {
+              const { data: latestProfile } = await supabase
+                .from('profiles')
+                .select('session_id')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+              
+              if (latestProfile) {
+                const { data, error } = await supabase.functions.invoke('score_prism', {
+                  body: { session_id: latestProfile.session_id, debug: true }
+                });
+                
+                if (error) {
+                  console.error('Debug scoring error:', error);
+                  toast({
+                    title: "Debug Failed",
+                    description: `Error: ${error.message}`,
+                    variant: "destructive",
+                  });
+                } else {
+                  console.log('=== DEBUG SCORING RESULT ===');
+                  console.log(JSON.stringify(data, null, 2));
+                  toast({
+                    title: "Debug Complete",
+                    description: `Session ${latestProfile.session_id} debug logged to console`,
+                  });
+                }
+              } else {
+                toast({
+                  title: "No Sessions Found",
+                  description: "No profiles found to debug",
+                  variant: "destructive",
+                });
+              }
+            }}
+            variant="outline"
+            className="border-yellow-300 text-yellow-800 hover:bg-yellow-100 hover:text-yellow-900"
+          >
+            Debug Latest Session
           </Button>
         </div>
       </section>

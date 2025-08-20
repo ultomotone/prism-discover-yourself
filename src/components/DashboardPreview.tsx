@@ -28,19 +28,7 @@ const DashboardPreview = () => {
     backfillMissingProfiles();
     rescoreBrokenProfiles();
     
-    // Debug latest session
-    (async () => {
-      const { data: latestProfile } = await supabase
-        .from('profiles')
-        .select('session_id')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (latestProfile) {
-        await debugScoreSession(latestProfile.session_id);
-      }
-    })();
+    // Debug removed to prevent loading issues
 
     const fetchPreviewStats = async () => {
       try {
