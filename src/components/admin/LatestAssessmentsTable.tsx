@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -11,18 +13,39 @@ interface Assessment {
   country: string;
   type_code: string;
   fit_value: number | null;
+  score_fit_raw: number | null;
   fit_band: string | null;
   version: string;
 }
 
-const formatFitValue = (value: number | null, sessionId?: string): string => {
-  if (value === null || value === undefined || !isFinite(value) || isNaN(value)) {
-    if (sessionId) {
-      console.warn(`Missing calibrated fit for session: ${sessionId}`);
+const formatFitValue = (
+  calibratedFit: number | null, 
+  rawFit: number | null, 
+  showRawFit: boolean, 
+  sessionId?: string
+): string => {
+  const fitCal = calibratedFit;
+  const fitRaw = rawFit;
+  
+  if (showRawFit) {
+    if (fitRaw === null || fitRaw === undefined || !isFinite(fitRaw) || isNaN(fitRaw)) {
+      if (sessionId) {
+        console.warn(`Missing raw fit for session: ${sessionId}`);
+      }
+      return "—";
     }
-    return "—";
+    return `${Math.round(fitRaw)}%`;
+  } else {
+    if (fitCal === null || fitCal === undefined || !isFinite(fitCal) || isNaN(fitCal)) {
+      if (sessionId) {
+        console.warn(`Missing calibrated fit for session: ${sessionId}`);
+      }
+      return "—";
+    }
+    // Convert calibrated (~20..85) to 1..100 look
+    const fitForUI = Math.round((fitCal - 20) * (100 / 65));
+    return `${fitForUI}%`;
   }
-  return `${Math.round(value)}%`;
 };
 
 const getFitBadgeVariant = (band: string | null) => {
@@ -45,16 +68,15 @@ const getVersionBadgeVariant = (version: string) => {
 export const LatestAssessmentsTable = () => {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showRawFit, setShowRawFit] = useState(false);
 
   const fetchAssessments = async () => {
     try {
       setLoading(true);
       
-      // Force v1.1 calibrated fits only - no cache
+      // Fetch from profiles with country info - no cache
       const { data, error } = await supabase
-        .from('v_latest_assessments_v11')
-        .select('session_id, finished_at, country, type_code, fit_value, fit_band, version')
-        .order('finished_at', { ascending: false })
+        .rpc('get_recent_assessments_safe')
         .limit(50);
 
       if (error) {
@@ -63,21 +85,34 @@ export const LatestAssessmentsTable = () => {
       }
 
       if (data) {
+        // Transform data to match our interface
+        const transformedData = data.map(row => ({
+          session_id: row.session_id,
+          finished_at: row.created_at,
+          country: row.country_display,
+          type_code: row.type_display,
+          fit_value: row.score_fit_calibrated,
+          score_fit_raw: row.score_fit_raw,
+          fit_band: row.fit_band,
+          version: row.version
+        }));
+
         // Verification log for v1.1 data source
         console.info('Admin v1.1 data source OK', {
-          rowCount: data.length,
-          fitSample: data.slice(0, 5).map(r => ({
+          rowCount: transformedData.length,
+          fitSample: transformedData.slice(0, 5).map(r => ({
             session: r.session_id?.slice(0, 8),
-            fit: r.fit_value,
+            fitCal: r.fit_value,
+            fitRaw: r.score_fit_raw,
             band: r.fit_band
           })),
-          outOfRangeFits: data.filter(r => 
+          outOfRangeFits: transformedData.filter(r => 
             r.fit_value && (r.fit_value > 95 || r.fit_value < 10)
           ).length
         });
 
         // Warn about unexpected fit ranges
-        data.forEach(row => {
+        transformedData.forEach(row => {
           if (row.fit_value && (row.fit_value > 95 || row.fit_value < 10)) {
             console.warn('Unexpected range — check calibration or source', {
               session: row.session_id?.slice(0, 8),
@@ -86,7 +121,7 @@ export const LatestAssessmentsTable = () => {
           }
         });
 
-        setAssessments(data);
+        setAssessments(transformedData);
       }
     } catch (error) {
       console.error('Error fetching assessments:', error);
@@ -119,9 +154,21 @@ export const LatestAssessmentsTable = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Latest Assessments</CardTitle>
+        <CardTitle className="flex items-center justify-between">
+          Latest Assessments
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="fit-toggle" className="text-sm font-normal">
+              Fit: {showRawFit ? 'Raw' : 'Cal'}
+            </Label>
+            <Switch
+              id="fit-toggle"
+              checked={showRawFit}
+              onCheckedChange={setShowRawFit}
+            />
+          </div>
+        </CardTitle>
         <p className="text-sm text-muted-foreground">
-          v1.1 calibrated fits only
+          v1.1 {showRawFit ? 'raw and calibrated' : 'calibrated'} fits
         </p>
       </CardHeader>
       <CardContent>
@@ -158,7 +205,7 @@ export const LatestAssessmentsTable = () => {
                     {assessment.country || '—'}
                   </TableCell>
                   <TableCell className="font-mono">
-                    {formatFitValue(assessment.fit_value, assessment.session_id)}
+                    {formatFitValue(assessment.fit_value, assessment.score_fit_raw, showRawFit, assessment.session_id)}
                   </TableCell>
                   <TableCell className="font-mono">
                     —
