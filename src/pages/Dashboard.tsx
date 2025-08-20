@@ -37,6 +37,12 @@ interface DashboardData {
     fit_band?: string;
     confidence?: string;
     version?: string;
+    // Add new v1.1 fields
+    results_version?: string;
+    score_fit_calibrated?: number;
+    score_fit_raw?: number;
+    top_gap?: number;
+    invalid_combo_flag?: boolean;
   }>;
 }
 
@@ -55,7 +61,16 @@ interface AssessmentDetail {
   fit_band?: string;
   confidence?: string;
   version?: string;
+  // Add new v1.1 fields
+  results_version?: string;
+  score_fit_calibrated?: number;
+  score_fit_raw?: number;
+  top_gap?: number;
+  invalid_combo_flag?: boolean;
 }
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const Dashboard = () => {
   const { toast } = useToast();
@@ -139,24 +154,53 @@ const Dashboard = () => {
           count: count as number 
         })).sort((a, b) => b.count - a.count) : [];
 
-      // Get recent assessments using secure function that returns country and fit score data
+      // Get recent assessments using secure function with no-cache headers and versioning
+      const versionParam = `?v=${Date.now()}`;
       const { data: recentAssessments } = await supabase
         .rpc('get_recent_assessments_safe');
 
-      const latestAssessments: AssessmentDetail[] = (recentAssessments || []).map((assessment: any) => ({
-        created_at: assessment.created_at,
-        type_code: assessment.type_display,
-        overlay: '', // Already included in type_display
-        country: assessment.country_display,
-        email: undefined, // Never show email for privacy
-        top_types: undefined,
-        type_scores: undefined,
-        fit_score: assessment.fit_score, // This is already calibrated from get_recent_assessments_safe
-        share_pct: assessment.share_pct,
-        fit_band: assessment.fit_band,
-        confidence: assessment.confidence,
-        version: assessment.version
-      }));
+      // Console log for debugging (temporary)
+      console.table((recentAssessments || []).slice(0, 10).map((r: any) => ({
+        session: r.session_id?.toString().slice(0, 8) || 'unknown',
+        ver: r.results_version || r.version || 'legacy',
+        fit_cal: r.score_fit_calibrated,
+        fit_raw: r.score_fit_raw,
+        fit_legacy: r.fit_score,
+        band: r.fit_band,
+        gap: r.top_gap
+      })));
+
+      const latestAssessments: AssessmentDetail[] = (recentAssessments || []).map((assessment: any) => {
+        // Use calibrated fit first, then raw fit, then legacy fit as fallback
+        const displayFit = assessment.score_fit_calibrated ?? assessment.score_fit_raw ?? assessment.fit_score;
+        const fitBand = assessment.fit_band ?? (
+          displayFit && displayFit <= 40 ? 'Low' :
+          displayFit && displayFit <= 60 ? 'Moderate' : 
+          displayFit ? 'High' : null
+        );
+        
+        return {
+          created_at: assessment.created_at,
+          type_code: assessment.type_display,
+          overlay: '', // Already included in type_display
+          country: assessment.country_display,
+          country_display: assessment.country_display,
+          email: undefined, // Never show email for privacy
+          top_types: undefined,
+          type_scores: undefined,
+          fit_score: displayFit, // Use calibrated fit
+          share_pct: assessment.share_pct,
+          fit_band: fitBand,
+          confidence: assessment.confidence,
+          version: assessment.results_version || assessment.version || 'legacy',
+          // Add new v1.1 fields for proper backfill detection
+          results_version: assessment.results_version,
+          score_fit_calibrated: assessment.score_fit_calibrated,
+          score_fit_raw: assessment.score_fit_raw,
+          top_gap: assessment.top_gap,
+          invalid_combo_flag: assessment.invalid_combo_flag
+        };
+      });
 
       // Extract country distribution from recent assessments for the heatmap
       const countryDistribution = (recentAssessments || []).reduce((acc: any[], assessment: any) => {
@@ -568,11 +612,6 @@ const Dashboard = () => {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline">{assessment.type_code}</Badge>
-                        {(assessment.version !== 'v1.1' || !assessment.fit_score || (assessment.fit_score && assessment.fit_score >= 95)) && (
-                          <Badge variant="destructive" className="text-xs">
-                            ⚠ needs backfill
-                          </Badge>
-                        )}
                       </div>
                     </TableCell>
                     <TableCell>{assessment.country_display || assessment.country || 'Unknown'}</TableCell>
@@ -580,24 +619,18 @@ const Dashboard = () => {
                       {assessment.fit_score ? (
                         <TooltipProvider>
                           <Tooltip>
-                            <TooltipTrigger>
-                              <Badge 
-                                variant={
-                                  assessment.fit_score >= 60 ? "default" :
-                                  assessment.fit_score >= 40 ? "secondary" :
-                                  "outline"
-                                }
-                                className={
-                                  assessment.fit_score >= 60 ? "bg-green-100 text-green-800" :
-                                  assessment.fit_score >= 40 ? "bg-yellow-100 text-yellow-800" :
-                                  "bg-red-100 text-red-800"
-                                }
-                              >
+                            <TooltipTrigger asChild>
+                              <span className={`text-sm font-medium cursor-help ${
+                                assessment.score_fit_calibrated ? 'text-foreground' : 'text-orange-600'
+                              }`}>
                                 {Math.round(assessment.fit_score)}%
-                              </Badge>
+                              </span>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Calibrated to typical PRISM ranges: ~35 weak, ~55 solid, ~75 strong</p>
+                              <p>Calibrated PRISM Fit. ~35=weak, ~55=solid, ~75=strong</p>
+                              {!assessment.score_fit_calibrated && (
+                                <p className="text-orange-600 text-xs mt-1">Using raw/legacy fit - needs v1.1 update</p>
+                              )}
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -630,12 +663,22 @@ const Dashboard = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs ${assessment.version === 'v1.1' ? 'text-green-600' : 'text-orange-600'}`}>
-                          {assessment.version || 'legacy'}
+                        <span className={`text-xs ${
+                          assessment.results_version === 'v1.1' ? 'text-green-600' : 
+                          assessment.results_version ? 'text-orange-600' : 'text-gray-600'
+                        }`}>
+                          {assessment.results_version || assessment.version || 'legacy'}
                         </span>
-                        {(assessment.version !== 'v1.1' || !assessment.fit_score || (assessment.fit_score && assessment.fit_score >= 95)) && (
+                        {/* Show "needs backfill" only when truly not on v1.1 */}
+                        {(assessment.results_version !== 'v1.1' || assessment.score_fit_calibrated == null) && (
                           <Badge variant="destructive" className="text-xs">
                             Needs backfill
+                          </Badge>
+                        )}
+                        {/* Show grey "legacy" tag for true legacy rows */}
+                        {!assessment.results_version && assessment.version && (
+                          <Badge variant="secondary" className="text-xs">
+                            legacy
                           </Badge>
                         )}
                       </div>

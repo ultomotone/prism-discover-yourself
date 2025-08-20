@@ -1279,8 +1279,13 @@ export type Database = {
           created_at: string
           fit_band: string
           fit_score: number
+          invalid_combo_flag: boolean
+          results_version: string
+          score_fit_calibrated: number
+          score_fit_raw: number
           session_id: string
           share_pct: number
+          top_gap: number
           type_display: string
           version: string
         }[]

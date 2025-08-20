@@ -124,9 +124,14 @@ type Profile = {
   validity: { inconsistency:number; sd_index:number };
   confidence: "High"|"Moderate"|"Low";
   validity_status?: string; // NEW v1.1
-  top_gap?: number; // NEW v1.1
+  // Add v1.1 calibrated fit fields
+  results_version?: string;
+  score_fit_calibrated?: number;
+  score_fit_raw?: number;
+  fit_band?: "High"|"Moderate"|"Low";
+  top_gap?: number;
+  invalid_combo_flag?: boolean;
   close_call?: boolean; // NEW v1.1
-  fit_band?: string; // NEW v1.1
   fc_answered_ct?: number; // NEW v1.1
   top_3_fits?: Array<{ code: string; fit: number; share: number }>; // NEW v1.1
   diagnostics?: { // NEW v2
@@ -430,15 +435,15 @@ function WhyNotSecond({ profile }: { profile: Profile }) {
   );
 }
 
-// NEW v2: Enhanced retest banner with calibrated thresholds
+//  Enhanced retest banner with v1.1 calibrated thresholds
 function RetestBanner({ profile }: { profile: Profile }) {
-  const topFit = profile.type_scores?.[profile.top_types?.[0]]?.fit_abs || 0;
+  const topFit = profile.score_fit_calibrated ?? (profile.type_scores?.[profile.top_types?.[0]]?.fit_abs || 0);
   const topGap = profile.top_gap || 0;
   const confidence = profile.confidence;
   const fitBand = profile.fit_band;
   
-  // Show banner for low fit band or close calls
-  const shouldShowBanner = fitBand === 'Low' || topGap < 3 || topFit < 45;
+  // Show banner for low fit band or close calls (v1.1 criteria)
+  const shouldShowBanner = fitBand === 'Low' || topGap < 3;
   
   if (!shouldShowBanner) return null;
   
@@ -486,7 +491,20 @@ function Top3({ p }:{ p:Profile }){
                 <div className="text-xs text-muted-foreground">Share {t.share_pct}%</div>
               </div>
               <div className="text-sm text-muted-foreground">{title}</div>
-              <div className="mt-2 text-sm"><b>Fit</b> {t.fit_abs}</div>
+              <div className="mt-2 text-sm">
+                <span className="font-semibold">
+                  Fit {/* Use calibrated fit if available, with tooltip */}
+                  <span 
+                    className={`cursor-help ${p.score_fit_calibrated ? 'text-foreground' : 'text-orange-600'}`} 
+                    title={p.score_fit_calibrated ? 
+                      "Calibrated PRISM Fit. ~35=weak, ~55=solid, ~75=strong" : 
+                      "Using raw/legacy fit - needs v1.1 update"
+                    }
+                  >
+                    {p.score_fit_calibrated ?? t.fit_abs}
+                  </span>
+                </span>
+              </div>
               {isMain && (
                 <div className="mt-2 text-xs">
                   <div className="mb-1 flex items-center gap-1">
@@ -517,7 +535,7 @@ function Top3({ p }:{ p:Profile }){
         profile={p}
         data={p.top_types.map(code => ({
           code,
-          fit: p.type_scores[code].fit_abs,
+          fit: p.score_fit_calibrated ?? (p.type_scores[code].fit_abs), // Use calibrated fit if available
           share: p.type_scores[code].share_pct
         }))}
       />
