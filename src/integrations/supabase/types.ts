@@ -286,6 +286,7 @@ export type Database = {
           parent_session_id: string | null
           person_key: string | null
           prev_session_id: string | null
+          recomputed_at: string | null
           results_version: string | null
           run_index: number | null
           score_fit_calibrated: number | null
@@ -293,6 +294,7 @@ export type Database = {
           session_id: string
           session_kind: string | null
           strengths: Json | null
+          submitted_at: string | null
           top_3_fits: Json | null
           top_gap: number | null
           top_types: Json | null
@@ -333,6 +335,7 @@ export type Database = {
           parent_session_id?: string | null
           person_key?: string | null
           prev_session_id?: string | null
+          recomputed_at?: string | null
           results_version?: string | null
           run_index?: number | null
           score_fit_calibrated?: number | null
@@ -340,6 +343,7 @@ export type Database = {
           session_id: string
           session_kind?: string | null
           strengths?: Json | null
+          submitted_at?: string | null
           top_3_fits?: Json | null
           top_gap?: number | null
           top_types?: Json | null
@@ -380,6 +384,7 @@ export type Database = {
           parent_session_id?: string | null
           person_key?: string | null
           prev_session_id?: string | null
+          recomputed_at?: string | null
           results_version?: string | null
           run_index?: number | null
           score_fit_calibrated?: number | null
@@ -387,6 +392,7 @@ export type Database = {
           session_id?: string
           session_kind?: string | null
           strengths?: Json | null
+          submitted_at?: string | null
           top_3_fits?: Json | null
           top_gap?: number | null
           top_types?: Json | null
@@ -1374,6 +1380,7 @@ export type Database = {
           parent_session_id: string | null
           person_key: string | null
           prev_session_id: string | null
+          recomputed_at: string | null
           results_version: string | null
           run_index: number | null
           score_fit_calibrated: number | null
@@ -1381,6 +1388,7 @@ export type Database = {
           session_id: string
           session_kind: string | null
           strengths: Json | null
+          submitted_at: string | null
           top_3_fits: Json | null
           top_gap: number | null
           top_types: Json | null

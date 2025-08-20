@@ -719,7 +719,8 @@ serve(async (req) => {
     const typeCode = top3[0];
     const { base, creative } = TYPE_MAP[typeCode];
 
-    // Enhanced profile data with v1.1 fields
+    // Enhanced profile data with v1.1 fields (timestamps & recompute handling)
+    const now = new Date().toISOString();
     const profileData = {
       session_id: session_id,
       user_id: user_id || currentSession?.user_id || null,
@@ -758,19 +759,35 @@ serve(async (req) => {
       top_types: top3,
       dims_highlights: dims_highlights,
       version: "v1.1",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      submitted_at: now,
+      created_at: now,
+      updated_at: now
     };
 
+    // Check if profile exists to determine if this is a recompute
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('session_id, submitted_at')
+      .eq('session_id', session_id)
+      .maybeSingle();
+
     // Insert or update profile using ON CONFLICT for proper upsert
+    const upsertData = {
+      ...profileData,
+      session_id: session_id,
+      version: "v1.1"
+    };
+
+    // If existing profile, preserve original submitted_at and add recomputed_at
+    if (existingProfile) {
+      upsertData.submitted_at = existingProfile.submitted_at; // preserve original
+      upsertData.recomputed_at = now; // mark recomputation time
+      upsertData.updated_at = now;
+    }
+
     const { error: upsertError } = await supabase
       .from('profiles')
-      .upsert({
-        ...profileData,
-        session_id: session_id,
-        version: "v1.1",
-        updated_at: new Date().toISOString()
-      }, {
+      .upsert(upsertData, {
         onConflict: 'session_id',
         ignoreDuplicates: false
       });
