@@ -517,16 +517,89 @@ serve(async (req) => {
       rawScores[code] = typeScores[code as TypeCode];
     }
     
-    // Raw type scores usually fall ~1..6.5; clamp and map linearly.
-    function mapFitAbs(s: number): number {
+    // Raw type scores usually fall ~1..6.5; clamp and map linearly for raw fit
+    function mapFitRaw(s: number): number {
       const sClamped = Math.max(0, Math.min(6.5, s));
       const v = (sClamped / 6.5) * 100;
       return Math.round(v * 10) / 10;
     }
 
-    const fitAbs: Record<string, number> = {};
+    // Calculate raw fit scores (unbounded by cohort)
+    const fitRaw: Record<string, number> = {};
     for (const [code, s] of Object.entries(rawScores)) {
-      fitAbs[code] = mapFitAbs(s);
+      fitRaw[code] = mapFitRaw(s);
+    }
+
+    // NEW: Fit Calibration - percentile normalize by cohort and calibrate to typical range
+    const { data: cohortData } = await supabase
+      .from('profiles')
+      .select('type_scores, top_types')
+      .gte('created_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()) // Last 90 days
+      .not('type_scores', 'is', null)
+      .not('top_types', 'is', null);
+
+    // Extract fit scores from cohort for percentile calculation
+    const cohortFitScores: number[] = [];
+    if (cohortData && cohortData.length > 0) {
+      for (const profile of cohortData) {
+        try {
+          const topType = profile.top_types?.[0];
+          if (topType && profile.type_scores?.[topType]?.fit_abs) {
+            // Use raw score equivalent for cohort comparison
+            const cohortRawFit = profile.type_scores[topType].fit_abs;
+            cohortFitScores.push(cohortRawFit);
+          }
+        } catch (e) {
+          // Skip invalid entries
+        }
+      }
+    }
+
+    // Calibrate fit scores
+    const fitAbs: Record<string, number> = {};
+    const topRawFit = fitRaw[Object.keys(fitRaw).sort((a, b) => fitRaw[b] - fitRaw[a])[0]] || 50;
+
+    if (cohortFitScores.length >= 50) {
+      // Percentile-based calibration with sufficient data
+      cohortFitScores.sort((a, b) => a - b);
+      
+      // Find percentile of this score in cohort
+      let percentile = 0;
+      for (let i = 0; i < cohortFitScores.length; i++) {
+        if (cohortFitScores[i] >= topRawFit) {
+          percentile = i / cohortFitScores.length;
+          break;
+        }
+      }
+      
+      // Map percentile to target range (35-75)
+      const targetMin = 35, targetMax = 75;
+      const calibratedFit = targetMin + percentile * (targetMax - targetMin);
+      
+      // Apply to all types proportionally
+      const calibrationFactor = calibratedFit / topRawFit;
+      for (const [code, rawFit] of Object.entries(fitRaw)) {
+        let calibrated = rawFit * calibrationFactor;
+        
+        // Cap extremes unless statistically extreme (z > 2.0)
+        const zScore = Math.abs((rawFit - 50) / 15); // Approximate z-score
+        if (zScore <= 2.0) {
+          calibrated = Math.max(20, Math.min(85, calibrated));
+        }
+        
+        fitAbs[code] = Math.round(calibrated * 10) / 10;
+      }
+      
+      console.log(`evt:fit_calibrated,session_id:${session_id},cohort_size:${cohortFitScores.length},percentile:${percentile.toFixed(3)},raw_top:${topRawFit},calibrated_top:${fitAbs[Object.keys(fitRaw).sort((a, b) => fitRaw[b] - fitRaw[a])[0]]}`);
+    } else {
+      // Fallback to simpler calibration with insufficient cohort data
+      console.log(`evt:insufficient_cohort,session_id:${session_id},cohort_size:${cohortFitScores.length},using_fallback`);
+      for (const [code, rawFit] of Object.entries(fitRaw)) {
+        // Simple scaling to bring 99% scores down to realistic range
+        let calibrated = rawFit * 0.65 + 20; // Scale down and offset
+        calibrated = Math.max(20, Math.min(85, calibrated));
+        fitAbs[code] = Math.round(calibrated * 10) / 10;  
+      }
     }
     const temp = 1.0;
     const exps = Object.fromEntries(Object.entries(rawScores).map(([k,v])=>[k, Math.exp(v/temp)]));
@@ -558,12 +631,19 @@ serve(async (req) => {
     const type_scores: Record<string,{fit_abs:number; share_pct:number}> = {};
     for (const code of Object.keys(TYPE_MAP)) type_scores[code] = { fit_abs: fitAbs[code], share_pct: sharePct[code] };
 
-    // NEW: Calculate top_gap, close_call, fit_band
+    // NEW: Calculate top_gap, close_call, fit_band with enhanced logic
     const topFit = fitAbs[top3[0]] || 0;
     const secondFit = fitAbs[top3[1]] || 0;
-    const topGap = topFit - secondFit;
-    const closeCall = topGap < 5;
-    const fitBand = topFit >= 60 ? "High" : topFit >= 40 ? "Moderate" : "Low";
+    const topGap = Math.round((topFit - secondFit) * 10) / 10;
+    const closeCall = topGap < 3;
+    
+    // Enhanced fit band logic from config
+    let fitBand = "Low";
+    if (topFit >= 60 && topGap >= 5) {
+      fitBand = "High";
+    } else if ((topFit >= 45 && topFit < 60) || (topGap >= 2 && topGap < 5)) {
+      fitBand = "Moderate"; 
+    }
 
     // NEW: Top-3 fit explainer data
     const top3Fits = top3.map(code => ({
@@ -639,14 +719,26 @@ serve(async (req) => {
       overlay: overlay,
       confidence: confidence,
       validity_status: validityStatus,
-      top_gap: topGap,
-      close_call: closeCall,
+      
+      // NEW v1.1 fields
+      results_version: "v1.1",
+      score_fit_raw: fitRaw[typeCode] || 0,
+      score_fit_calibrated: fitAbs[typeCode] || 0,
       fit_band: fitBand,
+      top_gap: topGap,
+      invalid_combo_flag: invalidComboAttempts > 0,
+      
+      close_call: closeCall,
       fc_answered_ct: fcAnsweredCount,
       top_3_fits: top3Fits,
       fit_explainer: {
         top_3_comparison: top3Fits,
-        interpretation: { fit_band: fitBand, close_call: closeCall, top_gap: topGap }
+        interpretation: { 
+          fit_band: fitBand, 
+          close_call: closeCall, 
+          top_gap: topGap,
+          calibration_note: "Fit is calibrated to typical PRISM ranges; 35≈weak, 55≈solid, 75≈strong"
+        }
       },
       strengths: strengths,
       dimensions: dimensions,

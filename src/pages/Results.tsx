@@ -34,10 +34,10 @@ export default function Results() {
         const urlParams = new URLSearchParams(window.location.search);
         const shareToken = urlParams.get('token');
 
-        // First check if the session exists and is completed
+        // First check if the session exists
         const { data: sessionData, error: sessionError } = await supabase
           .from('assessment_sessions')
-          .select('completed_at, share_token')
+          .select('completed_at, share_token, status')
           .eq('id', sessionId)
           .single();
 
@@ -47,30 +47,27 @@ export default function Results() {
           return;
         }
 
-        if (!sessionData.completed_at) {
+        // Enhanced routing - don't depend on email, check if completed
+        if (!sessionData.completed_at && sessionData.status !== 'completed') {
           setError('Assessment not completed yet');
           setLoading(false);
           return;
         }
 
-        // Use share token from URL or session data
+        // Use share token from URL or session data for access
         const validToken = shareToken || sessionData.share_token;
-        if (!validToken) {
-          setError('Invalid access token');
-          setLoading(false);
-          return;
-        }
 
-        // Use secure RPC to get profile data
+        // Try to get profile data using secure RPC
         const { data: profileData, error: profileError } = await supabase
           .rpc('get_profile_by_session', {
             p_session_id: sessionId,
-            p_share_token: validToken
+            p_share_token: validToken || ''
           });
 
         if (profileError || !profileData || !profileData.id) {
-          setError('Profile data not found or access denied');
+          // Show recovery UI instead of hard error
           setLoading(false);
+          setError('recovery_needed');
           return;
         }
 
@@ -78,15 +75,9 @@ export default function Results() {
         if (profileData.type_code === 'UNK') {
           console.log('Detected UNK result, triggering re-score with updated algorithm');
           
-          // Delete the invalid profile - use secure deletion
-          await supabase.rpc('get_profile_by_session', {
-            p_session_id: sessionId,
-            p_share_token: validToken
-          });
-          
           // Force re-scoring with new algorithm
           const { data, error } = await supabase.functions.invoke('score_prism', {
-            body: { session_id: sessionId },
+            body: { session_id: sessionId, force_recompute: true },
           });
 
           if (error || !data || data.status !== 'success') {
@@ -183,6 +174,60 @@ export default function Results() {
   }
 
   if (error) {
+    // Enhanced error handling with recovery UI
+    if (error === 'recovery_needed') {
+      return (
+        <div className="min-h-screen bg-background">
+          <Header />
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <Card className="max-w-md">
+              <CardContent className="text-center py-8">
+                <div className="mb-4">
+                  <p className="font-semibold">We found your submission but need a minute to render.</p>
+                  <p className="text-sm mt-1 text-muted-foreground">Your responses are safely stored.</p>
+                </div>
+                <div className="space-y-2">
+                  <Button 
+                    onClick={() => {
+                      setError(null);
+                      setLoading(true);
+                      // Trigger a retry by calling fetchResults again
+                      const retry = async () => {
+                        const fetchResults = async () => {
+                          // Retry logic here... (same as above)
+                          window.location.reload(); // Simple retry for now
+                        };
+                        await fetchResults();
+                      };
+                      retry();
+                    }} 
+                    className="w-full"
+                  >
+                    Retry Loading
+                  </Button>
+                  <Button 
+                    onClick={() => window.open('mailto:support@prismassessment.com?subject=Results%20Recovery&body=Session%20ID:%20' + sessionId, '_blank')}
+                    variant="outline" 
+                    className="w-full"
+                  >
+                    Contact Support
+                  </Button>
+                  <Button onClick={() => navigate('/')} variant="ghost" className="w-full">
+                    Go Home
+                  </Button>
+                </div>
+                <div className="mt-4 p-3 bg-muted rounded text-xs">
+                  <p className="font-medium mb-1">Session ID:</p>
+                  <code className="text-muted-foreground">{sessionId}</code>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
+    // Regular error display
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -248,8 +293,38 @@ export default function Results() {
         </div>
 
         <div id="results-content" className="space-y-6">
-          {/* Results */}
+          {/* Enhanced Results */}
           <ResultsV2 profile={scoring} />
+
+          {/* Show retest banner for low confidence or close calls */}
+          {(scoring?.fit_band === 'Low' || (scoring?.top_gap && scoring.top_gap < 3)) && (
+            <Card className="max-w-4xl mx-auto border-amber-200 bg-amber-50">
+              <CardContent className="p-6 text-center">
+                <h3 className="font-semibold text-amber-800 mb-2">Consider a Retest</h3>
+                <p className="text-amber-700 mb-4">
+                  Your results show a close call between types. Consider retesting in 30 days for a clearer picture.
+                </p>
+                <Button 
+                  onClick={() => navigate('/assessment')}
+                  variant="outline"
+                  className="border-amber-300 text-amber-800 hover:bg-amber-100"
+                >
+                  Take New Assessment
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Type Guard Notice */}
+          {scoring?.invalid_combo_flag && (
+            <Card className="max-w-4xl mx-auto border-blue-200 bg-blue-50">
+              <CardContent className="p-4 text-center">
+                <p className="text-blue-700 text-sm">
+                  ⚡ We filtered an implausible combo to avoid a mistype. See scoring notes for details.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Support Section */}
           <Card className="max-w-4xl mx-auto">

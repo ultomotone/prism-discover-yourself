@@ -146,6 +146,29 @@ const Admin: React.FC = () => {
               <Database className="h-4 w-4" />
               Run v1.1 Backfill
             </Button>
+            <Button 
+              onClick={async () => {
+                const { data, error } = await supabase.functions.invoke('recompute_profiles_v11');
+                if (error) {
+                  toast({
+                    title: "Recompute Failed",
+                    description: error.message,
+                    variant: "destructive"
+                  });
+                } else {
+                  toast({
+                    title: "Recompute Complete", 
+                    description: `Updated ${data.updated}/${data.processed} profiles with v1.1 calibration`
+                  });
+                  await refreshData();
+                }
+              }}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Recompute v1.1
+            </Button>
           </div>
 
           {/* Filters */}

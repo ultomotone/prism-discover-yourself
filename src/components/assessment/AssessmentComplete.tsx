@@ -50,20 +50,50 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
   useEffect(() => {
     const run = async () => {
       if (!sessionId) return;
-      setLoadingScore(true);
-      setScoreError(null);
-      const { data, error } = await supabase.functions.invoke('score_prism', {
-        body: { 
-          session_id: sessionId
-        },
-      });
-      if (error || !data || data.status !== 'success') {
-        setScoreError(error?.message || data?.error || 'Scoring failed');
-      } else {
-        setScoring(data.profile);
-      }
-      setLoadingScore(false);
+      
+      let isSubmitting = false;
+      
+      const submitAssessment = async () => {
+        if (isSubmitting) return; // Prevent double-clicks
+        isSubmitting = true;
+        
+        setLoadingScore(true);
+        setScoreError(null);
+        
+        try {
+          // Use new finalizeAssessment endpoint for idempotent result delivery
+          const { data, error } = await supabase.functions.invoke('finalizeAssessment', {
+            body: { session_id: sessionId }
+          });
+          
+          if (error) {
+            throw new Error(error.message || 'Failed to finalize assessment');
+          }
+
+          if (data?.error) {
+            // Backend returned error but responses are saved
+            setScoreError(data.error);
+            // Still show results_url if available for retry
+            if (data.results_url) {
+              // Could set a results URL for recovery
+            }
+          } else if (data?.status === 'success' && data?.profile) {
+            setScoring(data.profile);
+          } else {
+            throw new Error('Invalid response from finalization service');
+          }
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : 'Assessment finalization failed';
+          setScoreError(errorMessage);
+        } finally {
+          setLoadingScore(false);
+          isSubmitting = false;
+        }
+      };
+      
+      await submitAssessment();
     };
+    
     run();
   }, [sessionId]);
 
@@ -135,11 +165,41 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="max-w-md">
           <CardContent className="text-center py-8">
-            <div className="text-destructive mb-4">
-              <p className="font-semibold">Error Processing Results</p>
-              <p className="text-sm mt-1">{scoreError}</p>
+            <div className="text-muted-foreground mb-4">
+              <CheckCircle className="h-8 w-8 text-primary mx-auto mb-2" />
+              <p className="font-semibold">We saved your responses.</p>
+              <p className="text-sm mt-1 text-destructive">{scoreError}</p>
             </div>
-            <Button onClick={onReturnHome}>Return Home</Button>
+            <div className="space-y-2">
+              <Button 
+                onClick={() => window.location.reload()} 
+                className="w-full"
+              >
+                Retry Results
+              </Button>
+              <Button 
+                onClick={onReturnHome} 
+                variant="outline" 
+                className="w-full"
+              >
+                Return Home
+              </Button>
+              <div className="mt-4 p-3 bg-muted rounded text-xs">
+                <p className="font-medium mb-1">Session ID:</p>
+                <code className="text-muted-foreground">{sessionId}</code>
+                <Button
+                  onClick={() => {
+                    navigator.clipboard.writeText(sessionId);
+                    toast({ title: "Session ID copied to clipboard" });
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="ml-2"
+                >
+                  <Copy className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -279,13 +279,17 @@ export type Database = {
           gap_minutes: number | null
           glossary_version: number | null
           id: string
+          invalid_combo_flag: boolean | null
           ip_hash: string | null
           neuroticism: Json | null
           overlay: string | null
           parent_session_id: string | null
           person_key: string | null
           prev_session_id: string | null
+          results_version: string | null
           run_index: number | null
+          score_fit_calibrated: number | null
+          score_fit_raw: number | null
           session_id: string
           session_kind: string | null
           strengths: Json | null
@@ -322,13 +326,17 @@ export type Database = {
           gap_minutes?: number | null
           glossary_version?: number | null
           id?: string
+          invalid_combo_flag?: boolean | null
           ip_hash?: string | null
           neuroticism?: Json | null
           overlay?: string | null
           parent_session_id?: string | null
           person_key?: string | null
           prev_session_id?: string | null
+          results_version?: string | null
           run_index?: number | null
+          score_fit_calibrated?: number | null
+          score_fit_raw?: number | null
           session_id: string
           session_kind?: string | null
           strengths?: Json | null
@@ -365,13 +373,17 @@ export type Database = {
           gap_minutes?: number | null
           glossary_version?: number | null
           id?: string
+          invalid_combo_flag?: boolean | null
           ip_hash?: string | null
           neuroticism?: Json | null
           overlay?: string | null
           parent_session_id?: string | null
           person_key?: string | null
           prev_session_id?: string | null
+          results_version?: string | null
           run_index?: number | null
+          score_fit_calibrated?: number | null
+          score_fit_raw?: number | null
           session_id?: string
           session_kind?: string | null
           strengths?: Json | null
@@ -1232,13 +1244,17 @@ export type Database = {
           gap_minutes: number | null
           glossary_version: number | null
           id: string
+          invalid_combo_flag: boolean | null
           ip_hash: string | null
           neuroticism: Json | null
           overlay: string | null
           parent_session_id: string | null
           person_key: string | null
           prev_session_id: string | null
+          results_version: string | null
           run_index: number | null
+          score_fit_calibrated: number | null
+          score_fit_raw: number | null
           session_id: string
           session_kind: string | null
           strengths: Json | null
