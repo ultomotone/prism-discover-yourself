@@ -14,7 +14,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import Header from "@/components/Header";
 import { CountryDistributionChart } from "@/components/CountryDistributionChart";
 import DashboardPreview from "@/components/DashboardPreview";
-import { KPIOverviewSection } from "@/components/admin/KPIOverviewSection";
 import { LatestAssessmentsTable } from "@/components/admin/LatestAssessmentsTable";
 
 interface DashboardData {
@@ -88,42 +87,6 @@ const revalidateAdminKPIs = () => {
   console.log('Cache revalidation triggered for admin KPIs');
 };
 
-// Fit Histogram Component
-const FitHistogram = () => {
-  const [histogramData, setHistogramData] = useState<any[]>([]);
-  
-  useEffect(() => {
-    const fetchHistogram = async () => {
-      const { data } = await supabase.from('v_fit_histogram').select('*');
-      if (data) {
-        const formattedData = data.map(d => ({
-          bin: `${Math.floor(d.bin_min)}-${Math.ceil(d.bin_max)}`,
-          count: d.count,
-          range: `${d.bin_min}-${d.bin_max}`
-        }));
-        setHistogramData(formattedData);
-      }
-    };
-    fetchHistogram();
-  }, []);
-
-  return (
-    <div className="h-48">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={histogramData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="bin" fontSize={10} />
-          <YAxis />
-          <ChartTooltip 
-            formatter={(value, name) => [value, 'Count']}
-            labelFormatter={(label) => `Fit Score: ${label}%`}
-          />
-          <Bar dataKey="count" fill="hsl(var(--primary))" />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-};
 
 const Dashboard = () => {
   const { toast } = useToast();
@@ -340,48 +303,6 @@ const Dashboard = () => {
     });
   }, [data, searchTerm, selectedType, selectedOverlay]);
 
-  const handleBackfillV11 = async () => {
-    setLoading(true);
-    try {
-      toast({
-        title: "Starting v1.1 Backfill",
-        description: "This may take a few minutes for large datasets...",
-      });
-
-      // Call the v1.1 recompute function
-      const { data, error } = await supabase.functions.invoke('recompute_profiles_v11', { 
-        body: {} 
-      });
-
-      if (error) {
-        console.error('Backfill v1.1 error:', error);
-        toast({
-          title: "Backfill Failed",
-          description: error.message || "Failed to start v1.1 backfill",
-          variant: "destructive",
-        });
-      } else {
-        console.log('Backfill v1.1 completed:', data);
-        toast({
-          title: "Backfill Complete",
-          description: `Updated ${data?.updated || 0} profiles to v1.1`,
-        });
-
-        // Force refresh with cache-busting
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Brief delay
-        await fetchDashboardData();
-      }
-    } catch (e) {
-      console.error('Backfill v1.1 exception:', e);
-      toast({
-        title: "Backfill Error",
-        description: "An unexpected error occurred during backfill",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const exportCSV = () => {
     if (!filteredAssessments.length) return;
@@ -503,30 +424,19 @@ const Dashboard = () => {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              onClick={fetchDashboardData} 
-              variant="outline"
-              disabled={loading}
-              className="flex items-center gap-2"
-            >
-              <TrendingUp className="h-4 w-4" />
-              {loading ? 'Refreshing...' : 'Refresh Data'}
-            </Button>
-            <Button 
-              onClick={handleBackfillV11} 
-              variant="outline"
-              disabled={loading}
-              className="flex items-center gap-2"
-            >
-              <Info className="h-4 w-4" />
-              {loading ? 'Processing...' : 'Recompute v1.1'}
-            </Button>
-          </div>
+          <Button 
+            onClick={fetchDashboardData} 
+            variant="outline"
+            disabled={loading}
+            className="flex items-center gap-2"
+          >
+            <TrendingUp className="h-4 w-4" />
+            {loading ? 'Refreshing...' : 'Refresh Data'}
+          </Button>
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="prism-shadow-card">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -573,33 +483,10 @@ const Dashboard = () => {
               </div>
             </CardContent>
           </Card>
-
-          <Card className="prism-shadow-card">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Average Fit Score</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {data?.latestAssessments?.length ? 
-                  Math.round(data.latestAssessments
-                    .filter(a => a.fit_score && a.fit_score > 0)
-                    .reduce((sum, a) => sum + (a.fit_score || 0), 0) / 
-                    data.latestAssessments.filter(a => a.fit_score && a.fit_score > 0).length
-                  ) || 0 : 0}%
-              </div>
-              <p className="text-xs text-muted-foreground">Recent assessments</p>
-            </CardContent>
-          </Card>
         </div>
 
-        {/* V1.1 KPI Overview Cards with NaN Guards */}
-        <KPIOverviewSection />
-
         {/* Type Distribution Chart */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 gap-6 mb-8">
           <Card className="prism-shadow-card">
             <CardHeader>
               <CardTitle>Type Distribution</CardTitle>
@@ -616,22 +503,6 @@ const Dashboard = () => {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </CardContent>
-          </Card>
-          
-          {/* Fit Score Distribution */}
-          <Card className="prism-shadow-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Fit Score Distribution
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Distribution of calibrated fit scores (v1.1)
-              </p>
-            </CardHeader>
-            <CardContent>
-              <FitHistogram />
             </CardContent>
           </Card>
         </div>
