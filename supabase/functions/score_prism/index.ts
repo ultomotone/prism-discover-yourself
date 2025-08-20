@@ -580,15 +580,6 @@ serve(async (req) => {
           top_gap: topGap
         }
       },
-      // NEW v2 diagnostics
-      diagnostics: {
-        invalid_combo_attempts: invalidComboAttempts,
-        top_gap: topGap,
-        considered: Object.keys(rawScores).map(code => ({
-          type: code,
-          fit: fitAbs[code] || 0
-        })).sort((a, b) => b.fit - a.fit).slice(0, 5)
-      },
       strengths: strengths,
       dimensions: dimensions,
       blocks: blocks,
