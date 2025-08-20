@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { backfillMissingProfiles } from "@/utils/backfillProfiles";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MilestoneProgress } from "@/components/ui/milestone-progress";
@@ -21,6 +22,9 @@ const DashboardPreview = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Trigger backfill on component mount
+    backfillMissingProfiles();
+
     const fetchPreviewStats = async () => {
       try {
         // Use secure aggregated statistics instead of direct profile access
@@ -98,13 +102,22 @@ const DashboardPreview = () => {
 
     fetchPreviewStats();
 
-    // Set up real-time subscription to dashboard_statistics instead of profiles
+    // Set up real-time subscription to both dashboard_statistics and profiles
     const channel = supabase
       .channel('preview-updates')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'dashboard_statistics' },
         () => {
           fetchPreviewStats();
+        }
+      )
+      .on('postgres_changes', 
+        { event: 'INSERT', schema: 'public', table: 'profiles' },
+        () => {
+          // When new profile is created, update dashboard stats
+          supabase.rpc('update_dashboard_statistics').then(() => {
+            fetchPreviewStats();
+          });
         }
       )
       .subscribe();
