@@ -339,6 +339,22 @@ const Dashboard = () => {
       </section>
 
       <div className="prism-container py-8">
+        {/* Fit Score Fix Banner */}
+        <div className="mb-6">
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+              <div>
+                <h3 className="font-medium text-green-900">Fit Score Calculations Updated</h3>
+                <p className="text-sm text-green-700">
+                  All assessment fit scores have been recalculated with improved accuracy. 
+                  Scores now properly reflect the full 0-100% range instead of being capped.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Date Range Filter */}
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-4">
@@ -418,18 +434,20 @@ const Dashboard = () => {
           <Card className="prism-shadow-card">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground">N+ vs N–</CardTitle>
-                <Globe className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-muted-foreground">Average Fit Score</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-2">
-                {data?.overlayStats.map((stat) => (
-                  <Badge key={stat.overlay} variant="secondary" className="text-xs">
-                    {stat.overlay}: {stat.count}
-                  </Badge>
-                ))}
+              <div className="text-2xl font-bold">
+                {data?.latestAssessments?.length ? 
+                  Math.round(data.latestAssessments
+                    .filter(a => a.fit_score && a.fit_score > 0)
+                    .reduce((sum, a) => sum + (a.fit_score || 0), 0) / 
+                    data.latestAssessments.filter(a => a.fit_score && a.fit_score > 0).length
+                  ) || 0 : 0}%
               </div>
+              <p className="text-xs text-muted-foreground">Recent assessments</p>
             </CardContent>
           </Card>
         </div>
@@ -559,9 +577,28 @@ const Dashboard = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>{assessment.country_display || assessment.country || 'Unknown'}</TableCell>
-                     <TableCell>
-                       {assessment.fit_score ? Math.round(assessment.fit_score) : 'N/A'}
-                     </TableCell>
+                    <TableCell>
+                      {assessment.fit_score ? (
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            variant={
+                              assessment.fit_score >= 70 ? "default" :
+                              assessment.fit_score >= 40 ? "secondary" :
+                              "outline"
+                            }
+                            className={
+                              assessment.fit_score >= 70 ? "bg-green-100 text-green-800 hover:bg-green-200" :
+                              assessment.fit_score >= 40 ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200" :
+                              "bg-red-100 text-red-800 hover:bg-red-200"
+                            }
+                          >
+                            {Math.round(assessment.fit_score)}%
+                          </Badge>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">Processing...</span>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -624,7 +661,22 @@ const Dashboard = () => {
                   </div>
                 )}
 
-                <div>
+                 {selectedAssessment.fit_score && (
+                   <div>
+                     <p className="text-sm text-muted-foreground">Fit Score</p>
+                     <Badge 
+                       className={`mt-1 ${
+                         selectedAssessment.fit_score >= 70 ? "bg-green-100 text-green-800" :
+                         selectedAssessment.fit_score >= 40 ? "bg-yellow-100 text-yellow-800" :
+                         "bg-red-100 text-red-800"
+                       }`}
+                     >
+                       {Math.round(selectedAssessment.fit_score)}%
+                     </Badge>
+                   </div>
+                 )}
+
+                 <div>
                   <p className="text-sm text-muted-foreground">Date</p>
                   <p className="text-sm">{new Date(selectedAssessment.created_at).toLocaleString()}</p>
                 </div>
