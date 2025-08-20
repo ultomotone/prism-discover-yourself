@@ -719,6 +719,45 @@ export type Database = {
         }
         Relationships: []
       }
+      v_kpi_metrics_v11: {
+        Row: {
+          confidence: string | null
+          country: string | null
+          created_at: string | null
+          day: string | null
+          fit: number | null
+          fit_band: string | null
+          results_version: string | null
+          session_id: string | null
+          type_code: string | null
+          type_share: number | null
+        }
+        Insert: {
+          confidence?: string | null
+          country?: never
+          created_at?: string | null
+          day?: never
+          fit?: never
+          fit_band?: string | null
+          results_version?: never
+          session_id?: string | null
+          type_code?: string | null
+          type_share?: never
+        }
+        Update: {
+          confidence?: string | null
+          country?: never
+          created_at?: string | null
+          day?: never
+          fit?: never
+          fit_band?: string | null
+          results_version?: never
+          session_id?: string | null
+          type_code?: string | null
+          type_share?: never
+        }
+        Relationships: []
+      }
       v_kpi_overlay: {
         Row: {
           n: number | null
@@ -1366,6 +1405,13 @@ export type Database = {
           top_gap: number
           type_display: string
           version: string
+        }[]
+      }
+      kpi_country_activity_v11: {
+        Args: { end_ts?: string; start_ts?: string }
+        Returns: {
+          country: string
+          sessions: number
         }[]
       }
       update_dashboard_statistics: {

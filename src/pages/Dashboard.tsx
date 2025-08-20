@@ -12,9 +12,10 @@ import { Search, Download, ExternalLink, Calendar, Users, TrendingUp, Globe, Inf
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import Header from "@/components/Header";
-import CountryDistributionChart from "@/components/CountryDistributionChart";
-import { rescoreSpecificSessions } from "@/utils/rescoreUNKSessions";
+import { CountryDistributionChart } from "@/components/CountryDistributionChart";
+import DashboardPreview from "@/components/DashboardPreview";
 import { KPIOverviewSection } from "@/components/admin/KPIOverviewSection";
+import { LatestAssessmentsTable } from "@/components/admin/LatestAssessmentsTable";
 
 interface DashboardData {
   totalAssessments: number;
@@ -642,177 +643,15 @@ const Dashboard = () => {
               </p>
             </CardHeader>
             <CardContent>
-              <CountryDistributionChart data={data?.countryDistribution || []} />
+              <CountryDistributionChart />
             </CardContent>
           </Card>
         </div>
 
-        {/* Latest Assessments Table */}
-        <Card className="prism-shadow-card">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Latest Assessments</CardTitle>
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8 w-48"
-                  />
-                </div>
-                <Select value={selectedType} onValueChange={setSelectedType}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    {data?.typeDistribution.map((type) => (
-                      <SelectItem key={type.type} value={type.type}>{type.type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={selectedOverlay} onValueChange={setSelectedOverlay}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Overlay" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="+">N+</SelectItem>
-                    <SelectItem value="–">N–</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button onClick={exportCSV} variant="outline" size="sm">
-                  <Download className="h-4 w-4 mr-2" />
-                  CSV
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>When</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Country</TableHead>
-                  <TableHead>Fit</TableHead>
-                  <TableHead>Share</TableHead>
-                  <TableHead>Band</TableHead>
-                  <TableHead>Version</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAssessments.slice(page * 10, (page + 1) * 10).map((assessment, index) => (
-                  <TableRow 
-                    key={`${assessment.created_at}-${index}`} 
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => setSelectedAssessment(assessment)}
-                  >
-                    <TableCell>
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(assessment.created_at).toLocaleString()}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">{assessment.type_code}</Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>{assessment.country_display || assessment.country || 'Unknown'}</TableCell>
-                     <TableCell>
-                       {typeof assessment.fit_score === 'number' && !isNaN(assessment.fit_score) ? (
-                         <TooltipProvider>
-                           <Tooltip>
-                             <TooltipTrigger asChild>
-                               <span className={`text-sm font-medium cursor-help ${
-                                 assessment.results_version === 'v1.1' ? 'text-foreground' : 'text-orange-600'
-                               }`}>
-                                 {Math.round(assessment.fit_score)}%
-                               </span>
-                             </TooltipTrigger>
-                             <TooltipContent>
-                               <p>Calibrated PRISM Fit • ~35 weak • ~55 solid • ~75 strong</p>
-                               <p className="text-xs mt-1">Raw value: {assessment.fit_score.toFixed(1)}</p>
-                               {assessment.results_version !== 'v1.1' && (
-                                 <p className="text-orange-600 text-xs mt-1">Legacy fit - run "Recompute v1.1" to update</p>
-                               )}
-                             </TooltipContent>
-                           </Tooltip>
-                         </TooltipProvider>
-                       ) : (
-                         <span className="text-muted-foreground text-sm">—</span>
-                       )}
-                     </TableCell>
-                     <TableCell>
-                       {typeof assessment.share_pct === 'number' && !isNaN(assessment.share_pct) ? (
-                         <span className="text-sm">{Math.round(assessment.share_pct)}%</span>
-                       ) : (
-                         <span className="text-muted-foreground text-sm">—</span>
-                       )}
-                     </TableCell>
-                    <TableCell>
-                      {assessment.fit_band ? (
-                        <Badge 
-                          variant="outline"
-                          className={
-                            assessment.fit_band === 'High' ? "border-green-500 text-green-700" :
-                            assessment.fit_band === 'Moderate' ? "border-yellow-500 text-yellow-700" :
-                            "border-red-500 text-red-700"
-                          }
-                        >
-                          {assessment.fit_band}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs ${
-                          assessment.results_version === 'v1.1' ? 'text-green-600' : 
-                          assessment.results_version ? 'text-orange-600' : 'text-gray-600'
-                        }`}>
-                          {assessment.results_version || assessment.version || 'legacy'}
-                        </span>
-                         {/* Show "needs backfill" only when is_legacy_fit is true */}
-                         {assessment.results_version === 'v1.1' && !assessment.score_fit_calibrated ? (
-                           <Badge variant="destructive" className="text-xs">
-                             needs backfill
-                           </Badge>
-                         ) : assessment.results_version !== 'v1.1' ? (
-                           <Badge variant="secondary" className="text-xs">
-                             legacy
-                           </Badge>
-                         ) : null}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            
-            {filteredAssessments.length > 10 && (
-              <div className="flex justify-center mt-4 gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setPage(Math.max(0, page - 1))}
-                  disabled={page === 0}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setPage(page + 1)}
-                  disabled={(page + 1) * 10 >= filteredAssessments.length}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Latest Assessments */}
+        <div className="mb-8">
+          <LatestAssessmentsTable />
+        </div>
       </div>
 
       {/* Assessment Detail Drawer */}

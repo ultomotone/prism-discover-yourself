@@ -30,14 +30,21 @@ interface DiagnosticsData {
 }
 
 const formatValue = (value: any, suffix: string = ""): string => {
-  if (value === null || value === undefined || !isFinite(value)) {
+  if (value === null || value === undefined || !isFinite(value) || isNaN(value)) {
     return "—";
+  }
+  // Clamp percentages to reasonable bounds
+  if (suffix === "%" && value > 100) {
+    return "100%";
+  }
+  if (suffix === "%" && value < 0) {
+    return "0%";
   }
   return `${Math.round(value)}${suffix}`;
 };
 
 const formatDecimal = (value: any, decimals: number = 1): string => {
-  if (value === null || value === undefined || !isFinite(value)) {
+  if (value === null || value === undefined || !isFinite(value) || isNaN(value)) {
     return "—";
   }
   return value.toFixed(decimals);

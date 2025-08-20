@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Treemap, ResponsiveContainer, Cell, Tooltip } from 'recharts';
+import { supabase } from "@/integrations/supabase/client";
 
 interface CountryData {
   country: string;
@@ -7,7 +8,7 @@ interface CountryData {
 }
 
 interface CountryDistributionChartProps {
-  data: CountryData[];
+  className?: string;
 }
 
 const COLORS = [
@@ -90,23 +91,77 @@ const CustomContent = ({ root, depth, x, y, width, height, index, payload }: any
   );
 };
 
-export default function CountryDistributionChart({ data }: CountryDistributionChartProps) {
-  const treemapData = data.map((item, index) => ({
+export const CountryDistributionChart = ({ className }: CountryDistributionChartProps) => {
+  const [countryData, setCountryData] = useState<CountryData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchCountryData = async () => {
+    try {
+      setLoading(true);
+      
+      // Use the new v1.1 country activity function
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const { data, error } = await supabase.rpc('kpi_country_activity_v11', {
+        start_ts: thirtyDaysAgo.toISOString(),
+        end_ts: new Date().toISOString()
+      });
+
+      if (error) {
+        console.error('Error fetching country data:', error);
+        setCountryData([]);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        console.log('Country distribution for activity map:', data);
+        // Transform data to match expected format
+        const formattedData = data.map((item: any) => ({
+          country: item.country,
+          count: item.sessions
+        }));
+        setCountryData(formattedData);
+      } else {
+        console.log('No country data available');
+        setCountryData([]);
+      }
+    } catch (error) {
+      console.error('Unexpected error in fetchCountryData:', error);
+      setCountryData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCountryData();
+  }, []);
+
+  const treemapData = countryData.map((item, index) => ({
     ...item,
     size: item.count,
     index,
   }));
 
-  if (!data.length) {
+  if (loading) {
     return (
-      <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+      <div className={`h-[400px] flex items-center justify-center ${className}`}>
+        <div className="animate-pulse text-muted-foreground">Loading country data...</div>
+      </div>
+    );
+  }
+
+  if (!countryData.length) {
+    return (
+      <div className={`h-[400px] flex items-center justify-center text-muted-foreground ${className}`}>
         No country data available
       </div>
     );
   }
 
   return (
-    <div className="h-[400px] w-full">
+    <div className={`h-[400px] w-full ${className}`}>
       <ResponsiveContainer width="100%" height="100%">
         <Treemap
           data={treemapData}
@@ -120,4 +175,6 @@ export default function CountryDistributionChart({ data }: CountryDistributionCh
       </ResponsiveContainer>
     </div>
   );
-}
+};
+
+export default CountryDistributionChart;

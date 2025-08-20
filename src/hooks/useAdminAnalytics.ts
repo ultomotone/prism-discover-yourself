@@ -193,17 +193,11 @@ export const useAdminAnalytics = () => {
 
   const fetchChartData = async () => {
     try {
-      // Get recent dashboard statistics for overlay and type distribution
-      const { data: dashboardStats } = await supabase
-        .from('dashboard_statistics')
-        .select('*')
-        .order('stat_date', { ascending: false })
-        .limit(1)
-        .single();
-
-      // Also get recent assessments for confidence distribution
-      const { data: recentAssessments } = await supabase
-        .rpc('get_recent_assessments_safe');
+      // Use the new v1.1 KPI metrics view for confidence and overlay distribution
+      const { data: kpiMetrics } = await supabase
+        .from('v_kpi_metrics_v11')
+        .select('confidence, type_code, country')
+        .gte('created_at', subDays(new Date(), 30).toISOString());
 
       let confidenceDistribution = [
         { confidence: 'High', count: 0 },
@@ -218,48 +212,42 @@ export const useAdminAnalytics = () => {
 
       let typeDistribution: Array<{ type: string; count: number }> = [];
 
-      if (dashboardStats) {
-        // Use dashboard statistics for overlay distribution
-        overlayDistribution = [
-          { overlay: '+', count: dashboardStats.overlay_positive || 0 },
-          { overlay: '–', count: dashboardStats.overlay_negative || 0 }
-        ];
-
-        // Use dashboard statistics for type distribution
-        if (dashboardStats.type_distribution) {
-          typeDistribution = Object.entries(dashboardStats.type_distribution as Record<string, number>)
-            .map(([type, count]) => ({ type, count }))
-            .sort((a, b) => b.count - a.count);
-        }
-      }
-
-      // Get real confidence distribution from profiles (with fallback)
-      let { data: profilesForConfidence } = await supabase
-        .from('profiles')
-        .select('confidence')
-        .gte('created_at', subDays(new Date(), 30).toISOString());
-
-      if (!profilesForConfidence || profilesForConfidence.length === 0) {
-        const { data: profilesExt } = await supabase
-          .from('v_profiles_ext')
-          .select('confidence')
-          .gte('created_at', subDays(new Date(), 30).toISOString());
-        profilesForConfidence = profilesExt as any;
-      }
-
-      if (profilesForConfidence && profilesForConfidence.length > 0) {
-        const highCount = profilesForConfidence.filter(p => p.confidence === 'high').length;
-        const modCount = profilesForConfidence.filter(p => p.confidence === 'moderate').length;
-        const lowCount = profilesForConfidence.filter(p => p.confidence === 'low').length;
+      if (kpiMetrics && kpiMetrics.length > 0) {
+        // Calculate confidence distribution
+        const highCount = kpiMetrics.filter(p => p.confidence === 'high').length;
+        const modCount = kpiMetrics.filter(p => p.confidence === 'moderate').length;
+        const lowCount = kpiMetrics.filter(p => p.confidence === 'low').length;
         
         confidenceDistribution = [
           { confidence: 'High', count: highCount },
           { confidence: 'Moderate', count: modCount },
           { confidence: 'Low', count: lowCount }
         ];
+
+        // Calculate overlay distribution from type codes
+        const positiveCount = kpiMetrics.filter(p => p.type_code && p.type_code.endsWith('+')).length;
+        const negativeCount = kpiMetrics.filter(p => p.type_code && p.type_code.endsWith('–')).length;
+        
+        overlayDistribution = [
+          { overlay: '+', count: positiveCount },
+          { overlay: '–', count: negativeCount }
+        ];
+
+        // Calculate type distribution
+        const typeCounts: Record<string, number> = {};
+        kpiMetrics.forEach(item => {
+          if (item.type_code) {
+            const typePrefix = item.type_code.substring(0, 3);
+            typeCounts[typePrefix] = (typeCounts[typePrefix] || 0) + 1;
+          }
+        });
+        
+        typeDistribution = Object.entries(typeCounts)
+          .map(([type, count]) => ({ type, count }))
+          .sort((a, b) => b.count - a.count);
       }
 
-      // Throughput trend (last 14 days)
+      // Throughput trend (last 14 days) - keep using existing view
       const { data: throughputTrendData } = await supabase
         .from('v_kpi_throughput')
         .select('d, completions')
