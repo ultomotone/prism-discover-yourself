@@ -232,8 +232,15 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
                 <Button 
                   variant="hero" 
                   size="lg" 
-                  className="text-xl px-12 py-4"
-                  onClick={onStart}
+                  className="text-xl px-12 py-4 touch-manipulation cursor-pointer"
+                  onClick={(e) => {
+                    console.log('Start Assessment button clicked', e);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onStart();
+                  }}
+                  onTouchStart={() => console.log('Touch start on button')}
+                  type="button"
                 >
                   Start Assessment
                 </Button>
