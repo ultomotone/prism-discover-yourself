@@ -46,15 +46,464 @@ serve(async (req) => {
     switch (true) {
       // GET /assessments - Latest assessments
       case path === '/assessments' && method === 'GET': {
+        const limit = parseInt(url.searchParams.get('limit') || '100');
+        const offset = parseInt(url.searchParams.get('offset') || '0');
+        
         const { data, error } = await supabase
           .from('v_latest_assessments_v11')
           .select('*')
           .order('finished_at', { ascending: false })
-          .limit(100);
+          .range(offset, offset + limit - 1);
 
         if (error) throw error;
         
         return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // PROFILES CRUD
+      // GET /profiles - All profiles with pagination
+      case path === '/profiles' && method === 'GET': {
+        const limit = parseInt(url.searchParams.get('limit') || '100');
+        const offset = parseInt(url.searchParams.get('offset') || '0');
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1);
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // POST /profiles - Create profile
+      case path === '/profiles' && method === 'POST': {
+        const body = await req.json();
+        const { data, error } = await supabase
+          .from('profiles')
+          .insert(body)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // PUT /profiles/:id - Update profile
+      case path.startsWith('/profiles/') && method === 'PUT': {
+        const id = path.replace('/profiles/', '');
+        const body = await req.json();
+        const { data, error } = await supabase
+          .from('profiles')
+          .update(body)
+          .eq('id', id)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // DELETE /profiles/:id - Delete profile
+      case path.startsWith('/profiles/') && method === 'DELETE': {
+        const id = path.replace('/profiles/', '');
+        const { data, error } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', id)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // ASSESSMENT SESSIONS CRUD
+      // GET /sessions - All sessions with pagination
+      case path === '/sessions' && method === 'GET': {
+        const limit = parseInt(url.searchParams.get('limit') || '100');
+        const offset = parseInt(url.searchParams.get('offset') || '0');
+        
+        const { data, error } = await supabase
+          .from('assessment_sessions')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1);
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // POST /sessions - Create session
+      case path === '/sessions' && method === 'POST': {
+        const body = await req.json();
+        const { data, error } = await supabase
+          .from('assessment_sessions')
+          .insert(body)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // PUT /sessions/:id - Update session
+      case path.startsWith('/sessions/') && method === 'PUT': {
+        const id = path.replace('/sessions/', '');
+        const body = await req.json();
+        const { data, error } = await supabase
+          .from('assessment_sessions')
+          .update(body)
+          .eq('id', id)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // DELETE /sessions/:id - Delete session
+      case path.startsWith('/sessions/') && method === 'DELETE': {
+        const id = path.replace('/sessions/', '');
+        const { data, error } = await supabase
+          .from('assessment_sessions')
+          .delete()
+          .eq('id', id)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // ASSESSMENT RESPONSES CRUD
+      // GET /responses - All responses with pagination
+      case path === '/responses' && method === 'GET': {
+        const limit = parseInt(url.searchParams.get('limit') || '100');
+        const offset = parseInt(url.searchParams.get('offset') || '0');
+        const sessionId = url.searchParams.get('session_id');
+        
+        let query = supabase
+          .from('assessment_responses')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (sessionId) {
+          query = query.eq('session_id', sessionId);
+        }
+
+        const { data, error } = await query.range(offset, offset + limit - 1);
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // POST /responses - Create response
+      case path === '/responses' && method === 'POST': {
+        const body = await req.json();
+        const { data, error } = await supabase
+          .from('assessment_responses')
+          .insert(body)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // PUT /responses/:id - Update response
+      case path.startsWith('/responses/') && method === 'PUT': {
+        const id = path.replace('/responses/', '');
+        const body = await req.json();
+        const { data, error } = await supabase
+          .from('assessment_responses')
+          .update(body)
+          .eq('id', id)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // DELETE /responses/:id - Delete response
+      case path.startsWith('/responses/') && method === 'DELETE': {
+        const id = path.replace('/responses/', '');
+        const { data, error } = await supabase
+          .from('assessment_responses')
+          .delete()
+          .eq('id', id)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // ASSESSMENT SCORING KEY CRUD
+      // GET /scoring-key - All scoring keys
+      case path === '/scoring-key' && method === 'GET': {
+        const { data, error } = await supabase
+          .from('assessment_scoring_key')
+          .select('*')
+          .order('question_id');
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // POST /scoring-key - Create scoring key
+      case path === '/scoring-key' && method === 'POST': {
+        const body = await req.json();
+        const { data, error } = await supabase
+          .from('assessment_scoring_key')
+          .insert(body)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // PUT /scoring-key/:id - Update scoring key
+      case path.startsWith('/scoring-key/') && method === 'PUT': {
+        const questionId = path.replace('/scoring-key/', '');
+        const body = await req.json();
+        const { data, error } = await supabase
+          .from('assessment_scoring_key')
+          .update(body)
+          .eq('question_id', questionId)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // KB DEFINITIONS CRUD
+      // GET /kb-definitions - All KB definitions
+      case path === '/kb-definitions' && method === 'GET': {
+        const { data, error } = await supabase
+          .from('kb_definitions')
+          .select('*')
+          .order('key');
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // POST /kb-definitions - Create KB definition
+      case path === '/kb-definitions' && method === 'POST': {
+        const body = await req.json();
+        const { data, error } = await supabase
+          .from('kb_definitions')
+          .insert(body)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // PUT /kb-definitions/:key - Update KB definition
+      case path.startsWith('/kb-definitions/') && method === 'PUT': {
+        const key = decodeURIComponent(path.replace('/kb-definitions/', ''));
+        const body = await req.json();
+        const { data, error } = await supabase
+          .from('kb_definitions')
+          .update(body)
+          .eq('key', key)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // DELETE /kb-definitions/:key - Delete KB definition
+      case path.startsWith('/kb-definitions/') && method === 'DELETE': {
+        const key = decodeURIComponent(path.replace('/kb-definitions/', ''));
+        const { data, error } = await supabase
+          .from('kb_definitions')
+          .delete()
+          .eq('key', key)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // KB TYPES CRUD
+      // GET /kb-types - All KB types
+      case path === '/kb-types' && method === 'GET': {
+        const { data, error } = await supabase
+          .from('kb_types')
+          .select('*')
+          .order('code');
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // POST /kb-types - Create KB type
+      case path === '/kb-types' && method === 'POST': {
+        const body = await req.json();
+        const { data, error } = await supabase
+          .from('kb_types')
+          .insert(body)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // PUT /kb-types/:code - Update KB type
+      case path.startsWith('/kb-types/') && method === 'PUT': {
+        const code = path.replace('/kb-types/', '');
+        const body = await req.json();
+        const { data, error } = await supabase
+          .from('kb_types')
+          .update(body)
+          .eq('code', code)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // DELETE /kb-types/:code - Delete KB type
+      case path.startsWith('/kb-types/') && method === 'DELETE': {
+        const code = path.replace('/kb-types/', '');
+        const { data, error } = await supabase
+          .from('kb_types')
+          .delete()
+          .eq('code', code)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // DASHBOARD STATISTICS CRUD
+      // GET /dashboard-stats - All dashboard statistics
+      case path === '/dashboard-stats' && method === 'GET': {
+        const { data, error } = await supabase
+          .from('dashboard_statistics')
+          .select('*')
+          .order('stat_date', { ascending: false });
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // POST /dashboard-stats - Create dashboard statistic
+      case path === '/dashboard-stats' && method === 'POST': {
+        const body = await req.json();
+        const { data, error } = await supabase
+          .from('dashboard_statistics')
+          .insert(body)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // PUT /dashboard-stats/:id - Update dashboard statistic
+      case path.startsWith('/dashboard-stats/') && method === 'PUT': {
+        const id = path.replace('/dashboard-stats/', '');
+        const body = await req.json();
+        const { data, error } = await supabase
+          .from('dashboard_statistics')
+          .update(body)
+          .eq('id', id)
+          .select();
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // ALL VIEWS ACCESS
+      // GET /views/:view_name - Access any view
+      case path.startsWith('/views/') && method === 'GET': {
+        const viewName = path.replace('/views/', '');
+        const limit = parseInt(url.searchParams.get('limit') || '100');
+        const offset = parseInt(url.searchParams.get('offset') || '0');
+        
+        const { data, error } = await supabase
+          .from(viewName)
+          .select('*')
+          .range(offset, offset + limit - 1);
+
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data, view: viewName }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
@@ -300,35 +749,6 @@ serve(async (req) => {
         });
       }
 
-      // GET /profiles - Recent profiles for analysis
-      case path === '/profiles' && method === 'GET': {
-        const limit = url.searchParams.get('limit') || '50';
-        
-        const { data, error } = await supabase
-          .from('profiles')
-          .select(`
-            session_id,
-            created_at,
-            type_code,
-            overlay,
-            confidence,
-            fit_band,
-            score_fit_calibrated,
-            score_fit_raw,
-            top_gap,
-            results_version,
-            invalid_combo_flag
-          `)
-          .eq('results_version', 'v1.1')
-          .order('created_at', { ascending: false })
-          .limit(parseInt(limit));
-
-        if (error) throw error;
-        
-        return new Response(JSON.stringify({ data }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
 
       // GET /country-stats - Country activity statistics
       case path === '/country-stats' && method === 'GET': {
@@ -348,22 +768,65 @@ serve(async (req) => {
       // Default: List available endpoints
       default: {
         const endpoints = {
-          message: 'ChatGPT Gateway API',
-          available_endpoints: {
-            'GET /assessments': 'Latest assessments from v_latest_assessments_v11',
+          message: 'ChatGPT Gateway API - Full CRUD Access',
+          core_endpoints: {
+            'GET /assessments': 'Latest assessments (pagination: ?limit=100&offset=0)',
             'GET /kpi': 'KPI overview from v_kpi_overview_30d_v11',
             'GET /metrics': 'Detailed metrics from v_kpi_metrics_v11',
             'GET /quality': 'Quality metrics (v_quality or fallback to v_kpi_quality)',
-            'GET /config': 'Get all scoring configuration',
-            'GET /config/:key': 'Get a single scoring configuration key',
-            'PUT /config': 'Bulk update scoring configuration (JSON object of key:value)',
-            'PUT /config/:key': 'Update a single scoring configuration key from JSON body',
-            'PUT|POST /config-set/:key/:value': 'Update a single key via URL (accepts numeric, boolean, null, JSON)',
             'POST /recompute': 'Trigger profile recomputation',
-            'GET /profiles': 'Recent profiles (add ?limit=N to control count)',
             'GET /country-stats': 'Country activity statistics'
           },
-          authentication: 'Include x-bot-token header with your bot token'
+          profiles_crud: {
+            'GET /profiles': 'All profiles (pagination: ?limit=100&offset=0)',
+            'POST /profiles': 'Create new profile',
+            'PUT /profiles/:id': 'Update profile by ID',
+            'DELETE /profiles/:id': 'Delete profile by ID'
+          },
+          sessions_crud: {
+            'GET /sessions': 'All assessment sessions (pagination: ?limit=100&offset=0)',
+            'POST /sessions': 'Create new session',
+            'PUT /sessions/:id': 'Update session by ID',
+            'DELETE /sessions/:id': 'Delete session by ID'
+          },
+          responses_crud: {
+            'GET /responses': 'All assessment responses (pagination: ?limit=100&offset=0, filter: ?session_id=uuid)',
+            'POST /responses': 'Create new response',
+            'PUT /responses/:id': 'Update response by ID',
+            'DELETE /responses/:id': 'Delete response by ID'
+          },
+          scoring_crud: {
+            'GET /scoring-key': 'All scoring keys',
+            'POST /scoring-key': 'Create new scoring key',
+            'PUT /scoring-key/:question_id': 'Update scoring key by question ID'
+          },
+          kb_crud: {
+            'GET /kb-definitions': 'All KB definitions',
+            'POST /kb-definitions': 'Create new KB definition',
+            'PUT /kb-definitions/:key': 'Update KB definition by key',
+            'DELETE /kb-definitions/:key': 'Delete KB definition by key',
+            'GET /kb-types': 'All KB types',
+            'POST /kb-types': 'Create new KB type',
+            'PUT /kb-types/:code': 'Update KB type by code',
+            'DELETE /kb-types/:code': 'Delete KB type by code'
+          },
+          dashboard_crud: {
+            'GET /dashboard-stats': 'All dashboard statistics',
+            'POST /dashboard-stats': 'Create new dashboard statistic',
+            'PUT /dashboard-stats/:id': 'Update dashboard statistic by ID'
+          },
+          config_crud: {
+            'GET /config': 'Get all scoring configuration',
+            'PUT /config': 'Bulk update scoring configuration (JSON object of key:value)',
+            'GET /config/:key': 'Get a single scoring configuration key',
+            'PUT /config/:key': 'Update a single scoring configuration key from JSON body',
+            'PUT|POST /config-set/:key/:value': 'Update a single key via URL (accepts numeric, boolean, null, JSON)'
+          },
+          views_access: {
+            'GET /views/:view_name': 'Access any database view (pagination: ?limit=100&offset=0)'
+          },
+          authentication: 'Include x-bot-token header with your bot token',
+          note: 'All endpoints support full CRUD operations where applicable. Use pagination parameters for large datasets.'
         };
 
         return new Response(JSON.stringify(endpoints), {
