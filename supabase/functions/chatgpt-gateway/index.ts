@@ -33,7 +33,11 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const url = new URL(req.url);
-    const path = url.pathname.replace('/functions/v1/chatgpt-gateway', '');
+    // Normalize path for both domains:
+    // - https://<proj>.supabase.co/functions/v1/chatgpt-gateway/...
+    // - https://<proj>.functions.supabase.co/chatgpt-gateway/...
+    let path = url.pathname;
+    path = path.replace('/functions/v1/chatgpt-gateway', '').replace('/chatgpt-gateway', '') || '/';
     const method = req.method;
 
     console.log(`ChatGPT Gateway: ${method} ${path}`);
@@ -60,7 +64,7 @@ serve(async (req) => {
         const { data, error } = await supabase
           .from('v_kpi_overview_30d_v11')
           .select('*')
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
         
@@ -86,17 +90,31 @@ serve(async (req) => {
 
       // GET /quality - Quality metrics
       case path === '/quality' && method === 'GET': {
-        const { data, error } = await supabase
-          .from('v_quality')
-          .select('*')
-          .order('session_id')
-          .limit(1000);
+        try {
+          const { data, error } = await supabase
+            .from('v_quality')
+            .select('*')
+            .order('session_id')
+            .limit(1000);
 
-        if (error) throw error;
-        
-        return new Response(JSON.stringify({ data }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+          if (error) throw error;
+          
+          return new Response(JSON.stringify({ data, source: 'v_quality' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (e) {
+          console.warn('v_quality unavailable, falling back to v_kpi_quality:', e?.message || e);
+          const { data, error } = await supabase
+            .from('v_kpi_quality')
+            .select('*')
+            .limit(1);
+
+          if (error) throw error;
+          
+          return new Response(JSON.stringify({ data, source: 'v_kpi_quality' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
       }
 
       // GET /config - Scoring configuration
@@ -210,7 +228,7 @@ serve(async (req) => {
             'GET /assessments': 'Latest assessments from v_latest_assessments_v11',
             'GET /kpi': 'KPI overview from v_kpi_overview_30d_v11',
             'GET /metrics': 'Detailed metrics from v_kpi_metrics_v11',
-            'GET /quality': 'Quality metrics from v_quality',
+            'GET /quality': 'Quality metrics (v_quality or fallback to v_kpi_quality)',
             'GET /config': 'Get all scoring configuration',
             'PUT /config/:key': 'Update scoring configuration key',
             'POST /recompute': 'Trigger profile recomputation',
