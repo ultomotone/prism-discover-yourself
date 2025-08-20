@@ -131,13 +131,77 @@ serve(async (req) => {
         });
       }
 
-      // PUT /config/:key - Update scoring configuration
-      case path.startsWith('/config/') && method === 'PUT': {
-        const key = path.replace('/config/', '');
-        const { value } = await req.json();
+      // PUT /config - Bulk update scoring configuration
+      case path === '/config' && method === 'PUT': {
+        let body: any = null;
+        try {
+          body = await req.json();
+        } catch (_) {
+          return new Response(JSON.stringify({ error: "Invalid JSON body. Send an object: { \"key\": value, ... }" }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
 
-        if (!key || !value) {
-          return new Response(JSON.stringify({ error: 'Missing key or value' }), {
+        if (!body || typeof body !== 'object' || Array.isArray(body)) {
+          return new Response(JSON.stringify({ error: "Body must be a JSON object of key: value pairs" }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const nowIso = new Date().toISOString();
+        const rows = Object.entries(body).map(([k, v]) => ({ key: k, value: v, updated_at: nowIso }));
+
+        if (rows.length === 0) {
+          return new Response(JSON.stringify({ error: "No keys provided" }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const { data, error } = await supabase
+          .from('scoring_config')
+          .upsert(rows)
+          .select();
+
+        if (error) throw error;
+
+        console.log(`Bulk updated scoring config keys: ${rows.map(r => r.key).join(', ')}`);
+        return new Response(JSON.stringify({ data, updated: rows.map(r => r.key) }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // PUT /config/:key - Update single scoring configuration
+      case path.startsWith('/config/') && method === 'PUT': {
+        const key = decodeURIComponent(path.replace('/config/', ''));
+
+        // Accept both { value: ... } and raw JSON values (e.g., 60, "on", true)
+        let value: any = undefined;
+        let parsed: any = undefined;
+        let textBody = '';
+        try {
+          textBody = await req.text();
+          parsed = textBody ? JSON.parse(textBody) : undefined;
+        } catch (_) {
+          parsed = undefined;
+        }
+
+        if (parsed !== undefined) {
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && Object.prototype.hasOwnProperty.call(parsed, 'value')) {
+            value = parsed.value;
+          } else {
+            // If a JSON primitive or object without "value" was sent, store it directly
+            value = parsed;
+          }
+        }
+
+        if (!key || value === undefined) {
+          return new Response(JSON.stringify({ 
+            error: "Missing 'value'. Send either { \"value\": ... } or a raw JSON value in the body.",
+            example_single: { value: 60 },
+          }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
@@ -230,7 +294,8 @@ serve(async (req) => {
             'GET /metrics': 'Detailed metrics from v_kpi_metrics_v11',
             'GET /quality': 'Quality metrics (v_quality or fallback to v_kpi_quality)',
             'GET /config': 'Get all scoring configuration',
-            'PUT /config/:key': 'Update scoring configuration key',
+            'PUT /config': 'Bulk update scoring configuration (JSON object of key:value)',
+            'PUT /config/:key': 'Update a single scoring configuration key',
             'POST /recompute': 'Trigger profile recomputation',
             'GET /profiles': 'Recent profiles (add ?limit=N to control count)',
             'GET /country-stats': 'Country activity statistics'
