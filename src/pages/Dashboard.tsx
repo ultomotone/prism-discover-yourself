@@ -225,7 +225,7 @@ const Dashboard = () => {
           email: undefined, // Never show email for privacy
           top_types: undefined,
           type_scores: undefined,
-          fit_score: assessment.fit_display, // Use canonical fit from view
+          fit_score: typeof assessment.fit_display === 'number' ? assessment.fit_display.toFixed(1) : assessment.fit_display, // Use one decimal place
           share_pct: assessment.share_pct,
           fit_band: assessment.fit_band_display, // Use server-computed band
           confidence: assessment.confidence,
@@ -241,16 +241,21 @@ const Dashboard = () => {
 
       // Extract country distribution from recent assessments for the heatmap
       const countryDistribution = (recentAssessments || []).reduce((acc: any[], assessment: any) => {
-        if (assessment.country_display && assessment.country_display !== 'Unknown') {
-          const existing = acc.find(item => item.country === assessment.country_display);
+        // Use 'country' field directly since it's available in the view
+        const countryName = assessment.country || assessment.country_display;
+        if (countryName && countryName !== 'Unknown' && countryName.trim() !== '') {
+          const existing = acc.find(item => item.country === countryName);
           if (existing) {
             existing.count++;
           } else {
-            acc.push({ country: assessment.country_display, count: 1 });
+            acc.push({ country: countryName, count: 1 });
           }
         }
         return acc;
       }, []);
+
+      // Debug log to verify country data is being passed
+      console.log('Country distribution for activity map:', countryDistribution);
 
       setData({
         totalAssessments: stats?.total_assessments || 0,
