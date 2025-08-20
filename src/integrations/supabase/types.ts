@@ -818,27 +818,27 @@ export type Database = {
           confidence?: string | null
           country?: never
           finished_at?: string | null
-          fit_band?: never
+          fit_band?: string | null
           fit_value?: never
           invalid_combo_flag?: boolean | null
           overlay?: string | null
           session_id?: string | null
           share_pct?: never
-          type_code?: string | null
-          version?: string | null
+          type_code?: never
+          version?: never
         }
         Update: {
           confidence?: string | null
           country?: never
           finished_at?: string | null
-          fit_band?: never
+          fit_band?: string | null
           fit_value?: never
           invalid_combo_flag?: boolean | null
           overlay?: string | null
           session_id?: string | null
           share_pct?: never
-          type_code?: string | null
-          version?: string | null
+          type_code?: never
+          version?: never
         }
         Relationships: []
       }

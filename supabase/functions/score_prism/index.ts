@@ -530,76 +530,57 @@ serve(async (req) => {
       fitRaw[code] = mapFitRaw(s);
     }
 
-    // NEW: Fit Calibration - percentile normalize by cohort and calibrate to typical range
+    // NEW: Fit Calibration - use raw cohort fits for calibration
     const { data: cohortData } = await supabase
       .from('profiles')
-      .select('type_scores, top_types')
-      .gte('created_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()) // Last 90 days
-      .not('type_scores', 'is', null)
-      .not('top_types', 'is', null);
+      .select('score_fit_raw')
+      .eq('results_version', 'v1.1')
+      .gte('created_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
+      .not('score_fit_raw', 'is', null);
 
-    // Extract fit scores from cohort for percentile calculation
-    const cohortFitScores: number[] = [];
-    if (cohortData && cohortData.length > 0) {
-      for (const profile of cohortData) {
-        try {
-          const topType = profile.top_types?.[0];
-          if (topType && profile.type_scores?.[topType]?.fit_abs) {
-            // Use raw score equivalent for cohort comparison
-            const cohortRawFit = profile.type_scores[topType].fit_abs;
-            cohortFitScores.push(cohortRawFit);
-          }
-        } catch (e) {
-          // Skip invalid entries
-        }
-      }
-    }
+    const cohortFitScores: number[] = (cohortData ?? [])
+      .map(r => Number(r.score_fit_raw))
+      .filter(v => Number.isFinite(v));
 
-    // Calibrate fit scores
-    const fitAbs: Record<string, number> = {};
-    const topRawFit = fitRaw[Object.keys(fitRaw).sort((a, b) => fitRaw[b] - fitRaw[a])[0]] || 50;
+    // Compute cohort stats from raw fits
+    let fitAbs: Record<string, number> = {};
+    const topRawFit = fitRaw[Object.keys(fitRaw).sort((a,b)=>fitRaw[b]-fitRaw[a])[0]] ?? 50;
 
     if (cohortFitScores.length >= 50) {
-      // Percentile-based calibration with sufficient data
-      cohortFitScores.sort((a, b) => a - b);
-      
-      // Find percentile of this score in cohort
-      let percentile = 0;
-      for (let i = 0; i < cohortFitScores.length; i++) {
-        if (cohortFitScores[i] >= topRawFit) {
-          percentile = i / cohortFitScores.length;
-          break;
-        }
-      }
-      
-      // Map percentile to target range (35-75)
+      // Percentile of current raw top in raw cohort
+      cohortFitScores.sort((a,b)=>a-b);
+      const n = cohortFitScores.length;
+      const rank = cohortFitScores.filter(v => v <= topRawFit).length; // <= to include ties
+      const percentile = Math.max(0, Math.min(1, rank / n));
+
+      // Map percentile into a calibrated band (35..75 typical)
       const targetMin = 35, targetMax = 75;
-      const calibratedFit = targetMin + percentile * (targetMax - targetMin);
-      
-      // Apply to all types proportionally
-      const calibrationFactor = calibratedFit / topRawFit;
+      const calibratedTop = targetMin + percentile * (targetMax - targetMin);
+
+      const calibrationFactor = calibratedTop / Math.max(1e-6, topRawFit);
+
       for (const [code, rawFit] of Object.entries(fitRaw)) {
-        let calibrated = rawFit * calibrationFactor;
-        
-        // Cap extremes unless statistically extreme (z > 2.0)
-        const zScore = Math.abs((rawFit - 50) / 15); // Approximate z-score
-        if (zScore <= 2.0) {
-          calibrated = Math.max(20, Math.min(85, calibrated));
-        }
-        
-        fitAbs[code] = Math.round(calibrated * 10) / 10;
+        // Scale and clamp; keep extremes only if z>2 (approx around raw mean 50±15)
+        let cal = rawFit * calibrationFactor;
+        const zApprox = Math.abs((rawFit - 50) / 15);
+        if (zApprox <= 2.0) cal = Math.max(20, Math.min(85, cal));
+        fitAbs[code] = Math.round(cal * 10) / 10;
       }
       
       console.log(`evt:fit_calibrated,session_id:${session_id},cohort_size:${cohortFitScores.length},percentile:${percentile.toFixed(3)},raw_top:${topRawFit},calibrated_top:${fitAbs[Object.keys(fitRaw).sort((a, b) => fitRaw[b] - fitRaw[a])[0]]}`);
     } else {
-      // Fallback to simpler calibration with insufficient cohort data
-      console.log(`evt:insufficient_cohort,session_id:${session_id},cohort_size:${cohortFitScores.length},using_fallback`);
+      // Fallback: simple z-score using cohort or defaults
+      const mean = cohortFitScores.length ? (cohortFitScores.reduce((a,b)=>a+b,0)/cohortFitScores.length) : 50;
+      const sd = Math.max(5, Math.sqrt(cohortFitScores.reduce((a,b)=>a+(b-mean)**2,0)/(cohortFitScores.length||1)));
       for (const [code, rawFit] of Object.entries(fitRaw)) {
-        // Simple scaling to bring 99% scores down to realistic range
-        let calibrated = rawFit * 0.65 + 20; // Scale down and offset
-        calibrated = Math.max(20, Math.min(85, calibrated));
-        fitAbs[code] = Math.round(calibrated * 10) / 10;  
+        // 50 + 15*z, then compress to 20..85 and shift to ~35..75 behavior
+        const z = (rawFit - mean) / sd;
+        let cal = 50 + 15*z;
+        cal = Math.max(20, Math.min(85, cal));
+        fitAbs[code] = Math.round(cal * 10) / 10;
       }
+      
+      console.log(`evt:insufficient_cohort,session_id:${session_id},cohort_size:${cohortFitScores.length},using_fallback`);
     }
     const temp = 1.0;
     const exps = Object.fromEntries(Object.entries(rawScores).map(([k,v])=>[k, Math.exp(v/temp)]));

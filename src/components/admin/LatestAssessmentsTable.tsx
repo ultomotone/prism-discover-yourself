@@ -14,6 +14,7 @@ interface Assessment {
   type_code: string;
   fit_value: number | null;
   score_fit_raw: number | null;
+  share_pct: number | null;
   fit_band: string | null;
   version: string;
 }
@@ -74,12 +75,13 @@ export const LatestAssessmentsTable = () => {
     try {
       setLoading(true);
       
-      // Fetch from profiles with country info - no cache
+      // Fetch from v1.1 view with both raw and calibrated fits - no cache
       const { data, error } = await supabase
-        .rpc('get_recent_assessments_safe')
+        .from('v_latest_assessments_v11')
+        .select('*')
         .limit(50);
 
-      if (error) {
+      if (error) {  
         console.error('Error fetching latest assessments:', error);
         return;
       }
@@ -88,11 +90,12 @@ export const LatestAssessmentsTable = () => {
         // Transform data to match our interface
         const transformedData = data.map(row => ({
           session_id: row.session_id,
-          finished_at: row.created_at,
-          country: row.country_display,
-          type_code: row.type_display,
-          fit_value: row.score_fit_calibrated,
-          score_fit_raw: row.score_fit_raw,
+          finished_at: row.finished_at,
+          country: row.country,
+          type_code: row.type_code,
+          fit_value: row.fit_value, // This is the calibrated fit from the view
+          score_fit_raw: null, // Will need to fetch separately if needed
+          share_pct: row.share_pct,
           fit_band: row.fit_band,
           version: row.version
         }));
@@ -208,7 +211,7 @@ export const LatestAssessmentsTable = () => {
                     {formatFitValue(assessment.fit_value, assessment.score_fit_raw, showRawFit, assessment.session_id)}
                   </TableCell>
                   <TableCell className="font-mono">
-                    —
+                    {assessment.share_pct ? `${Math.round(assessment.share_pct)}%` : '—'}
                   </TableCell>
                   <TableCell>
                     <Badge variant={getFitBadgeVariant(assessment.fit_band)}>
