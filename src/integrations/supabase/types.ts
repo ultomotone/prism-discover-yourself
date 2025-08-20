@@ -499,6 +499,33 @@ export type Database = {
       }
     }
     Views: {
+      assessment_landscape: {
+        Row: {
+          assessment_id: string | null
+          confidence: string | null
+          confidence_band: string | null
+          confidence_margin: number | null
+          created_at: string | null
+          duration_minutes: number | null
+          fit_abs: number | null
+          inconsistency_score: number | null
+          overlay: string | null
+          respondent_id: string | null
+          sd_score: number | null
+          session_id: string | null
+          stalled: boolean | null
+          state_focus: number | null
+          state_mood: number | null
+          state_sleep: number | null
+          state_stress: number | null
+          state_time_pressure: number | null
+          submitted_at: string | null
+          top_gap: number | null
+          type_code: string | null
+          validity_pass: boolean | null
+        }
+        Relationships: []
+      }
       v_activity_country_30d: {
         Row: {
           country_label: string | null
