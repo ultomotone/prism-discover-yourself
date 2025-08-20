@@ -732,6 +732,57 @@ export type Database = {
         }
         Relationships: []
       }
+      v_latest_assessments_v11: {
+        Row: {
+          confidence: string | null
+          country: string | null
+          created_at: string | null
+          fit_band_display: string | null
+          fit_display: number | null
+          invalid_combo_flag: boolean | null
+          is_legacy_fit: boolean | null
+          results_version: string | null
+          session_id: string | null
+          share_pct: number | null
+          top_gap: number | null
+          type_code: string | null
+          type_display: string | null
+          user_id: string | null
+        }
+        Insert: {
+          confidence?: string | null
+          country?: never
+          created_at?: string | null
+          fit_band_display?: never
+          fit_display?: never
+          invalid_combo_flag?: never
+          is_legacy_fit?: never
+          results_version?: never
+          session_id?: string | null
+          share_pct?: never
+          top_gap?: number | null
+          type_code?: string | null
+          type_display?: never
+          user_id?: string | null
+        }
+        Update: {
+          confidence?: string | null
+          country?: never
+          created_at?: string | null
+          fit_band_display?: never
+          fit_display?: never
+          invalid_combo_flag?: never
+          is_legacy_fit?: never
+          results_version?: never
+          session_id?: string | null
+          share_pct?: never
+          top_gap?: number | null
+          type_code?: string | null
+          type_display?: never
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       v_method_agreement_prep: {
         Row: {
           answer_array: string[] | null

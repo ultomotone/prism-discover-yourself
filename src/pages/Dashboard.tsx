@@ -69,9 +69,14 @@ interface AssessmentDetail {
   invalid_combo_flag?: boolean;
 }
 
+// Force dynamic rendering and disable all caching
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Force no-cache for all dashboard data fetches
 const CACHE_HEADERS = {
-  'Cache-Control': 'no-store, must-revalidate',
+  'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+  'Pragma': 'no-cache',
   'Surrogate-Control': 'no-store'
 };
 
@@ -157,49 +162,41 @@ const Dashboard = () => {
           count: count as number 
         })).sort((a, b) => b.count - a.count) : [];
 
-      // Get recent assessments using secure function with no-cache headers and versioning
+      // Get recent assessments using canonical v1.1 view with no-cache headers  
       const versionParam = `?v=${Date.now()}`;
       const { data: recentAssessments } = await supabase
-        .rpc('get_recent_assessments_safe');
+        .from('v_latest_assessments_v11')
+        .select('created_at, session_id, country, type_code, fit_display, share_pct, fit_band_display, results_version, is_legacy_fit, invalid_combo_flag, top_gap, confidence, type_display')
+        .range(0, 49);
 
-      // Console log for debugging (temporary)
-      console.table((recentAssessments || []).slice(0, 10).map((r: any) => ({
+      // Verification logging for admin (temporary)
+      console.info('[AdminList] sample rows:', (recentAssessments || []).slice(0, 3).map(r => ({
         session: r.session_id?.toString().slice(0, 8) || 'unknown',
-        ver: r.results_version || r.version || 'legacy',
-        fit_cal: r.score_fit_calibrated,
-        fit_raw: r.score_fit_raw,
-        fit_legacy: r.fit_score,
-        band: r.fit_band,
-        gap: r.top_gap
+        fit_display: r.fit_display,
+        calibrated: !r.is_legacy_fit,
+        band: r.fit_band_display,
+        version: r.results_version
       })));
 
-      const latestAssessments: AssessmentDetail[] = (recentAssessments || []).map((assessment: any) => {
-        // Use calibrated fit first, then raw fit, then legacy fit as fallback
-        const displayFit = assessment.score_fit_calibrated ?? assessment.score_fit_raw ?? assessment.fit_score;
-        const fitBand = assessment.fit_band ?? (
-          displayFit && displayFit <= 40 ? 'Low' :
-          displayFit && displayFit <= 60 ? 'Moderate' : 
-          displayFit ? 'High' : null
-        );
-        
+      const latestAssessments: AssessmentDetail[] = (recentAssessments || []).map((assessment: any) => {        
         return {
           created_at: assessment.created_at,
-          type_code: assessment.type_display,
+          type_code: assessment.type_display || assessment.type_code,
           overlay: '', // Already included in type_display
-          country: assessment.country_display,
-          country_display: assessment.country_display,
+          country: assessment.country,
+          country_display: assessment.country,
           email: undefined, // Never show email for privacy
           top_types: undefined,
           type_scores: undefined,
-          fit_score: displayFit, // Use calibrated fit
+          fit_score: assessment.fit_display, // Use canonical fit from view
           share_pct: assessment.share_pct,
-          fit_band: fitBand,
+          fit_band: assessment.fit_band_display, // Use server-computed band
           confidence: assessment.confidence,
-          version: assessment.results_version || assessment.version || 'legacy',
+          version: assessment.results_version || 'legacy',
           // Add new v1.1 fields for proper backfill detection
           results_version: assessment.results_version,
-          score_fit_calibrated: assessment.score_fit_calibrated,
-          score_fit_raw: assessment.score_fit_raw,
+          score_fit_calibrated: assessment.is_legacy_fit ? null : assessment.fit_display, // Infer from flag
+          score_fit_raw: null, // Not needed from view
           top_gap: assessment.top_gap,
           invalid_combo_flag: assessment.invalid_combo_flag
         };
@@ -299,7 +296,48 @@ const Dashboard = () => {
     });
   }, [data, searchTerm, selectedType, selectedOverlay]);
 
-  // Removed handleRescore - server-side only
+  const handleBackfillV11 = async () => {
+    setLoading(true);
+    try {
+      toast({
+        title: "Starting v1.1 Backfill",
+        description: "This may take a few minutes for large datasets...",
+      });
+
+      // Call the v1.1 recompute function
+      const { data, error } = await supabase.functions.invoke('recompute_profiles_v11', { 
+        body: {} 
+      });
+
+      if (error) {
+        console.error('Backfill v1.1 error:', error);
+        toast({
+          title: "Backfill Failed",
+          description: error.message || "Failed to start v1.1 backfill",
+          variant: "destructive",
+        });
+      } else {
+        console.log('Backfill v1.1 completed:', data);
+        toast({
+          title: "Backfill Complete",
+          description: `Updated ${data?.updated || 0} profiles to v1.1`,
+        });
+
+        // Force refresh with cache-busting
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Brief delay
+        await fetchDashboardData();
+      }
+    } catch (e) {
+      console.error('Backfill v1.1 exception:', e);
+      toast({
+        title: "Backfill Error",
+        description: "An unexpected error occurred during backfill",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const exportCSV = () => {
     if (!filteredAssessments.length) return;
@@ -430,6 +468,15 @@ const Dashboard = () => {
             >
               <TrendingUp className="h-4 w-4" />
               {loading ? 'Refreshing...' : 'Refresh Data'}
+            </Button>
+            <Button 
+              onClick={handleBackfillV11} 
+              variant="outline"
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              <Info className="h-4 w-4" />
+              {loading ? 'Processing...' : 'Recompute v1.1'}
             </Button>
           </div>
         </div>
@@ -618,29 +665,29 @@ const Dashboard = () => {
                       </div>
                     </TableCell>
                     <TableCell>{assessment.country_display || assessment.country || 'Unknown'}</TableCell>
-                    <TableCell>
-                      {assessment.fit_score ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className={`text-sm font-medium cursor-help ${
-                                assessment.score_fit_calibrated ? 'text-foreground' : 'text-orange-600'
-                              }`}>
-                                {Math.round(assessment.fit_score)}%
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Calibrated PRISM Fit. ~35=weak, ~55=solid, ~75=strong</p>
-                              {!assessment.score_fit_calibrated && (
-                                <p className="text-orange-600 text-xs mt-1">Using raw/legacy fit - needs v1.1 update</p>
-                              )}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
-                      )}
-                    </TableCell>
+                     <TableCell>
+                       {assessment.fit_score ? (
+                         <TooltipProvider>
+                           <Tooltip>
+                             <TooltipTrigger asChild>
+                               <span className={`text-sm font-medium cursor-help ${
+                                 assessment.results_version === 'v1.1' ? 'text-foreground' : 'text-orange-600'
+                               }`}>
+                                 {Math.round(assessment.fit_score)}%
+                               </span>
+                             </TooltipTrigger>
+                             <TooltipContent>
+                               <p>Calibrated PRISM Fit • ~35 weak • ~55 solid • ~75 strong</p>
+                               {assessment.results_version !== 'v1.1' && (
+                                 <p className="text-orange-600 text-xs mt-1">Legacy fit - run "Recompute v1.1" to update</p>
+                               )}
+                             </TooltipContent>
+                           </Tooltip>
+                         </TooltipProvider>
+                       ) : (
+                         <span className="text-muted-foreground text-sm">—</span>
+                       )}
+                     </TableCell>
                     <TableCell>
                       {assessment.share_pct ? (
                         <span className="text-sm">{Math.round(assessment.share_pct)}%</span>
@@ -672,18 +719,16 @@ const Dashboard = () => {
                         }`}>
                           {assessment.results_version || assessment.version || 'legacy'}
                         </span>
-                         {/* Show "needs backfill" only when truly not on v1.1 */}
-                         {!(assessment.results_version === 'v1.1' && assessment.score_fit_calibrated != null) && (
-                           assessment.results_version !== 'v1.1' ? (
-                             <Badge variant="destructive" className="text-xs">
-                               needs backfill
-                             </Badge>
-                           ) : (
-                             <Badge variant="secondary" className="text-xs">
-                               legacy
-                             </Badge>
-                           )
-                         )}
+                         {/* Show "needs backfill" only when is_legacy_fit is true */}
+                         {assessment.results_version === 'v1.1' && !assessment.score_fit_calibrated ? (
+                           <Badge variant="destructive" className="text-xs">
+                             needs backfill
+                           </Badge>
+                         ) : assessment.results_version !== 'v1.1' ? (
+                           <Badge variant="secondary" className="text-xs">
+                             legacy
+                           </Badge>
+                         ) : null}
                       </div>
                     </TableCell>
                   </TableRow>
