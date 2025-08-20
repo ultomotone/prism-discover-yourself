@@ -271,7 +271,8 @@ serve(async (req) => {
     if (fcAnsweredCount < fcExpectedMin) {
       console.log(`evt:incomplete_fc,session_id:${session_id},fc_count:${fcAnsweredCount},expected_min:${fcExpectedMin}`);
       fcCompleteness = "incomplete";
-      await supabase.from('assessment_sessions').update({ status: 'incomplete_fc' }).eq('id', session_id);
+      // Avoid mutating session status to a custom value that may violate DB CHECK constraints.
+      // If needed, consider storing a flag in session metadata instead.
     }
 
     // Attention checks from config
@@ -723,10 +724,6 @@ serve(async (req) => {
       },
       strengths: strengths,
       dimensions: dimensions,
-      blocks_likert: blocks_likert,
-      blocks_fc: blocks_fc,
-      blocks_norm_likert: blocks_norm_likert,
-      blocks_norm_fc: blocks_norm_fc,
       neuroticism: { raw_mean: nMean, z: z },
       validity: validity,
       type_scores: type_scores,
