@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, AlertTriangle, Users, Clock, RefreshCw, Percent, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { manualRescoreLatest } from "@/utils/manualRescore";
 
 const Admin: React.FC = () => {
   const { 
@@ -79,6 +80,22 @@ const Admin: React.FC = () => {
     }
   };
 
+  const handleRescoreLatest = async () => {
+    toast({
+      title: "Rescoring Started",
+      description: "Updating latest fit scores (v1.1)...",
+    });
+
+    const result = await manualRescoreLatest(50);
+    if ('error' in result && result.error) {
+      toast({ title: "Rescore Failed", description: `${result.error}`, variant: "destructive" });
+      return;
+    }
+
+    toast({ title: "Rescore Complete", description: 'Refreshing analytics...' });
+    await refreshData();
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
@@ -106,6 +123,10 @@ const Admin: React.FC = () => {
             <Button onClick={refreshData} disabled={loading} className="flex items-center gap-2">
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh
+            </Button>
+            <Button onClick={handleRescoreLatest} variant="secondary" className="flex items-center gap-2">
+              <Percent className="h-4 w-4" />
+              Rescore Latest
             </Button>
           </div>
 
