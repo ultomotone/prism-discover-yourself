@@ -14,7 +14,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import Header from "@/components/Header";
 import CountryDistributionChart from "@/components/CountryDistributionChart";
 import { rescoreSpecificSessions } from "@/utils/rescoreUNKSessions";
-import { manualRescoreLatest } from "@/utils/manualRescore";
 
 interface DashboardData {
   totalAssessments: number;
@@ -241,45 +240,7 @@ const Dashboard = () => {
     });
   }, [data, searchTerm, selectedType, selectedOverlay]);
 
-  const handleRescore = async () => {
-    try {
-      toast({
-        title: "Rescoring Started",
-        description: "Updating fit scores with v1.1 calculations...",
-      });
-      
-      const result = await manualRescoreLatest(50); // Rescore latest 50 profiles
-      console.log('Manual rescoring result:', result);
-      
-      // Refresh data after rescoring
-      await fetchDashboardData();
-      
-      if ('error' in result && result.error) {
-        toast({
-          title: "Rescoring Failed",
-          description: `Error: ${result.error}`,
-          variant: "destructive",
-        });
-      } else if ('successful' in result && 'total' in result) {
-        toast({
-          title: "Rescoring Complete",
-          description: `Updated ${result.successful}/${result.total} profiles successfully`,
-        });
-      } else {
-        toast({
-          title: "Rescoring Complete",
-          description: result.message || "Rescoring finished",
-        });
-      }
-    } catch (error) {
-      console.error('Rescoring failed:', error);
-      toast({
-        title: "Rescoring Failed",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
-    }
-  };
+  // Removed handleRescore - server-side only
 
   const exportCSV = () => {
     if (!filteredAssessments.length) return;
@@ -410,14 +371,6 @@ const Dashboard = () => {
             >
               <TrendingUp className="h-4 w-4" />
               {loading ? 'Refreshing...' : 'Refresh Data'}
-            </Button>
-            <Button 
-              onClick={handleRescore} 
-              variant="secondary"
-              className="flex items-center gap-2"
-            >
-              <Users className="h-4 w-4" />
-              Rescore Latest
             </Button>
           </div>
         </div>

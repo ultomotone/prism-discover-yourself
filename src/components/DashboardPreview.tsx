@@ -24,10 +24,7 @@ const DashboardPreview = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Trigger backfill, rescore broken profiles, and manual rescore latest
-    backfillMissingProfiles();
-    rescoreBrokenProfiles();
-    manualRescoreLatest(30); // Rescore latest 30 profiles
+    // No auto-rescoring - server-side only
 
     const fetchPreviewStats = async () => {
       try {
