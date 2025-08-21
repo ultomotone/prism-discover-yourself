@@ -69,7 +69,7 @@ export const LatestAssessmentsTable = () => {
       
       setTotalCount(count || 0);
       
-      // Fetch data with corrected timestamps from assessment_sessions
+      // Fetch data from profiles with proper v1.1 fields
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -83,12 +83,7 @@ export const LatestAssessmentsTable = () => {
           top_types,
           fit_band,
           results_version,
-          overlay,
-          assessment_sessions!inner (
-            completed_at,
-            started_at,
-            created_at
-          )
+          overlay
         `)
         .eq('results_version', 'v1.1')
         .not('type_code', 'is', null)
@@ -101,6 +96,17 @@ export const LatestAssessmentsTable = () => {
       }
 
       if (data) {
+        // Get session timing data for all sessions in batch
+        const sessionIds = data.map(row => row.session_id);
+        const { data: sessionsData } = await supabase
+          .from('assessment_sessions')
+          .select('id, completed_at, started_at, created_at')
+          .in('id', sessionIds);
+        
+        const sessionTimingMap = new Map(
+          (sessionsData || []).map(s => [s.id, s])
+        );
+
         // Get country question ID for country lookup
         const { data: countryConfig } = await supabase
           .from('scoring_config')
@@ -129,10 +135,10 @@ export const LatestAssessmentsTable = () => {
             const individualFit = typeScores[row.type_code]?.fit_abs || row.score_fit_calibrated || 0;
             const sharePercentage = typeScores[row.type_code]?.share_pct || 0;
             
-            // Use corrected completed_at from assessment_sessions
-            const sessionData = (row as any).assessment_sessions;
-            const completedAt = sessionData?.completed_at || row.submitted_at;
-            const startedAt = sessionData?.started_at;
+            // Get corrected timing from session data
+            const sessionTiming = sessionTimingMap.get(row.session_id);
+            const completedAt = sessionTiming?.completed_at || row.submitted_at;
+            const startedAt = sessionTiming?.started_at;
             
             return {
               session_id: row.session_id,
