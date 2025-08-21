@@ -39,17 +39,16 @@ export default function Roadmap() {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        // Total completed assessments - count from completed sessions, not profiles
+        // Total started sessions (any session that exists)
+        const { count: totalStartedCount } = await supabase
+          .from('assessment_sessions')
+          .select('*', { count: 'exact', head: true });
+
+        // Total completed assessments - sessions with completed_at timestamp
         const { count: completedCount } = await supabase
           .from('assessment_sessions')
           .select('*', { count: 'exact', head: true })
           .not('completed_at', 'is', null);
-
-        // Total started sessions with actual progress for completion rate
-        const { count: startedCount } = await supabase
-          .from('assessment_sessions')
-          .select('*', { count: 'exact', head: true })
-          .gt('completed_questions', 0); // Only sessions with at least 1 question answered
 
         // Confidence distribution - get unique profiles per session to avoid duplicates
         const { data: confidenceData } = await supabase
@@ -70,11 +69,21 @@ export default function Roadmap() {
           return acc;
         }, {} as { [key: string]: number });
 
-        const totalUniqueAssessments = Object.values(confidenceDistribution).reduce((sum, count) => sum + count, 0);
+        // Calculate completion rate and ensure it doesn't exceed 100%
+        const rawCompletionRate = totalStartedCount ? 
+          Math.round((completedCount || 0) / totalStartedCount * 100) : 0;
+        const cappedCompletionRate = Math.min(rawCompletionRate, 100);
+
+        console.log('Completion rate calculation:', {
+          totalStarted: totalStartedCount,
+          completed: completedCount,
+          rawRate: rawCompletionRate,
+          cappedRate: cappedCompletionRate
+        });
 
         setMetrics({
           totalAssessments: completedCount || 0,
-          completionRate: startedCount ? Math.round((completedCount || 0) / startedCount * 100) : 0,
+          completionRate: cappedCompletionRate,
           confidenceDistribution
         });
       } catch (error) {
