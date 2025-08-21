@@ -612,6 +612,24 @@ function Dimensions({ p }:{ p:Profile }){
 }
 
 function Blocks({ p }:{ p:Profile }){
+  // Add null safety checks for blocks data
+  if (!p.blocks_norm || typeof p.blocks_norm !== 'object') {
+    console.warn('Missing blocks_norm data in profile:', p);
+    return (
+      <section className="p-5 border rounded-2xl bg-card">
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="font-semibold">Blocks (%)</h3>
+          <InfoTip title="Block Analysis">
+            <div>Block data is not available for this profile.</div>
+          </InfoTip>
+        </div>
+        <div className="text-center text-muted-foreground py-8">
+          Block analysis data not available
+        </div>
+      </section>
+    );
+  }
+
   const blockLabels = {
     Core: "Core (Base+Creative)",
     Critic: "Critic (Role+Vulnerable)", 
@@ -619,6 +637,7 @@ function Blocks({ p }:{ p:Profile }){
     Instinct: "Instinct (Ignoring+Demonstrative)"
   };
   const colorMap = { Core:'bg-green-500', Hidden:'bg-blue-500', Critic:'bg-red-500', Instinct:'bg-purple-500' };
+  
   return (
     <section className="p-5 border rounded-2xl bg-card">
       <div className="flex items-center gap-2 mb-3">
@@ -648,9 +667,26 @@ function Blocks({ p }:{ p:Profile }){
 
 // Enhanced Core Description component using centralized data
 function TypeCoreSection({ typeCode }: { typeCode: string }) {
+  console.log('TypeCoreSection called with typeCode:', typeCode);
+  
+  if (!typeCode) {
+    console.warn('TypeCoreSection: No typeCode provided');
+    return null;
+  }
+  
   const coreData = TYPE_CORE_DESCRIPTIONS[typeCode];
   
-  if (!coreData) return null;
+  if (!coreData) {
+    console.warn('TypeCoreSection: No core data found for typeCode:', typeCode, 'Available codes:', Object.keys(TYPE_CORE_DESCRIPTIONS));
+    return (
+      <section className="p-6 border rounded-2xl bg-card prism-shadow-card">
+        <h2 className="text-xl font-bold mb-4 text-primary">Core</h2>
+        <p className="text-muted-foreground">
+          Core description not available for type: {typeCode}
+        </p>
+      </section>
+    );
+  }
   
   return (
     <section className="p-6 border rounded-2xl bg-card prism-shadow-card">
