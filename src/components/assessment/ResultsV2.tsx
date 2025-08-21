@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { ResponsiveContainer, BarChart, Bar as RechartsBar, XAxis, YAxis, Tooltip, ReferenceLine } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Check, Square } from "lucide-react";
+import { ChevronDown, ChevronUp, Check, Square, TrendingUp, TrendingDown, Users, Target, Zap, Heart } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TYPE_CORE_DESCRIPTIONS } from "@/data/typeCoreDescriptions";
+import { prismTypes } from "@/data/prismTypes";
 
 // thresholds for labels (tune later)
 const LABEL_THRESH = {
@@ -653,7 +654,7 @@ function TypeCoreSection({ typeCode }: { typeCode: string }) {
   
   return (
     <section className="p-6 border rounded-2xl bg-card prism-shadow-card">
-      <h2 className="text-xl font-bold mb-4 text-primary">{coreData.title}</h2>
+      <h2 className="text-xl font-bold mb-4 text-primary">Core</h2>
       {coreData.paragraphs.map((paragraph, index) => (
         <p key={index} className="text-lg leading-relaxed mb-4 last:mb-0">
           {paragraph}
@@ -663,11 +664,223 @@ function TypeCoreSection({ typeCode }: { typeCode: string }) {
   );
 }
 
-function TypeNarrative({ typeCode }:{ typeCode:string }){
-  const kb = TYPE_KB[typeCode]; if(!kb) return null;
+// State Overlay Section with description
+function StateOverlaySection({ overlay }: { overlay: string }) {
+  const overlayData = {
+    '+': {
+      label: 'Elevated Reactivity',
+      icon: <TrendingUp className="h-6 w-6 text-red-600" />,
+      description: 'You\'re currently in a heightened state with more intense, reactive responses. This means higher vigilance, faster action, and more emotional intensity. Your core functions may be more rigid, and you might be more sensitive to stressors.',
+      color: 'border-red-200 bg-red-50'
+    },
+    '–': {
+      label: 'Steady Reactivity', 
+      icon: <TrendingDown className="h-6 w-6 text-green-600" />,
+      description: 'You\'re in a calmer, more measured state with stable responses. This means lower reactivity, more deliberate thinking, and consistent energy. Your core functions operate smoothly and you recover faster from setbacks.',
+      color: 'border-green-200 bg-green-50'
+    },
+    'neutral': {
+      label: 'Neutral State',
+      icon: <TrendingDown className="h-6 w-6 text-blue-600" />,
+      description: 'Your assessment indicates a balanced emotional state without significant elevation or suppression of reactivity.',
+      color: 'border-blue-200 bg-blue-50'
+    }
+  };
+
+  const data = overlayData[overlay as keyof typeof overlayData] || overlayData.neutral;
+  
+  return (
+    <section className={`p-6 border rounded-2xl ${data.color}`}>
+      <div className="flex items-start gap-4">
+        <div className="flex-shrink-0">
+          {data.icon}
+        </div>
+        <div>
+          <h2 className="text-xl font-bold mb-2 text-primary">
+            State Overlay: {data.label} ({overlay})
+          </h2>
+          <p className="text-lg leading-relaxed text-muted-foreground">
+            {data.description}
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Core Alignment Section 
+function CoreAlignmentSection({ typeCode }: { typeCode: string }) {
+  const coreAlignments = {
+    'innovative-harmonizers': {
+      name: "Innovative Harmonizers",
+      formerly: "Alpha Quadra",
+      icon: <Zap className="h-6 w-6 text-primary" />,
+      archetype: "Enthusiastic explorers who seek out new ideas and shared comfort. This group embodies playful creativity, warm sociability, and a positive, inclusive outlook.",
+      coreValues: "Openness to possibilities and intellectual playfulness. They prize explorative thinking and brainstorming, combined with a love of personal comfort and present-moment enjoyment.",
+      types: ["ILE", "SEI", "ESE", "LII"]
+    },
+    'driven-idealists': {
+      name: "Driven Idealists",
+      formerly: "Beta Quadra", 
+      icon: <Target className="h-6 w-6 text-primary" />,
+      archetype: "Intense crusaders motivated by vision, loyalty, and impact. This group is defined by passionate energy and a strong sense of purpose.",
+      coreValues: "Mission, unity, and honor. They value having a clear vision or belief to fight for, and esteem group loyalty and shared principles.",
+      types: ["SLE", "IEI", "EIE", "LSI"]
+    },
+    'pragmatic-realists': {
+      name: "Pragmatic Realists", 
+      formerly: "Gamma Quadra",
+      icon: <Users className="h-6 w-6 text-primary" />,
+      archetype: "Hard-nosed yet principled achievers who keep their eyes on the prize. This group is all about practical results, personal responsibility, and realistic goals.",
+      coreValues: "Efficacy and authenticity. They prize effective action and concrete success above idle speculation, demanding grounded logic and proof.",
+      types: ["SEE", "ILI", "LIE", "ESI"]
+    },
+    'humanitarian-stabilizers': {
+      name: "Humanitarian Stabilizers",
+      formerly: "Delta Quadra",
+      icon: <Heart className="h-6 w-6 text-primary" />,
+      archetype: "Conscientious facilitators who cultivate stability, growth, and well-being for all. This group is characterized by steady, supportive efforts to build a better life.",
+      coreValues: "Steady improvement and ethical sincerity. They value doing what's right and what works in the long run, emphasizing integrity, trust, and personal values.",
+      types: ["LSE", "SLI", "IEE", "EII"]
+    }
+  };
+
+  // Find which core alignment this type belongs to
+  const alignment = Object.entries(coreAlignments).find(([_, data]) => 
+    data.types.includes(typeCode)
+  )?.[1];
+
+  if (!alignment) return null;
+
+  return (
+    <section className="p-6 border rounded-2xl bg-card prism-shadow-card">
+      <div className="flex items-start gap-4">
+        <div className="flex-shrink-0">
+          {alignment.icon}
+        </div>
+        <div>
+          <h2 className="text-xl font-bold mb-2 text-primary">
+            Core Alignment: {alignment.name}
+          </h2>
+          <p className="text-sm text-muted-foreground mb-3">
+            Formerly: {alignment.formerly}
+          </p>
+          <div className="space-y-3">
+            <div>
+              <h3 className="font-semibold text-primary mb-1">Archetype</h3>
+              <p className="text-muted-foreground">{alignment.archetype}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-primary mb-1">Core Values</h3>
+              <p className="text-muted-foreground">{alignment.coreValues}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Enhanced Functions Analysis Section
+function FunctionsAnalysis({ p }: { p: Profile }) {
+  // Calculate user's median strength for suppressed detection
+  const strengthValues = Object.values(p.strengths);
+  const medianStrength = strengthValues.sort((a, b) => a - b)[Math.floor(strengthValues.length / 2)];
+  const suppressedThreshold = medianStrength - 1;
+  
+  // Categorize functions based on type and performance
+  const functionsData = FUNCS.map(func => {
+    const strength = p.strengths[func] || 0;
+    const dimension = p.dimensions[func] || 0;
+    const isSuppressed = strength <= suppressedThreshold;
+    const isCoherent = p.dims_highlights.coherent.includes(func);
+    const isUnique = p.dims_highlights.unique.includes(func);
+    
+    let category = 'Typical';
+    if (isSuppressed) category = 'Suppressed';
+    else if (isUnique) category = 'Unique';
+    else if (isCoherent) category = 'Typical';
+    
+    return { func, strength, dimension, category, isSuppressed, isCoherent, isUnique };
+  });
+
+  const categoryColors = {
+    'Typical': 'text-foreground',
+    'Suppressed': 'text-red-600',
+    'Unique': 'text-blue-600'
+  };
+
   return (
     <section className="p-5 border rounded-2xl bg-card">
-      <h3 className="text-xl font-bold mb-3">{kb.title}</h3>
+      <div className="flex items-center gap-2 mb-4">
+        <h3 className="font-semibold">Functions Analysis</h3>
+        <InfoTip title="Functions Categories">
+          <div className="space-y-2">
+            <div><b>Typical:</b> {GLOSSARY.coherent.text}</div>
+            <div><b>Unique:</b> {GLOSSARY.unique.text}</div>
+            <div><b>Suppressed:</b> {GLOSSARY.suppressed.text}</div>
+          </div>
+        </InfoTip>
+      </div>
+      
+      <div className="grid md:grid-cols-2 gap-6">
+        <div>
+          <div className="text-sm text-muted-foreground mb-3">Judging Functions</div>
+          {functionsData.filter(f => ['Ti', 'Te', 'Fi', 'Fe'].includes(f.func)).map(f => (
+            <div key={f.func} className="flex items-center justify-between py-2 border-b border-muted last:border-0">
+              <div className="flex items-center gap-3">
+                <span className={`font-medium ${categoryColors[f.category]}`}>{f.func}</span>
+                <Badge variant="outline" className={`text-xs ${
+                  f.category === 'Suppressed' ? 'border-red-300 text-red-600' :
+                  f.category === 'Unique' ? 'border-blue-300 text-blue-600' :
+                  'border-gray-300'
+                }`}>
+                  {f.category}
+                </Badge>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-medium">{f.strength.toFixed(1)}</div>
+                <Chip n={f.dimension} />
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <div>
+          <div className="text-sm text-muted-foreground mb-3">Perceiving Functions</div>
+          {functionsData.filter(f => ['Ni', 'Ne', 'Si', 'Se'].includes(f.func)).map(f => (
+            <div key={f.func} className="flex items-center justify-between py-2 border-b border-muted last:border-0">
+              <div className="flex items-center gap-3">
+                <span className={`font-medium ${categoryColors[f.category]}`}>{f.func}</span>
+                <Badge variant="outline" className={`text-xs ${
+                  f.category === 'Suppressed' ? 'border-red-300 text-red-600' :
+                  f.category === 'Unique' ? 'border-blue-300 text-blue-600' :
+                  'border-gray-300'
+                }`}>
+                  {f.category}
+                </Badge>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-medium">{f.strength.toFixed(1)}</div>
+                <Chip n={f.dimension} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TypeNarrative({ typeCode }:{ typeCode:string }){
+  const kb = TYPE_KB[typeCode]; 
+  const prismType = prismTypes.find(t => t.code === typeCode);
+  
+  if(!kb || !prismType) return null;
+  
+  return (
+    <section className="p-5 border rounded-2xl bg-card">
+      <h3 className="text-xl font-bold mb-3">{typeCode} - {prismType.publicArchetype}</h3>
       {kb.p.map((para,i)=><p key={i} className="mb-3 leading-relaxed">{para}</p>)}
       <div className="grid md:grid-cols-2 gap-4 mt-4 text-sm">
         <div>
@@ -729,13 +942,16 @@ export const ResultsV2: React.FC<{ profile: Profile }> = ({ profile: p }) => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Top3 p={p} />
+      <StateOverlaySection overlay={p.overlay} />
       <TypeCoreSection typeCode={primary} />
       <TypeNarrative typeCode={primary} />
+      <FunctionsAnalysis p={p} />
       <div className="grid md:grid-cols-2 gap-6">
         <Strengths p={p} />
         <Dimensions p={p} />
       </div>
       <Blocks p={p} />
+      <CoreAlignmentSection typeCode={primary} />
       <MetaInfo p={p} />
     </div>
   );
