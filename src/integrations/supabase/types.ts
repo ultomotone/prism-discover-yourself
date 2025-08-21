@@ -134,8 +134,10 @@ export type Database = {
       assessment_sessions: {
         Row: {
           completed_at: string | null
+          completed_at_original: string | null
           completed_questions: number | null
           created_at: string
+          created_at_original: string | null
           email: string | null
           id: string
           ip_hash: string | null
@@ -143,6 +145,7 @@ export type Database = {
           session_type: string
           share_token: string
           started_at: string
+          started_at_original: string | null
           status: string | null
           total_questions: number | null
           ua_hash: string | null
@@ -151,8 +154,10 @@ export type Database = {
         }
         Insert: {
           completed_at?: string | null
+          completed_at_original?: string | null
           completed_questions?: number | null
           created_at?: string
+          created_at_original?: string | null
           email?: string | null
           id?: string
           ip_hash?: string | null
@@ -160,6 +165,7 @@ export type Database = {
           session_type?: string
           share_token: string
           started_at?: string
+          started_at_original?: string | null
           status?: string | null
           total_questions?: number | null
           ua_hash?: string | null
@@ -168,8 +174,10 @@ export type Database = {
         }
         Update: {
           completed_at?: string | null
+          completed_at_original?: string | null
           completed_questions?: number | null
           created_at?: string
+          created_at_original?: string | null
           email?: string | null
           id?: string
           ip_hash?: string | null
@@ -177,6 +185,7 @@ export type Database = {
           session_type?: string
           share_token?: string
           started_at?: string
+          started_at_original?: string | null
           status?: string | null
           total_questions?: number | null
           ua_hash?: string | null
