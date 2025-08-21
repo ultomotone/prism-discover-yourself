@@ -703,10 +703,22 @@ serve(async (req) => {
       return new Response(JSON.stringify({ status: "debug", debug: debugPayload }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Mark session as completed
+    // Mark session as completed (preserve timestamps)
+    const { data: currentSessionTiming } = await supabase
+      .from('assessment_sessions')
+      .select('status, completed_at, started_at, created_at')
+      .eq('id', session_id)
+      .single();
+
+    const updates: any = { status: 'completed' };
+    // Only set completed_at if null to preserve accurate timing
+    if (!currentSessionTiming?.completed_at) {
+      updates.completed_at = new Date().toISOString();
+    }
+
     const { error: sessionUpdateError } = await supabase
       .from('assessment_sessions')
-      .update({ status: 'completed', completed_at: new Date().toISOString() })
+      .update(updates)
       .eq('id', session_id);
 
     if (sessionUpdateError) {
