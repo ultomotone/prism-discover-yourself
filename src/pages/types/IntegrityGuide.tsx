@@ -19,6 +19,33 @@ const IntegrityGuide = () => {
               <p className="text-lg text-foreground">Empathetic idealists who orient by values, explore humane options, and guide others toward authentic living.</p>
             </div>
 
+            {/* Core Description from Results */}
+            <section className="mb-8 p-6 border rounded-2xl bg-card prism-shadow-card">
+              <h2 className="text-xl font-bold mb-4 text-primary">Core Profile</h2>
+              <p className="mb-3 leading-relaxed text-lg">
+                You read people's inner threads and possibilities. Integrity and growth matter; you prefer good fits to quick wins. You are trusted for judgment and care.
+              </p>
+              <p className="mb-4 leading-relaxed text-lg">
+                Conflict and deadlines can pinch. Light structure (Te) and timeboxed decisions keep your empathy moving outcomes.
+              </p>
+              <div className="grid md:grid-cols-2 gap-4 mt-4 text-sm">
+                <div>
+                  <div className="font-medium text-green-700 mb-2">Flow states</div>
+                  <ul className="space-y-1 text-muted-foreground">
+                    <li>• Values‑aligned projects; mentoring</li>
+                    <li>• Option space pruned to two</li>
+                  </ul>
+                </div>
+                <div>
+                  <div className="font-medium text-red-700 mb-2">Stress patterns</div>
+                  <ul className="space-y-1 text-muted-foreground">
+                    <li>• Decision drift; over‑empathizing</li>
+                    <li>• Avoids conflict; loses momentum</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
             {/* Content sections */}
             <div className="space-y-8">
               {/* Core */}
