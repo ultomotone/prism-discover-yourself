@@ -136,6 +136,19 @@ export default function Results() {
     };
   }, []);
 
+  // Auto-download PDF when results are loaded
+  useEffect(() => {
+    if (scoring && !loading && !error) {
+      // Add a small delay to ensure DOM is fully rendered
+      const timer = setTimeout(() => {
+        console.log('Auto-downloading PDF for session:', sessionId);
+        downloadPDF();
+      }, 1500); // 1.5 second delay
+
+      return () => clearTimeout(timer);
+    }
+  }, [scoring, loading, error, sessionId]);
+
   const downloadPDF = async () => {
     try {
       const node = document.getElementById('results-content');
