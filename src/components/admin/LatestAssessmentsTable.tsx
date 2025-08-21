@@ -119,7 +119,7 @@ export const LatestAssessmentsTable = () => {
         // Get countries for each session
         const transformedData = await Promise.all(
           data.map(async (row) => {
-            // Get country from assessment responses
+            // Get country from assessment responses (normalize blanks/Unknown)
             let country = 'Unknown';
             if (countryQId) {
               const { data: countryResponse } = await supabase
@@ -128,7 +128,8 @@ export const LatestAssessmentsTable = () => {
                 .eq('session_id', row.session_id)
                 .eq('question_id', countryQId)
                 .maybeSingle();
-              country = countryResponse?.answer_value || 'Unknown';
+              const raw = (countryResponse?.answer_value || '').trim();
+              country = raw && raw.toLowerCase() !== 'unknown' ? raw : 'Unknown';
             }
             
             // Calculate individual fit from type_scores (not using global fit)

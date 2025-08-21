@@ -116,11 +116,13 @@ export const CountryDistributionChart = ({ className }: CountryDistributionChart
 
       if (data && data.length > 0) {
         console.log('Country distribution for activity map:', data);
-        // Transform data to match expected format
-        const formattedData = data.map((item: any) => ({
-          country: item.country,
-          count: item.sessions
-        }));
+        // Transform data to match expected format and filter out Unknown/blank
+        const formattedData = data
+          .map((item: any) => ({
+            country: item.country,
+            count: item.sessions
+          }))
+          .filter((d: any) => d.country && d.country.trim() !== '' && d.country !== 'Unknown');
         setCountryData(formattedData);
       } else {
         console.log('No country data available');
