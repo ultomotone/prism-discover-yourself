@@ -306,10 +306,14 @@ export const LatestAssessmentsTable = () => {
                 <TableRow key={assessment.session_id}>
                   <TableCell className="text-sm">
                     {/* Use corrected completed_at timestamp without duration */}
-                    {assessment.finished_at 
-                      ? format(new Date(assessment.finished_at), 'MMM dd, HH:mm:ss')
-                      : '—'
-                    }
+                    {assessment.finished_at ? (
+                      <div>
+                        <div>{format(new Date(assessment.finished_at), 'MMM dd, HH:mm:ss')}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {assessment.finished_at} {/* Debug: show raw timestamp */}
+                        </div>
+                      </div>
+                    ) : '—'}
                   </TableCell>
                   <TableCell className="font-medium">
                     {assessment.type_code || '—'}
