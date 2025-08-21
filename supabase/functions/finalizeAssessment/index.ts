@@ -39,6 +39,25 @@ serve(async (req) => {
     if (existingProfile && !profileError) {
       console.log(`evt:profile_exists,session_id:${session_id},returning_existing`);
       
+      // Ensure existing profile has all required computed fields for frontend
+      const enhancedProfile = {
+        ...existingProfile,
+        // Ensure essential computed fields exist
+        top_gap: existingProfile.top_gap ?? 0,
+        close_call: existingProfile.close_call ?? (existingProfile.top_gap ?? 0) < 5,
+        fit_band: existingProfile.fit_band ?? 'Moderate',
+        confidence: existingProfile.confidence ?? 'Moderate',
+        results_version: existingProfile.results_version ?? 'v1.1',
+        // Ensure top_types is an array
+        top_types: existingProfile.top_types || [existingProfile.type_code],
+        // Ensure type_scores exists
+        type_scores: existingProfile.type_scores || {},
+        // Ensure strengths exists  
+        strengths: existingProfile.strengths || {},
+        // Ensure dimensions exists
+        dimensions: existingProfile.dimensions || {},
+      };
+      
       // Generate results URL
       const { data: sessionData } = await supabase
         .from('assessment_sessions')
@@ -47,12 +66,12 @@ serve(async (req) => {
         .single();
 
       const resultsUrl = sessionData?.share_token 
-        ? `/results/${session_id}?token=${sessionData.share_token}&v=${existingProfile.results_version || 'v1.1'}`
-        : `/results/${session_id}?v=${existingProfile.results_version || 'v1.1'}`;
+        ? `/results/${session_id}?token=${sessionData.share_token}&v=${enhancedProfile.results_version}`
+        : `/results/${session_id}?v=${enhancedProfile.results_version}`;
 
     return new Response(JSON.stringify({
       status: 'success',
-      profile: existingProfile,
+      profile: enhancedProfile,
       results_url: resultsUrl,
       cached: true
     }), {
