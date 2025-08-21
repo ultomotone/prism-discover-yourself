@@ -98,15 +98,27 @@ const Assessment = () => {
 
   const handleAssessmentComplete = (assessmentResponses: AssessmentResponse[], sessionId: string) => {
     console.log('🟢 handleAssessmentComplete called with:');
-    console.log('🟢 Responses count:', assessmentResponses.length);
+    console.log('🟢 Responses count:', assessmentResponses?.length || 0);
     console.log('🟢 Session ID:', sessionId);
     console.log('🟢 Current state before change:', currentState);
     
-    setResponses(assessmentResponses);
-    setSessionId(sessionId);
-    setCurrentState('complete');
+    if (!sessionId) {
+      console.error('🔴 ERROR: No sessionId provided to handleAssessmentComplete');
+      return;
+    }
     
-    console.log('🟢 State changed to complete');
+    if (!assessmentResponses || assessmentResponses.length === 0) {
+      console.error('🔴 ERROR: No responses provided to handleAssessmentComplete');
+      return;
+    }
+    
+    // Set all state at once to avoid race conditions
+    setTimeout(() => {
+      setResponses(assessmentResponses);
+      setSessionId(sessionId);
+      setCurrentState('complete');
+      console.log('🟢 State changed to complete with sessionId:', sessionId);
+    }, 0);
   };
 
   const handleReturnToIntro = () => {
@@ -181,14 +193,23 @@ const Assessment = () => {
         />
       )}
       
-      {currentState === 'complete' && (
+      {currentState === 'complete' && sessionId && responses.length > 0 ? (
         <AssessmentComplete 
           responses={responses}
           sessionId={sessionId}
           onReturnHome={handleReturnHome}
           onTakeAgain={handleTakeAgain}
         />
-      )}
+      ) : currentState === 'complete' ? (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center">
+            <p>Loading assessment results...</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Session ID: {sessionId || 'Missing'} | Responses: {responses.length}
+            </p>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

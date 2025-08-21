@@ -22,6 +22,21 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
   console.log('🔵 Responses count:', responses?.length || 0);
   console.log('🔵 Session ID:', sessionId);
   
+  // Early return if missing required props
+  if (!sessionId) {
+    console.error('🔴 AssessmentComplete: Missing sessionId');
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p>Error: Missing session information</p>
+          <button onClick={onReturnHome} className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded">
+            Return Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
   const [scoring, setScoring] = useState<any | null>(null);
   const [loadingScore, setLoadingScore] = useState(false);
   const [scoreError, setScoreError] = useState<string | null>(null);
