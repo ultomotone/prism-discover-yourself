@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Clock, Brain, Shield, CheckCircle, Users, AlertTriangle, ChevronDown, Target, Zap, TrendingUp, BarChart3 } from "lucide-react";
+import { SystemStatusIndicator } from "@/components/SystemStatusIndicator";
 
 interface AssessmentIntroProps {
   onStart: () => void;
@@ -21,9 +22,14 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
             <h1 className="prism-heading-lg text-primary mb-6">
               Welcome to the PRISM Assessment
             </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-6">
               Personality, Regulation, Information, System, Mapping
             </p>
+            
+            {/* System Status Indicator */}
+            <div className="flex justify-center">
+              <SystemStatusIndicator />
+            </div>
           </div>
 
           {/* Introduction */}
@@ -189,7 +195,7 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
                 <h2 className="text-2xl font-semibold text-primary">Time Required</h2>
               </div>
               <p className="text-muted-foreground text-lg">
-                Approximately <strong>25–35 minutes</strong>
+                Approximately <strong className="text-primary animate-pulse bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent drop-shadow-[0_0_10px_hsl(var(--primary))] glow-text">35–55 minutes</strong>
               </p>
             </CardContent>
           </Card>

@@ -4,7 +4,6 @@ import { AssessmentIntro } from "@/components/assessment/AssessmentIntro";
 import { AssessmentForm, AssessmentResponse } from "@/components/assessment/AssessmentForm";
 import { AssessmentComplete } from "@/components/assessment/AssessmentComplete";
 import { SavedAssessments } from "@/components/assessment/SavedAssessments";
-import { SystemStatusIndicator } from "@/components/SystemStatusIndicator";
 import { supabase } from "@/integrations/supabase/client";
 
 type AssessmentState = 'intro' | 'form' | 'complete' | 'saved';
@@ -140,13 +139,6 @@ const Assessment = () => {
         return null;
       })()}
       {currentState !== 'form' && <Header />}
-      
-      {/* System Status Indicator - visible on all states except form */}
-      {currentState !== 'form' && (
-        <div className="fixed top-24 right-4 z-50">
-          <SystemStatusIndicator />
-        </div>
-      )}
       
       {currentState === 'saved' && (
         <div className="pt-24 pb-8">
