@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Header from "@/components/Header";
 import { AssessmentIntro } from "@/components/assessment/AssessmentIntro";
 import { AssessmentForm, AssessmentResponse } from "@/components/assessment/AssessmentForm";
@@ -9,15 +10,23 @@ import { supabase } from "@/integrations/supabase/client";
 type AssessmentState = 'intro' | 'form' | 'complete' | 'saved';
 
 const Assessment = () => {
+  const [searchParams] = useSearchParams();
   const [currentState, setCurrentState] = useState<AssessmentState>('intro');
   const [responses, setResponses] = useState<AssessmentResponse[]>([]);
   const [sessionId, setSessionId] = useState<string>('');
   const [resumeSessionId, setResumeSessionId] = useState<string | undefined>();
 
-  // Check for saved assessments on load
+  // Check for URL resume parameter and saved assessments on load
   useEffect(() => {
-    checkForSavedAssessments();
-  }, []);
+    const resumeParam = searchParams.get('resume');
+    if (resumeParam) {
+      console.log('🔗 URL resume parameter found:', resumeParam);
+      setResumeSessionId(resumeParam);
+      setCurrentState('form');
+    } else {
+      checkForSavedAssessments();
+    }
+  }, [searchParams]);
 
   const checkForSavedAssessments = async () => {
     try {
