@@ -68,24 +68,29 @@ export const SystemStatusControl = () => {
 
     setSaving(true);
     try {
+      // Use edge function to update system status (requires service role permissions)
+      const { data, error } = await supabase.functions.invoke('updateSystemStatus', {
+        body: { 
+          status: selectedStatus,
+          message: message.trim()
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      // Update local state with the new status
       const newStatus: SystemStatus = {
         status: selectedStatus,
         message: message.trim(),
         last_updated: new Date().toISOString(),
         updated_by: 'admin'
       };
-
-      const { error } = await supabase
-        .from('scoring_config')
-        .update({
-          value: newStatus as any,
-          updated_at: new Date().toISOString()
-        })
-        .eq('key', 'system_status');
-
-      if (error) {
-        throw error;
-      }
 
       setStatus(newStatus);
       toast({

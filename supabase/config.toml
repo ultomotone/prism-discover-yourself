@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.finalizeAssessment]
 verify_jwt = false
+
+[functions.updateSystemStatus]
+verify_jwt = false
