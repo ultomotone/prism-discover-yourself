@@ -35,14 +35,24 @@ export default function Results() {
         const shareToken = urlParams.get('token');
 
         // First check if the session exists
+        console.log('Fetching session data for:', sessionId);
         const { data: sessionData, error: sessionError } = await supabase
           .from('assessment_sessions')
           .select('completed_at, share_token, status')
           .eq('id', sessionId)
-          .single();
+          .maybeSingle();
+
+        console.log('Session data:', sessionData, 'Session error:', sessionError);
 
         if (sessionError) {
-          setError('Assessment session not found');
+          console.error('Session error:', sessionError);
+          setError('Assessment session not found: ' + sessionError.message);
+          setLoading(false);
+          return;
+        }
+
+        if (!sessionData) {
+          setError('No session found with the provided ID');
           setLoading(false);
           return;
         }
@@ -60,13 +70,24 @@ export default function Results() {
         // Try to get profile data using secure RPC with versioned URL to break cache
         const version = urlParams.get('v') || 'v1.1';
         
+        console.log('Calling get_profile_by_session with:', {
+          sessionId,
+          validToken,
+          shareToken,
+          sessionToken: sessionData.share_token
+        });
+        
         const { data: profileData, error: profileError } = await supabase
           .rpc('get_profile_by_session', {
             p_session_id: sessionId,
             p_share_token: validToken || ''
           });
 
-        if (profileError || !profileData || !profileData.id) {
+        console.log('Profile data received:', profileData);
+        console.log('Profile error:', profileError);
+
+        if (profileError || !profileData) {
+          console.error('Profile fetch failed:', profileError);
           // Show recovery UI instead of hard error
           setLoading(false);
           setError('recovery_needed');
