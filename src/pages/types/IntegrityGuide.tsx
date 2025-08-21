@@ -1,4 +1,5 @@
 import TypeLayout from "@/components/TypeLayout";
+import { TypeCoreSection } from "@/components/TypeCoreSection";
 
 const IntegrityGuide = () => {
   return (
@@ -20,50 +21,10 @@ const IntegrityGuide = () => {
             </div>
 
             {/* Core Description from Results */}
-            <section className="mb-8 p-6 border rounded-2xl bg-card prism-shadow-card">
-              <h2 className="text-xl font-bold mb-4 text-primary">Core Profile</h2>
-              <p className="mb-3 leading-relaxed text-lg">
-                You read people's inner threads and possibilities. Integrity and growth matter; you prefer good fits to quick wins. You are trusted for judgment and care.
-              </p>
-              <p className="mb-4 leading-relaxed text-lg">
-                Conflict and deadlines can pinch. Light structure (Te) and timeboxed decisions keep your empathy moving outcomes.
-              </p>
-              <div className="grid md:grid-cols-2 gap-4 mt-4 text-sm">
-                <div>
-                  <div className="font-medium text-green-700 mb-2">Flow states</div>
-                  <ul className="space-y-1 text-muted-foreground">
-                    <li>• Values‑aligned projects; mentoring</li>
-                    <li>• Option space pruned to two</li>
-                  </ul>
-                </div>
-                <div>
-                  <div className="font-medium text-red-700 mb-2">Stress patterns</div>
-                  <ul className="space-y-1 text-muted-foreground">
-                    <li>• Decision drift; over‑empathizing</li>
-                    <li>• Avoids conflict; loses momentum</li>
-                  </ul>
-                </div>
-              </div>
-            </section>
+            <TypeCoreSection typeCode="EII" className="mb-8" />
 
             {/* Content sections */}
             <div className="space-y-8">
-              {/* Core */}
-              <section>
-                <h2 className="text-2xl font-semibold mb-4">Core</h2>
-                <div className="prism-card p-6">
-                  <p className="text-lg leading-relaxed mb-4">
-                    EIIs are empathetic idealists, characterized by introverted feeling (Fi) base and extroverted intuition (Ne) creative. Their Fi base is 4-dimensional, giving them a profound depth of inner values and a nuanced understanding of human emotions and ethics. As a "plus" ethics type, an EII's Fi seeks to expand understanding and harmony – they strive to find common principles, uplift others morally, and build bridges of mutual respect. EIIs often see the good in people or the potential for good, and they feel a strong sense of personal responsibility to act with integrity and kindness. This internal moral compass guides their decisions more than any external rulebook.
-                  </p>
-                  <p className="text-lg leading-relaxed mb-4">
-                    Complementing this is Ne creative, a 3D function that allows EIIs to explore possibilities and ideas, but with a "minus" flavor – they tend to focus on refining possibilities, selecting the meaningful or realistic ones rather than a scattershot of random notions. This makes them insightful counselors or mentors: they can envision someone's latent talents or foresee pitfalls in a plan, gently steering toward the best outcome.
-                  </p>
-                  <p className="text-lg leading-relaxed">
-                    In flow, an EII might resemble a compassionate sage or a counselor under a tree. They feel at home when helping people navigate life's choices in line with their authentic selves. They also enjoy intellectual pursuits that align with their values – literature, psychology, social activism – anything that expands understanding of the human condition and can be used for positive change. Their Fi Ne synergy means they often communicate through analogies and stories, enriching moral points with imaginative examples.
-                  </p>
-                </div>
-              </section>
-
               {/* Critic */}
               <section>
                 <h2 className="text-2xl font-semibold mb-4">Critic</h2>

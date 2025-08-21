@@ -1,10 +1,10 @@
-// Enhanced ResultsV2 with prototype v2 improvements
 import React, { useState } from "react";
 import { ResponsiveContainer, BarChart, Bar as RechartsBar, XAxis, YAxis, Tooltip, ReferenceLine } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Check, Square } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { TYPE_CORE_DESCRIPTIONS } from "@/data/typeCoreDescriptions";
 
 // thresholds for labels (tune later)
 const LABEL_THRESH = {
@@ -645,6 +645,24 @@ function Blocks({ p }:{ p:Profile }){
   );
 }
 
+// Enhanced Core Description component using centralized data
+function TypeCoreSection({ typeCode }: { typeCode: string }) {
+  const coreData = TYPE_CORE_DESCRIPTIONS[typeCode];
+  
+  if (!coreData) return null;
+  
+  return (
+    <section className="p-6 border rounded-2xl bg-card prism-shadow-card">
+      <h2 className="text-xl font-bold mb-4 text-primary">{coreData.title}</h2>
+      {coreData.paragraphs.map((paragraph, index) => (
+        <p key={index} className="text-lg leading-relaxed mb-4 last:mb-0">
+          {paragraph}
+        </p>
+      ))}
+    </section>
+  );
+}
+
 function TypeNarrative({ typeCode }:{ typeCode:string }){
   const kb = TYPE_KB[typeCode]; if(!kb) return null;
   return (
@@ -711,6 +729,7 @@ export const ResultsV2: React.FC<{ profile: Profile }> = ({ profile: p }) => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Top3 p={p} />
+      <TypeCoreSection typeCode={primary} />
       <TypeNarrative typeCode={primary} />
       <div className="grid md:grid-cols-2 gap-6">
         <Strengths p={p} />
