@@ -75,11 +75,13 @@ serve(async (req) => {
     if (sessionError || !sessionData) {
       console.error(`evt:session_not_found,session_id:${session_id}`);
       return new Response(JSON.stringify({ 
+        status: 'error',
+        code: 'SESSION_NOT_FOUND',
         error: 'Session not found',
         session_id 
       }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store, must-revalidate', 'Surrogate-Control': 'no-store' }
       });
     }
 
@@ -112,13 +114,15 @@ serve(async (req) => {
         : `/results/${session_id}?v=error`;
 
       return new Response(JSON.stringify({
+        status: 'error',
+        code: 'SCORING_FAILED',
         error: 'Scoring failed but responses are saved',
         session_id,
         results_url: resultsUrl,
         retry_available: true
       }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store, must-revalidate', 'Surrogate-Control': 'no-store' }
       });
     }
 
@@ -130,13 +134,15 @@ serve(async (req) => {
         : `/results/${session_id}?v=error`;
 
       return new Response(JSON.stringify({
+        status: 'error',
+        code: 'INVALID_SCORING_RESULT',
         error: 'Invalid scoring result but responses are saved',
         session_id,
         results_url: resultsUrl,
         retry_available: true
       }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store, must-revalidate', 'Surrogate-Control': 'no-store' }
       });
     }
 
@@ -163,11 +169,13 @@ serve(async (req) => {
   } catch (error) {
     console.error('evt:finalize_error', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
-      session_id: req.body?.session_id || 'unknown'
+      status: 'error',
+      code: 'FINALIZE_ERROR',
+      error: (error as Error).message,
+      session_id: 'unknown'
     }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store, must-revalidate', 'Surrogate-Control': 'no-store' }
     });
   }
 });
