@@ -526,6 +526,31 @@ export type Database = {
         }
         Relationships: []
       }
+      inferred_session_times: {
+        Row: {
+          completed_at_created_at: string | null
+          completed_at_inferred_ms: string | null
+          session_id: string | null
+          started_at_created_at: string | null
+          started_at_inferred_ms: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
       v_activity_country_30d: {
         Row: {
           country_label: string | null
