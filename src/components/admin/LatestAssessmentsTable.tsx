@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, HelpCircle } from "lucide-react";
 
 interface Assessment {
   session_id: string;
@@ -226,29 +227,89 @@ export const LatestAssessmentsTable = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>When</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Country</TableHead>
-                <TableHead>Fit</TableHead>
-                <TableHead>Share</TableHead>
-                <TableHead>Band</TableHead>
-                <TableHead>Version</TableHead>
+                <TableHead>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger className="flex items-center gap-1">
+                        Type <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>PRISM personality type (e.g., LIE, IEI) with overlay (+/−) indicating stress state</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
+                <TableHead>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger className="flex items-center gap-1">
+                        Country <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Location where the assessment was completed</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
+                <TableHead>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger className="flex items-center gap-1">
+                        Fit <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>How well responses match the assigned type (calibrated score 1-100%)</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
+                <TableHead>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger className="flex items-center gap-1">
+                        Share <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Percentage probability this is the correct type vs. alternatives</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
+                <TableHead>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger className="flex items-center gap-1">
+                        Band <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Overall confidence level: High (strong fit), Moderate (decent fit), Low (weak fit)</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
+                <TableHead>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger className="flex items-center gap-1">
+                        Version <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Scoring algorithm version (v1.1 has enhanced calibration and fit calculation)</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {assessments.map((assessment) => (
                 <TableRow key={assessment.session_id}>
                   <TableCell className="text-sm">
-                    {/* FIXED: Use corrected completed_at timestamp and show duration */}
-                    {assessment.finished_at ? (
-                      <div>
-                        <div>{format(new Date(assessment.finished_at), 'MMM dd, HH:mm:ss')}</div>
-                        {assessment.started_at && (
-                          <div className="text-xs text-muted-foreground">
-                            {Math.round((new Date(assessment.finished_at).getTime() - new Date(assessment.started_at).getTime()) / 60000)}min
-                          </div>
-                        )}
-                      </div>
-                    ) : '—'}
+                    {/* Use corrected completed_at timestamp without duration */}
+                    {assessment.finished_at 
+                      ? format(new Date(assessment.finished_at), 'MMM dd, HH:mm:ss')
+                      : '—'
+                    }
                   </TableCell>
                   <TableCell className="font-medium">
                     {assessment.type_code || '—'}
