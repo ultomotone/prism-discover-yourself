@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.chatgpt-gateway]
 verify_jwt = false
+
+[functions.finalizeAssessment]
+verify_jwt = false
