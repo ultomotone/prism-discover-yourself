@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { MilestoneProgress } from "@/components/ui/milestone-progress";
@@ -111,6 +111,7 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      console.log("🔍 Starting Dashboard data fetch...");
 
       // Get config for country and email question IDs
       const { data: countryConfig } = await supabase
@@ -130,6 +131,8 @@ const Dashboard = () => {
       setCountryQId(countryId);
       setEmailQId(emailId);
 
+      console.log("🔍 Config loaded:", { countryId, emailId });
+
       // Use secure aggregated statistics instead of direct profile access
       const { data: stats } = await supabase
         .from('dashboard_statistics')
@@ -137,12 +140,16 @@ const Dashboard = () => {
         .eq('stat_date', new Date().toISOString().split('T')[0])
         .maybeSingle();
 
+      console.log("🔍 Dashboard stats:", stats);
+
       // Get weekly trend from aggregated view
       const { data: weeklyData } = await supabase
         .from('dashboard_statistics')
         .select('stat_date, daily_assessments')
         .gte('stat_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
         .order('stat_date', { ascending: true });
+
+      console.log("🔍 Weekly data:", weeklyData);
 
       // Process weekly trend
       const weeklyTrend = Array.from({ length: 7 }, (_, i) => {
@@ -170,8 +177,10 @@ const Dashboard = () => {
           count: count as number 
         })).sort((a, b) => b.count - a.count) : [];
 
+      console.log("🔍 About to fetch recent assessments...");
+
       // Get recent assessments directly from profiles with proper scoring fields
-      const { data: recentAssessments } = await supabase
+      const { data: recentAssessments, error: assessmentsError } = await supabase
         .from('profiles')
         .select(`
           session_id,
@@ -193,6 +202,14 @@ const Dashboard = () => {
         .order('created_at', { ascending: false })
         .limit(50);
 
+      if (assessmentsError) {
+        console.error("🔍 Error fetching assessments:", assessmentsError);
+        throw assessmentsError;
+      }
+
+      console.log("🔍 Recent assessments fetched:", recentAssessments?.length || 0, "items");
+      console.log("🔍 Sample assessment:", recentAssessments?.[0]);
+
       // Get country for each assessment 
       const assessmentsWithCountry = await Promise.all(
         (recentAssessments || []).map(async (assessment) => {
@@ -210,6 +227,8 @@ const Dashboard = () => {
         })
       );
 
+      console.log("🔍 Assessments with country:", assessmentsWithCountry.length);
+
       // Verification log for fit distribution
       console.log('Fit distribution check (direct from profiles):', assessmentsWithCountry.slice(0, 10).map(r => ({
         session: r.session_id?.toString().slice(0, 8) || 'unknown',
@@ -222,7 +241,15 @@ const Dashboard = () => {
         p2: r.type_scores && r.top_types ? r.type_scores[r.top_types[1]]?.share_pct : null
       })));
 
+      console.log("🔍 Processing latest assessments...");
+
       const latestAssessments: AssessmentDetail[] = assessmentsWithCountry.map((assessment: any) => {
+        console.log("🔍 Processing assessment:", assessment.session_id?.slice(0, 8), {
+          type_scores: assessment.type_scores,
+          top_types: assessment.top_types,
+          blocks: (assessment as any).blocks // Check if blocks exists
+        });
+
         const p1 = assessment.type_scores && assessment.top_types?.[0] 
           ? assessment.type_scores[assessment.top_types[0]]?.share_pct : null;
         const p2 = assessment.type_scores && assessment.top_types?.[1]
@@ -251,6 +278,8 @@ const Dashboard = () => {
         };
       });
 
+      console.log("🔍 Latest assessments processed:", latestAssessments.length);
+
       // Get country distribution using the secure dashboard function
       const { data: countryStats } = await supabase
         .rpc('get_dashboard_country_stats', { days_back: 30 });
@@ -263,6 +292,8 @@ const Dashboard = () => {
       // Debug log to verify country data is being passed
       console.log('Country distribution for activity map:', countryDistribution);
 
+      console.log("🔍 Setting final dashboard data...");
+
       setData({
         totalAssessments: stats?.total_assessments || 0,
         todayCount: stats?.daily_assessments || 0,
@@ -273,8 +304,10 @@ const Dashboard = () => {
         latestAssessments // Now shows anonymized recent assessments
       });
 
+      console.log("🔍 Dashboard data set successfully");
+
     } catch (error) {
-      console.error('Dashboard data fetch error:', error);
+      console.error('🔍 Dashboard data fetch error:', error);
       toast({
         title: "Error",
         description: "Failed to load dashboard data",
@@ -561,14 +594,41 @@ const Dashboard = () => {
               </p>
             </CardHeader>
             <CardContent>
-              <CountryDistributionChart />
+              {React.createElement(() => {
+                try {
+                  console.log("🔍 Rendering CountryDistributionChart");
+                  return <CountryDistributionChart />;
+                } catch (error) {
+                  console.error("🚨 Error in CountryDistributionChart:", error);
+                  return <div className="text-center py-4 text-muted-foreground">Chart unavailable</div>;
+                }
+              })}
             </CardContent>
           </Card>
         </div>
 
         {/* Latest Assessments */}
         <div className="mb-8">
-          <LatestAssessmentsTable />
+          {React.createElement(() => {
+            try {
+              console.log("🔍 Rendering LatestAssessmentsTable");
+              return <LatestAssessmentsTable />;
+            } catch (error) {
+              console.error("🚨 Error in LatestAssessmentsTable:", error);
+              return (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Latest Assessments</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-4 text-muted-foreground">
+                      Assessment table unavailable - {error instanceof Error ? error.message : 'Unknown error'}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            }
+          })}
         </div>
       </div>
 
