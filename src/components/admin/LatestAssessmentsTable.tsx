@@ -59,19 +59,35 @@ export const LatestAssessmentsTable = () => {
     try {
       setLoading(true);
       
-      // Get total count first
+      // Get total count from profiles table
       const { count } = await supabase
-        .from('v_latest_assessments_v11')
-        .select('*', { count: 'exact', head: true });
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('results_version', 'v1.1')
+        .not('type_code', 'is', null);
       
       setTotalCount(count || 0);
       
-      // Fetch paginated data from v1.1 view
+      // Fetch data directly from profiles with proper v1.1 fields
       const { data, error } = await supabase
-        .from('v_latest_assessments_v11')
-        .select('*')
+        .from('profiles')
+        .select(`
+          session_id,
+          submitted_at,
+          type_code,
+          score_fit_calibrated,
+          score_fit_raw,
+          top_gap,
+          type_scores,
+          top_types,
+          fit_band,
+          results_version,
+          overlay
+        `)
+        .eq('results_version', 'v1.1')
+        .not('type_code', 'is', null)
         .range(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE - 1)
-        .order('finished_at', { ascending: false });
+        .order('submitted_at', { ascending: false });
 
       if (error) {  
         console.error('Error fetching latest assessments:', error);
@@ -79,17 +95,46 @@ export const LatestAssessmentsTable = () => {
       }
 
       if (data) {
-        // Transform data to match our interface  
-        const transformedData = data.map(row => ({
-          session_id: row.session_id,
-          finished_at: row.finished_at,
-          country: row.country,
-          type_code: row.type_code,
-          fit_value: row.score_fit_calibrated, // Use calibrated as the primary value
-          share_pct: row.share_pct,
-          fit_band: row.fit_band,
-          version: row.version
-        }));
+        // Get country question ID for country lookup
+        const { data: countryConfig } = await supabase
+          .from('scoring_config')
+          .select('value')
+          .eq('key', 'dashboard_country_qid')
+          .maybeSingle();
+        const countryQId = (countryConfig?.value as any)?.id;
+
+        // Get countries for each session
+        const transformedData = await Promise.all(
+          data.map(async (row) => {
+            // Get country from assessment responses
+            let country = 'Unknown';
+            if (countryQId) {
+              const { data: countryResponse } = await supabase
+                .from('assessment_responses')
+                .select('answer_value')
+                .eq('session_id', row.session_id)
+                .eq('question_id', countryQId)
+                .maybeSingle();
+              country = countryResponse?.answer_value || 'Unknown';
+            }
+            
+            // Calculate individual fit from type_scores (not using global fit)
+            const typeScores = row.type_scores as Record<string, any> || {};
+            const individualFit = typeScores[row.type_code]?.fit_abs || row.score_fit_calibrated || 0;
+            const sharePercentage = typeScores[row.type_code]?.share_pct || 0;
+            
+            return {
+              session_id: row.session_id,
+              finished_at: row.submitted_at, // Use submitted_at for proper timing
+              country: country,
+              type_code: `${row.type_code}${row.overlay || ''}`, // Include overlay in display
+              fit_value: individualFit, // Individual type fit from type_scores
+              share_pct: sharePercentage, // Individual type share from type_scores
+              fit_band: row.fit_band,
+              version: row.results_version
+            };
+          })
+        );
 
         console.info('Admin v1.1 data source OK', {
           page: currentPage + 1,
@@ -175,8 +220,9 @@ export const LatestAssessmentsTable = () => {
               {assessments.map((assessment) => (
                 <TableRow key={assessment.session_id}>
                   <TableCell className="text-sm">
+                    {/* FIXED: Use submitted_at for proper submission time */}
                     {assessment.finished_at 
-                      ? format(new Date(assessment.finished_at), 'MMM dd, HH:mm')
+                      ? format(new Date(assessment.finished_at), 'MMM dd, HH:mm:ss')
                       : '—'
                     }
                   </TableCell>

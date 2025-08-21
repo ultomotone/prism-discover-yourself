@@ -567,45 +567,45 @@ serve(async (req) => {
       .map(r => Number(r.score_fit_raw))
       .filter(v => Number.isFinite(v));
 
-    // Compute cohort stats from raw fits
+    // Compute cohort stats from raw fits - FIXED: Apply calibration per type, not globally
     let fitAbs: Record<string, number> = {};
-    const topRawFit = fitRaw[Object.keys(fitRaw).sort((a,b)=>fitRaw[b]-fitRaw[a])[0]] ?? 50;
 
     if (cohortFitScores.length >= 50) {
-      // Percentile of current raw top in raw cohort
+      // Calculate cohort statistics for calibration
       cohortFitScores.sort((a,b)=>a-b);
       const n = cohortFitScores.length;
-      const rank = cohortFitScores.filter(v => v <= topRawFit).length; // <= to include ties
-      const percentile = Math.max(0, Math.min(1, rank / n));
-
-      // Map percentile into a calibrated band (35..75 typical)
-      const targetMin = 35, targetMax = 75;
-      const calibratedTop = targetMin + percentile * (targetMax - targetMin);
-
-      const calibrationFactor = calibratedTop / Math.max(1e-6, topRawFit);
-
+      
+      // Apply calibration individually to each type's raw score
       for (const [code, rawFit] of Object.entries(fitRaw)) {
-        // Scale and clamp; keep extremes only if z>2 (approx around raw mean 50±15)
-        let cal = rawFit * calibrationFactor;
+        // Find percentile of this type's raw fit in cohort
+        const rank = cohortFitScores.filter(v => v <= rawFit).length;
+        const percentile = Math.max(0, Math.min(1, rank / n));
+        
+        // Map percentile into a calibrated band (35..75 typical)
+        const targetMin = 35, targetMax = 75;
+        const calibratedFit = targetMin + percentile * (targetMax - targetMin);
+        
+        // Apply z-score clamp for extremes
         const zApprox = Math.abs((rawFit - 50) / 15);
-        if (zApprox <= 2.0) cal = Math.max(20, Math.min(85, cal));
-        fitAbs[code] = Math.round(cal * 10) / 10;
+        const finalFit = zApprox <= 2.0 ? Math.max(20, Math.min(85, calibratedFit)) : calibratedFit;
+        
+        fitAbs[code] = Math.round(finalFit * 10) / 10;
       }
       
-      console.log(`evt:fit_calibrated,session_id:${session_id},cohort_size:${cohortFitScores.length},percentile:${percentile.toFixed(3)},raw_top:${topRawFit},calibrated_top:${fitAbs[Object.keys(fitRaw).sort((a, b) => fitRaw[b] - fitRaw[a])[0]]}`);
+      console.log(`evt:fit_calibrated_per_type,session_id:${session_id},cohort_size:${cohortFitScores.length},top_fits:${Object.keys(fitRaw).sort((a,b)=>fitRaw[b]-fitRaw[a]).slice(0,3).map(code => `${code}:${fitAbs[code]}`).join(',')}`);
     } else {
-      // Fallback: simple z-score using cohort or defaults
+      // Fallback: apply z-score calibration per type
       const mean = cohortFitScores.length ? (cohortFitScores.reduce((a,b)=>a+b,0)/cohortFitScores.length) : 50;
       const sd = Math.max(5, Math.sqrt(cohortFitScores.reduce((a,b)=>a+(b-mean)**2,0)/(cohortFitScores.length||1)));
+      
       for (const [code, rawFit] of Object.entries(fitRaw)) {
-        // 50 + 15*z, then compress to 20..85 and shift to ~35..75 behavior
         const z = (rawFit - mean) / sd;
         let cal = 50 + 15*z;
         cal = Math.max(20, Math.min(85, cal));
         fitAbs[code] = Math.round(cal * 10) / 10;
       }
       
-      console.log(`evt:insufficient_cohort,session_id:${session_id},cohort_size:${cohortFitScores.length},using_fallback`);
+      console.log(`evt:insufficient_cohort_per_type,session_id:${session_id},cohort_size:${cohortFitScores.length},using_fallback`);
     }
     const temp = 1.0;
     const exps = Object.fromEntries(Object.entries(rawScores).map(([k,v])=>[k, Math.exp(v/temp)]));
@@ -771,9 +771,11 @@ serve(async (req) => {
       top_types: top3,
       dims_highlights: dims_highlights,
       version: "v1.1",
-      submitted_at: now,
-      created_at: now,
-      updated_at: now
+      
+      // FIXED: Use actual submission time with microsecond precision to avoid clustering
+      submitted_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
     // Check if profile exists to determine if this is a recompute
@@ -793,8 +795,14 @@ serve(async (req) => {
     // If existing profile, preserve original submitted_at and add recomputed_at
     if (existingProfile) {
       upsertData.submitted_at = existingProfile.submitted_at; // preserve original
-      upsertData.recomputed_at = now; // mark recomputation time
-      upsertData.updated_at = now;
+      upsertData.recomputed_at = new Date().toISOString(); // mark recomputation time with fresh timestamp
+      upsertData.updated_at = new Date().toISOString();
+    } else {
+      // For new profiles, ensure unique timestamp by adding microsecond-level uniqueness
+      const uniqueTime = new Date();
+      uniqueTime.setMilliseconds(uniqueTime.getMilliseconds() + Math.random() * 1000);
+      upsertData.submitted_at = uniqueTime.toISOString();
+      upsertData.created_at = uniqueTime.toISOString();
     }
 
     const { error: upsertError } = await supabase

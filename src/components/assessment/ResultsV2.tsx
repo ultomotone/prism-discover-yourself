@@ -493,15 +493,15 @@ function Top3({ p }:{ p:Profile }){
               <div className="text-sm text-muted-foreground">{title}</div>
               <div className="mt-2 text-sm">
                 <span className="font-semibold">
-                  Fit {/* Use calibrated fit if available, with tooltip */}
+                  Fit {/* Use individual type fit from type_scores */}
                   <span 
-                    className={`cursor-help ${p.score_fit_calibrated ? 'text-foreground' : 'text-orange-600'}`} 
-                    title={p.score_fit_calibrated ? 
-                      "Calibrated PRISM Fit. ~35=weak, ~55=solid, ~75=strong" : 
-                      "Using raw/legacy fit - needs v1.1 update"
+                    className={`cursor-help ${p.type_scores?.[code]?.fit_abs ? 'text-foreground' : 'text-orange-600'}`} 
+                    title={p.type_scores?.[code]?.fit_abs ? 
+                      "Individual calibrated fit for this specific type" : 
+                      "Using fallback fit value - check type_scores data"
                     }
                   >
-                    {p.score_fit_calibrated ?? t.fit_abs}
+                    {p.type_scores?.[code]?.fit_abs || t.fit_abs || 0}
                   </span>
                 </span>
               </div>
@@ -535,7 +535,8 @@ function Top3({ p }:{ p:Profile }){
         profile={p}
         data={p.top_types.map(code => ({
           code,
-          fit: p.score_fit_calibrated ?? (p.type_scores[code].fit_abs), // Use calibrated fit if available
+          // FIXED: Use per-type fit score from type_scores instead of global score_fit_calibrated
+          fit: p.type_scores?.[code]?.fit_abs || 0, // Individual type fit
           share: p.type_scores[code].share_pct
         }))}
       />
