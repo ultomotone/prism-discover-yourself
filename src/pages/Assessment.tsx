@@ -97,9 +97,16 @@ const Assessment = () => {
   };
 
   const handleAssessmentComplete = (assessmentResponses: AssessmentResponse[], sessionId: string) => {
+    console.log('🟢 handleAssessmentComplete called with:');
+    console.log('🟢 Responses count:', assessmentResponses.length);
+    console.log('🟢 Session ID:', sessionId);
+    console.log('🟢 Current state before change:', currentState);
+    
     setResponses(assessmentResponses);
     setSessionId(sessionId);
     setCurrentState('complete');
+    
+    console.log('🟢 State changed to complete');
   };
 
   const handleReturnToIntro = () => {

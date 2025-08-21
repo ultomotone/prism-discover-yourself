@@ -488,7 +488,14 @@ try {
         // Complete assessment
         const finalResponses = responses.filter(r => r.questionId !== currentQuestion.id);
         finalResponses.push(newResponse);
+        
+        console.log('🎯 LAST QUESTION COMPLETE - CALLING onComplete');
+        console.log('🎯 Final responses being passed:', finalResponses.length, 'responses');
+        console.log('🎯 Session ID being passed:', sessionId);
+        console.log('🎯 Is onComplete function defined?', typeof onComplete === 'function');
+        
         onComplete(finalResponses, sessionId);
+        console.log('🎯 onComplete called successfully');
       } else {
         // Move to next question
         setCurrentQuestionIndex(prev => prev + 1);

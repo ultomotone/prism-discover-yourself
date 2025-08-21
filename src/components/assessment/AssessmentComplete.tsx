@@ -18,6 +18,10 @@ interface AssessmentCompleteProps {
 
 
 export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeAgain }: AssessmentCompleteProps) {
+  console.log('🔵 AssessmentComplete component rendered with:');
+  console.log('🔵 Responses count:', responses?.length || 0);
+  console.log('🔵 Session ID:', sessionId);
+  
   const [scoring, setScoring] = useState<any | null>(null);
   const [loadingScore, setLoadingScore] = useState(false);
   const [scoreError, setScoreError] = useState<string | null>(null);
