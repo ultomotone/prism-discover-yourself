@@ -16,14 +16,51 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    console.log('evt:backfill_v11_start');
+    // Parse options and build dynamic query
+    const url = new URL(req.url);
+    let body: any = {};
+    try { body = await req.json(); } catch (_) {}
 
-    // Get profiles that need v1.1 recomputation
-    const { data: profiles, error: fetchError } = await supabase
+    const force_all = body.force_all === true || url.searchParams.get('force_all') === 'true';
+    const days_back_param = body.days_back ?? (url.searchParams.get('days_back') ? parseInt(url.searchParams.get('days_back')!) : undefined);
+    const limit_param = body.limit ?? (url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : undefined);
+
+    console.log(`evt:backfill_v11_start,force_all:${force_all},days_back:${days_back_param ?? 'NA'},limit:${limit_param ?? 'NA'}`);
+
+    // Build base query
+    let query = supabase
       .from('profiles')
-      .select('session_id, results_version, score_fit_calibrated, type_code, created_at')
-      .or(`results_version.neq.v1.1,score_fit_calibrated.is.null`)
-      .order('created_at', { ascending: false });
+      .select('session_id, results_version, score_fit_calibrated, type_code, created_at');
+
+    if (force_all) {
+      if (days_back_param) {
+        const fromIso = new Date(Date.now() - days_back_param * 24 * 60 * 60 * 1000).toISOString();
+        query = query.gte('created_at', fromIso);
+      }
+    } else {
+      // Default filter: only those missing v1.1 or missing calibrated fit
+      query = query.or(`results_version.neq.v1.1,score_fit_calibrated.is.null`);
+    }
+
+    query = query.order('created_at', { ascending: false });
+    if (limit_param && typeof limit_param === 'number') {
+      query = query.limit(limit_param);
+    }
+
+    let { data: profiles, error: fetchError } = await query;
+
+    // Fallback: if no profiles matched and not forced, recompute recent 30 days
+    if ((!profiles || profiles.length === 0) && !force_all) {
+      console.log('evt:fallback_recent_30d');
+      const fromIso = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: prof2, error: err2 } = await supabase
+        .from('profiles')
+        .select('session_id, results_version, score_fit_calibrated, type_code, created_at')
+        .gte('created_at', fromIso)
+        .order('created_at', { ascending: false });
+      profiles = prof2;
+      fetchError = err2;
+    }
 
     if (fetchError) {
       console.error('evt:fetch_error', fetchError);
