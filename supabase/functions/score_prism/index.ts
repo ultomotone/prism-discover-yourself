@@ -640,8 +640,13 @@ serve(async (req) => {
     // NEW: Calculate top_gap, close_call, fit_band with enhanced logic
     const topFit = fitAbs[top3[0]] || 0;
     const secondFit = fitAbs[top3[1]] || 0;
-    const topGap = Math.round((topFit - secondFit) * 10) / 10;
+    const topGap = Math.round((topFit - secondFit) * 10) / 10; // gap_to_second (fit-based)
     const closeCall = topGap < 3;
+
+    // Confidence numeric = P1 - P2 (probability/ share percentage difference)
+    const p1 = (sharePct[top3[0]] || 0);
+    const p2 = (sharePct[top3[1]] || 0);
+    const confidenceMargin = Math.round(((p1 - p2)) * 10) / 10; // 0..100 scale
     
     // Enhanced fit band logic from config
     let fitBand = "Low";
@@ -748,7 +753,14 @@ serve(async (req) => {
           fit_band: fitBand, 
           close_call: closeCall, 
           top_gap: topGap,
+          confidence_margin: confidenceMargin,
           calibration_note: "Fit is calibrated to typical PRISM ranges; 35≈weak, 55≈solid, 75≈strong"
+        },
+        metrics: {
+          gap_to_second: topGap,
+          confidence_margin: confidenceMargin,
+          p1: p1,
+          p2: p2
         }
       },
       strengths: strengths,
@@ -807,6 +819,8 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ 
       status: "success", 
+      gap_to_second: topGap,
+      confidence_numeric: confidenceMargin,
       profile: profileData 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
