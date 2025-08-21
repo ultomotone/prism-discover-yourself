@@ -71,6 +71,9 @@ class ErrorBoundary extends React.Component<
 
   static getDerivedStateFromError(error: Error) {
     console.error("🚨 React Error Boundary caught an error:", error);
+    console.error("🚨 Error name:", error.name);
+    console.error("🚨 Error message:", error.message);
+    console.error("🚨 Error stack:", error.stack);
     return { hasError: true, error };
   }
 
@@ -81,6 +84,10 @@ class ErrorBoundary extends React.Component<
       componentStack: errorInfo.componentStack,
       timestamp: new Date().toISOString()
     });
+    
+    // Log to help identify the problematic component
+    console.error("🚨 Component Stack (shows which component failed):");
+    console.error(errorInfo.componentStack);
   }
 
   render() {
@@ -92,6 +99,17 @@ class ErrorBoundary extends React.Component<
             <p className="text-muted-foreground mb-4">
               The page encountered an error and couldn't load properly.
             </p>
+            {this.state.error && (
+              <details className="mb-4 text-left text-sm">
+                <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                  Error details (for debugging)
+                </summary>
+                <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto">
+                  {this.state.error.message}
+                  {this.state.error.stack && `\n\n${this.state.error.stack}`}
+                </pre>
+              </details>
+            )}
             <div className="space-y-2">
               <button
                 className="w-full px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
