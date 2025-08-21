@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAdvancedAdminAnalytics } from "@/hooks/useAdvancedAdminAnalytics";
 import { AdminFilters } from "@/components/admin/AdminFilters";
 import { KPICard } from "@/components/admin/KPICard";
@@ -13,7 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { Download, AlertTriangle, Users, Clock, RefreshCw, Percent, CheckCircle, Database } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 const Admin: React.FC = () => {
   const { 
     filters, 
@@ -29,6 +32,10 @@ const Admin: React.FC = () => {
 
   const { toast } = useToast();
 
+  const [recomputeOpen, setRecomputeOpen] = useState(false);
+  const [forceAll, setForceAll] = useState(true);
+  const [daysBack, setDaysBack] = useState<number | ''>(30);
+  const [limit, setLimit] = useState<number | ''>('');
   const getCompletionRateStatus = (value: number) => {
     if (value >= 85) return 'good';
     if (value >= 70) return 'warning';
@@ -114,6 +121,31 @@ const Admin: React.FC = () => {
     }
   };
 
+  const handleRecomputeSubmit = async () => {
+    toast({
+      title: "Recompute Started",
+      description: `Running v1.1 recompute ${forceAll ? `(last ${daysBack || 'all'} days)` : '(only missing)'}...`,
+    });
+    try {
+      const body: any = {};
+      if (forceAll) body.force_all = true;
+      if (daysBack !== '' && Number(daysBack) > 0) body.days_back = Number(daysBack);
+      if (limit !== '' && Number(limit) > 0) body.limit = Number(limit);
+
+      const { data, error } = await supabase.functions.invoke('recompute_profiles_v11', { body });
+      if (error) {
+        toast({ title: "Recompute Failed", description: error.message, variant: "destructive" });
+        return;
+      }
+
+      toast({ title: "Recompute Complete", description: `Updated ${data.updated}/${data.processed} profiles` });
+      setRecomputeOpen(false);
+      await refreshData();
+    } catch (err) {
+      toast({ title: "Recompute Error", description: "Unexpected error during recompute", variant: "destructive" });
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
@@ -146,29 +178,54 @@ const Admin: React.FC = () => {
               <Database className="h-4 w-4" />
               Run v1.1 Backfill
             </Button>
-            <Button 
-              onClick={async () => {
-                const { data, error } = await supabase.functions.invoke('recompute_profiles_v11');
-                if (error) {
-                  toast({
-                    title: "Recompute Failed",
-                    description: error.message,
-                    variant: "destructive"
-                  });
-                } else {
-                  toast({
-                    title: "Recompute Complete", 
-                    description: `Updated ${data.updated}/${data.processed} profiles with v1.1 calibration`
-                  });
-                  await refreshData();
-                }
-              }}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Recompute v1.1
-            </Button>
+            <Dialog open={recomputeOpen} onOpenChange={setRecomputeOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4" />
+                  Recompute v1.1
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Recompute v1.1 Profiles</DialogTitle>
+                  <DialogDescription>Run bulk recompute using the new calibration. Use force-all with days back to target a window.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="force-all">Force all (ignore default filter)</Label>
+                    <Switch id="force-all" checked={forceAll} onCheckedChange={setForceAll} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="days-back">Days back</Label>
+                      <Input
+                        id="days-back"
+                        type="number"
+                        min={1}
+                        placeholder="e.g., 30"
+                        value={daysBack}
+                        onChange={(e) => setDaysBack(e.target.value === '' ? '' : Number(e.target.value))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="limit">Limit (optional)</Label>
+                      <Input
+                        id="limit"
+                        type="number"
+                        min={1}
+                        placeholder="e.g., 200"
+                        value={limit}
+                        onChange={(e) => setLimit(e.target.value === '' ? '' : Number(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setRecomputeOpen(false)}>Cancel</Button>
+                  <Button onClick={handleRecomputeSubmit}>Run</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Filters */}
