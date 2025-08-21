@@ -182,6 +182,31 @@ export const LatestAssessmentsTable = () => {
     fetchAssessments();
   }, [currentPage]);
 
+  // Set up real-time listener for new assessments
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-assessments-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'profiles',
+          filter: 'results_version=eq.v1.1'
+        },
+        (payload) => {
+          console.log('Real-time update received:', payload);
+          // Refresh assessments when new data comes in
+          fetchAssessments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentPage]); // Include currentPage so listener resets on page changes
+
   if (loading) {
     return (
       <Card>
