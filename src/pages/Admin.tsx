@@ -6,6 +6,7 @@ import { QualityPanel } from "@/components/admin/QualityPanel";
 import { ChartsSection } from "@/components/admin/ChartsSection";
 import { MethodHealthSection } from "@/components/admin/MethodHealthSection";
 import { EvidenceTab } from "@/components/admin/evidence/EvidenceTab";
+import { SystemStatusControl } from "@/components/admin/SystemStatusControl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -158,8 +159,9 @@ const Admin: React.FC = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="health" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="health">Health Monitor</TabsTrigger>
+          <TabsTrigger value="system">System Control</TabsTrigger>
           <TabsTrigger value="evidence">Evidence</TabsTrigger>
         </TabsList>
         
@@ -346,6 +348,11 @@ const Admin: React.FC = () => {
               />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="system" className="space-y-6">
+          {/* System Control Content */}
+          <SystemStatusControl />
         </TabsContent>
 
         <TabsContent value="evidence">
