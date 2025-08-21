@@ -23,7 +23,7 @@ export const assessmentQuestions: Question[] = [
     id: 1,
     text: "Email (for delivering results)",
     type: 'email',
-    required: false,
+    required: true,
     section: 'Demographics & Contact'
   },
   {
