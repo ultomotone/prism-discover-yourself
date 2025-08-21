@@ -10,6 +10,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 interface Assessment {
   session_id: string;
   finished_at: string;
+  started_at?: string;
   country: string;
   type_code: string;
   fit_value: number | null;
@@ -68,7 +69,7 @@ export const LatestAssessmentsTable = () => {
       
       setTotalCount(count || 0);
       
-      // Fetch data directly from profiles with proper v1.1 fields
+      // Fetch data with corrected timestamps from assessment_sessions
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -82,7 +83,12 @@ export const LatestAssessmentsTable = () => {
           top_types,
           fit_band,
           results_version,
-          overlay
+          overlay,
+          assessment_sessions!inner (
+            completed_at,
+            started_at,
+            created_at
+          )
         `)
         .eq('results_version', 'v1.1')
         .not('type_code', 'is', null)
@@ -123,9 +129,15 @@ export const LatestAssessmentsTable = () => {
             const individualFit = typeScores[row.type_code]?.fit_abs || row.score_fit_calibrated || 0;
             const sharePercentage = typeScores[row.type_code]?.share_pct || 0;
             
+            // Use corrected completed_at from assessment_sessions
+            const sessionData = (row as any).assessment_sessions;
+            const completedAt = sessionData?.completed_at || row.submitted_at;
+            const startedAt = sessionData?.started_at;
+            
             return {
               session_id: row.session_id,
-              finished_at: row.submitted_at, // Use submitted_at for proper timing
+              finished_at: completedAt, // Use corrected completed_at timestamp
+              started_at: startedAt,
               country: country,
               type_code: `${row.type_code}${row.overlay || ''}`, // Include overlay in display
               fit_value: individualFit, // Individual type fit from type_scores
@@ -220,11 +232,17 @@ export const LatestAssessmentsTable = () => {
               {assessments.map((assessment) => (
                 <TableRow key={assessment.session_id}>
                   <TableCell className="text-sm">
-                    {/* FIXED: Use submitted_at for proper submission time */}
-                    {assessment.finished_at 
-                      ? format(new Date(assessment.finished_at), 'MMM dd, HH:mm:ss')
-                      : '—'
-                    }
+                    {/* FIXED: Use corrected completed_at timestamp and show duration */}
+                    {assessment.finished_at ? (
+                      <div>
+                        <div>{format(new Date(assessment.finished_at), 'MMM dd, HH:mm:ss')}</div>
+                        {assessment.started_at && (
+                          <div className="text-xs text-muted-foreground">
+                            {Math.round((new Date(assessment.finished_at).getTime() - new Date(assessment.started_at).getTime()) / 60000)}min
+                          </div>
+                        )}
+                      </div>
+                    ) : '—'}
                   </TableCell>
                   <TableCell className="font-medium">
                     {assessment.type_code || '—'}
