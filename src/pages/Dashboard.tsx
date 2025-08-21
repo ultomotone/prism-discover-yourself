@@ -170,42 +170,83 @@ const Dashboard = () => {
           count: count as number 
         })).sort((a, b) => b.count - a.count) : [];
 
-      // Get recent assessments using new v1.1 view with proper fit values
+      // Get recent assessments directly from profiles with proper scoring fields
       const { data: recentAssessments } = await supabase
-        .from('v_latest_assessments_v11')
-        .select('finished_at, session_id, country, type_code, fit_value, share_pct, fit_band, version, confidence, overlay, invalid_combo_flag')
-        .range(0, 49);
+        .from('profiles')
+        .select(`
+          session_id,
+          created_at,
+          type_code,
+          overlay,
+          confidence,
+          score_fit_calibrated,
+          score_fit_raw,
+          top_gap,
+          fit_band,
+          results_version,
+          invalid_combo_flag,
+          type_scores,
+          top_types
+        `)
+        .eq('results_version', 'v1.1')
+        .not('type_code', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      // Get country for each assessment 
+      const assessmentsWithCountry = await Promise.all(
+        (recentAssessments || []).map(async (assessment) => {
+          let country = 'Unknown';
+          if (countryId) {
+            const { data: countryResponse } = await supabase
+              .from('assessment_responses')
+              .select('answer_value')
+              .eq('session_id', assessment.session_id)
+              .eq('question_id', countryId)
+              .maybeSingle();
+            country = countryResponse?.answer_value || 'Unknown';
+          }
+          return { ...assessment, country };
+        })
+      );
 
       // Verification log for fit distribution
-      console.log('Fit distribution check:', (recentAssessments || []).slice(0, 10).map(r => ({
+      console.log('Fit distribution check (direct from profiles):', assessmentsWithCountry.slice(0, 10).map(r => ({
         session: r.session_id?.toString().slice(0, 8) || 'unknown',
-        fit: r.fit_value,
+        fit_calibrated: r.score_fit_calibrated,
+        fit_raw: r.score_fit_raw,
+        top_gap: r.top_gap,
         band: r.fit_band,
-        version: r.version
+        version: r.results_version,
+        p1: r.type_scores && r.top_types ? r.type_scores[r.top_types[0]]?.share_pct : null,
+        p2: r.type_scores && r.top_types ? r.type_scores[r.top_types[1]]?.share_pct : null
       })));
 
-      const latestAssessments: AssessmentDetail[] = (recentAssessments || []).map((assessment: any) => {        
+      const latestAssessments: AssessmentDetail[] = assessmentsWithCountry.map((assessment: any) => {
+        const p1 = assessment.type_scores && assessment.top_types?.[0] 
+          ? assessment.type_scores[assessment.top_types[0]]?.share_pct : null;
+        const p2 = assessment.type_scores && assessment.top_types?.[1]
+          ? assessment.type_scores[assessment.top_types[1]]?.share_pct : null;
+        
         return {
-          created_at: assessment.finished_at,
+          created_at: assessment.created_at,
           type_code: `${assessment.type_code}${assessment.overlay || ''}`,
           overlay: assessment.overlay || '',
           country: assessment.country,
           country_display: assessment.country,
           email: undefined, // Never show email for privacy
-          top_types: undefined,
-          type_scores: undefined,
-          fit_score: typeof assessment.fit_value === 'number' && !isNaN(assessment.fit_value) 
-            ? Math.round(assessment.fit_value) 
-            : null, // Use rounded numeric value, null if invalid
-          share_pct: assessment.share_pct,
+          top_types: assessment.top_types,
+          type_scores: assessment.type_scores,
+          fit_score: assessment.score_fit_calibrated,
+          share_pct: p1,
           fit_band: assessment.fit_band,
           confidence: assessment.confidence,
-          version: assessment.version || 'legacy',
+          version: assessment.results_version || 'legacy',
           // Add new v1.1 fields 
-          results_version: assessment.version,
-          score_fit_calibrated: assessment.fit_value,
-          score_fit_raw: null,
-          top_gap: null,
+          results_version: assessment.results_version,
+          score_fit_calibrated: assessment.score_fit_calibrated,
+          score_fit_raw: assessment.score_fit_raw,
+          top_gap: assessment.top_gap,
           invalid_combo_flag: assessment.invalid_combo_flag
         };
       });

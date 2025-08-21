@@ -33,6 +33,8 @@ interface QualityData {
   inconsistencyMean: number;
   sdIndexMean: number;
   funcBalanceMedian: number;
+  confidenceMarginMedian: number; // P1-P2
+  validityPassRate: number;
 }
 
 interface ChartData {
@@ -80,7 +82,9 @@ export const useAdvancedAdminAnalytics = () => {
     closeCallsPercent: 0,
     inconsistencyMean: 0,
     sdIndexMean: 0,
-    funcBalanceMedian: 0
+    funcBalanceMedian: 0,
+    confidenceMarginMedian: 0,
+    validityPassRate: 0
   });
   const [chartData, setChartData] = useState<ChartData>({
     confidenceDistribution: [],
@@ -196,20 +200,57 @@ export const useAdvancedAdminAnalytics = () => {
 
   const fetchQualityData = async () => {
     try {
-      const { data: qualityStats } = await supabase
-        .from('v_quality')
-        .select('top1_fit, top_gap, inconsistency, sd_index, func_balance');
+      // Get quality data directly from profiles with v1.1 scoring
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select(`
+          score_fit_calibrated,
+          top_gap, 
+          type_scores,
+          top_types,
+          validity,
+          validity_status
+        `)
+        .eq('results_version', 'v1.1')
+        .not('score_fit_calibrated', 'is', null);
 
-      if (qualityStats && qualityStats.length > 0) {
-        // Calculate statistics client-side
-        const top1Fits = qualityStats.map(q => q.top1_fit).filter(f => f !== null);
-        const topGaps = qualityStats.map(q => q.top_gap).filter(g => g !== null);
-        const inconsistencies = qualityStats.map(q => q.inconsistency).filter(i => i !== null);
-        const sdIndices = qualityStats.map(q => q.sd_index).filter(s => s !== null);
-        const funcBalances = qualityStats.map(q => q.func_balance).filter(f => f !== null);
+      if (profilesData && profilesData.length > 0) {
+        // Calculate statistics client-side using v1.1 data
+        const fitScores = profilesData.map(p => p.score_fit_calibrated).filter(f => f !== null);
+        const topGaps = profilesData.map(p => p.top_gap).filter(g => g !== null && g !== undefined);
+        
+        // Calculate confidence margins (P1-P2) from type_scores
+        const confidenceMargins = profilesData
+          .filter(p => p.type_scores && p.top_types && Array.isArray(p.top_types) && p.top_types.length >= 2)
+          .map(p => {
+            const typeScores = p.type_scores as Record<string, any>;
+            const topTypes = p.top_types as string[];
+            const p1 = typeScores[topTypes[0]]?.share_pct || 0;
+            const p2 = typeScores[topTypes[1]]?.share_pct || 0;
+            return p1 - p2;
+          })
+          .filter(margin => margin !== null && !isNaN(margin));
+
+        // Extract validity metrics from profiles
+        const inconsistencies = profilesData
+          .filter(p => p.validity && typeof p.validity === 'object')
+          .map(p => {
+            const validity = p.validity as any;
+            return validity?.inconsistency;
+          })
+          .filter(val => val !== null && val !== undefined);
+        
+        const sdIndices = profilesData
+          .filter(p => p.validity && typeof p.validity === 'object')
+          .map(p => {
+            const validity = p.validity as any;
+            return validity?.sd_index;
+          })
+          .filter(val => val !== null && val !== undefined);
 
         const median = (arr: number[]) => {
-          const sorted = arr.sort((a, b) => a - b);
+          if (arr.length === 0) return 0;
+          const sorted = [...arr].sort((a, b) => a - b);
           return sorted[Math.floor(sorted.length / 2)] || 0;
         };
 
@@ -218,13 +259,27 @@ export const useAdvancedAdminAnalytics = () => {
         const closeCallsCount = topGaps.filter(gap => gap < 3).length;
         const closeCallsPercent = topGaps.length > 0 ? (closeCallsCount / topGaps.length) * 100 : 0;
 
+        // Calculate validity pass rate
+        const validityPasses = profilesData.filter(p => p.validity_status === 'pass').length;
+        const validityPassRate = (validityPasses / profilesData.length) * 100;
+
         setQualityData({
-          top1FitMedian: median(top1Fits),
+          top1FitMedian: median(fitScores),
           topGapMedian: median(topGaps),
           closeCallsPercent,
           inconsistencyMean: average(inconsistencies),
           sdIndexMean: average(sdIndices),
-          funcBalanceMedian: median(funcBalances)
+          funcBalanceMedian: 0, // Would need function balance calculation
+          confidenceMarginMedian: median(confidenceMargins),
+          validityPassRate
+        });
+
+        console.log('Quality metrics calculated:', {
+          profiles: profilesData.length,
+          topGapMedian: median(topGaps),
+          closeCallsPercent: closeCallsPercent.toFixed(1),
+          confidenceMarginMedian: median(confidenceMargins).toFixed(1),
+          validityPassRate: validityPassRate.toFixed(1)
         });
       }
     } catch (error) {

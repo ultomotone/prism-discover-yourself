@@ -9,6 +9,8 @@ interface QualityData {
   inconsistencyMean: number;
   sdIndexMean: number;
   funcBalanceMedian: number;
+  confidenceMarginMedian: number;
+  validityPassRate: number;
 }
 
 interface QualityPanelProps {
@@ -43,7 +45,7 @@ export const QualityPanel: React.FC<QualityPanelProps> = ({ data, onExport }) =>
         <CardTitle>Quality Metrics</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <KPICard
             title="Top-1 Fit Median"
             value={data.top1FitMedian.toFixed(1)}
@@ -57,6 +59,13 @@ export const QualityPanel: React.FC<QualityPanelProps> = ({ data, onExport }) =>
             status={getTopGapStatus(data.topGapMedian)}
             tooltip="Median difference between Top-1 and Top-2 fit scores. Higher gap = clearer type determination"
             onExport={() => onExport('v_fit_ranks')}
+          />
+          
+          <KPICard
+            title="Confidence Margin"
+            value={`${data.confidenceMarginMedian.toFixed(1)}%`}
+            tooltip="Median P1-P2 probability difference. Higher values indicate more confident type assignments"
+            onExport={() => onExport('v_quality')}
           />
           
           <KPICard
@@ -89,6 +98,14 @@ export const QualityPanel: React.FC<QualityPanelProps> = ({ data, onExport }) =>
             status={getFuncBalanceStatus(data.funcBalanceMedian)}
             tooltip="Median difference between max and min function strengths within profiles"
             onExport={() => onExport('v_quality')}
+          />
+          
+          <KPICard
+            title="Validity Pass Rate"
+            value={`${data.validityPassRate.toFixed(1)}%`}
+            status={data.validityPassRate >= 85 ? 'good' : data.validityPassRate >= 70 ? 'warning' : 'danger'}
+            tooltip="Percentage of sessions passing v1.1 validity checks. Target: >85%"
+            onExport={() => onExport('v_validity')}
           />
         </div>
       </CardContent>

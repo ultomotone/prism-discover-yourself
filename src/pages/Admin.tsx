@@ -182,6 +182,28 @@ const Admin: React.FC = () => {
           {/* KPI Strip */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
             <KPICard
+              title="Top Gap Median"
+              value={`${qualityData.topGapMedian.toFixed(1)}`}
+              tooltip="Median gap between top 2 type scores (fit difference). Higher values indicate clearer type distinctions."
+              onExport={() => exportToCSV('v_quality')}
+            />
+            
+            <KPICard
+              title="Confidence Margin"
+              value={`${qualityData.confidenceMarginMedian.toFixed(1)}%`}
+              tooltip="Median P1-P2 probability difference (confidence margin). Higher values indicate more confident type assignments."
+              onExport={() => exportToCSV('v_quality')}
+            />
+            
+            <KPICard
+              title="Close Calls"
+              value={`${qualityData.closeCallsPercent.toFixed(1)}%`}
+              subtitle="Gap < 3"
+              tooltip="Percentage of assessments with top gap < 3 points (borderline cases requiring careful interpretation)"
+              onExport={() => exportToCSV('v_quality')}
+            />
+            
+            <KPICard
               title="Completions"
               value={kpiData.completions.toLocaleString()}
               tooltip="Total number of completed assessments in the selected time period"
