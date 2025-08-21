@@ -101,7 +101,7 @@ export const LatestAssessmentsTable = () => {
         const sessionIds = data.map(row => row.session_id);
         const { data: sessionsData } = await supabase
           .from('assessment_sessions')
-          .select('id, completed_at, started_at, created_at')
+          .select('id, completed_at, completed_at_original, started_at, started_at_original, created_at, created_at_original')
           .in('id', sessionIds);
         
         const sessionTimingMap = new Map(
@@ -137,18 +137,21 @@ export const LatestAssessmentsTable = () => {
             const sharePercentage = typeScores[row.type_code]?.share_pct || 0;
             
             // Get corrected timing from session data
-            const sessionTiming = sessionTimingMap.get(row.session_id);
-            const completedAt = sessionTiming?.completed_at || row.submitted_at;
-            const startedAt = sessionTiming?.started_at;
+            const sessionTiming = sessionTimingMap.get(row.session_id) as any;
+            const completedAt = sessionTiming?.completed_at_original || row.submitted_at || sessionTiming?.completed_at;
+            const startedAt = sessionTiming?.started_at_original 
+              || sessionTiming?.created_at_original 
+              || sessionTiming?.started_at 
+              || sessionTiming?.created_at;
             
             return {
               session_id: row.session_id,
-              finished_at: completedAt, // Use corrected completed_at timestamp
+              finished_at: completedAt,
               started_at: startedAt,
               country: country,
-              type_code: `${row.type_code}${row.overlay || ''}`, // Include overlay in display
-              fit_value: individualFit, // Individual type fit from type_scores
-              share_pct: sharePercentage, // Individual type share from type_scores
+              type_code: `${row.type_code}${row.overlay || ''}`,
+              fit_value: individualFit,
+              share_pct: sharePercentage,
               fit_band: row.fit_band,
               version: row.results_version
             };
