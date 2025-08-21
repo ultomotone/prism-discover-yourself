@@ -334,12 +334,22 @@ export const LatestAssessmentsTable = () => {
               {assessments.map((assessment) => (
                 <TableRow key={assessment.session_id}>
                   <TableCell className="text-sm">
-                    {/* Use corrected completed_at timestamp without duration */}
+                    {/* Use corrected completed_at timestamp in Eastern Time */}
                     {assessment.finished_at ? (
                       <div>
-                        <div>{format(new Date(assessment.finished_at), 'MMM dd, HH:mm:ss')}</div>
+                        <div>
+                          {new Intl.DateTimeFormat('en-US', {
+                            timeZone: 'America/New_York',
+                            month: 'short',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false
+                          }).format(new Date(assessment.finished_at))} ET
+                        </div>
                         <div className="text-xs text-muted-foreground">
-                          {assessment.finished_at} {/* Debug: show raw timestamp */}
+                          {assessment.finished_at} {/* Debug: show raw UTC timestamp */}
                         </div>
                       </div>
                     ) : '—'}
