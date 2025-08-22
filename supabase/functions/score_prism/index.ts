@@ -510,6 +510,17 @@ serve(async (req) => {
       Instinct: Math.round((blocks_fc.Instinct / bFCSum) * 1000)/10,
     } : { Core:0, Critic:0, Hidden:0, Instinct:0 };
 
+    // Blend Likert and FC into a single normalized blocks percentage using source-weighted average
+    const totalB = bLikertSum + bFCSum;
+    const wLik = totalB > 0 ? (bLikertSum / totalB) : 1;
+    const wFC  = totalB > 0 ? (bFCSum / totalB) : 0;
+    const blocks_norm_blend = {
+      Core: Math.round(((wLik * blocks_norm_likert.Core) + (wFC * blocks_norm_fc.Core)) * 10) / 10,
+      Critic: Math.round(((wLik * blocks_norm_likert.Critic) + (wFC * blocks_norm_fc.Critic)) * 10) / 10,
+      Hidden: Math.round(((wLik * blocks_norm_likert.Hidden) + (wFC * blocks_norm_fc.Hidden)) * 10) / 10,
+      Instinct: Math.round(((wLik * blocks_norm_likert.Instinct) + (wFC * blocks_norm_fc.Instinct)) * 10) / 10,
+    };
+
     // ---- Distance-based type matching (PRISM Scoring 6.18) ----
     // Build numeric prototype targets (1..5) from block weights
     const MIN_W = Math.min(...Object.values(BLOCK_WEIGHTS));
@@ -782,6 +793,8 @@ serve(async (req) => {
       type_scores: type_scores,
       top_types: top3,
       dims_highlights: dims_highlights,
+      blocks_norm: blocks_norm_blend,
+      blocks: { likert: blocks_norm_likert, fc: blocks_norm_fc },
       version: "v1.1",
       
       // FIXED: Use actual submission time with microsecond precision to avoid clustering

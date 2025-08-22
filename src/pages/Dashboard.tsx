@@ -374,18 +374,20 @@ const Dashboard = () => {
   useEffect(() => {
     fetchDashboardData();
 
-    // One-time backfill to ensure all completed sessions have profiles
+    // One-time backfill and recompute to ensure all completed sessions have full profiles (incl. Blocks & Neuroticism)
     (async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('backfill_profiles', { body: {} });
-        if (error) {
-          console.error('Backfill error:', error);
-        } else if (data && (data.created || 0) > 0) {
-          // Refresh after backfill creates new profiles
+        const [backfillRes, recomputeRes] = await Promise.all([
+          supabase.functions.invoke('backfill_profiles', { body: {} }),
+          supabase.functions.invoke('recompute_profiles_v11', { body: { force_all: true } })
+        ]);
+
+        if (backfillRes.error) console.error('Backfill error:', backfillRes.error);
+        if ((backfillRes.data && (backfillRes.data.created || 0) > 0) || (recomputeRes.data && recomputeRes.data.updated > 0)) {
           await fetchDashboardData();
         }
       } catch (e) {
-        console.error('Backfill exception:', e);
+        console.error('Backfill/Recompute exception:', e);
       }
     })();
 
