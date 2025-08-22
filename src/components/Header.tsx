@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Menu, X, ChevronDown } from "lucide-react";
@@ -42,23 +42,23 @@ const Header = () => {
       <nav className="prism-container">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <a href="/" className="flex items-center hover:opacity-80 prism-transition">
+          <Link to="/" className="flex items-center hover:opacity-80 prism-transition">
             <div className="w-8 h-8 prism-gradient-hero rounded-md flex items-center justify-center mr-3">
               <span className="text-white font-bold text-lg">P</span>
             </div>
             <span className="text-xl font-bold text-primary">PRISM</span>
-          </a>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {navigation.map((item) => (
-              <a
+              <Link
                 key={item.name}
-                href={item.href}
+                to={item.href}
                 className="text-foreground hover:text-primary prism-transition font-medium"
               >
                 {item.name}
-              </a>
+              </Link>
             ))}
             
             {/* Solutions Dropdown */}
@@ -72,7 +72,7 @@ const Header = () => {
               <DropdownMenuContent className="w-48 bg-background border border-border shadow-lg z-50">
                 {solutionsItems.map((item) => (
                   <DropdownMenuItem key={item.name} asChild>
-                    <a href={item.href} className="w-full">{item.name}</a>
+                    <Link to={item.href} className="w-full">{item.name}</Link>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -89,12 +89,12 @@ const Header = () => {
               <DropdownMenuContent className="w-56 bg-background border border-border shadow-lg z-50 max-h-96 overflow-y-auto">
                 {prismTypes.map((type) => (
                   <DropdownMenuItem key={type.code} asChild>
-                    <a href={`/types/${type.slug}`} className="w-full">
+                    <Link to={`/types/${type.slug}`} className="w-full">
                       <div className="flex flex-col">
                         <div className="font-medium">{type.code} - {type.publicArchetype}</div>
                         <div className="text-xs text-muted-foreground">{type.baseCreative}</div>
                       </div>
-                    </a>
+                    </Link>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -110,18 +110,18 @@ const Header = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56 bg-background border border-border shadow-lg z-50">
                 <DropdownMenuItem asChild>
-                  <a href="/signals" className="w-full">Information Elements Overview</a>
+                  <Link to="/signals" className="w-full">Information Elements Overview</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {prismComponents.slice(1, 9).map((item) => (
                   <DropdownMenuItem key={item.name} asChild>
-                    <a href={item.href} className="w-full">{item.name}</a>
+                    <Link to={item.href} className="w-full">{item.name}</Link>
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
                 {prismComponents.slice(9).map((item) => (
                   <DropdownMenuItem key={item.name} asChild>
-                    <a href={item.href} className="w-full">{item.name}</a>
+                    <Link to={item.href} className="w-full">{item.name}</Link>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -167,28 +167,28 @@ const Header = () => {
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-background border-t border-border">
               {navigation.map((item) => (
-                <a
+                <Link
                   key={item.name}
-                  href={item.href}
+                  to={item.href}
                   className="block px-3 py-2 text-foreground hover:text-primary prism-transition font-medium"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.name}
-                </a>
+                </Link>
               ))}
               
               {/* Solutions in Mobile */}
               <div className="border-t border-border mt-2 pt-2">
                 <div className="px-3 py-1 text-sm font-semibold text-muted-foreground">Solutions</div>
                 {solutionsItems.map((item) => (
-                  <a
+                  <Link
                     key={item.name}
-                    href={item.href}
+                    to={item.href}
                     className="block px-3 py-2 text-sm text-foreground hover:text-primary prism-transition"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.name}
-                  </a>
+                  </Link>
                 ))}
               </div>
               
@@ -196,14 +196,14 @@ const Header = () => {
               <div className="border-t border-border mt-2 pt-2">
                 <div className="px-3 py-1 text-sm font-semibold text-muted-foreground">PRISM Types</div>
                 {prismTypes.map((type) => (
-                  <a
+                  <Link
                     key={type.code}
-                    href={`/types/${type.slug}`}
+                    to={`/types/${type.slug}`}
                     className="block px-3 py-2 text-sm text-foreground hover:text-primary prism-transition"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {type.code} - {type.publicArchetype}
-                  </a>
+                  </Link>
                 ))}
               </div>
               
@@ -211,14 +211,14 @@ const Header = () => {
               <div className="border-t border-border mt-2 pt-2">
                 <div className="px-3 py-1 text-sm font-semibold text-muted-foreground">PRISM Components</div>
                 {prismComponents.map((item) => (
-                  <a
+                  <Link
                     key={item.name}
-                    href={item.href}
+                    to={item.href}
                     className="block px-3 py-2 text-sm text-foreground hover:text-primary prism-transition"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.name}
-                  </a>
+                  </Link>
                 ))}
               </div>
               
