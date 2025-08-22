@@ -23,6 +23,7 @@ interface DashboardData {
   overlayStats: Array<{ overlay: string; count: number }>;
   typeDistribution: Array<{ type: string; count: number }>;
   countryDistribution: Array<{ country: string; count: number }>;
+  blocksAnalysis: Array<{ block: string; average: number; count: number }>;
   latestAssessments: Array<{
     created_at: string;
     type_code: string;
@@ -292,6 +293,47 @@ const Dashboard = () => {
       // Debug log to verify country data is being passed
       console.log('Country distribution for activity map:', countryDistribution);
 
+      // Fetch blocks analysis data
+      console.log("🔍 Fetching blocks analysis data...");
+      const { data: blocksData, error: blocksError } = await supabase
+        .from('profiles')
+        .select('blocks_norm')
+        .eq('results_version', 'v1.1')
+        .not('blocks_norm', 'is', null);
+
+      console.log("🔍 Blocks data fetched:", blocksData?.length || 0, "profiles with blocks");
+
+      let blocksAnalysis: Array<{ block: string; average: number; count: number }> = [];
+      
+      if (blocksData && blocksData.length > 0) {
+        const blockTotals = { Core: 0, Critic: 0, Hidden: 0, Instinct: 0 };
+        const blockCounts = { Core: 0, Critic: 0, Hidden: 0, Instinct: 0 };
+
+        blocksData.forEach(profile => {
+          const blocks = profile.blocks_norm as any;
+          if (blocks && typeof blocks === 'object') {
+            Object.keys(blockTotals).forEach(blockKey => {
+              if (blocks[blockKey] !== undefined && blocks[blockKey] !== null) {
+                blockTotals[blockKey as keyof typeof blockTotals] += blocks[blockKey];
+                blockCounts[blockKey as keyof typeof blockCounts]++;
+              }
+            });
+          }
+        });
+
+        blocksAnalysis = Object.keys(blockTotals).map(blockKey => ({
+          block: blockKey,
+          average: blockCounts[blockKey as keyof typeof blockCounts] > 0 
+            ? blockTotals[blockKey as keyof typeof blockTotals] / blockCounts[blockKey as keyof typeof blockCounts] 
+            : 0,
+          count: blockCounts[blockKey as keyof typeof blockCounts]
+        })).sort((a, b) => b.average - a.average);
+
+        console.log("🔍 Blocks analysis processed:", blocksAnalysis);
+      } else {
+        console.log("🔍 No blocks data available");
+      }
+
       console.log("🔍 Setting final dashboard data...");
 
       setData({
@@ -301,6 +343,7 @@ const Dashboard = () => {
         overlayStats,
         typeDistribution,
         countryDistribution, // Now contains actual country data for heatmap
+        blocksAnalysis, // Add blocks analysis
         latestAssessments // Now shows anonymized recent assessments
       });
 
@@ -560,7 +603,7 @@ const Dashboard = () => {
         </div>
 
         {/* Type Distribution Chart */}
-        <div className="grid grid-cols-1 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <Card className="prism-shadow-card">
             <CardHeader>
               <CardTitle>Type Distribution</CardTitle>
@@ -577,6 +620,55 @@ const Dashboard = () => {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Blocks Analysis */}
+          <Card className="prism-shadow-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Info className="h-4 w-4" />
+                Blocks (%)
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger className="text-muted-foreground">
+                      <Info className="h-3 w-3" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Average block percentages across all assessments</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {data?.blocksAnalysis.length > 0 ? (
+                <div className="space-y-4">
+                  {data.blocksAnalysis.map((block, index) => (
+                    <div key={block.block} className="flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${
+                          block.block === 'Core' ? 'bg-primary' :
+                          block.block === 'Critic' ? 'bg-secondary' :
+                          block.block === 'Hidden' ? 'bg-accent' : 
+                          'bg-muted-foreground'
+                        }`} />
+                        <span className="font-medium">{block.block}</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold">{block.average.toFixed(1)}%</div>
+                        <div className="text-xs text-muted-foreground">
+                          {block.count} profiles
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  Block analysis data not available
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
