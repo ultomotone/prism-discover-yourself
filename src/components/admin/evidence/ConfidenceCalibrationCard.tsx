@@ -14,7 +14,7 @@ export const ConfidenceCalibrationCard: React.FC<ConfidenceCalibrationCardProps>
   onExportCSV,
   loading = false
 }) => {
-  const definition = "Empirical hit-rate = % where High (or Moderate/Low) at T1 predicted the same Top-1 at T2. Expected vs Observed should track High>Moderate>Low.";
+  const definition = "Compares expected accuracy for High/Moderate/Low bands (e.g., 90%/70%/50%) vs. actual match rate.\n\nDeviation: Absolute difference in percentage points (e.g., ±29.5pp = very poorly calibrated).";
   
   const chartData = data ? [
     {
@@ -42,7 +42,7 @@ export const ConfidenceCalibrationCard: React.FC<ConfidenceCalibrationCardProps>
 
   return (
     <EvidenceKPICard
-      title="Calibration of Confidence"
+      title="🎯 Calibration of Confidence"
       definition={definition}
       value={overallCalibration ? `±${overallCalibration.toFixed(1)}pp` : '...'}
       subtitle="Deviation from expected"

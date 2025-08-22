@@ -13,7 +13,9 @@ export const TypeStabilityCard: React.FC<TypeStabilityCardProps> = ({
   onExportCSV,
   loading = false
 }) => {
-  const definition = "% of retest pairs where Top-1 type (from profiles.top_types[0]) is unchanged.";
+  const stabilityDefinition = "Formula:\n\nStability % = (# of pairs with same top type / total pairs) × 100\n\nSame type code (e.g., LIE) between the two assessments in a pair = stable.";
+  
+  const adjacentDefinition = "Formula:\n\nAdjacent % = (# of pairs that shifted to an adjacent type / total pairs) × 100\n\n\"Adjacent\" = shares one of base or creative function, but not both.";
   
   const formatPercent = (value: number) => {
     return `${value.toFixed(1)}%`;
@@ -22,8 +24,8 @@ export const TypeStabilityCard: React.FC<TypeStabilityCardProps> = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <EvidenceKPICard
-        title="Type Stability"
-        definition={definition}
+        title="🔐 Type Stability"
+        definition={stabilityDefinition}
         value={data ? formatPercent(data.stabilityPercent) : '...'}
         subtitle={data ? `n=${data.n} pairs` : undefined}
         badge="Primary"
@@ -32,8 +34,8 @@ export const TypeStabilityCard: React.FC<TypeStabilityCardProps> = ({
         loading={loading}
       />
       <EvidenceKPICard
-        title="Adjacent Oscillation"
-        definition="% where Top-1 flips but Top-2 set is identical (same two types, order swapped)."
+        title="🔁 Adjacent Oscillation"
+        definition={adjacentDefinition}
         value={data ? formatPercent(data.adjacentFlipPercent) : '...'}
         subtitle={data ? `n=${data.n} pairs` : undefined}
         badge="Secondary"

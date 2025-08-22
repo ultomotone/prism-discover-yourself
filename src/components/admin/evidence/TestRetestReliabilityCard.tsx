@@ -14,7 +14,7 @@ export const TestRetestReliabilityCard: React.FC<TestRetestReliabilityCardProps>
   onExportCSV,
   loading = false
 }) => {
-  const definition = "Pearson r between session-pair vectors of profiles.strengths (Ti…Se) for the same user across nearest two sessions.";
+  const definition = "Formula: Pearson r across 8 function scores between paired assessments.\n\nAggregate: Mean r across all respondent pairs.";
   
   const formatValue = (value: number) => {
     return value.toFixed(3);
@@ -22,7 +22,7 @@ export const TestRetestReliabilityCard: React.FC<TestRetestReliabilityCardProps>
 
   return (
     <EvidenceKPICard
-      title="Test–Retest Reliability (Strengths r)"
+      title="🔁 Test–Retest Reliability (Strengths r)"
       definition={definition}
       value={data ? formatValue(data.overallR) : '...'}
       subtitle={data ? `n=${data.n} pairs` : undefined}

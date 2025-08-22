@@ -14,7 +14,7 @@ export const MethodAgreementCard: React.FC<MethodAgreementCardProps> = ({
   onExportCSV,
   loading = false
 }) => {
-  const definition = "Correlation between Likert-based strength and forced-choice support share for the same function within the session (Spearman r). Overall MAI = mean of the 8 r's.";
+  const definition = "Per Function:\n\nr = Pearson correlation between Likert-based and FC-based scores\n\nMAI = mean of 8 function r values";
   
   const getCorrelationColor = (r: number) => {
     if (r >= 0.7) return 'bg-green-500';
@@ -26,7 +26,7 @@ export const MethodAgreementCard: React.FC<MethodAgreementCardProps> = ({
 
   return (
     <EvidenceKPICard
-      title="Method Agreement Index (MAI)"
+      title="📏 Method Agreement Index (MAI)"
       definition={definition}
       value={data ? data.overall.toFixed(3) : '...'}
       subtitle="Overall MAI"
