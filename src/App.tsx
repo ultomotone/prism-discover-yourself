@@ -2,6 +2,7 @@ import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Footer from "./components/Footer";
@@ -152,6 +153,16 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/assessment" element={<Assessment />} />
                 <Route path="/results/:sessionId" element={<Results />} />
+                {/* Debug route for Results testing */}
+                <Route path="/results" element={
+                  <div className="min-h-screen bg-background flex items-center justify-center">
+                    <div className="text-center">
+                      <h1 className="text-2xl font-bold mb-4">Results Page - Missing Session ID</h1>
+                      <p className="text-muted-foreground mb-4">You need a session ID to view results</p>
+                      <Button onClick={() => window.location.href = '/'}>Go Home</Button>
+                    </div>
+                  </div>
+                } />
                 <Route path="/history" element={<History />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/admin" element={<Admin />} />

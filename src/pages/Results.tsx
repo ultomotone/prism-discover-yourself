@@ -11,7 +11,9 @@ import jsPDF from 'jspdf';
 import Header from '@/components/Header';
 
 export default function Results() {
+  console.log('🟢 Results component mounted');
   const { sessionId } = useParams();
+  console.log('🔍 Session ID from params:', sessionId);
   const navigate = useNavigate();
   const { toast } = useToast();
   const [scoring, setScoring] = useState<any | null>(null);
