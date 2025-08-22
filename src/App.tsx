@@ -10,6 +10,7 @@ import Assessment from "./pages/Assessment";
 import Results from "./pages/Results";
 import History from "./pages/History";
 import Dashboard from "./pages/Dashboard";
+import DashboardTest from "./pages/Dashboard-Test";
 import About from "./pages/About";
 import Signals from "./pages/Signals";
 import Ti from "./pages/Ti";
@@ -153,7 +154,7 @@ const App = () => (
                 <Route path="/assessment" element={<Assessment />} />
                 <Route path="/results/:sessionId" element={<Results />} />
                 <Route path="/history" element={<History />} />
-                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard" element={<DashboardTest />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/signals" element={<Signals />} />
