@@ -971,9 +971,34 @@ function MetaInfo({ p }:{ p:Profile }){
   );
 }
 
+// Wrapper function to safely render components with error boundaries
+function SafeComponent<T extends Record<string, any>>({ 
+  component: Component, 
+  props, 
+  fallbackName 
+}: { 
+  component: React.ComponentType<T>; 
+  props: T; 
+  fallbackName: string;
+}) {
+  try {
+    console.log(`🔵 Rendering ${fallbackName}...`);
+    return <Component {...props} />;
+  } catch (error) {
+    console.error(`🔴 Error in ${fallbackName}:`, error);
+    return (
+      <div className="p-4 border border-red-300 rounded bg-red-50">
+        <h3 className="font-semibold text-red-700">Error in {fallbackName}</h3>
+        <p className="text-red-600 text-sm">{error instanceof Error ? error.message : 'Unknown error'}</p>
+      </div>
+    );
+  }
+}
+
 // ---------- Main export -----------------------------------------------------
 export const ResultsV2: React.FC<{ profile: Profile }> = ({ profile: p }) => {
   console.log('🟢 ResultsV2 component rendering with profile:', p);
+  console.log('🟢 Profile keys:', p ? Object.keys(p) : 'No profile');
   
   // Early return for missing profile
   if (!p) {
@@ -990,6 +1015,13 @@ export const ResultsV2: React.FC<{ profile: Profile }> = ({ profile: p }) => {
   
   const primary = p.top_types?.[0] || p.type_code;
   console.log('🟡 Primary type determined as:', primary);
+  console.log('🟡 Available data:', {
+    top_types: p.top_types,
+    type_code: p.type_code,
+    overlay: p.overlay,
+    strengths: p.strengths ? Object.keys(p.strengths) : 'Missing',
+    blocks: p.blocks ? Object.keys(p.blocks) : 'Missing'
+  });
   
   // Early return for missing primary type
   if (!primary) {
@@ -1007,18 +1039,18 @@ export const ResultsV2: React.FC<{ profile: Profile }> = ({ profile: p }) => {
   try {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
-        <Top3 p={p} />
-        <StateOverlaySection overlay={p.overlay} />
-        <TypeCoreSection typeCode={primary} />
-        <TypeNarrative typeCode={primary} />
-        <FunctionsAnalysis p={p} />
+        <SafeComponent component={Top3} props={{ p }} fallbackName="Top3" />
+        <SafeComponent component={StateOverlaySection} props={{ overlay: p.overlay }} fallbackName="StateOverlaySection" />
+        <SafeComponent component={TypeCoreSection} props={{ typeCode: primary }} fallbackName="TypeCoreSection" />
+        <SafeComponent component={TypeNarrative} props={{ typeCode: primary }} fallbackName="TypeNarrative" />
+        <SafeComponent component={FunctionsAnalysis} props={{ p }} fallbackName="FunctionsAnalysis" />
         <div className="grid md:grid-cols-2 gap-6">
-          <Strengths p={p} />
-          <Dimensions p={p} />
+          <SafeComponent component={Strengths} props={{ p }} fallbackName="Strengths" />
+          <SafeComponent component={Dimensions} props={{ p }} fallbackName="Dimensions" />
         </div>
-        <Blocks p={p} />
-        <CoreAlignmentSection typeCode={primary} />
-        <MetaInfo p={p} />
+        <SafeComponent component={Blocks} props={{ p }} fallbackName="Blocks" />
+        <SafeComponent component={CoreAlignmentSection} props={{ typeCode: primary }} fallbackName="CoreAlignmentSection" />
+        <SafeComponent component={MetaInfo} props={{ p }} fallbackName="MetaInfo" />
       </div>
     );
   } catch (error) {
