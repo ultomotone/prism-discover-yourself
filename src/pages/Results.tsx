@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, ArrowLeft, ExternalLink, Copy } from "lucide-react";
+import { Download, ArrowLeft, ExternalLink, Copy, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ResultsV2 } from "@/components/assessment/ResultsV2";
 import { useToast } from "@/hooks/use-toast";
@@ -418,6 +418,34 @@ export default function Results() {
             </CardContent>
           </Card>
 
+          {/* Community Invitation */}
+          <Card className="max-w-4xl mx-auto border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5">
+            <CardContent className="p-6 text-center">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Users className="h-6 w-6 text-primary" />
+                <h2 className="text-2xl font-bold text-primary">Join Our Community</h2>
+              </div>
+              <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+                Connect with thousands of like-minded individuals exploring their personality journey. 
+                Share insights, ask questions, and deepen your understanding of PRISM and personality theory.
+              </p>
+              <div className="space-y-4">
+                <Button 
+                  onClick={() => window.open('https://www.skool.com/your-personality-blueprint/about?ref=931e57f033d34f3eb64db45f22b1389e', '_blank')}
+                  size="lg"
+                  className="flex items-center gap-2 bg-gradient-to-r from-primary to-secondary hover:from-primary-dark hover:to-secondary-dark"
+                >
+                  <Users className="h-4 w-4" />
+                  Join Personality Blueprint Community
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                  Free to join • Expert discussions • Type-focused groups
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Action Buttons */}
           <Card className="max-w-4xl mx-auto">
             <CardContent className="p-6">
@@ -473,26 +501,6 @@ export default function Results() {
                 >
                   <Copy className="h-4 w-4" />
                   Save Results Link
-                </Button>
-
-                <Button 
-                  onClick={() => {
-                    const details = `Assessment Details:\n\nType: ${scoring?.type_code}${scoring?.overlay || ''}\nDate: ${new Date().toLocaleString()}\nCountry: Spain\nConfidence: ${scoring?.confidence || 'Unknown'}\nSession ID: ${sessionId}\n\nBase Function: ${scoring?.base_func || 'Unknown'}\nCreative Function: ${scoring?.creative_func || 'Unknown'}\n\nStrengths: ${JSON.stringify(scoring?.strengths, null, 2)}\n\nDimensions: ${JSON.stringify(scoring?.dimensions, null, 2)}`;
-                    
-                    navigator.clipboard.writeText(details).then(() => {
-                      toast({
-                        title: "Assessment details copied!",
-                        description: "Raw assessment data copied to clipboard for analysis.",
-                      });
-                    }).catch(() => {
-                      alert(`Assessment Details:\n\n${details}`);
-                    });
-                  }}
-                  variant="ghost" 
-                  size="lg"
-                  className="flex items-center gap-2"
-                >
-                  Assessment Details
                 </Button>
               </div>
             </CardContent>
