@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { BarChart3, Shield, Users, CheckCircle } from "lucide-react";
+import { BarChart3, Shield, Users, CheckCircle, FileText } from "lucide-react";
+import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 
 const Research = () => {
@@ -71,6 +72,32 @@ const Research = () => {
                 </CardContent>
               </Card>
             </div>
+          </section>
+
+          {/* Published Research */}
+          <section className="mb-16">
+            <h2 className="prism-heading-md text-primary mb-12 text-center">Published Research</h2>
+            <Card className="prism-shadow-card">
+              <CardContent className="p-8">
+                <div className="flex items-start">
+                  <FileText className="h-8 w-8 text-secondary mr-4 mt-1 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-primary mb-2">
+                      First 100 Assessments: PRISM v1.0 and v1.1 Analysis
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      A detailed analysis of cognitive-function coherence, typology distributions, and state vs. trait effects in early PRISM data. This study examines the first ~100 completed sessions to evaluate assessment reliability and theoretical alignment.
+                    </p>
+                    <Link 
+                      to="/research/first-hundred-study"
+                      className="inline-flex items-center text-secondary hover:text-secondary/80 font-medium"
+                    >
+                      Read Full Study →
+                    </Link>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </section>
 
           {/* Invitation to participate */}

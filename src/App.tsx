@@ -31,6 +31,7 @@ import Consultants from "./pages/Consultants";
 import Education from "./pages/Education";
 import Insights from "./pages/Insights";
 import Research from "./pages/Research";
+import FirstHundredStudy from "./pages/FirstHundredStudy";
 import FAQ from "./pages/FAQ";
 import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
@@ -175,6 +176,7 @@ const App = () => (
                 <Route path="/education" element={<Education />} />
                 <Route path="/insights" element={<Insights />} />
                 <Route path="/research" element={<Research />} />
+                <Route path="/research/first-hundred-study" element={<FirstHundredStudy />} />
                 <Route path="/faq" element={<FAQ />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/privacy" element={<Privacy />} />
