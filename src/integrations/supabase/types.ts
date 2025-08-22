@@ -1493,6 +1493,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      update_dashboard_statistics_for_date: {
+        Args: { target_date: string }
+        Returns: undefined
+      }
+      update_dashboard_statistics_range: {
+        Args: { end_date: string; start_date: string }
+        Returns: undefined
+      }
     }
     Enums: {
       assessment_scale_type:
