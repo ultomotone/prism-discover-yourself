@@ -973,22 +973,63 @@ function MetaInfo({ p }:{ p:Profile }){
 
 // ---------- Main export -----------------------------------------------------
 export const ResultsV2: React.FC<{ profile: Profile }> = ({ profile: p }) => {
-  const primary = p.top_types?.[0] || p.type_code;
+  console.log('🟢 ResultsV2 component rendering with profile:', p);
   
-  return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <Top3 p={p} />
-      <StateOverlaySection overlay={p.overlay} />
-      <TypeCoreSection typeCode={primary} />
-      <TypeNarrative typeCode={primary} />
-      <FunctionsAnalysis p={p} />
-      <div className="grid md:grid-cols-2 gap-6">
-        <Strengths p={p} />
-        <Dimensions p={p} />
+  // Early return for missing profile
+  if (!p) {
+    console.error('🔴 ResultsV2: No profile provided');
+    return (
+      <div className="max-w-4xl mx-auto p-8 text-center">
+        <div className="border rounded-lg p-6 bg-muted">
+          <h2 className="text-xl font-bold mb-2 text-destructive">Profile Data Missing</h2>
+          <p className="text-muted-foreground">Unable to load assessment results. Please try refreshing the page.</p>
+        </div>
       </div>
-      <Blocks p={p} />
-      <CoreAlignmentSection typeCode={primary} />
-      <MetaInfo p={p} />
-    </div>
-  );
+    );
+  }
+  
+  const primary = p.top_types?.[0] || p.type_code;
+  console.log('🟡 Primary type determined as:', primary);
+  
+  // Early return for missing primary type
+  if (!primary) {
+    console.error('🔴 ResultsV2: No primary type found', { top_types: p.top_types, type_code: p.type_code });
+    return (
+      <div className="max-w-4xl mx-auto p-8 text-center">
+        <div className="border rounded-lg p-6 bg-muted">
+          <h2 className="text-xl font-bold mb-2 text-destructive">Type Classification Error</h2>
+          <p className="text-muted-foreground">Unable to determine personality type from results. Please contact support.</p>
+        </div>
+      </div>
+    );
+  }
+  
+  try {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <Top3 p={p} />
+        <StateOverlaySection overlay={p.overlay} />
+        <TypeCoreSection typeCode={primary} />
+        <TypeNarrative typeCode={primary} />
+        <FunctionsAnalysis p={p} />
+        <div className="grid md:grid-cols-2 gap-6">
+          <Strengths p={p} />
+          <Dimensions p={p} />
+        </div>
+        <Blocks p={p} />
+        <CoreAlignmentSection typeCode={primary} />
+        <MetaInfo p={p} />
+      </div>
+    );
+  } catch (error) {
+    console.error('🔴 ResultsV2 rendering error:', error);
+    return (
+      <div className="max-w-4xl mx-auto p-8 text-center">
+        <div className="border rounded-lg p-6 bg-muted">
+          <h2 className="text-xl font-bold mb-2 text-destructive">Rendering Error</h2>
+          <p className="text-muted-foreground">An error occurred while displaying results: {error instanceof Error ? error.message : 'Unknown error'}</p>
+        </div>
+      </div>
+    );
+  }
 };
