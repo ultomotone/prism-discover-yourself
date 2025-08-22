@@ -125,6 +125,11 @@ type Profile = {
   validity: { inconsistency:number; sd_index:number };
   confidence: "High"|"Moderate"|"Low";
   validity_status?: string; // NEW v1.1
+  
+  // NEW v1.1.2 calibrated confidence fields
+  conf_raw?: number;
+  conf_calibrated?: number;
+  conf_band?: "High"|"Moderate"|"Low";
   // Add v1.1 calibrated fit fields
   results_version?: string;
   score_fit_calibrated?: number;
@@ -950,7 +955,32 @@ function MetaInfo({ p }:{ p:Profile }){
       </div>
       <div className="grid md:grid-cols-2 gap-4 text-sm">
         <div className="space-y-2">
-          <div><b>Confidence</b>: {p.confidence}</div>
+          <div className="flex items-center gap-2">
+            <b>Confidence</b>: 
+            <Badge 
+              variant={
+                (p.conf_band || p.confidence) === 'High' ? 'default' : 
+                (p.conf_band || p.confidence) === 'Moderate' ? 'secondary' : 'destructive'
+              } 
+              className="text-xs px-2 py-1"
+            >
+              {p.conf_band || p.confidence}
+            </Badge>
+            {p.conf_calibrated && (
+              <InfoTip title="Calibrated Confidence">
+                <div className="space-y-1">
+                  <p><b>Calibrated Probability:</b> {Math.round((p.conf_calibrated) * 100)}%</p>
+                  <p className="text-xs text-muted-foreground">
+                    Calibrated from cohort outcomes using isotonic regression; 
+                    reflects empirical accuracy for similar profiles.
+                  </p>
+                  {p.conf_raw && (
+                    <p className="text-xs"><b>Raw confidence:</b> {p.conf_raw.toFixed(3)}</p>
+                  )}
+                </div>
+              </InfoTip>
+            )}
+          </div>
           <div className={validityColor}><b>Validity Status</b>: {p.validity_status || 'pass'}</div>
           <div><b>Fit Band</b>: {p.fit_band || 'Unknown'}</div>
           {p.close_call && <div className="text-orange-600"><b>Close Call</b>: Top-gap = {p.top_gap?.toFixed(1)}</div>}

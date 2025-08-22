@@ -194,6 +194,33 @@ export type Database = {
         }
         Relationships: []
       }
+      calibration_model: {
+        Row: {
+          id: number
+          knots: Json
+          method: string
+          stratum: Json
+          trained_at: string
+          version: string
+        }
+        Insert: {
+          id?: number
+          knots: Json
+          method?: string
+          stratum: Json
+          trained_at?: string
+          version?: string
+        }
+        Update: {
+          id?: number
+          knots?: Json
+          method?: string
+          stratum?: Json
+          trained_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       dashboard_statistics: {
         Row: {
           daily_assessments: number
@@ -273,6 +300,9 @@ export type Database = {
           blocks: Json | null
           blocks_norm: Json | null
           close_call: boolean | null
+          conf_band: string | null
+          conf_calibrated: number | null
+          conf_raw: number | null
           confidence: string | null
           created_at: string | null
           creative_func: string | null
@@ -322,6 +352,9 @@ export type Database = {
           blocks?: Json | null
           blocks_norm?: Json | null
           close_call?: boolean | null
+          conf_band?: string | null
+          conf_calibrated?: number | null
+          conf_raw?: number | null
           confidence?: string | null
           created_at?: string | null
           creative_func?: string | null
@@ -371,6 +404,9 @@ export type Database = {
           blocks?: Json | null
           blocks_norm?: Json | null
           close_call?: boolean | null
+          conf_band?: string | null
+          conf_calibrated?: number | null
+          conf_raw?: number | null
           confidence?: string | null
           created_at?: string | null
           creative_func?: string | null
@@ -431,6 +467,27 @@ export type Database = {
           key?: string
           updated_at?: string | null
           value?: Json
+        }
+        Relationships: []
+      }
+      session_method_metrics: {
+        Row: {
+          created_at: string | null
+          fc_z: Json
+          likert_z: Json
+          session_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          fc_z: Json
+          likert_z: Json
+          session_id: string
+        }
+        Update: {
+          created_at?: string | null
+          fc_z?: Json
+          likert_z?: Json
+          session_id?: string
         }
         Relationships: []
       }
@@ -573,6 +630,20 @@ export type Database = {
           conf_bin: string | null
           hit_rate: number | null
           n: number | null
+        }
+        Relationships: []
+      }
+      v_calibration_training: {
+        Row: {
+          created_at: string | null
+          dim_band: string | null
+          observed: number | null
+          overlay: string | null
+          raw_conf: number | null
+          session_id_a: string | null
+          session_id_b: string | null
+          type_a: string | null
+          type_b: string | null
         }
         Relationships: []
       }
@@ -912,6 +983,22 @@ export type Database = {
           share_pct?: never
           type_code?: never
           version?: never
+        }
+        Relationships: []
+      }
+      v_method_agreement: {
+        Row: {
+          day: string | null
+          mai: number | null
+          n_sessions: number | null
+          r_fe: number | null
+          r_fi: number | null
+          r_ne: number | null
+          r_ni: number | null
+          r_se: number | null
+          r_si: number | null
+          r_te: number | null
+          r_ti: number | null
         }
         Relationships: []
       }
@@ -1419,6 +1506,9 @@ export type Database = {
           blocks: Json | null
           blocks_norm: Json | null
           close_call: boolean | null
+          conf_band: string | null
+          conf_calibrated: number | null
+          conf_raw: number | null
           confidence: string | null
           created_at: string | null
           creative_func: string | null

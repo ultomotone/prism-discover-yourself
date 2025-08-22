@@ -342,14 +342,67 @@ serve(async (req) => {
     const w_likert = w_lik_base * wLikertState * dynamicLikertWeight;
     const norm     = (w_fc + w_likert) || 1;
 
+    // Calculate z-scores for Likert and FC methods within session for MAI improvement
+    const likertValues: number[] = [];
+    const fcValues: number[] = [];
+    
     for (const f of FUNCS) {
-      const L       = likert[f] || [];
-      const meanL   = L.length ? (L.reduce((a,b)=>a+b,0)/L.length) : 0;   // 1..5
-      const fcPct   = fcTotal ? ((fcFuncCount[f] || 0) / fcTotal) : 0;    // 0..1
-      const fcScaled= 1 + fcPct * 4;                                      // 1..5
-      const blended = (w_likert * meanL + w_fc * fcScaled) / norm;        // normalize
-      strengths[f]  = Math.max(1, Math.min(5, Number.isFinite(blended) ? blended : 0)); // clamp 1..5
+      const L = likert[f] || [];
+      const meanL = L.length ? (L.reduce((a,b)=>a+b,0)/L.length) : 0;
+      likertValues.push(meanL);
+      
+      const fcPct = fcTotal ? ((fcFuncCount[f] || 0) / fcTotal) : 0;
+      fcValues.push(fcPct);
     }
+    
+    const likertMean = likertValues.reduce((a, b) => a + b, 0) / likertValues.length;
+    const likertStd = Math.sqrt(likertValues.reduce((sum, v) => sum + Math.pow(v - likertMean, 2), 0) / likertValues.length) || 1;
+    
+    const fcMean = fcValues.reduce((a, b) => a + b, 0) / fcValues.length;
+    const fcStd = Math.sqrt(fcValues.reduce((sum, v) => sum + Math.pow(v - fcMean, 2), 0) / fcValues.length) || 1;
+    
+    // Compute z-scored versions and blend with reliability weighting
+    const likertZ: Record<string, number> = {};
+    const fcZ: Record<string, number> = {};
+    const blendedStrengths: Record<string, number> = {};
+    
+    for (const f of FUNCS) {
+      const L = likert[f] || [];
+      const meanL = L.length ? (L.reduce((a,b)=>a+b,0)/L.length) : 0;
+      const fcPct = fcTotal ? ((fcFuncCount[f] || 0) / fcTotal) : 0;
+      
+      likertZ[f] = (meanL - likertMean) / likertStd;
+      fcZ[f] = (fcPct - fcMean) / fcStd;
+      
+      // Enhanced reliability-weighted blending for MAI
+      const qualityBonus = (inconsIdx < 1.5 && sdIndex < 4.6) ? 0.1 : 0;
+      const fcCoverage = Math.min(1, fcAnsweredCount / Math.max(1, fcExpectedMin));
+      const wFcEnhanced = Math.min(0.55, Math.max(0.2, fcCoverage * 0.4 + qualityBonus));
+      const wLikertEnhanced = 1 - wFcEnhanced;
+      
+      // Blend z-scored methods and convert back to 1-5 scale
+      const zBlended = wLikertEnhanced * likertZ[f] + wFcEnhanced * fcZ[f];
+      blendedStrengths[f] = Math.max(1, Math.min(5, 3 + zBlended)); // center at 3 with z-score spread
+      
+      // Fallback to original method if z-score fails
+      const fcScaled = 1 + fcPct * 4;
+      const originalBlended = (w_likert * meanL + w_fc * fcScaled) / norm;
+      strengths[f] = Number.isFinite(blendedStrengths[f]) ? blendedStrengths[f] : 
+                     Math.max(1, Math.min(5, Number.isFinite(originalBlended) ? originalBlended : 0));
+    }
+    
+    // Store method metrics for MAI computation (async, don't block main flow)
+    supabase
+      .from('session_method_metrics')
+      .upsert({
+        session_id: session_id,
+        created_at: new Date().toISOString(),
+        likert_z: likertZ,
+        fc_z: fcZ
+      })
+      .then(({ error }) => {
+        if (error) console.error('Error storing method metrics:', error);
+      });
 
     // ---- dimensions: map 1..5 avg -> 1..4 ----
     const mapDim = (avg:number)=>{
@@ -654,10 +707,92 @@ serve(async (req) => {
     const topGap = Math.round((topFit - secondFit) * 10) / 10; // gap_to_second (fit-based)
     const closeCall = topGap < 3;
 
-    // Confidence numeric = P1 - P2 (probability/ share percentage difference)
+    // Enhanced confidence calculation with calibration
     const p1 = (sharePct[top3[0]] || 0);
     const p2 = (sharePct[top3[1]] || 0);
     const confidenceMargin = Math.round(((p1 - p2)) * 10) / 10; // 0..100 scale
+    
+    // Raw confidence calculation
+    const { data: confParamsData } = await supabase
+      .from('scoring_config')
+      .select('value')
+      .eq('key', 'conf_raw_params')
+      .single();
+    
+    const confParams = confParamsData?.value || {a: 0.25, b: 0.35, c: 0.20};
+    
+    // Calculate entropy from share distribution
+    const shareEntropy = -Object.values(sharePct).reduce((sum: number, share: number) => {
+      if (share > 0) sum += (share / 100) * Math.log2(share / 100);
+      return sum;
+    }, 0);
+    
+    // Sigmoid function for raw confidence
+    const sigmoid = (x: number) => 1 / (1 + Math.exp(-x));
+    const rawConf = sigmoid(
+      confParams.a * topGap + 
+      confParams.b * (p1 - p2) / 100 - 
+      confParams.c * shareEntropy
+    );
+    
+    // Apply calibration mapping based on dimensional profile
+    const dimBand = Math.max(...Object.values(dimensions)) >= 3 ? '3-4D' : 
+                    Math.max(...Object.values(dimensions)) === 2 ? '2D' : '1D';
+    const overlayStr = overlay === '+' ? 'plus' : 'minus';
+    
+    let calibratedConf = rawConf;
+    
+    // Look up calibration model
+    try {
+      const { data: calibrationData } = await supabase
+        .from('calibration_model')
+        .select('knots, method')
+        .eq('stratum->dim_band', dimBand)
+        .eq('stratum->overlay', overlayStr)
+        .order('trained_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (calibrationData?.knots) {
+        // Apply calibration using interpolation
+        const knots = calibrationData.knots as Array<{x: number; y: number}>;
+        if (knots.length > 0) {
+          // Find surrounding knots and interpolate
+          let lower = knots[0];
+          let upper = knots[knots.length - 1];
+          
+          for (let i = 0; i < knots.length - 1; i++) {
+            if (rawConf >= knots[i].x && rawConf <= knots[i + 1].x) {
+              lower = knots[i];
+              upper = knots[i + 1];
+              break;
+            }
+          }
+          
+          if (lower.x === upper.x) {
+            calibratedConf = lower.y;
+          } else {
+            const t = (rawConf - lower.x) / (upper.x - lower.x);
+            calibratedConf = lower.y + t * (upper.y - lower.y);
+          }
+          calibratedConf = Math.max(0, Math.min(1, calibratedConf));
+        }
+      }
+    } catch (calError) {
+      console.error('Calibration lookup failed:', calError);
+      // Use raw confidence as fallback
+    }
+    
+    // Determine confidence band
+    const { data: bandCutsData } = await supabase
+      .from('scoring_config')
+      .select('value')
+      .eq('key', 'conf_band_cuts')
+      .single();
+    
+    const bandCuts = bandCutsData?.value || {high: 0.75, moderate: 0.55};
+    const confBand = calibratedConf >= bandCuts.high ? 'High' :
+                     calibratedConf >= bandCuts.moderate ? 'Moderate' : 'Low';
     
     // Enhanced fit band logic from config
     let fitBand = "Low";
@@ -769,6 +904,11 @@ serve(async (req) => {
       
       close_call: closeCall,
       fc_answered_ct: fcAnsweredCount,
+      
+      // Enhanced confidence fields
+      conf_raw: Number(rawConf.toFixed(4)),
+      conf_calibrated: Number(calibratedConf.toFixed(4)),
+      conf_band: confBand,
       top_3_fits: top3Fits,
       fit_explainer: {
         top_3_comparison: top3Fits,
