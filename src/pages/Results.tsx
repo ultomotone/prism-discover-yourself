@@ -100,12 +100,19 @@ export default function Results() {
         if (profileData.type_code === 'UNK') {
           console.log('Detected UNK result, triggering re-score with updated algorithm');
           
+          console.time('PRISM rescore');
+          console.log('[PRISM] rescore payload', { session_id: sessionId, force_recompute: true });
+          
           // Force re-scoring with new algorithm
           const { data, error } = await supabase.functions.invoke('score_prism', {
             body: { session_id: sessionId, force_recompute: true },
           });
 
+          console.timeEnd('PRISM rescore');
+          console.log('[PRISM] rescore result', JSON.stringify(data, null, 2));
+
           if (error || !data || data.status !== 'success') {
+            console.error('[PRISM] rescore failed', error || data?.error);
             setError(error?.message || data?.error || 'Failed to re-score results');
           } else {
             setScoring(data.profile);

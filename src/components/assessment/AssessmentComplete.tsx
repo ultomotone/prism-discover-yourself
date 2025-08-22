@@ -76,14 +76,21 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
         if (isSubmitting) return; // Prevent double-clicks
         isSubmitting = true;
         
+        console.time('PRISM submit');
+        console.log('[PRISM] submit payload', { session_id: sessionId });
+        
         setLoadingScore(true);
         setScoreError(null);
         
         try {
+          console.time('PRISM score');
           // Use new finalizeAssessment endpoint for idempotent result delivery
           const { data, error } = await supabase.functions.invoke('finalizeAssessment', {
             body: { session_id: sessionId }
           });
+          
+          console.timeEnd('PRISM score');
+          console.log('[PRISM] scored result', JSON.stringify(data, null, 2));
           
           if (error) {
             throw new Error(error.message || 'Failed to finalize assessment');
@@ -97,14 +104,20 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
               // Could set a results URL for recovery
             }
           } else if (data?.status === 'success' && data?.profile) {
+            // Quick shape check
+            const expect = ['type','overlay','confidence','blocks','dimensions','validity','top3'];
+            console.log('[PRISM] fields present', Object.fromEntries(expect.map(k => [k, data?.profile?.[k] !== undefined])));
+            
             setScoring(data.profile);
           } else {
             throw new Error('Invalid response from finalization service');
           }
         } catch (err) {
+          console.error('[PRISM] scoring failed', err);
           const errorMessage = err instanceof Error ? err.message : 'Assessment finalization failed';
           setScoreError(errorMessage);
         } finally {
+          console.timeEnd('PRISM submit');
           setLoadingScore(false);
           isSubmitting = false;
         }
@@ -168,12 +181,23 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
     pdf.save("PRISM_Profile.pdf");
   };
 
+  if (scoreError === 'scoring') return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <Card className="max-w-md">
+        <CardContent className="text-center py-8">
+          <p className="text-destructive mb-4">Scoring failed. Try again.</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   if (loadingScore) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Analyzing your responses...</p>
+          <p>Scoring your PRISM profile…</p>
         </div>
       </div>
     );
@@ -225,12 +249,13 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
     );
   }
 
-  if (!scoring || scoring.empty) {
+  if (!scoring) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="max-w-md">
           <CardContent className="text-center py-8">
-            <p>No scoring results available.</p>
+            <h3 className="font-semibold mb-2">No results yet</h3>
+            <p className="text-muted-foreground mb-4">We couldn't find a score payload.</p>
             <Button onClick={onReturnHome} className="mt-4">Return Home</Button>
           </CardContent>
         </Card>
@@ -254,15 +279,18 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
 
         <div id="results-content" className="space-y-6">
           {/* Enhanced Results with V2 Component */}
-          {scoring.top_types && scoring.strengths ? (
+          {scoring?.top_types && scoring?.strengths ? (
             <ResultsV2 profile={scoring} />
           ) : (
             <Card className="max-w-4xl mx-auto">
               <CardContent className="p-8">
                 <h2 className="text-2xl font-bold mb-4">Profile Results</h2>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground mb-4">
                   Profile data is being processed. Please try refreshing the page.
                 </p>
+                <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
+                  <p>Available fields: {Object.keys(scoring || {}).join(', ')}</p>
+                </div>
               </CardContent>
             </Card>
           )}
