@@ -302,24 +302,33 @@ const Dashboard = () => {
         .not('blocks_norm', 'is', null);
 
       console.log("🔍 Blocks data fetched:", blocksData?.length || 0, "profiles with blocks");
+      console.log("🔍 Blocks error:", blocksError);
 
       let blocksAnalysis: Array<{ block: string; average: number; count: number }> = [];
       
       if (blocksData && blocksData.length > 0) {
+        console.log("🔍 Sample blocks data:", blocksData.slice(0, 2));
+        
         const blockTotals = { Core: 0, Critic: 0, Hidden: 0, Instinct: 0 };
         const blockCounts = { Core: 0, Critic: 0, Hidden: 0, Instinct: 0 };
 
-        blocksData.forEach(profile => {
+        blocksData.forEach((profile, index) => {
           const blocks = profile.blocks_norm as any;
+          console.log(`🔍 Processing profile ${index}:`, blocks);
+          
           if (blocks && typeof blocks === 'object') {
             Object.keys(blockTotals).forEach(blockKey => {
-              if (blocks[blockKey] !== undefined && blocks[blockKey] !== null) {
+              if (blocks[blockKey] !== undefined && blocks[blockKey] !== null && typeof blocks[blockKey] === 'number') {
                 blockTotals[blockKey as keyof typeof blockTotals] += blocks[blockKey];
                 blockCounts[blockKey as keyof typeof blockCounts]++;
+                console.log(`🔍 Added ${blockKey}: ${blocks[blockKey]}, running total: ${blockTotals[blockKey as keyof typeof blockTotals]}`);
               }
             });
           }
         });
+
+        console.log("🔍 Final totals:", blockTotals);
+        console.log("🔍 Final counts:", blockCounts);
 
         blocksAnalysis = Object.keys(blockTotals).map(blockKey => ({
           block: blockKey,
@@ -331,7 +340,7 @@ const Dashboard = () => {
 
         console.log("🔍 Blocks analysis processed:", blocksAnalysis);
       } else {
-        console.log("🔍 No blocks data available");
+        console.log("🔍 No blocks data available - blocksData:", blocksData, "error:", blocksError);
       }
 
       console.log("🔍 Setting final dashboard data...");
