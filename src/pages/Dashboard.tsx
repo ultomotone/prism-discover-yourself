@@ -8,9 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, ResponsiveContainer, LineChart, Line } from "recharts";
-import { Search, Download, ExternalLink, Calendar, Users, TrendingUp, Globe, Info } from "lucide-react";
+import { Search, Download, ExternalLink, Calendar, Users, TrendingUp, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import Header from "@/components/Header";
 import { CountryDistributionChart } from "@/components/CountryDistributionChart";
 import DashboardPreview from "@/components/DashboardPreview";
@@ -23,7 +22,6 @@ interface DashboardData {
   overlayStats: Array<{ overlay: string; count: number }>;
   typeDistribution: Array<{ type: string; count: number }>;
   countryDistribution: Array<{ country: string; count: number }>;
-  blocksAnalysis: Array<{ block: string; average: number; count: number }>;
   latestAssessments: Array<{
     created_at: string;
     type_code: string;
@@ -247,8 +245,7 @@ const Dashboard = () => {
       const latestAssessments: AssessmentDetail[] = assessmentsWithCountry.map((assessment: any) => {
         console.log("🔍 Processing assessment:", assessment.session_id?.slice(0, 8), {
           type_scores: assessment.type_scores,
-          top_types: assessment.top_types,
-          blocks: (assessment as any).blocks // Check if blocks exists
+          top_types: assessment.top_types
         });
 
         const p1 = assessment.type_scores && assessment.top_types?.[0] 
@@ -293,56 +290,6 @@ const Dashboard = () => {
       // Debug log to verify country data is being passed
       console.log('Country distribution for activity map:', countryDistribution);
 
-      // Fetch blocks analysis data
-      console.log("🔍 Fetching blocks analysis data...");
-      const { data: blocksData, error: blocksError } = await supabase
-        .from('profiles')
-        .select('blocks_norm')
-        .eq('results_version', 'v1.1')
-        .not('blocks_norm', 'is', null);
-
-      console.log("🔍 Blocks data fetched:", blocksData?.length || 0, "profiles with blocks");
-      console.log("🔍 Blocks error:", blocksError);
-
-      let blocksAnalysis: Array<{ block: string; average: number; count: number }> = [];
-      
-      if (blocksData && blocksData.length > 0) {
-        console.log("🔍 Sample blocks data:", blocksData.slice(0, 2));
-        
-        const blockTotals = { Core: 0, Critic: 0, Hidden: 0, Instinct: 0 };
-        const blockCounts = { Core: 0, Critic: 0, Hidden: 0, Instinct: 0 };
-
-        blocksData.forEach((profile, index) => {
-          const blocks = profile.blocks_norm as any;
-          console.log(`🔍 Processing profile ${index}:`, blocks);
-          
-          if (blocks && typeof blocks === 'object') {
-            Object.keys(blockTotals).forEach(blockKey => {
-              if (blocks[blockKey] !== undefined && blocks[blockKey] !== null && typeof blocks[blockKey] === 'number') {
-                blockTotals[blockKey as keyof typeof blockTotals] += blocks[blockKey];
-                blockCounts[blockKey as keyof typeof blockCounts]++;
-                console.log(`🔍 Added ${blockKey}: ${blocks[blockKey]}, running total: ${blockTotals[blockKey as keyof typeof blockTotals]}`);
-              }
-            });
-          }
-        });
-
-        console.log("🔍 Final totals:", blockTotals);
-        console.log("🔍 Final counts:", blockCounts);
-
-        blocksAnalysis = Object.keys(blockTotals).map(blockKey => ({
-          block: blockKey,
-          average: blockCounts[blockKey as keyof typeof blockCounts] > 0 
-            ? blockTotals[blockKey as keyof typeof blockTotals] / blockCounts[blockKey as keyof typeof blockCounts] 
-            : 0,
-          count: blockCounts[blockKey as keyof typeof blockCounts]
-        })).sort((a, b) => b.average - a.average);
-
-        console.log("🔍 Blocks analysis processed:", blocksAnalysis);
-      } else {
-        console.log("🔍 No blocks data available - blocksData:", blocksData, "error:", blocksError);
-      }
-
       console.log("🔍 Setting final dashboard data...");
 
       setData({
@@ -352,7 +299,6 @@ const Dashboard = () => {
         overlayStats,
         typeDistribution,
         countryDistribution, // Now contains actual country data for heatmap
-        blocksAnalysis, // Add blocks analysis
         latestAssessments // Now shows anonymized recent assessments
       });
 
@@ -374,7 +320,7 @@ const Dashboard = () => {
   useEffect(() => {
     fetchDashboardData();
 
-    // One-time backfill and recompute to ensure all completed sessions have full profiles (incl. Blocks & Neuroticism)
+    // One-time backfill and recompute to ensure all completed sessions have full profiles
     (async () => {
       try {
         const [backfillRes, recomputeRes] = await Promise.all([
@@ -614,13 +560,13 @@ const Dashboard = () => {
         </div>
 
         {/* Type Distribution Chart */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="mb-8">
           <Card className="prism-shadow-card">
             <CardHeader>
               <CardTitle>Type Distribution</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64">
+              <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data?.typeDistribution.filter(t => t.type !== 'UNK')}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -631,55 +577,6 @@ const Dashboard = () => {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Blocks Analysis */}
-          <Card className="prism-shadow-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Info className="h-4 w-4" />
-                Blocks (%)
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger className="text-muted-foreground">
-                      <Info className="h-3 w-3" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Average block percentages across all assessments</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {data?.blocksAnalysis.length > 0 ? (
-                <div className="space-y-4">
-                  {data.blocksAnalysis.map((block, index) => (
-                    <div key={block.block} className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${
-                          block.block === 'Core' ? 'bg-primary' :
-                          block.block === 'Critic' ? 'bg-secondary' :
-                          block.block === 'Hidden' ? 'bg-accent' : 
-                          'bg-muted-foreground'
-                        }`} />
-                        <span className="font-medium">{block.block}</span>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-bold">{block.average.toFixed(1)}%</div>
-                        <div className="text-xs text-muted-foreground">
-                          {block.count} profiles
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  Block analysis data not available
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>
