@@ -169,9 +169,20 @@ const Dashboard = () => {
         if (stats.overlay_negative > 0) overlayStats.push({ overlay: 'N–', count: stats.overlay_negative });
       }
 
-      // Process type distribution from aggregated data
-      const typeDistribution = stats?.type_distribution ? 
-        Object.entries(stats.type_distribution).map(([type, count]) => ({ 
+      // Get type distribution directly from profiles if stats are incomplete
+      const { data: typeData } = await supabase
+        .from('profiles')
+        .select('type_code')
+        .eq('results_version', 'v1.1')
+        .not('type_code', 'is', null);
+
+      const typeDistribution = typeData ? 
+        Object.entries(
+          typeData.reduce((acc: Record<string, number>, profile: any) => {
+            acc[profile.type_code] = (acc[profile.type_code] || 0) + 1;
+            return acc;
+          }, {})
+        ).map(([type, count]) => ({ 
           type, 
           count: count as number 
         })).sort((a, b) => b.count - a.count) : [];

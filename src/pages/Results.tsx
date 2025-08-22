@@ -419,11 +419,11 @@ export default function Results() {
                 Connect with thousands of like-minded individuals exploring their personality journey. 
                 Share insights, ask questions, and deepen your understanding of PRISM and personality theory.
               </p>
-              <div className="space-y-4">
+              <div className="flex flex-col items-center space-y-4">
                 <Button 
                   onClick={() => window.open('https://www.skool.com/your-personality-blueprint/about?ref=931e57f033d34f3eb64db45f22b1389e', '_blank')}
                   size="lg"
-                  className="flex items-center gap-2 bg-gradient-to-r from-primary to-secondary hover:from-primary-dark hover:to-secondary-dark"
+                  className="flex items-center gap-2 bg-gradient-to-r from-primary to-secondary hover:from-primary-dark hover:to-secondary-dark mx-auto"
                 >
                   <Users className="h-4 w-4" />
                   Join Personality Blueprint Community
