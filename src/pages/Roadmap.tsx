@@ -267,6 +267,15 @@ export default function Roadmap() {
                   </p>
                 </div>
                 <div>
+                  <h4 className="font-medium mb-2">Published Research Study</h4>
+                  <p className="text-sm text-muted-foreground">
+                    <Link to="/research/first-hundred-study" className="text-primary hover:text-primary/80 underline">
+                      First 100 Assessments: PRISM v1.0 and v1.1 Analysis
+                    </Link>
+                    — Detailed analysis of cognitive-function coherence and typology distributions.
+                  </p>
+                </div>
+                <div>
                   <h4 className="font-medium mb-2">"What we improved" notes</h4>
                   <p className="text-sm text-muted-foreground">
                     Item wording fixes, scale anchors, timing.
