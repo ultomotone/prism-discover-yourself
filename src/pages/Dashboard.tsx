@@ -69,10 +69,6 @@ interface AssessmentDetail {
   invalid_combo_flag?: boolean;
 }
 
-// Force dynamic rendering and disable all caching
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 // Force no-cache for all dashboard data fetches
 const CACHE_HEADERS = {
   'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
@@ -88,6 +84,7 @@ const revalidateAdminKPIs = () => {
 
 
 const Dashboard = () => {
+  console.log('🔍 Dashboard component rendering');
   const { toast } = useToast();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
