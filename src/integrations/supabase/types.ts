@@ -934,9 +934,9 @@ export type Database = {
           day?: never
           fit?: never
           fit_band?: string | null
-          results_version?: never
+          results_version?: string | null
           session_id?: string | null
-          type_code?: string | null
+          type_code?: never
           type_share?: never
         }
         Update: {
@@ -946,9 +946,9 @@ export type Database = {
           day?: never
           fit?: never
           fit_band?: string | null
-          results_version?: never
+          results_version?: string | null
           session_id?: string | null
-          type_code?: string | null
+          type_code?: never
           type_share?: never
         }
         Relationships: []
