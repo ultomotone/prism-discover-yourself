@@ -1,75 +1,15 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
+import { PrismCalibration } from '../_shared/calibration.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface CalibrationPoint {
-  x: number; // raw confidence
-  y: number; // calibrated probability
-}
-
 interface StratumData {
   dim_band: string;
   overlay: string;
   points: Array<{raw_conf: number; observed: number}>;
-}
-
-// Simple isotonic regression implementation
-function isotonicRegression(points: Array<{x: number; y: number}>): CalibrationPoint[] {
-  if (points.length === 0) return [];
-  
-  // Sort by x values
-  const sorted = [...points].sort((a, b) => a.x - b.x);
-  
-  // Group by x and average y values
-  const grouped = new Map<number, number[]>();
-  sorted.forEach(p => {
-    if (!grouped.has(p.x)) grouped.set(p.x, []);
-    grouped.get(p.x)!.push(p.y);
-  });
-  
-  const knots: CalibrationPoint[] = [];
-  for (const [x, ys] of grouped) {
-    const avgY = ys.reduce((a, b) => a + b, 0) / ys.length;
-    knots.push({x, y: avgY});
-  }
-  
-  // Enforce monotonicity (simple pool-adjacent-violators)
-  for (let i = 1; i < knots.length; i++) {
-    if (knots[i].y < knots[i-1].y) {
-      // Merge violating points
-      const combinedX = (knots[i-1].x + knots[i].x) / 2;
-      const combinedY = (knots[i-1].y + knots[i].y) / 2;
-      knots[i-1] = {x: combinedX, y: combinedY};
-      knots.splice(i, 1);
-      i--; // Check again from this position
-    }
-  }
-  
-  return knots;
-}
-
-// Platt scaling (logistic regression) fallback for small samples
-function plattScaling(points: Array<{x: number; y: number}>): CalibrationPoint[] {
-  if (points.length < 5) {
-    // Too few points, return identity mapping
-    return [{x: 0, y: 0}, {x: 1, y: 1}];
-  }
-  
-  // Simple logistic regression approximation
-  // For production, consider using a proper ML library
-  const n = points.length;
-  const meanX = points.reduce((sum, p) => sum + p.x, 0) / n;
-  const meanY = points.reduce((sum, p) => sum + p.y, 0) / n;
-  
-  // Create calibration curve with fixed points
-  return [
-    {x: 0, y: Math.max(0, meanY - 0.1)},
-    {x: 0.5, y: meanY},
-    {x: 1, y: Math.min(1, meanY + 0.1)}
-  ];
 }
 
 Deno.serve(async (req) => {
@@ -81,8 +21,9 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceKey);
+    const calibration = new PrismCalibration(supabase);
 
-    console.log('🎯 Starting confidence calibration training...');
+    console.log(`🎯 Starting confidence calibration training v${calibration.getVersion()}...`);
 
     // Get calibration configuration
     const { data: configData } = await supabase
@@ -160,19 +101,19 @@ Deno.serve(async (req) => {
         y: p.observed
       }));
 
-      // Choose calibration method
-      let knots: CalibrationPoint[];
+      // Choose calibration method using unified utility
+      let knots;
       if (config.method === 'platt' || points.length < 10) {
-        knots = plattScaling(points);
+        knots = PrismCalibration.plattScaling(points);
       } else {
-        knots = isotonicRegression(points);
+        knots = PrismCalibration.isotonicRegression(points);
       }
 
-      // Store calibration model
+      // Store calibration model with unified version
       const { error: insertError } = await supabase
         .from('calibration_model')
         .insert({
-          version: 'v1.1.2',
+          version: calibration.getVersion(),
           method: config.method === 'platt' ? 'platt' : 'isotonic',
           stratum: {
             dim_band: stratumData.dim_band,

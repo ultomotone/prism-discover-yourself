@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { PrismConfigManager } from '../_shared/config.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,11 +13,13 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client using environment variables
+    // Initialize Supabase client and configuration manager
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+    
+    const configManager = new PrismConfigManager(supabase);
 
     // Parse session_id from the request JSON body
     const { session_id } = await req.json();
@@ -31,7 +34,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Processing finalization for session: ${session_id}`);
+    console.log(`Processing finalization for session: ${session_id} using PRISM ${configManager.getVersion()}`);
 
     // Check if a profile already exists for the given session_id and return cached results if it does
     const { data: existingProfile } = await supabase

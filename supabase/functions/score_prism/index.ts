@@ -1,6 +1,7 @@
-// supabase/functions/score_prism/index.ts - PRISM v1.1 Enhanced Scoring Engine
+// supabase/functions/score_prism/index.ts - PRISM v1.2.0 Enhanced Scoring Engine
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { PrismCalibration } from "../_shared/calibration.ts";
 
 const FUNCS = ["Ti","Te","Fi","Fe","Ni","Ne","Si","Se"] as const;
 const OPP: Record<string,string> = { Ti:"Fe", Fe:"Ti", Te:"Fi", Fi:"Te", Ni:"Se", Se:"Ni", Ne:"Si", Si:"Ne" };
@@ -135,8 +136,9 @@ serve(async (req) => {
       return new Response(JSON.stringify({ status:"error", error:"Server not configured" }), { status:500, headers:{...corsHeaders,"Content-Type":"application/json"}});
     }
     const supabase = createClient(supabaseUrl, supabaseKey);
+    const calibration = new PrismCalibration(supabase);
 
-    console.log(`evt:scoring_start,session_id:${session_id},version:v1.1`);
+    console.log(`evt:scoring_start,session_id:${session_id},version:v1.2.0`);
 
     // ---- load answers (with created_at for dedup) ----
     const { data: rawRows, error: aerr } = await supabase
@@ -707,92 +709,34 @@ serve(async (req) => {
     const topGap = Math.round((topFit - secondFit) * 10) / 10; // gap_to_second (fit-based)
     const closeCall = topGap < 3;
 
-    // Enhanced confidence calculation with calibration
+    // Enhanced confidence calculation with unified calibration
     const p1 = (sharePct[top3[0]] || 0);
     const p2 = (sharePct[top3[1]] || 0);
     const confidenceMargin = Math.round(((p1 - p2)) * 10) / 10; // 0..100 scale
     
-    // Raw confidence calculation
-    const { data: confParamsData } = await supabase
-      .from('scoring_config')
-      .select('value')
-      .eq('key', 'conf_raw_params')
-      .single();
-    
-    const confParams = confParamsData?.value || {a: 0.25, b: 0.35, c: 0.20};
-    
-    // Calculate entropy from share distribution
+    // Calculate entropy from share distribution for calibration
     const shareEntropy = -Object.values(sharePct).reduce((sum: number, share: number) => {
       if (share > 0) sum += (share / 100) * Math.log2(share / 100);
       return sum;
     }, 0);
     
-    // Sigmoid function for raw confidence
-    const sigmoid = (x: number) => 1 / (1 + Math.exp(-x));
-    const rawConf = sigmoid(
-      confParams.a * topGap + 
-      confParams.b * (p1 - p2) / 100 - 
-      confParams.c * shareEntropy
-    );
-    
-    // Apply calibration mapping based on dimensional profile
+    // Determine dimensional profile for calibration stratum
     const dimBand = Math.max(...Object.values(dimensions)) >= 3 ? '3-4D' : 
                     Math.max(...Object.values(dimensions)) === 2 ? '2D' : '1D';
-    const overlayStr = overlay === '+' ? 'plus' : 'minus';
     
-    let calibratedConf = rawConf;
+    // Use unified calibration system
+    const confidenceResult = await calibration.calculateConfidence({
+      topGap,
+      shareMargin: confidenceMargin,
+      shareEntropy,
+      dimBand,
+      overlay,
+      sessionId: session_id
+    });
     
-    // Look up calibration model
-    try {
-      const { data: calibrationData } = await supabase
-        .from('calibration_model')
-        .select('knots, method')
-        .eq('stratum->dim_band', dimBand)
-        .eq('stratum->overlay', overlayStr)
-        .order('trained_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
-      if (calibrationData?.knots) {
-        // Apply calibration using interpolation
-        const knots = calibrationData.knots as Array<{x: number; y: number}>;
-        if (knots.length > 0) {
-          // Find surrounding knots and interpolate
-          let lower = knots[0];
-          let upper = knots[knots.length - 1];
-          
-          for (let i = 0; i < knots.length - 1; i++) {
-            if (rawConf >= knots[i].x && rawConf <= knots[i + 1].x) {
-              lower = knots[i];
-              upper = knots[i + 1];
-              break;
-            }
-          }
-          
-          if (lower.x === upper.x) {
-            calibratedConf = lower.y;
-          } else {
-            const t = (rawConf - lower.x) / (upper.x - lower.x);
-            calibratedConf = lower.y + t * (upper.y - lower.y);
-          }
-          calibratedConf = Math.max(0, Math.min(1, calibratedConf));
-        }
-      }
-    } catch (calError) {
-      console.error('Calibration lookup failed:', calError);
-      // Use raw confidence as fallback
-    }
-    
-    // Determine confidence band
-    const { data: bandCutsData } = await supabase
-      .from('scoring_config')
-      .select('value')
-      .eq('key', 'conf_band_cuts')
-      .single();
-    
-    const bandCuts = bandCutsData?.value || {high: 0.75, moderate: 0.55};
-    const confBand = calibratedConf >= bandCuts.high ? 'High' :
-                     calibratedConf >= bandCuts.moderate ? 'Moderate' : 'Low';
+    const rawConf = confidenceResult.raw;
+    const calibratedConf = confidenceResult.calibrated;
+    const confBand = confidenceResult.band;
     
     // Enhanced fit band logic from config
     let fitBand = "Low";
@@ -894,8 +838,8 @@ serve(async (req) => {
       confidence: confidence,
       validity_status: validityStatus,
       
-      // NEW v1.1 fields
-      results_version: "v1.1",
+      // NEW v1.2.0 fields with unified calibration
+      results_version: "v1.2.0",
       score_fit_raw: fitRaw[typeCode] || 0,
       score_fit_calibrated: fitAbs[typeCode] || 0,
       fit_band: fitBand,
@@ -935,7 +879,7 @@ serve(async (req) => {
       dims_highlights: dims_highlights,
       blocks_norm: blocks_norm_blend,
       blocks: { likert: blocks_norm_likert, fc: blocks_norm_fc },
-      version: "v1.1",
+      version: "v1.2.0",
       
       // FIXED: Use actual submission time with microsecond precision to avoid clustering
       submitted_at: new Date().toISOString(),
@@ -954,7 +898,7 @@ serve(async (req) => {
     const upsertData = {
       ...profileData,
       session_id: session_id,
-      version: "v1.1"
+      version: "v1.2.0"
     };
 
     // If existing profile, preserve original submitted_at and add recomputed_at
