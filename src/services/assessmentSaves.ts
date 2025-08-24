@@ -110,57 +110,80 @@ async function performIdempotentSave(params: SaveResponseParams): Promise<void> 
 }
 
 /**
- * Load existing responses for a session
+ * Load existing responses for a session using edge function
  */
 export async function loadSessionResponses(sessionId: string): Promise<Array<{
   questionId: number | string;
   answer: string | number | string[] | number[];
 }>> {
-  console.log('📥 Loading session responses:', sessionId);
+  console.log('📥 Loading session responses via edge function:', sessionId);
 
-  const { data: responses, error } = await supabase
-    .from('assessment_responses')
-    .select('question_id, answer_value, answer_numeric, answer_array')
-    .eq('session_id', sessionId)
-    .order('question_id');
+  try {
+    // Use edge function to get progress and responses
+    const { data, error } = await supabase.functions.invoke('get_progress', {
+      body: { session_id: sessionId }
+    });
 
-  if (error) {
-    console.error('💥 Failed to load responses:', error);
-    throw error;
-  }
-
-  const mappedResponses = (responses || []).map(r => {
-    let answer: string | number | string[] | number[];
-
-    // Reconstruct answer from stored fields
-    if (r.answer_array && Array.isArray(r.answer_array)) {
-      answer = r.answer_array;
-    } else if (r.answer_numeric !== null) {
-      answer = r.answer_numeric;
-    } else {
-      answer = r.answer_value || '';
-      
-      // Try to parse JSON arrays stored as strings
-      if (typeof answer === 'string' && answer.startsWith('[')) {
-        try {
-          const parsed = JSON.parse(answer);
-          if (Array.isArray(parsed)) {
-            answer = parsed;
-          }
-        } catch (e) {
-          // Keep as string if parsing fails
-        }
-      }
+    if (error) {
+      console.error('💥 Failed to load responses via edge function:', error);
+      throw error;
     }
 
-    return {
-      questionId: r.question_id,
-      answer
-    };
-  });
+    if (data?.status !== 'success') {
+      throw new Error(data?.error || 'Failed to load progress');
+    }
 
-  console.log('📊 Loaded responses:', mappedResponses.length);
-  return mappedResponses;
+    const responses = (data.responses || []).map((r: any) => {
+      let answer: string | number | string[] | number[];
+
+      // Reconstruct answer from stored fields
+      if (r.answer_array && Array.isArray(r.answer_array)) {
+        answer = r.answer_array;
+      } else if (r.answer_numeric !== null) {
+        answer = r.answer_numeric;
+      } else {
+        answer = r.answer_value || '';
+        
+        // Try to parse JSON arrays stored as strings
+        if (typeof answer === 'string' && answer.startsWith('[')) {
+          try {
+            const parsed = JSON.parse(answer);
+            if (Array.isArray(parsed)) {
+              answer = parsed;
+            }
+          } catch (e) {
+            // Keep as string if parsing fails
+          }
+        }
+      }
+
+      return {
+        questionId: r.question_id,
+        answer
+      };
+    });
+
+    console.log('📊 Loaded responses via edge function:', responses.length);
+    return responses;
+  } catch (error) {
+    console.error('💥 Edge function call failed, falling back to direct query');
+    // Fallback to direct query in case of edge function issues
+    const { data: responses, error: directError } = await supabase
+      .from('assessment_responses')
+      .select('question_id, answer_value, answer_numeric, answer_array')
+      .eq('session_id', sessionId)
+      .order('question_id');
+
+    if (directError) {
+      console.error('💥 Direct query also failed:', directError);
+      throw directError;
+    }
+
+    return (responses || []).map(r => ({
+      questionId: r.question_id,
+      answer: r.answer_array || r.answer_numeric || r.answer_value || ''
+    }));
+  }
 }
 
 /**

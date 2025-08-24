@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.save_response]
 verify_jwt = false
+
+[functions.get_progress]
+verify_jwt = false

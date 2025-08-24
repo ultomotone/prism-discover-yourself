@@ -41,15 +41,17 @@ Deno.serve(async (req) => {
       .from('profiles')
       .select('*')
       .eq('session_id', session_id)
-      .single();
+      .maybeSingle();
 
     if (existingProfile) {
       console.log('Profile already exists, returning cached result');
       const resultsUrl = `https://de95f929-2a16-4b73-9441-1460cd22bde1.lovableproject.com/results/${session_id}`;
       return new Response(
         JSON.stringify({ 
+          status: 'success',
           profile: existingProfile,
-          resultsUrl 
+          resultsUrl,
+          message: 'Assessment completed successfully (cached)'
         }),
         { 
           status: 200, 
@@ -76,7 +78,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Do not set session completed here; score_prism is the single writer of completion state
+    // Mark session as completed (best effort)
+    await supabase
+      .from('assessment_sessions')
+      .update({ 
+        status: 'completed', 
+        completed_at: new Date().toISOString() 
+      })
+      .eq('id', session_id);
 
     // Invoke the 'score_prism' Supabase function to generate assessment results
     console.log('Invoking score_prism function');
@@ -99,12 +108,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!scoringData || scoringData.error) {
-      console.error('Invalid scoring result:', scoringData);
+    // Extract the actual profile from the scoring response
+    const profile = scoringData?.profile;
+    if (!profile?.type_code) {
+      console.error('Invalid scoring result shape:', scoringData);
       return new Response(
         JSON.stringify({ 
-          error: 'Invalid scoring result',
-          details: scoringData?.error || 'No data returned from scoring'
+          error: 'Invalid scoring result shape',
+          details: 'Missing profile or type_code',
+          got: scoringData
         }),
         { 
           status: 500, 
@@ -120,7 +132,8 @@ Deno.serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
-        profile: scoringData.profile,
+        status: 'success',
+        profile: profile,  // Return the actual profile object, not the wrapper
         resultsUrl,
         message: 'Assessment completed successfully'
       }),
