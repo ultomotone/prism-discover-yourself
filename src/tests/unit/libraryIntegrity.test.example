@@ -1,0 +1,201 @@
+// Library integrity unit tests
+import { describe, it, expect } from 'vitest';
+import { ALL_FIXTURES, TestFixture } from '../../fixtures/assessmentFixtures';
+import { Question } from '../../data/assessmentQuestions';
+
+describe('Library Integrity Tests', () => {
+  
+  describe('Question Structure Validation', () => {
+    it('should have required fields for all questions', () => {
+      ALL_FIXTURES.forEach(fixture => {
+        fixture.questions.forEach(question => {
+          expect(question.id).toBeDefined();
+          expect(question.text).toBeDefined();
+          expect(question.type).toBeDefined();
+          expect(question.section).toBeDefined();
+          expect(typeof question.required).toBe('boolean');
+        });
+      });
+    });
+
+    it('should only contain allowed question types', () => {
+      const allowedTypes = [
+        'email', 'text', 'multiple-choice', 'likert-1-5', 'likert-1-7', 
+        'yes-no', 'forced-choice-2', 'forced-choice-4', 'forced-choice-5', 
+        'state-1-7', 'categorical-5', 'frequency', 'matrix', 'select-all', 
+        'ranking', 'country-select'
+      ];
+
+      ALL_FIXTURES.forEach(fixture => {
+        fixture.questions.forEach(question => {
+          expect(allowedTypes).toContain(question.type);
+        });
+      });
+    });
+  });
+
+  describe('Forced Choice Validation', () => {
+    it('should have correct FC cardinality matching type', () => {
+      ALL_FIXTURES.forEach(fixture => {
+        const fcQuestions = fixture.questions.filter(q => q.type?.startsWith('forced-choice-'));
+        
+        fcQuestions.forEach(question => {
+          const expectedOptions = parseInt(question.type.split('-')[2]);
+          expect(question.options?.length).toBe(expectedOptions);
+        });
+      });
+    });
+
+    it('should count FC questions correctly', () => {
+      const happyPath = ALL_FIXTURES.find(f => f.name === 'complete_valid_library');
+      const fcQuestions = happyPath?.questions.filter(q => 
+        q.type?.startsWith('forced-choice-') && 
+        q.section?.includes('Work')
+      ) || [];
+      
+      expect(fcQuestions.length).toBeGreaterThanOrEqual(24);
+    });
+
+    it('should detect FC deficit correctly', () => {
+      const fcDeficit = ALL_FIXTURES.find(f => f.name === 'fc_deficit_23_blocks');
+      const fcQuestions = fcDeficit?.questions.filter(q => 
+        q.type?.startsWith('forced-choice-') && 
+        q.section?.includes('Work')
+      ) || [];
+      
+      expect(fcQuestions.length).toBe(23);
+    });
+  });
+
+  describe('Inconsistency Pair Validation', () => {
+    it('should have complete INC pairs (A+B) in happy path', () => {
+      const happyPath = ALL_FIXTURES.find(f => f.name === 'complete_valid_library');
+      const incQuestions = happyPath?.questions.filter(q => q.tag?.startsWith('INC_')) || [];
+      
+      const pairGroups = new Map<string, { hasA: boolean; hasB: boolean }>();
+      
+      incQuestions.forEach(q => {
+        if (!q.pair_group) return;
+        
+        if (!pairGroups.has(q.pair_group)) {
+          pairGroups.set(q.pair_group, { hasA: false, hasB: false });
+        }
+        
+        const pair = pairGroups.get(q.pair_group)!;
+        if (q.tag?.endsWith('_A')) pair.hasA = true;
+        if (q.tag?.endsWith('_B')) pair.hasB = true;
+      });
+
+      Array.from(pairGroups.values()).forEach(pair => {
+        expect(pair.hasA && pair.hasB).toBe(true);
+      });
+    });
+
+    it('should detect missing INC pairs', () => {
+      const missingPair = ALL_FIXTURES.find(f => f.name === 'inc_missing_pair');
+      const incQuestions = missingPair?.questions.filter(q => q.tag?.startsWith('INC_')) || [];
+      
+      const pairGroups = new Map<string, { hasA: boolean; hasB: boolean }>();
+      
+      incQuestions.forEach(q => {
+        if (!q.pair_group) return;
+        
+        if (!pairGroups.has(q.pair_group)) {
+          pairGroups.set(q.pair_group, { hasA: false, hasB: false });
+        }
+        
+        const pair = pairGroups.get(q.pair_group)!;
+        if (q.tag?.endsWith('_A')) pair.hasA = true;
+        if (q.tag?.endsWith('_B')) pair.hasB = true;
+      });
+
+      const incompletePairs = Array.from(pairGroups.values()).filter(pair => 
+        !pair.hasA || !pair.hasB
+      );
+      
+      expect(incompletePairs.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Social Desirability Validation', () => {
+    it('should have at least one SD item in happy path', () => {
+      const happyPath = ALL_FIXTURES.find(f => f.name === 'complete_valid_library');
+      const sdQuestions = happyPath?.questions.filter(q => 
+        q.tag === 'SD' || q.social_desirability
+      ) || [];
+      
+      expect(sdQuestions.length).toBeGreaterThan(0);
+    });
+
+    it('should detect missing SD items', () => {
+      const noSD = ALL_FIXTURES.find(f => f.name === 'no_sd_items');
+      const sdQuestions = noSD?.questions.filter(q => 
+        q.tag === 'SD' || q.social_desirability
+      ) || [];
+      
+      expect(sdQuestions.length).toBe(0);
+    });
+  });
+
+  describe('Neuroticism Index Validation', () => {
+    it('should have N and N_R items with correct reverse scoring', () => {
+      const happyPath = ALL_FIXTURES.find(f => f.name === 'complete_valid_library');
+      const neuroQuestions = happyPath?.questions.filter(q => 
+        ['N', 'N_R'].includes(q.tag || '')
+      ) || [];
+      
+      expect(neuroQuestions.length).toBeGreaterThanOrEqual(2);
+      
+      const nQuestion = neuroQuestions.find(q => q.tag === 'N');
+      const nrQuestion = neuroQuestions.find(q => q.tag === 'N_R');
+      
+      expect(nQuestion).toBeDefined();
+      expect(nrQuestion).toBeDefined();
+      expect(nrQuestion?.reverse_scored).toBe(true);
+    });
+
+    it('should detect missing neuroticism items', () => {
+      const neuroGap = ALL_FIXTURES.find(f => f.name === 'neuro_gap_missing_items');
+      const neuroQuestions = neuroGap?.questions.filter(q => 
+        ['N', 'N_R'].includes(q.tag || '')
+      ) || [];
+      
+      expect(neuroQuestions.length).toBe(0);
+    });
+  });
+
+  describe('Required Field Logic', () => {
+    it('should have only email (Q1) as required', () => {
+      ALL_FIXTURES.forEach(fixture => {
+        const emailQuestion = fixture.questions.find(q => q.id === 1);
+        expect(emailQuestion?.required).toBe(true);
+        expect(emailQuestion?.type).toBe('email');
+        
+        // Q2-Q16 should be optional
+        const earlyQuestions = fixture.questions.filter(q => q.id >= 2 && q.id <= 16);
+        earlyQuestions.forEach(q => {
+          expect(q.required).toBe(false);
+        });
+      });
+    });
+  });
+
+  describe('Section Organization', () => {
+    it('should have proper section distribution', () => {
+      const happyPath = ALL_FIXTURES.find(f => f.name === 'complete_valid_library');
+      const sections = new Set(happyPath?.questions.map(q => q.section));
+      
+      const expectedSections = [
+        'Demographics',
+        'Core PRISM Functions', 
+        'Neuroticism Index',
+        'Situational Work Style',
+        'Validity & Quality Control'
+      ];
+      
+      expectedSections.forEach(section => {
+        expect(Array.from(sections).some(s => s.includes(section))).toBe(true);
+      });
+    });
+  });
+});

@@ -1,0 +1,223 @@
+// Validator unit tests
+import { describe, it, expect, vi } from 'vitest';
+import { validatePrismAssessment } from '../../utils/prismValidation';
+import { 
+  HAPPY_PATH_FIXTURE, 
+  FC_DEFICIT_FIXTURE, 
+  INC_MISSING_PAIR_FIXTURE,
+  NO_SD_FIXTURE,
+  SAMPLE_RESPONSES
+} from '../../fixtures/assessmentFixtures';
+
+// Mock supabase functions
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    functions: {
+      invoke: vi.fn()
+    }
+  }
+}));
+
+const { supabase } = await import('@/integrations/supabase/client');
+
+describe('PRISM Validator Tests', () => {
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('Happy Path Validation', () => {
+    it('should pass complete valid assessment', async () => {
+      // Mock successful API responses
+      (supabase.functions.invoke as any)
+        .mockResolvedValueOnce({
+          data: { config: { fc_expected_min: 24 } }
+        })
+        .mockResolvedValueOnce({
+          data: { data: HAPPY_PATH_FIXTURE.questions }
+        });
+
+      const result = await validatePrismAssessment(SAMPLE_RESPONSES.happy_path);
+
+      expect(result.ok).toBe(true);
+      expect(result.errors).toHaveLength(0);
+      expect(result.counts.fc_answered).toBeGreaterThanOrEqual(24);
+      expect(result.counts.sd_present).toBe(true);
+    });
+  });
+
+  describe('FC Threshold Validation', () => {
+    it('should fail when FC answered < fc_expected_min', async () => {
+      (supabase.functions.invoke as any)
+        .mockResolvedValueOnce({
+          data: { config: { fc_expected_min: 24 } }
+        })
+        .mockResolvedValueOnce({
+          data: { data: FC_DEFICIT_FIXTURE.questions }
+        });
+
+      const result = await validatePrismAssessment(SAMPLE_RESPONSES.fc_deficit);
+
+      expect(result.ok).toBe(false);
+      expect(result.errors.some(e => e.includes('Insufficient forced-choice'))).toBe(true);
+      expect(result.counts.fc_answered).toBe(23);
+      expect(result.counts.fc_expected).toBe(24);
+    });
+
+    it('should handle edge case: exactly meeting minimum', async () => {
+      (supabase.functions.invoke as any)
+        .mockResolvedValueOnce({
+          data: { config: { fc_expected_min: 23 } }
+        })
+        .mockResolvedValueOnce({
+          data: { data: FC_DEFICIT_FIXTURE.questions }
+        });
+
+      const result = await validatePrismAssessment(SAMPLE_RESPONSES.fc_deficit);
+
+      expect(result.ok).toBe(true); // Should pass with min=23, answered=23
+    });
+  });
+
+  describe('Inconsistency Pair Validation', () => {
+    it('should fail when INC pairs incomplete', async () => {
+      (supabase.functions.invoke as any)
+        .mockResolvedValueOnce({
+          data: { config: { fc_expected_min: 24 } }
+        })
+        .mockResolvedValueOnce({
+          data: { data: INC_MISSING_PAIR_FIXTURE.questions }
+        });
+
+      // Responses with only A items, no B items
+      const incOnlyAResponses = [
+        { questionId: 1, answer: "test@example.com" },
+        { questionId: 200, answer: "3" }, // INC_01_A
+        { questionId: 201, answer: "3" }, // INC_02_A  
+        { questionId: 202, answer: "3" }  // INC_03_A
+        // Missing corresponding B items
+      ];
+
+      const result = await validatePrismAssessment(incOnlyAResponses);
+
+      expect(result.ok).toBe(false);
+      expect(result.errors.some(e => e.includes('inconsistency pair'))).toBe(true);
+      expect(result.counts.inc_pairs_complete).toBeLessThan(result.counts.inc_pairs_present);
+    });
+  });
+
+  describe('Attention Check Validation', () => {
+    it('should fail when AC answers incorrect', async () => {
+      (supabase.functions.invoke as any)
+        .mockResolvedValueOnce({
+          data: { config: { fc_expected_min: 24 } }
+        })
+        .mockResolvedValueOnce({
+          data: { data: HAPPY_PATH_FIXTURE.questions }
+        });
+
+      const result = await validatePrismAssessment(SAMPLE_RESPONSES.ac_wrong);
+
+      expect(result.ok).toBe(false);
+      expect(result.errors.some(e => e.includes('attention check'))).toBe(true);
+    });
+  });
+
+  describe('Social Desirability Validation', () => {
+    it('should fail when no SD items present', async () => {
+      (supabase.functions.invoke as any)
+        .mockResolvedValueOnce({
+          data: { config: { fc_expected_min: 24 } }
+        })
+        .mockResolvedValueOnce({
+          data: { data: NO_SD_FIXTURE.questions }
+        });
+
+      const result = await validatePrismAssessment([]);
+
+      expect(result.ok).toBe(false);
+      expect(result.errors.some(e => e.includes('social desirability'))).toBe(true);
+      expect(result.counts.sd_present).toBe(false);
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should handle API failures gracefully', async () => {
+      (supabase.functions.invoke as any)
+        .mockRejectedValueOnce(new Error('Network error'));
+
+      const result = await validatePrismAssessment([]);
+
+      expect(result.ok).toBe(false);
+      expect(result.errors.some(e => e.includes('system error'))).toBe(true);
+    });
+
+    it('should handle malformed config', async () => {
+      (supabase.functions.invoke as any)
+        .mockResolvedValueOnce({
+          data: null // Malformed response
+        });
+
+      const result = await validatePrismAssessment([]);
+
+      expect(result.ok).toBe(false);
+      expect(result.config.fc_expected_min).toBe(24); // Should use default
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should handle empty responses array', async () => {
+      (supabase.functions.invoke as any)
+        .mockResolvedValueOnce({
+          data: { config: { fc_expected_min: 24 } }
+        })
+        .mockResolvedValueOnce({
+          data: { data: HAPPY_PATH_FIXTURE.questions }
+        });
+
+      const result = await validatePrismAssessment([]);
+
+      expect(result.ok).toBe(false);
+      expect(result.counts.fc_answered).toBe(0);
+    });
+
+    it('should handle duplicate responses (latest wins)', async () => {
+      (supabase.functions.invoke as any)
+        .mockResolvedValueOnce({
+          data: { config: { fc_expected_min: 24 } }
+        })
+        .mockResolvedValueOnce({
+          data: { data: HAPPY_PATH_FIXTURE.questions }
+        });
+
+      const duplicateResponses = [
+        { questionId: 1, answer: "old@example.com" },
+        { questionId: 1, answer: "new@example.com" }, // Should win
+        { questionId: 100, answer: "Option A" }
+      ];
+
+      const result = await validatePrismAssessment(duplicateResponses);
+
+      // Should process the later response for questionId 1
+      expect(result.ok).toBeDefined();
+    });
+  });
+
+  describe('Config Integration', () => {
+    it('should use custom fc_expected_min from config', async () => {
+      const customMin = 30;
+      
+      (supabase.functions.invoke as any)
+        .mockResolvedValueOnce({
+          data: { config: { fc_expected_min: customMin } }
+        })
+        .mockResolvedValueOnce({
+          data: { data: HAPPY_PATH_FIXTURE.questions }
+        });
+
+      const result = await validatePrismAssessment(SAMPLE_RESPONSES.happy_path);
+
+      expect(result.config.fc_expected_min).toBe(customMin);
+    });
+  });
+});

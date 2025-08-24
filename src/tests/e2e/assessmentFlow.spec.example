@@ -1,0 +1,287 @@
+// E2E tests for assessment UI behavior
+import { test, expect, Page } from '@playwright/test';
+
+test.describe('Assessment Form UI Tests', () => {
+
+  test.beforeEach(async ({ page }) => {
+    // Navigate to assessment start
+    await page.goto('/assessment');
+  });
+
+  test.describe('Keyboard Navigation', () => {
+    test('should navigate FC options with keyboard only', async ({ page }) => {
+      // Wait for assessment to load
+      await page.waitForSelector('[data-testid="assessment-question"]');
+      
+      // Navigate to a forced choice question
+      await navigateToFCQuestion(page);
+      
+      // Test keyboard navigation
+      await page.keyboard.press('Tab'); // Focus first option
+      await page.keyboard.press('Space'); // Select option
+      
+      // Verify selection
+      const selectedOption = page.locator('input[type="radio"]:checked');
+      await expect(selectedOption).toBeVisible();
+      
+      // Navigate with arrow keys
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('Space');
+      
+      // Verify new selection
+      const newSelectedOption = page.locator('input[type="radio"]:checked');
+      await expect(newSelectedOption).toBeVisible();
+    });
+
+    test('should focus first error on validation failure', async ({ page }) => {
+      // Navigate to end of assessment
+      await navigateToEnd(page);
+      
+      // Try to submit without meeting FC threshold
+      await page.click('[data-testid="submit-button"]');
+      
+      // Wait for error summary to appear
+      await page.waitForSelector('[role="alert"]');
+      
+      // Check that first error is focused
+      const errorSummary = page.locator('[role="alert"]');
+      await expect(errorSummary).toBeFocused();
+      
+      // Verify error content
+      await expect(errorSummary).toContainText('forced-choice');
+    });
+  });
+
+  test.describe('Required Field Logic', () => {
+    test('should allow submission with only email if integrity rules met', async ({ page }) => {
+      // Fill only email (Q1)
+      await page.fill('input[type="email"]', 'test@example.com');
+      
+      // Navigate through and skip Q2-Q16 (should be optional)
+      for (let i = 0; i < 15; i++) {
+        await page.click('[data-testid="next-button"]');
+        // Should not require answers for Q2-Q16
+      }
+      
+      // Fill minimum required for integrity (would need FC, INC, etc.)
+      await fillMinimumIntegrityRequirements(page);
+      
+      // Should be able to submit
+      await page.click('[data-testid="submit-button"]');
+      
+      // Should proceed or show specific integrity errors, not required field errors
+      const requiredFieldError = page.locator('text=required');
+      await expect(requiredFieldError).not.toBeVisible();
+    });
+
+    test('should require email but not Q2-Q16', async ({ page }) => {
+      // Try to skip email (Q1)
+      await page.click('[data-testid="next-button"]');
+      
+      // Should get validation error for email
+      await expect(page.locator('text=email')).toBeVisible();
+      
+      // Fill email
+      await page.fill('input[type="email"]', 'test@example.com');
+      await page.click('[data-testid="next-button"]');
+      
+      // Q2-Q16 should be skippable without errors
+      for (let i = 0; i < 15; i++) {
+        await page.click('[data-testid="next-button"]');
+        // Should advance without requiring input
+      }
+    });
+  });
+
+  test.describe('Validation Error Display', () => {
+    test('should block submission with FC < 24', async ({ page }) => {
+      await fillMinimalAssessment(page);
+      
+      // Fill only 23 FC questions
+      await fillForcedChoiceQuestions(page, 23);
+      
+      // Try to submit
+      await page.click('[data-testid="submit-button"]');
+      
+      // Should show validation error
+      await expect(page.locator('[role="alert"]')).toBeVisible();
+      await expect(page.locator('text=23/24')).toBeVisible();
+      
+      // Submit button should remain enabled for retry
+      const submitButton = page.locator('[data-testid="submit-button"]');
+      await expect(submitButton).toBeEnabled();
+    });
+
+    test('should show progress breakdown in error summary', async ({ page }) => {
+      await fillMinimalAssessment(page);
+      
+      // Deliberately leave gaps
+      await fillForcedChoiceQuestions(page, 20); // Below minimum
+      
+      await page.click('[data-testid="submit-button"]');
+      
+      // Verify progress display
+      const errorSummary = page.locator('[role="alert"]');
+      await expect(errorSummary).toContainText('20/24'); // FC progress
+      await expect(errorSummary).toContainText('Current Progress');
+    });
+
+    test('should allow dismissing error summary', async ({ page }) => {
+      await fillMinimalAssessment(page);
+      
+      await page.click('[data-testid="submit-button"]');
+      
+      // Wait for error summary
+      await page.waitForSelector('[role="alert"]');
+      
+      // Dismiss error
+      await page.click('[aria-label="Dismiss error summary"]');
+      
+      // Should hide error summary
+      await expect(page.locator('[role="alert"]')).not.toBeVisible();
+    });
+  });
+
+  test.describe('Forced Choice Block Rendering', () => {
+    test('should render FC questions as radio groups', async ({ page }) => {
+      await navigateToFCQuestion(page);
+      
+      // Should have radio group
+      const radioGroup = page.locator('[role="radiogroup"]');
+      await expect(radioGroup).toBeVisible();
+      
+      // Should have multiple options
+      const radioOptions = page.locator('input[type="radio"]');
+      await expect(radioOptions).toHaveCount.greaterThan(1);
+      
+      // Options should be exclusive
+      await page.check('input[type="radio"]:first-child');
+      await page.check('input[type="radio"]:nth-child(2)');
+      
+      // Only last selected should remain checked
+      const checkedOptions = page.locator('input[type="radio"]:checked');
+      await expect(checkedOptions).toHaveCount(1);
+    });
+
+    test('should show FC block metadata', async ({ page }) => {
+      await navigateToFCQuestion(page);
+      
+      // Should show question type info
+      await expect(page.locator('text=options')).toBeVisible();
+    });
+  });
+
+  test.describe('Accessibility', () => {
+    test('should have proper ARIA labels', async ({ page }) => {
+      await navigateToFCQuestion(page);
+      
+      // Check radio group has proper ARIA
+      const radioGroup = page.locator('[role="radiogroup"]');
+      await expect(radioGroup).toHaveAttribute('aria-required', 'false');
+      
+      // Check options have labels
+      const firstOption = page.locator('input[type="radio"]').first();
+      const labelId = await firstOption.getAttribute('id');
+      const label = page.locator(`label[for="${labelId}"]`);
+      await expect(label).toBeVisible();
+    });
+
+    test('should announce validation errors to screen readers', async ({ page }) => {
+      await fillMinimalAssessment(page);
+      await page.click('[data-testid="submit-button"]');
+      
+      // Error should have proper ARIA attributes
+      const alert = page.locator('[role="alert"]');
+      await expect(alert).toHaveAttribute('aria-live', 'assertive');
+    });
+  });
+
+  test.describe('Section Organization', () => {
+    test('should show questions in proper order', async ({ page }) => {
+      // Email should be first
+      await expect(page.locator('input[type="email"]')).toBeVisible();
+      
+      // Navigate through sections
+      const sections = [
+        'Demographics',
+        'Core PRISM Functions', 
+        'Neuroticism Index',
+        'Situational Work Style',
+        'Validity & Quality Control'
+      ];
+      
+      for (const section of sections) {
+        // Should eventually encounter each section
+        let found = false;
+        for (let i = 0; i < 50 && !found; i++) {
+          const sectionText = await page.locator('[data-testid="current-section"]').textContent();
+          if (sectionText?.includes(section)) {
+            found = true;
+          } else {
+            await page.click('[data-testid="next-button"]');
+          }
+        }
+        expect(found).toBe(true);
+      }
+    });
+  });
+});
+
+// Helper functions
+async function navigateToFCQuestion(page: Page) {
+  // Navigate until we find a forced choice question
+  for (let i = 0; i < 50; i++) {
+    const hasRadioGroup = await page.locator('[role="radiogroup"]').isVisible();
+    if (hasRadioGroup) {
+      break;
+    }
+    await page.click('[data-testid="next-button"]');
+  }
+}
+
+async function navigateToEnd(page: Page) {
+  // Navigate to the end of assessment
+  for (let i = 0; i < 100; i++) {
+    const isLastQuestion = await page.locator('text=Complete Assessment').isVisible();
+    if (isLastQuestion) {
+      break;
+    }
+    await page.click('[data-testid="next-button"]');
+  }
+}
+
+async function fillMinimalAssessment(page: Page) {
+  // Fill only email
+  await page.fill('input[type="email"]', 'test@example.com');
+  
+  // Navigate to end quickly
+  await navigateToEnd(page);
+}
+
+async function fillForcedChoiceQuestions(page: Page, count: number) {
+  let filled = 0;
+  
+  // Reset to beginning and fill FC questions
+  await page.reload();
+  await page.fill('input[type="email"]', 'test@example.com');
+  
+  for (let i = 0; i < 200 && filled < count; i++) {
+    const hasRadioGroup = await page.locator('[role="radiogroup"]').isVisible();
+    if (hasRadioGroup) {
+      await page.check('input[type="radio"]:first-child');
+      filled++;
+    }
+    
+    const isLastQuestion = await page.locator('text=Complete Assessment').isVisible();
+    if (isLastQuestion) break;
+    
+    await page.click('[data-testid="next-button"]');
+  }
+}
+
+async function fillMinimumIntegrityRequirements(page: Page) {
+  // This would fill the minimum required for validation to pass
+  // Implementation depends on the specific test scenario
+  await fillForcedChoiceQuestions(page, 24);
+  // Would also need to fill INC pairs, AC questions, etc.
+}
