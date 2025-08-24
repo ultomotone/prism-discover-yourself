@@ -408,7 +408,7 @@ const Admin: React.FC = () => {
               <CardTitle>Latest Assessments</CardTitle>
             </CardHeader>
             <CardContent>
-              <LatestAssessmentsTable />
+          <LatestAssessmentsTable />
             </CardContent>
           </Card>
 
