@@ -1,16 +1,20 @@
 import { Question } from "@/data/assessmentQuestions";
 
 /**
+ * Removes internal context suffixes from option text for display
+ * Preserves original values for data integrity
+ */
+export function sanitizeOptionText(optionText: string): string {
+  // Remove "(Ni)" and similar internal context suffixes
+  return optionText.replace(/\s*\([A-Z][a-z]*\)\s*$/, '').trim();
+}
+
+/**
  * Determines if a question should be visible in the assessment
  * Hidden questions are excluded from rendering, counts, and validation
  */
 export function visibleIf(question: Question): boolean {
-  // Hide question id 133 (contains Ni reference)
-  if (question.id === 133) {
-    return false;
-  }
-  
-  // Hide questions tagged with 'Ni'
+  // Hide questions tagged with 'Ni' (but not question 133 which should remain visible)
   if (question.tag === 'Ni') {
     return false;
   }
