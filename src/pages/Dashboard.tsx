@@ -37,6 +37,11 @@ const Dashboard = () => {
     refreshData
   } = useDashboardAnalytics();
 
+  // Show error state if analytics failed
+  if (analyticsError) {
+    console.error('Dashboard analytics error:', analyticsError);
+  }
+
   // Fetch dashboard statistics for totals and progress
   useEffect(() => {
     const fetchDashboardStats = async () => {
@@ -276,6 +281,10 @@ const Dashboard = () => {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
+              ) : analyticsError ? (
+                <div className="h-64 flex items-center justify-center text-destructive">
+                  Error loading data: {analyticsError}
+                </div>
               ) : (
                 <div className="h-64 flex items-center justify-center text-muted-foreground">
                   No type distribution data available
@@ -374,6 +383,10 @@ const Dashboard = () => {
                       </Button>
                     </div>
                   )}
+                </div>
+              ) : analyticsError ? (
+                <div className="text-center py-8 text-destructive">
+                  Error loading assessments: {analyticsError}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
