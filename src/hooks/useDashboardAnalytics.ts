@@ -36,29 +36,51 @@ export const useDashboardAnalytics = () => {
         console.log('🔍 Dashboard: Profiles query failed, trying alternative approach...');
       }
 
-      // If profiles failed, try getting data from recent assessments function
+      // If profiles failed, try getting all dashboard profile stats
       if (profiles.length === 0) {
         try {
-          const { data: recentData, error: recentError } = await supabase
-            .rpc('get_recent_assessments_safe');
+          const { data: dashboardData, error: dashboardError } = await supabase
+            .rpc('get_dashboard_profile_stats');
 
-          console.log('🔍 Dashboard: Recent assessments safe result:', { data: recentData?.length, error: recentError });
+          console.log('🔍 Dashboard: All profile stats result:', { data: dashboardData?.length, error: dashboardError });
 
-          if (!recentError && recentData) {
-            // Transform the safe data into our expected format
-            profiles = recentData.map((item: any) => ({
-              type_code: item.type_display?.substring(0, 3) || 'Unknown',
-              overlay: item.type_display?.includes('+') ? '+' : item.type_display?.includes('–') ? '–' : null,
+          if (!dashboardError && dashboardData) {
+            // Transform the dashboard data into our expected format
+            profiles = dashboardData.map((item: any) => ({
+              type_code: item.type_code,
+              overlay: item.profile_overlay,
               created_at: item.created_at,
               confidence: item.confidence,
               fit_band: item.fit_band,
-              results_version: item.version,
-              session_id: null, // Not available in safe view
-              country: item.country_display
+              results_version: item.results_version,
+              session_id: null, // Not needed for dashboard
+              country: item.country
             }));
           }
         } catch (e) {
-          console.error('🔍 Dashboard: Safe function also failed:', e);
+          console.error('🔍 Dashboard: Dashboard function also failed:', e);
+          // Final fallback to recent safe function
+          try {
+            const { data: recentData, error: recentError } = await supabase
+              .rpc('get_recent_assessments_safe');
+
+            console.log('🔍 Dashboard: Recent assessments safe fallback:', { data: recentData?.length, error: recentError });
+
+            if (!recentError && recentData) {
+              profiles = recentData.map((item: any) => ({
+                type_code: item.type_display?.substring(0, 3) || 'Unknown',
+                overlay: item.type_display?.includes('+') ? '+' : item.type_display?.includes('–') ? '–' : null,
+                created_at: item.created_at,
+                confidence: item.confidence,
+                fit_band: item.fit_band,
+                results_version: item.version,
+                session_id: null,
+                country: item.country_display
+              }));
+            }
+          } catch (fallbackError) {
+            console.error('🔍 Dashboard: All methods failed:', fallbackError);
+          }
         }
       }
 

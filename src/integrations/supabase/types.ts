@@ -1600,6 +1600,18 @@ export type Database = {
           session_count: number
         }[]
       }
+      get_dashboard_profile_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          confidence: string
+          country: string
+          created_at: string
+          fit_band: string
+          profile_overlay: string
+          results_version: string
+          type_code: string
+        }[]
+      }
       get_profile_by_session: {
         Args: { p_session_id: string; p_share_token: string }
         Returns: {
