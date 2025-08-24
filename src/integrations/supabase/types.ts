@@ -649,6 +649,17 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_profile_stats: {
+        Row: {
+          assessment_date: string | null
+          confidence: string | null
+          count: number | null
+          fit_band: string | null
+          overlay: string | null
+          type_code: string | null
+        }
+        Relationships: []
+      }
       inferred_session_times: {
         Row: {
           completed_at_created_at: string | null
@@ -1558,6 +1569,10 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_scores: {
+        Args: { p_session_id: string }
+        Returns: Json
+      }
       check_question_library_integrity: {
         Args: { p_fc_expected_min?: number }
         Returns: {
@@ -1658,6 +1673,10 @@ export type Database = {
           type_display: string
           version: string
         }[]
+      }
+      get_user_assessment_scores: {
+        Args: { p_session_id: string }
+        Returns: Json
       }
       kpi_country_activity_v11: {
         Args: { end_ts?: string; start_ts?: string }

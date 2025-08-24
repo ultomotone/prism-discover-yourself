@@ -189,6 +189,15 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
         // Get current user (null if anonymous)
         const { data: { user } } = await supabase.auth.getUser();
         
+        // Check if user needs to authenticate for scoring
+        if (!user) {
+          console.warn('⚠️ User not authenticated - assessment will be limited');
+          toast({
+            title: "Sign Up for Full Results",
+            description: "Create an account to save your assessment and get detailed scoring results.",
+          });
+        }
+        
         // Generate UUIDs with fallback for browser compatibility
         const generateUUID = () => {
           if (typeof crypto !== 'undefined' && crypto.randomUUID) {

@@ -67,66 +67,89 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
   }, [sessionId]);
 
   useEffect(() => {
-    const run = async () => {
+    const submitAndScore = async () => {
       if (!sessionId) return;
       
-      let isSubmitting = false;
+      console.log('🔄 Starting assessment scoring for session:', sessionId);
+      setLoadingScore(true);
+      setScoreError(null);
       
-      const submitAssessment = async () => {
-        if (isSubmitting) return; // Prevent double-clicks
-        isSubmitting = true;
+      try {
+        // Check if user is authenticated
+        const { data: { user } } = await supabase.auth.getUser();
         
-        console.time('PRISM submit');
-        console.log('[PRISM] submit payload', { session_id: sessionId });
-        
-        setLoadingScore(true);
-        setScoreError(null);
-        
-        try {
-          console.time('PRISM score');
-          // Use new finalizeAssessment endpoint for idempotent result delivery
+        if (!user) {
+          setScoreError('Authentication required for scoring. Please sign up or log in to see your results.');
+          setLoadingScore(false);
+          return;
+        }
+
+        console.log('✅ User authenticated, proceeding with scoring');
+
+        // Try to get scores using the new SQL function first (for authenticated users)
+        const { data: scoresData, error: scoresError } = await supabase
+          .rpc('get_user_assessment_scores', { p_session_id: sessionId });
+
+        if (scoresError) {
+          console.error('❌ Direct scoring failed:', scoresError);
+          // Fallback to edge function
           const { data, error } = await supabase.functions.invoke('finalizeAssessment', {
             body: { session_id: sessionId }
           });
-          
-          console.timeEnd('PRISM score');
-          console.log('[PRISM] scored result', JSON.stringify(data, null, 2));
-          
+
           if (error) {
             throw new Error(error.message || 'Failed to finalize assessment');
           }
 
           if (data?.error) {
-            // Backend returned error but responses are saved
             setScoreError(data.error);
-            // Still show results_url if available for retry
-            if (data.results_url) {
-              // Could set a results URL for recovery
-            }
           } else if (data?.status === 'success' && data?.profile) {
-            // Quick shape check
-            const expect = ['type','overlay','confidence','blocks','dimensions','validity','top3'];
-            console.log('[PRISM] fields present', Object.fromEntries(expect.map(k => [k, data?.profile?.[k] !== undefined])));
-            
             setScoring(data.profile);
           } else {
-            throw new Error('Invalid response from finalization service');
+            throw new Error('Invalid response from scoring service');
           }
-        } catch (err) {
-          console.error('[PRISM] scoring failed', err);
-          const errorMessage = err instanceof Error ? err.message : 'Assessment finalization failed';
-          setScoreError(errorMessage);
-        } finally {
-          console.timeEnd('PRISM submit');
-          setLoadingScore(false);
-          isSubmitting = false;
+        } else if ((scoresData as any)?.error) {
+          setScoreError((scoresData as any).error);
+        } else {
+          console.log('✅ Direct SQL scoring successful:', scoresData);
+          
+          // Type-safe access to the scores data
+          const typedScoresData = scoresData as any;
+          
+          // Transform scores into profile format expected by ResultsV2
+          const profile = {
+            session_id: sessionId,
+            type_code: 'pending', // Will be calculated from dimension scores
+            confidence: 'moderate',
+            dimension_scores: typedScoresData.dimension_scores,
+            forced_choice_scores: typedScoresData.forced_choice_scores,
+            likert_scores: typedScoresData.likert_scores,
+            response_count: typedScoresData.response_count,
+            calculated_at: typedScoresData.calculated_at
+          };
+
+          // Fallback to edge function for full profile generation if needed
+          const { data, error } = await supabase.functions.invoke('finalizeAssessment', {
+            body: { session_id: sessionId, dimension_scores: typedScoresData.dimension_scores }
+          });
+
+          if (!error && data?.profile) {
+            setScoring(data.profile);
+          } else {
+            // Use basic profile with direct scores
+            setScoring(profile);
+          }
         }
-      };
-      
-      await submitAssessment();
+      } catch (err) {
+        console.error('💥 Assessment scoring failed:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Assessment scoring failed';
+        setScoreError(errorMessage);
+      } finally {
+        setLoadingScore(false);
+      }
     };
     
-    run();
+    submitAndScore();
   }, [sessionId]);
 
   const resultsUrl = shareToken 
@@ -204,6 +227,42 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
   }
 
   if (scoreError) {
+    // Show auth prompt if the error is related to authentication
+    if (scoreError.includes('Authentication required') || scoreError.includes('Access denied')) {
+      return (
+        <div className="min-h-screen bg-background">
+          <div className="py-8 px-4">
+            <div className="text-center mb-8">
+              <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="h-10 w-10 text-primary-foreground" />
+              </div>
+              <h1 className="text-4xl font-bold text-primary mb-4">Assessment Complete!</h1>
+              <p className="text-xl text-muted-foreground mb-6">
+                Your responses have been saved. Create an account to access your detailed results.
+              </p>
+              
+              <Card className="max-w-md mx-auto">
+                <CardContent className="p-6">
+                  <div className="text-destructive mb-4">
+                    <p className="text-sm">{scoreError}</p>
+                  </div>
+                  <div className="space-y-3">
+                    <Button onClick={onReturnHome} className="w-full">
+                      Sign Up for Full Results
+                    </Button>
+                    <Button onClick={onReturnHome} variant="outline" className="w-full">
+                      Return Home
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Show generic error for other types of errors
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="max-w-md">
