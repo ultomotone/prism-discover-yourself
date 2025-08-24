@@ -69,7 +69,7 @@ const Admin: React.FC = () => {
         exportToCSV('v_fit_ranks'),
         exportToCSV('v_conf_dist'),
         exportToCSV('v_overlay_conf'),
-        exportToCSV('v_throughput'),
+        exportToCSV('v_kpi_throughput'),
         exportToCSV('v_fc_coverage'),
         exportToCSV('v_share_entropy'),
         exportToCSV('v_dim_coverage'),

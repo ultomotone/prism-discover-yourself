@@ -21,7 +21,18 @@ const ALLOWED_VIEWS = {
   'latest_assessments': 'v_latest_assessments_v11',
   'quality': 'v_quality',
   'recent_assessments': 'v_recent_assessments_safe',
-  'item_stats': 'v_item_stats'
+  'item_stats': 'v_item_stats',
+  'v_kpi_overview_30d_v11': 'v_kpi_overview_30d_v11',
+  'v_kpi_quality': 'v_kpi_quality',
+  'v_conf_dist': 'v_conf_dist',
+  'v_overlay_conf': 'v_overlay_conf',
+  'v_kpi_throughput': 'v_kpi_throughput',
+  'v_sessions': 'v_profiles_ext',
+  'v_fit_ranks': 'v_fit_ranks',
+  'v_fc_coverage': 'v_fc_coverage',
+  'v_share_entropy': 'v_fc_analytics',
+  'v_dim_coverage': 'v_dim_coverage',
+  'v_section_times': 'v_section_times'
 };
 
 serve(async (req) => {
@@ -63,11 +74,28 @@ serve(async (req) => {
       .select('*', { count: 'exact', head: false })
       .range(offset, offset + limit - 1);
 
-    // Apply basic filters if provided (simple equality only for security)
+    // Apply filters if provided
     if (filters && typeof filters === 'object') {
       for (const [key, value] of Object.entries(filters)) {
-        if (value !== null && value !== undefined) {
-          query = query.eq(key, value);
+        if (value !== null && value !== undefined && value !== 'all') {
+          // Handle date range filters
+          if (key === 'dateRange' && typeof value === 'object' && value.from && value.to) {
+            const fromDate = new Date(value.from).toISOString();
+            const toDate = new Date(value.to).toISOString();
+            // Try multiple common timestamp column names
+            const timestampColumns = ['created_at', 'd', 'timestamp', 'finished_at'];
+            for (const col of timestampColumns) {
+              try {
+                query = query.gte(col, fromDate).lte(col, toDate);
+                break;
+              } catch (e) {
+                // Continue to next column if this one doesn't exist
+              }
+            }
+          } else if (typeof value === 'string' && value !== 'all') {
+            // Simple equality filter for non-'all' values
+            query = query.eq(key, value);
+          }
         }
       }
     }
@@ -91,7 +119,13 @@ serve(async (req) => {
         offset,
         timestamp: new Date().toISOString()
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+        } 
+      }
     );
 
   } catch (error) {

@@ -1,422 +1,129 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { MilestoneProgress } from "@/components/ui/milestone-progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, ResponsiveContainer, LineChart, Line } from "recharts";
-import { Search, Download, ExternalLink, Calendar, Users, TrendingUp, Globe } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, ResponsiveContainer } from "recharts";
+import { Search, RefreshCw, Clock, Users, Globe, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import { CountryDistributionChart } from "@/components/CountryDistributionChart";
-import DashboardPreview from "@/components/DashboardPreview";
-import { LatestAssessmentsTable } from "@/components/admin/LatestAssessmentsTable";
+import { useDashboardAnalytics } from "@/hooks/useDashboardAnalytics";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DashboardData {
   totalAssessments: number;
   todayCount: number;
   weeklyTrend: Array<{ day: string; count: number }>;
   overlayStats: Array<{ overlay: string; count: number }>;
-  typeDistribution: Array<{ type: string; count: number }>;
   countryDistribution: Array<{ country: string; count: number }>;
-  latestAssessments: Array<{
-    created_at: string;
-    type_code: string;
-    type_display?: string;
-    top_types?: string[];
-    type_scores?: Record<string, { fit_abs?: number; share_pct?: number }>;
-    overlay: string;
-    country?: string;
-    country_display?: string;
-    email?: string;
-    fit_score?: number;
-    share_pct?: number;
-    fit_band?: string;
-    confidence?: string;
-    version?: string;
-    // Add new v1.1 fields
-    results_version?: string;
-    score_fit_calibrated?: number;
-    score_fit_raw?: number;
-    top_gap?: number;
-    invalid_combo_flag?: boolean;
-  }>;
 }
-
-interface AssessmentDetail {
-  created_at: string;
-  type_code: string;
-  type_display?: string;
-  top_types?: string[];
-  type_scores?: Record<string, { fit_abs?: number; share_pct?: number }>;
-  overlay: string;
-  country?: string;
-  country_display?: string;
-  email?: string;
-  fit_score?: number;
-  share_pct?: number;
-  fit_band?: string;
-  confidence?: string;
-  version?: string;
-  // Add new v1.1 fields
-  results_version?: string;
-  score_fit_calibrated?: number;
-  score_fit_raw?: number;
-  top_gap?: number;
-  invalid_combo_flag?: boolean;
-}
-
-// Force no-cache for all dashboard data fetches
-const CACHE_HEADERS = {
-  'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-  'Pragma': 'no-cache',
-  'Surrogate-Control': 'no-store'
-};
-
-// Revalidate admin KPIs cache tag
-const revalidateAdminKPIs = () => {
-  // This would be used with Next.js revalidateTag('admin-kpis')
-  console.log('Cache revalidation triggered for admin KPIs');
-};
-
 
 const Dashboard = () => {
-  console.log('🔍 Dashboard component rendering');
   const { toast } = useToast();
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedOverlay, setSelectedOverlay] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<string>("30");
-  const [selectedAssessment, setSelectedAssessment] = useState<AssessmentDetail | null>(null);
   const [page, setPage] = useState(0);
-  const [countryQId, setCountryQId] = useState<number | null>(null);
-  const [emailQId, setEmailQId] = useState<number | null>(null);
+  const [data, setData] = useState<DashboardData | null>(null);
 
-  const maskEmail = (email: string): string => {
-    if (!email || !email.includes('@')) return email || '';
-    const [local, domain] = email.split('@');
-    if (local.length <= 2) return `${local[0]}***@${domain}`;
-    return `${local[0]}***@${domain}`;
-  };
+  const {
+    typeDistribution,
+    latestAssessments,
+    loading: analyticsLoading,
+    error: analyticsError,
+    refreshData
+  } = useDashboardAnalytics();
 
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      console.log("🔍 Starting Dashboard data fetch...");
+  // Fetch dashboard statistics for totals and progress
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        // Get aggregated statistics
+        const { data: stats } = await supabase
+          .from('dashboard_statistics')
+          .select('*')
+          .eq('stat_date', new Date().toISOString().split('T')[0])
+          .maybeSingle();
 
-      // Get config for country and email question IDs
-      const { data: countryConfig } = await supabase
-        .from('scoring_config')
-        .select('value')
-        .eq('key', 'dashboard_country_qid')
-        .single();
-      
-      const { data: emailConfig } = await supabase
-        .from('scoring_config')
-        .select('value')
-        .eq('key', 'dashboard_email_qid')
-        .single();
+        // Get weekly trend
+        const { data: weeklyData } = await supabase
+          .from('dashboard_statistics')
+          .select('stat_date, daily_assessments')
+          .gte('stat_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+          .order('stat_date', { ascending: true });
 
-      const countryId = (countryConfig?.value as any)?.id;
-      const emailId = (emailConfig?.value as any)?.id;
-      setCountryQId(countryId);
-      setEmailQId(emailId);
-
-      console.log("🔍 Config loaded:", { countryId, emailId });
-
-      // Use secure aggregated statistics instead of direct profile access
-      const { data: stats } = await supabase
-        .from('dashboard_statistics')
-        .select('*')
-        .eq('stat_date', new Date().toISOString().split('T')[0])
-        .maybeSingle();
-
-      console.log("🔍 Dashboard stats:", stats);
-
-      // Get weekly trend from aggregated view
-      const { data: weeklyData } = await supabase
-        .from('dashboard_statistics')
-        .select('stat_date, daily_assessments')
-        .gte('stat_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-        .order('stat_date', { ascending: true });
-
-      console.log("🔍 Weekly data:", weeklyData);
-
-      // Process weekly trend
-      const weeklyTrend = Array.from({ length: 7 }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - (6 - i));
-        const dateStr = date.toISOString().split('T')[0];
-        const dayData = weeklyData?.find(d => d.stat_date === dateStr);
-        return {
-          day: date.toLocaleDateString('en', { weekday: 'short' }),
-          count: dayData?.daily_assessments || 0
-        };
-      });
-
-      // Process overlay stats from aggregated data
-      const overlayStats = [];
-      if (stats) {
-        if (stats.overlay_positive > 0) overlayStats.push({ overlay: 'N+', count: stats.overlay_positive });
-        if (stats.overlay_negative > 0) overlayStats.push({ overlay: 'N–', count: stats.overlay_negative });
-      }
-
-      // Get type distribution directly from profiles if stats are incomplete
-      const { data: typeData } = await supabase
-        .from('profiles')
-        .select('type_code')
-        .eq('results_version', 'v1.2.0')
-        .not('type_code', 'is', null);
-
-      const typeDistribution = typeData ? 
-        Object.entries(
-          typeData.reduce((acc: Record<string, number>, profile: any) => {
-            acc[profile.type_code] = (acc[profile.type_code] || 0) + 1;
-            return acc;
-          }, {})
-        ).map(([type, count]) => ({ 
-          type, 
-          count: count as number 
-        })).sort((a, b) => b.count - a.count) : [];
-
-      console.log("🔍 About to fetch recent assessments...");
-
-      // Get recent assessments directly from profiles with proper scoring fields
-      const { data: recentAssessments, error: assessmentsError } = await supabase
-        .from('profiles')
-        .select(`
-          session_id,
-          created_at,
-          type_code,
-          overlay,
-          confidence,
-          score_fit_calibrated,
-          score_fit_raw,
-          top_gap,
-          fit_band,
-          results_version,
-          invalid_combo_flag,
-          type_scores,
-          top_types
-        `)
-        .eq('results_version', 'v1.2.0')
-        .not('type_code', 'is', null)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (assessmentsError) {
-        console.error("🔍 Error fetching assessments:", assessmentsError);
-        throw assessmentsError;
-      }
-
-      console.log("🔍 Recent assessments fetched:", recentAssessments?.length || 0, "items");
-      console.log("🔍 Sample assessment:", recentAssessments?.[0]);
-
-      // Get country for each assessment 
-      const assessmentsWithCountry = await Promise.all(
-        (recentAssessments || []).map(async (assessment) => {
-          let country = 'Unknown';
-          if (countryId) {
-            const { data: countryResponse } = await supabase
-              .from('assessment_responses')
-              .select('answer_value')
-              .eq('session_id', assessment.session_id)
-              .eq('question_id', countryId)
-              .maybeSingle();
-            country = countryResponse?.answer_value || 'Unknown';
-          }
-          return { ...assessment, country };
-        })
-      );
-
-      console.log("🔍 Assessments with country:", assessmentsWithCountry.length);
-
-      // Verification log for fit distribution
-      console.log('Fit distribution check (direct from profiles):', assessmentsWithCountry.slice(0, 10).map(r => ({
-        session: r.session_id?.toString().slice(0, 8) || 'unknown',
-        fit_calibrated: r.score_fit_calibrated,
-        fit_raw: r.score_fit_raw,
-        top_gap: r.top_gap,
-        band: r.fit_band,
-        version: r.results_version,
-        p1: r.type_scores && r.top_types ? r.type_scores[r.top_types[0]]?.share_pct : null,
-        p2: r.type_scores && r.top_types ? r.type_scores[r.top_types[1]]?.share_pct : null
-      })));
-
-      console.log("🔍 Processing latest assessments...");
-
-      const latestAssessments: AssessmentDetail[] = assessmentsWithCountry.map((assessment: any) => {
-        console.log("🔍 Processing assessment:", assessment.session_id?.slice(0, 8), {
-          type_scores: assessment.type_scores,
-          top_types: assessment.top_types
+        // Process weekly trend
+        const weeklyTrend = Array.from({ length: 7 }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - (6 - i));
+          const dateStr = date.toISOString().split('T')[0];
+          const dayData = weeklyData?.find(d => d.stat_date === dateStr);
+          return {
+            day: date.toLocaleDateString('en', { weekday: 'short' }),
+            count: dayData?.daily_assessments || 0
+          };
         });
 
-        const p1 = assessment.type_scores && assessment.top_types?.[0] 
-          ? assessment.type_scores[assessment.top_types[0]]?.share_pct : null;
-        const p2 = assessment.type_scores && assessment.top_types?.[1]
-          ? assessment.type_scores[assessment.top_types[1]]?.share_pct : null;
-        
-        return {
-          created_at: assessment.created_at,
-          type_code: `${assessment.type_code}${assessment.overlay || ''}`,
-          overlay: assessment.overlay || '',
-          country: assessment.country,
-          country_display: assessment.country,
-          email: undefined, // Never show email for privacy
-          top_types: assessment.top_types,
-          type_scores: assessment.type_scores,
-          fit_score: assessment.score_fit_calibrated,
-          share_pct: p1,
-          fit_band: assessment.fit_band,
-          confidence: assessment.confidence,
-          version: assessment.results_version || 'legacy',
-          // Add new v1.1 fields 
-          results_version: assessment.results_version,
-          score_fit_calibrated: assessment.score_fit_calibrated,
-          score_fit_raw: assessment.score_fit_raw,
-          top_gap: assessment.top_gap,
-          invalid_combo_flag: assessment.invalid_combo_flag
-        };
-      });
+        // Get country distribution
+        const { data: countryStats } = await supabase
+          .rpc('get_dashboard_country_stats', { days_back: 30 });
 
-      console.log("🔍 Latest assessments processed:", latestAssessments.length);
+        const countryDistribution = (countryStats || []).map(stat => ({
+          country: stat.country_name,
+          count: stat.session_count
+        }));
 
-      // Get country distribution using the secure dashboard function
-      const { data: countryStats } = await supabase
-        .rpc('get_dashboard_country_stats', { days_back: 30 });
-
-      const countryDistribution = (countryStats || []).map(stat => ({
-        country: stat.country_name,
-        count: stat.session_count
-      }));
-
-      // Debug log to verify country data is being passed
-      console.log('Country distribution for activity map:', countryDistribution);
-
-      console.log("🔍 Setting final dashboard data...");
-
-      setData({
-        totalAssessments: stats?.total_assessments || 0,
-        todayCount: stats?.daily_assessments || 0,
-        weeklyTrend,
-        overlayStats,
-        typeDistribution,
-        countryDistribution, // Now contains actual country data for heatmap
-        latestAssessments // Now shows anonymized recent assessments
-      });
-
-      console.log("🔍 Dashboard data set successfully");
-
-    } catch (error) {
-      console.error('🔍 Dashboard data fetch error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load dashboard data",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Subscribe to real-time updates for all relevant tables
-  useEffect(() => {
-    fetchDashboardData();
-
-    // One-time backfill and recompute to ensure all completed sessions have full profiles
-    (async () => {
-      try {
-        const [backfillRes, recomputeRes] = await Promise.all([
-          supabase.functions.invoke('backfill_profiles', { body: {} }),
-          supabase.functions.invoke('recompute_profiles_v11', { body: { force_all: true } })
-        ]);
-
-        if (backfillRes.error) console.error('Backfill error:', backfillRes.error);
-        if ((backfillRes.data && (backfillRes.data.created || 0) > 0) || (recomputeRes.data && recomputeRes.data.updated > 0)) {
-          await fetchDashboardData();
+        // Process overlay stats from aggregated data
+        const overlayStats = [];
+        if (stats) {
+          if (stats.overlay_positive > 0) overlayStats.push({ overlay: 'N+', count: stats.overlay_positive });
+          if (stats.overlay_negative > 0) overlayStats.push({ overlay: 'N–', count: stats.overlay_negative });
         }
-      } catch (e) {
-        console.error('Backfill/Recompute exception:', e);
+
+        setData({
+          totalAssessments: stats?.total_assessments || 0,
+          todayCount: stats?.daily_assessments || 0,
+          weeklyTrend,
+          overlayStats,
+          countryDistribution,
+        });
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard statistics",
+          variant: "destructive",
+        });
       }
-    })();
-
-    // Set up comprehensive real-time subscriptions
-    const channel = supabase
-      .channel('dashboard-realtime')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'profiles' },
-        (payload) => {
-          console.log('🔄 Profiles changed:', payload);
-          fetchDashboardData();
-        }
-      )
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'dashboard_statistics' },
-        (payload) => {
-          console.log('🔄 Dashboard statistics changed:', payload);
-          fetchDashboardData();
-        }
-      )
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'assessment_sessions' },
-        (payload) => {
-          console.log('🔄 Assessment sessions changed:', payload);
-          // Only refetch if session status changed to completed
-          if (payload.eventType === 'UPDATE' && payload.new?.status === 'completed') {
-            fetchDashboardData();
-          }
-        }
-      )
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'assessment_responses' },
-        (payload) => {
-          console.log('🔄 New assessment response:', payload);
-          // Debounced refetch to avoid too many calls during assessment taking
-          setTimeout(fetchDashboardData, 5000);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
     };
-  }, [dateRange]);
 
-  // Filtered assessments for table
-  const filteredAssessments = useMemo(() => {
-    if (!data) return [];
-    return data.latestAssessments.filter(assessment => {
-      const matchesSearch = !searchTerm || 
-        assessment.type_display?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        assessment.type_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        assessment.country_display?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        assessment.country?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesType = selectedType === 'all' || 
-        assessment.type_display?.substring(0, 3) === selectedType ||
-        assessment.type_code?.substring(0, 3) === selectedType;
-      const matchesOverlay = selectedOverlay === 'all' || 
-        assessment.overlay === selectedOverlay ||
-        (assessment.type_display && (assessment.type_display.includes('+') || assessment.type_display.includes('–')));
-      return matchesSearch && matchesType && matchesOverlay;
-    });
-  }, [data, searchTerm, selectedType, selectedOverlay]);
+    fetchDashboardStats();
+  }, [toast]);
 
+  // Filtered assessments for table with defensive null checks
+  const filteredAssessments = (latestAssessments || []).filter(assessment => {
+    const matchesSearch = !searchTerm || 
+      assessment.type_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      assessment.country?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = selectedType === 'all' || 
+      assessment.type_code?.substring(0, 3) === selectedType;
+    const matchesOverlay = selectedOverlay === 'all' || 
+      assessment.overlay === selectedOverlay;
+    return matchesSearch && matchesType && matchesOverlay;
+  });
 
   const exportCSV = () => {
     if (!filteredAssessments.length) return;
     
-    const headers = ['Date', 'Type', 'Overlay', 'Country', 'Email'];
+    const headers = ['Date', 'Type', 'Overlay', 'Country'];
     const rows = filteredAssessments.map(assessment => [
-      new Date(assessment.created_at).toLocaleString(),
+      new Date(assessment.created_at || assessment.finished_at).toLocaleString(),
       assessment.type_code,
       assessment.overlay,
-      assessment.country || '',
-      maskEmail(assessment.email || '')
+      assessment.country || ''
     ]);
 
     const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
@@ -429,7 +136,7 @@ const Dashboard = () => {
     URL.revokeObjectURL(url);
   };
 
-  const progressPercentage = data ? Math.min(100, Math.round((data.totalAssessments / 1000) * 100)) : 0;
+  const loading = analyticsLoading || !data;
 
   if (loading) {
     return (
@@ -495,49 +202,6 @@ const Dashboard = () => {
       </section>
 
       <div className="prism-container py-8">
-        {/* Fit Score Fix Banner */}
-        <div className="mb-6">
-          <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-              <div>
-                <h3 className="font-medium text-green-900">Fit Score Calculations Updated</h3>
-                <p className="text-sm text-green-700">
-                  All assessment fit scores have been recalculated with improved accuracy. 
-                  Scores now properly reflect the full 0-100% range instead of being capped.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Date Range Filter */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-4">
-            <Calendar className="h-5 w-5 text-muted-foreground" />
-            <Select value={dateRange} onValueChange={setDateRange}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">Last 7 days</SelectItem>
-                <SelectItem value="30">Last 30 days</SelectItem>
-                <SelectItem value="90">Last 90 days</SelectItem>
-                <SelectItem value="365">Last year</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Button 
-            onClick={fetchDashboardData} 
-            variant="outline"
-            disabled={loading}
-            className="flex items-center gap-2"
-          >
-            <TrendingUp className="h-4 w-4" />
-            {loading ? 'Refreshing...' : 'Refresh Data'}
-          </Button>
-        </div>
-
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="prism-shadow-card">
@@ -557,7 +221,7 @@ const Dashboard = () => {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">New Today</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <Clock className="h-4 w-4 text-muted-foreground" />
               </div>
             </CardHeader>
             <CardContent>
@@ -568,140 +232,170 @@ const Dashboard = () => {
 
           <Card className="prism-shadow-card">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">7-Day Trend</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-12">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={data?.weeklyTrend}>
-                    <Line 
-                      type="monotone" 
-                      dataKey="count" 
-                      stroke="hsl(var(--primary))" 
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Type Distribution Chart */}
-        <div className="mb-8">
-          <Card className="prism-shadow-card">
-            <CardHeader>
-              <CardTitle>Type Distribution</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data?.typeDistribution.filter(t => t.type !== 'UNK')}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="type" />
-                    <YAxis />
-                     <ChartTooltip />
-                     <Bar dataKey="count" fill="hsl(var(--primary))" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-
-        {/* Latest Assessments */}
-        <div className="mb-8">
-          {React.createElement(() => {
-            try {
-              console.log("🔍 Rendering LatestAssessmentsTable");
-              return <LatestAssessmentsTable />;
-            } catch (error) {
-              console.error("🚨 Error in LatestAssessmentsTable:", error);
-              return (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Latest Assessments</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-4 text-muted-foreground">
-                      Assessment table unavailable - {error instanceof Error ? error.message : 'Unknown error'}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            }
-          })}
-        </div>
-      </div>
-
-      {/* Assessment Detail Drawer */}
-      {selectedAssessment && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="max-w-md w-full">
-            <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Assessment Details</CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedAssessment(null)}>
-                  ×
+                <CardTitle className="text-sm font-medium text-muted-foreground">Countries Active</CardTitle>
+                <Globe className="h-4 w-4 text-muted-foreground" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{data?.countryDistribution?.length || 0}</div>
+              <p className="text-xs text-muted-foreground">Last 30 days</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Type Distribution Chart */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-base font-medium">Type Distribution</CardTitle>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={refreshData}
+                disabled={loading}
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="h-64 flex items-center justify-center">
+                  <div className="animate-pulse text-muted-foreground">Loading chart...</div>
+                </div>
+              ) : typeDistribution.length > 0 ? (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={typeDistribution}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="type" />
+                      <YAxis />
+                      <ChartTooltip />
+                      <Bar dataKey="count" fill="hsl(var(--primary))" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-64 flex items-center justify-center text-muted-foreground">
+                  No type distribution data available
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Latest Assessments */}
+          <Card className="col-span-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-base font-medium">Latest Assessments</CardTitle>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-40"
+                />
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={refreshData}
+                  disabled={loading}
+                >
+                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Type</p>
-                  <Badge className="mt-1">{selectedAssessment.type_code}</Badge>
-                </div>
-                
-                {selectedAssessment.top_types && (
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Top 3 Types</p>
-                    <div className="space-y-2">
-                      {selectedAssessment.top_types.slice(0, 3).map((type: any, i: number) => (
-                        <div key={i} className="flex justify-between text-sm">
-                          <span>{type.code || type}</span>
-                          {type.fit_abs && (
-                            <span className="text-muted-foreground">{type.fit_abs}%</span>
-                          )}
-                        </div>
-                      ))}
+              {loading ? (
+                <div className="space-y-2">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex items-center space-x-4">
+                      <div className="h-4 bg-muted rounded w-20 animate-pulse"></div>
+                      <div className="h-4 bg-muted rounded w-16 animate-pulse"></div>
+                      <div className="h-4 bg-muted rounded w-24 animate-pulse"></div>
+                      <div className="h-4 bg-muted rounded w-12 animate-pulse"></div>
                     </div>
-                  </div>
-                )}
-
-                 {selectedAssessment.fit_score && (
-                   <div>
-                     <p className="text-sm text-muted-foreground">Fit Score</p>
-                     <Badge 
-                       className={`mt-1 ${
-                         selectedAssessment.fit_score >= 70 ? "bg-green-100 text-green-800" :
-                         selectedAssessment.fit_score >= 40 ? "bg-yellow-100 text-yellow-800" :
-                         "bg-red-100 text-red-800"
-                       }`}
-                     >
-                       {Math.round(selectedAssessment.fit_score)}%
-                     </Badge>
-                   </div>
-                 )}
-
-                 <div>
-                  <p className="text-sm text-muted-foreground">Date</p>
-                  <p className="text-sm">{new Date(selectedAssessment.created_at).toLocaleString()}</p>
+                  ))}
                 </div>
-
-                {selectedAssessment.country && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Country</p>
-                    <p className="text-sm">{selectedAssessment.country}</p>
-                  </div>
-                )}
-              </div>
+              ) : filteredAssessments.length > 0 ? (
+                <div className="space-y-2 max-h-80 overflow-y-auto">
+                  {filteredAssessments.slice(page * 10, (page + 1) * 10).map((assessment, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <Badge variant="outline" className="text-xs">
+                          {assessment.type_code || 'Unknown'}
+                        </Badge>
+                        {assessment.overlay && (
+                          <Badge variant={assessment.overlay === '+' ? 'default' : 'secondary'} className="text-xs">
+                            N{assessment.overlay}
+                          </Badge>
+                        )}
+                        <span className="text-sm text-muted-foreground">
+                          {assessment.country || 'Unknown'}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {assessment.fit_band && (
+                          <Badge 
+                            variant={assessment.fit_band === 'Great' ? 'default' : 
+                                   assessment.fit_band === 'Good' ? 'secondary' : 'outline'}
+                            className="text-xs"
+                          >
+                            {assessment.fit_band}
+                          </Badge>
+                        )}
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(assessment.finished_at || assessment.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {filteredAssessments.length > 10 && (
+                    <div className="flex justify-center space-x-2 pt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(Math.max(0, page - 1))}
+                        disabled={page === 0}
+                      >
+                        Previous
+                      </Button>
+                      <span className="py-2 px-3 text-sm">
+                        Page {page + 1} of {Math.ceil(filteredAssessments.length / 10)}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(Math.min(Math.ceil(filteredAssessments.length / 10) - 1, page + 1))}
+                        disabled={page >= Math.ceil(filteredAssessments.length / 10) - 1}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No recent assessments found
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
-      )}
+
+        {/* Country Distribution */}
+        {data?.countryDistribution && data.countryDistribution.length > 0 && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Global Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CountryDistributionChart className="h-80" />
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };

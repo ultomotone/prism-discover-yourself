@@ -66,10 +66,14 @@ const defaultFilters: Filters = {
   device: "all"
 };
 
-// Fetcher for edge functions
+// Helper to build stable SWR key with filters
+const key = (name: string, f: Filters) => ['view', name, JSON.stringify(f)] as const;
+
+// Fetcher for edge functions with cache prevention
 const getView = async (viewName: string, filters?: Record<string, any>) => {
   const { data, error } = await supabase.functions.invoke('getView', {
-    body: { view_name: viewName, limit: 1000, filters }
+    body: { view_name: viewName, limit: 1000, filters },
+    headers: { 'cache-control': 'no-cache' }
   });
   if (error) throw error;
   return data?.data || [];
@@ -79,54 +83,78 @@ export const useAdvancedAdminAnalytics = () => {
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [loading, setLoading] = useState(false);
 
-  // Use SWR for data fetching with edge functions
-  const { data: kpiMetrics } = useSWR(['view', 'v_kpi_overview_30d_v11'], () => getView('v_kpi_overview_30d_v11'), {
-    refreshInterval: 15000,
-    revalidateOnFocus: true
-  });
+  // Use SWR for data fetching with edge functions and filter-aware keys
+  const { data: kpiMetrics } = useSWR(
+    key('v_kpi_overview_30d_v11', filters),
+    () => getView('v_kpi_overview_30d_v11', filters),
+    { refreshInterval: 15000, revalidateOnFocus: true, keepPreviousData: true }
+  );
 
-  const { data: qualityMetrics } = useSWR(['view', 'v_kpi_quality'], () => getView('v_kpi_quality'), {
-    refreshInterval: 15000
-  });
+  const { data: qualityMetrics } = useSWR(
+    key('v_kpi_quality', filters),
+    () => getView('v_kpi_quality', filters),
+    { refreshInterval: 15000, keepPreviousData: true }
+  );
 
-  const { data: latestAssessments } = useSWR(['view', 'v_latest_assessments_v11'], () => getView('v_latest_assessments_v11'), {
-    refreshInterval: 15000
-  });
+  const { data: latestAssessments } = useSWR(
+    key('v_latest_assessments_v11', filters),
+    () => getView('v_latest_assessments_v11', filters),
+    { refreshInterval: 15000, keepPreviousData: true }
+  );
 
-  const { data: confDist } = useSWR(['view', 'v_conf_dist'], () => getView('v_conf_dist'), {
-    refreshInterval: 15000
-  });
+  const { data: confDist } = useSWR(
+    key('v_conf_dist', filters),
+    () => getView('v_conf_dist', filters),
+    { refreshInterval: 15000, keepPreviousData: true }
+  );
 
-  const { data: overlayDist } = useSWR(['view', 'v_overlay_conf'], () => getView('v_overlay_conf'), {
-    refreshInterval: 15000
-  });
+  const { data: overlayDist } = useSWR(
+    key('v_overlay_conf', filters),
+    () => getView('v_overlay_conf', filters),
+    { refreshInterval: 15000, keepPreviousData: true }
+  );
 
-  const { data: throughputData } = useSWR(['view', 'v_kpi_throughput'], () => getView('v_kpi_throughput'), {
-    refreshInterval: 15000
-  });
+  const { data: throughputData } = useSWR(
+    key('v_kpi_throughput', filters),
+    () => getView('v_kpi_throughput', filters),
+    { refreshInterval: 15000, keepPreviousData: true }
+  );
 
-  // Realtime subscriptions
+  // Realtime subscriptions with filter-aware cache invalidation
   useEffect(() => {
     const channel = supabase
       .channel('admin-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'assessment_responses' }, () => {
+        mutate(key('v_latest_assessments_v11', filters));
+        mutate(key('v_kpi_overview_30d_v11', filters));
+        mutate(key('v_kpi_quality', filters));
+        mutate(key('v_kpi_throughput', filters));
+        mutate(key('v_conf_dist', filters));
+        mutate(key('v_overlay_conf', filters));
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'assessment_responses' }, () => {
+        mutate(key('v_kpi_overview_30d_v11', filters));
+        mutate(key('v_kpi_quality', filters));
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'assessment_sessions' }, () => {
+        mutate(key('v_latest_assessments_v11', filters));
+        mutate(key('v_kpi_overview_30d_v11', filters));
+        mutate(key('v_kpi_throughput', filters));
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
-        mutate(['view', 'v_latest_assessments_v11']);
-        mutate(['view', 'v_kpi_quality']);
+        mutate(key('v_latest_assessments_v11', filters));
+        mutate(key('v_kpi_quality', filters));
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'assessment_sessions' }, () => {
-        mutate(['view', 'v_latest_assessments_v11']);
-        mutate(['view', 'v_kpi_overview_30d_v11']);
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'dashboard_statistics' }, () => {
-        mutate(['view', 'v_kpi_overview_30d_v11']);
-        mutate(['view', 'v_kpi_throughput']);
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'dashboard_statistics' }, () => {
+        mutate(key('v_kpi_overview_30d_v11', filters));
+        mutate(key('v_kpi_throughput', filters));
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [filters]);
 
   // Transform SWR data to existing format
   const kpiData: KPIData = {
@@ -176,14 +204,14 @@ export const useAdvancedAdminAnalytics = () => {
   const refreshData = async () => {
     setLoading(true);
     try {
-      // Mutate all SWR keys to force refresh
+      // Mutate all SWR keys to force refresh with current filters
       await Promise.all([
-        mutate(['view', 'v_kpi_overview_30d_v11']),
-        mutate(['view', 'v_kpi_quality']),
-        mutate(['view', 'v_latest_assessments_v11']),
-        mutate(['view', 'v_conf_dist']),
-        mutate(['view', 'v_overlay_conf']),
-        mutate(['view', 'v_kpi_throughput'])
+        mutate(key('v_kpi_overview_30d_v11', filters)),
+        mutate(key('v_kpi_quality', filters)),
+        mutate(key('v_latest_assessments_v11', filters)),
+        mutate(key('v_conf_dist', filters)),
+        mutate(key('v_overlay_conf', filters)),
+        mutate(key('v_kpi_throughput', filters))
       ]);
     } finally {
       setLoading(false);
