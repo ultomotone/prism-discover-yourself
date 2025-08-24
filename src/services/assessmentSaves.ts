@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface SaveResponseParams {
   sessionId: string;
-  questionId: number;
+  questionId: number | string;
   answer: string | number | string[] | number[];
   questionText: string;
   questionType: string;
@@ -72,14 +72,13 @@ async function performIdempotentSave(params: SaveResponseParams): Promise<void> 
       answer.substring(0, 50) + '...' : answer 
   });
 
-  // Prepare the response data
+  // Prepare the response data (no updated_at to avoid PGRST204)
   const responseData: any = {
     session_id: sessionId,
     question_id: questionId,
     question_text: questionText,
     question_type: questionType,
-    question_section: questionSection,
-    updated_at: new Date().toISOString()
+    question_section: questionSection
   };
 
   // Handle different answer types properly
@@ -116,7 +115,7 @@ async function performIdempotentSave(params: SaveResponseParams): Promise<void> 
  * Load existing responses for a session
  */
 export async function loadSessionResponses(sessionId: string): Promise<Array<{
-  questionId: number;
+  questionId: number | string;
   answer: string | number | string[] | number[];
 }>> {
   console.log('📥 Loading session responses:', sessionId);
@@ -167,21 +166,35 @@ export async function loadSessionResponses(sessionId: string): Promise<Array<{
 }
 
 /**
- * Calculate next question index based on actual responses
+ * Calculate first unanswered question index using library order
  */
-export function calculateNextQuestionIndex(
-  totalQuestions: number,
-  responses: Array<{ questionId: number }>
+export function firstUnansweredIndex(
+  library: Array<{ id: string | number }>,
+  responsesMap: Record<string | number, any>
 ): number {
-  const answeredQuestionIds = new Set(responses.map(r => r.questionId));
-  
-  // Find first unanswered question (1-indexed questions)
-  for (let i = 1; i <= totalQuestions; i++) {
-    if (!answeredQuestionIds.has(i)) {
-      return i - 1; // Convert to 0-indexed for array
+  for (let i = 0; i < library.length; i++) {
+    const question = library[i];
+    const response = responsesMap[question.id];
+    
+    // Check if question is unanswered
+    if (response == null || 
+        (Array.isArray(response) && response.length === 0) ||
+        (typeof response === 'string' && response.trim() === '')) {
+      return i;
     }
   }
   
-  // All questions answered
-  return totalQuestions - 1;
+  // All questions answered - return last index for final submit UI
+  return Math.max(0, library.length - 1);
+}
+
+/**
+ * Convert response array to map by question ID
+ */
+export function responsesToMap(responses: Array<{ questionId: string | number; answer: any }>): Record<string | number, any> {
+  const map: Record<string | number, any> = {};
+  responses.forEach(r => {
+    map[r.questionId] = r.answer;
+  });
+  return map;
 }

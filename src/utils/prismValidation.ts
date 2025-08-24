@@ -28,7 +28,7 @@ export interface ValidationPayload {
 }
 
 export interface AssessmentResponse {
-  questionId: number;
+  questionId: number | string;
   answer: string | number | string[] | number[];
 }
 

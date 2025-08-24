@@ -232,10 +232,9 @@ export function QuestionComponent({ question, value, onChange, hasError = false 
       return (
         <ForcedChoiceBlock
           question={question}
-          value={value}
+          value={value as string}
           onChange={(selectedValue) => onChange(selectedValue)}
-          isRequired={question.required}
-          hasError={hasError}
+          questionNumber={question.id}
         />
       );
     case 'categorical-5':

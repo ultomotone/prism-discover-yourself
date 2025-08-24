@@ -11,7 +11,7 @@ import { QuestionComponent } from "./QuestionComponent";
 import { ProgressCard } from "./ProgressCard";
 import { visibleIf, getVisibleQuestions, getVisibleQuestionCount, getVisibleQuestionIndex } from "@/lib/visibility";
 import { getPrismConfig, PrismConfig } from "@/services/prismConfig";
-import { saveResponseIdempotent, loadSessionResponses, calculateNextQuestionIndex } from "@/services/assessmentSaves";
+import { saveResponseIdempotent, loadSessionResponses, firstUnansweredIndex, responsesToMap } from "@/services/assessmentSaves";
 import { ErrorSummary } from "./ErrorSummary";
 import { EmailSavePrompt } from "./EmailSavePrompt";
 import { SessionConflictModal } from "./SessionConflictModal";
@@ -20,7 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Save } from "lucide-react";
 
 export interface AssessmentResponse {
-  questionId: number;
+  questionId: number | string;
   answer: string | number | string[] | number[];
 }
 
@@ -132,70 +132,29 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
       console.log('Loaded session data:', session);
       console.log('Loaded responses:', responsesData.length);
 
-      // Use actual responses to calculate next question, not just completed_questions count
-      const nextIndex = calculateNextQuestionIndex(visibleQuestions.length, responsesData);
-      console.log('Calculated next question index:', nextIndex);
+      // Convert responses to map for firstUnansweredIndex calculation
+      const responsesMap = responsesToMap(responsesData);
+      
+      // Use proper first unanswered index calculation with library order
+      const nextIndex = firstUnansweredIndex(visibleQuestions, responsesMap);
+      console.log('Calculated next question index using library order:', nextIndex);
+      
+      // If session reports high completed_questions but we have 0 responses, trust the responses
+      if (Object.keys(responsesMap).length === 0 && (session.completed_questions || 0) > 0) {
+        console.warn('⚠️ Session counters inconsistent; recalculating from responses');
+        console.log('Session reported completed_questions:', session.completed_questions, 'but responses loaded:', Object.keys(responsesMap).length);
+      }
 
       // Set state with loaded data
       setSessionId(sessionId);
       setResponses(responsesData);
       setCurrentQuestionIndex(nextIndex);
       setQuestionStartTime(Date.now());
-      const { data: responses, error: responsesError } = await supabase
-        .from('assessment_responses')
-        .select('question_id, answer_value, answer_numeric, answer_array, answer_object')
-        .eq('session_id', sessionId)
-        .order('question_id');
-
-      if (responsesError) {
-        console.error('Error loading responses:', responsesError);
-      }
-
-      console.log('Loaded responses:', responses);
-      console.log('Session completed_questions:', session.completed_questions);
-
-      // Convert responses to the expected format
-      const loadedResponses: AssessmentResponse[] = responses?.map(r => {
-        let answer: string | number | string[] | number[] = '';
-        
-        if (r.answer_array) {
-          answer = r.answer_array;
-        } else if (r.answer_numeric !== null) {
-          answer = r.answer_numeric;
-        } else if (r.answer_object && typeof r.answer_object === 'object' && r.answer_object !== null) {
-          const answerObj = r.answer_object as { matrix_answers?: any };
-          answer = answerObj.matrix_answers || [];
-        } else {
-          answer = r.answer_value || '';
-        }
-        
-        return {
-          questionId: r.question_id,
-          answer: answer
-        };
-      }) || [];
-
-      setSessionId(sessionId);
-      setResponses(loadedResponses);
-      
-      // Set current question index to the next unanswered question
-      const nextQuestionIndex = Math.min(
-        session.completed_questions || 0,
-        assessmentQuestions.length - 1
-      );
-      
-      console.log('Calculated nextQuestionIndex:', nextQuestionIndex);
-      console.log('Total loaded responses:', loadedResponses.length);
-      console.log('About to call setCurrentQuestionIndex with:', nextQuestionIndex);
-      
-      // Important: Set the question index BEFORE setting isResumingSession to false
-      setCurrentQuestionIndex(nextQuestionIndex);
-      setQuestionStartTime(Date.now());
 
       console.log('Current question index set, showing toast...');
       toast({
         title: "Assessment Resumed",
-        description: `Continuing from question ${nextQuestionIndex + 1}`,
+        description: `Continuing from question ${nextIndex + 1}`,
       });
       
       setIsResumingSession(false);
