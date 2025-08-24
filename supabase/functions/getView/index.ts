@@ -60,7 +60,7 @@ serve(async (req) => {
     // Build query
     let query = supabaseClient
       .from(actualViewName)
-      .select('*')
+      .select('*', { count: 'exact', head: false })
       .range(offset, offset + limit - 1);
 
     // Apply basic filters if provided (simple equality only for security)

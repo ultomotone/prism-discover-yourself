@@ -66,9 +66,11 @@ serve(async (req) => {
 
     // Add defaults for critical values if missing
     const defaults = {
+      results_version: "v1.1.2",
       fc_expected_min: 24,
       dim_thresholds: { one: 2.1, two: 3.0, three: 3.8 },
       neuro_norms: { mean: 3, sd: 1 },
+      system_status: { status: "ok", message: "PRISM online", last_updated: null, updated_by: "admin" },
       required_question_tags: [
         "Ti_S", "Te_S", "Fi_S", "Fe_S", "Ni_S", "Ne_S", "Si_S", "Se_S",
         "N", "N_R", "SD", "INC_A", "INC_B", "AC_1"

@@ -33,7 +33,7 @@ serve(async (req) => {
     }
 
     // Get IP and User-Agent for hashing
-    const clientIP = req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || 'unknown';
+    const clientIP = req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '0.0.0.0';
     const userAgent = req.headers.get('user-agent') || 'unknown';
     
     // Create simple hashes (in production, use proper crypto)

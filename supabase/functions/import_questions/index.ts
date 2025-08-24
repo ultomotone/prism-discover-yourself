@@ -1,3 +1,4 @@
+import { parse } from "https://deno.land/std@0.177.0/csv/parse.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -45,33 +46,28 @@ serve(async (req) => {
     if (csv_data && typeof csv_data === 'string') {
       console.log('Parsing CSV data...');
       try {
-        const lines = csv_data.trim().split('\n');
-        const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-        
-        for (let i = 1; i < lines.length; i++) {
-          const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-          const row: any = {};
-          
-          headers.forEach((header, index) => {
-            const value = values[index] || '';
-            // Parse common fields
-            if (header === 'id' || header === 'order_index') {
-              row[header] = value ? parseInt(value) : null;
-            } else if (header === 'reverse_scored' || header === 'required') {
-              row[header] = value.toLowerCase() === 'true' || value === '1';
-            } else if (header === 'fc_map' || header === 'meta') {
+        const records = parse(csv_data, { skipFirstRow: true, columns: true });
+        for (const row of records as any[]) {
+          const q: any = {};
+          for (const [k, v] of Object.entries(row)) {
+            const key = String(k).trim();
+            const val = String(v ?? "").trim();
+            if (["id", "order_index"].includes(key)) {
+              q[key] = val ? Number(val) : null;
+            } else if (["reverse_scored", "required"].includes(key)) {
+              q[key] = ["true", "1", "yes"].includes(val.toLowerCase());
+            } else if (["fc_map", "meta"].includes(key)) {
               try {
-                row[header] = value ? JSON.parse(value) : null;
+                q[key] = val ? JSON.parse(val) : null;
               } catch {
-                row[header] = value || null;
+                q[key] = val || null;
               }
             } else {
-              row[header] = value || null;
+              q[key] = val || null;
             }
-          });
-          
-          if (row.id && row.type && row.section) {
-            questionsToImport.push(row as QuestionImport);
+          }
+          if (q.id && q.type && q.section) {
+            questionsToImport.push(q);
           }
         }
         console.log(`Parsed ${questionsToImport.length} questions from CSV`);

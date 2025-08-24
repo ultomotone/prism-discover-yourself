@@ -23,6 +23,10 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceKey);
     const calibration = new PrismCalibration(supabase);
 
+    // Get scoring version from config
+    const { data: versionData } = await supabase.from('scoring_config').select('value').eq('key', 'results_version').maybeSingle();
+    const scoringVersion = versionData?.value || 'v1.1.2';
+
     // Phase 5: Enhanced calibration training with better error handling and validation
     console.log(`🎯 Starting confidence calibration training v${calibration.getVersion()}...`);
 
@@ -183,7 +187,7 @@ Deno.serve(async (req) => {
 
       // Store calibration model with enhanced metadata
       const modelData = {
-        version: calibration.getVersion(),
+        version: scoringVersion,
         method: method,
         stratum: {
           dim_band: stratumData.dim_band,
@@ -201,7 +205,7 @@ Deno.serve(async (req) => {
 
       const { error: insertError } = await supabase
         .from('calibration_model')
-        .insert(modelData);
+        .upsert(modelData, { onConflict: 'version,stratum' });
 
       if (insertError) {
         console.error(`Error storing calibration for ${key}:`, insertError);

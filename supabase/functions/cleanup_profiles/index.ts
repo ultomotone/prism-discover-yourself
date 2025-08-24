@@ -30,6 +30,12 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: 'Provide session_id or session_ids[]' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    // Dry run support - check how many would be deleted
+    if (body.dry_run) {
+      const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).in('session_id', sessionIds).eq('type_code', 'UNK');
+      return new Response(JSON.stringify({ success: true, dry_run: true, would_delete: count || 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" }});
+    }
+
     // Delete only UNK profiles for safety
     const { error: delError, count } = await supabase
       .from('profiles')

@@ -60,7 +60,7 @@ serve(async (req) => {
     const fetchOne = async (sid: string) => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("type_code, strengths, dimensions, neuroticism, overlay, created_at, run_index, top_types, blocks_norm")
+        .select("type_code, strengths, dimensions, neuroticism, overlay, created_at, run_index, top_types, blocks_norm, type_scores, conf_calibrated")
         .eq("session_id", sid)
         .maybeSingle();
       if (error) throw error;
@@ -75,6 +75,11 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Safe accessor helper
+    const safe = (o: any, p: string, d: any = null) => (o && o[p] !== undefined ? o[p] : d);
+    const fitFrom = safe(P, 'type_scores', {})?.[P.type_code]?.fit_abs ?? null;
+    const fitTo = safe(C, 'type_scores', {})?.[C.type_code]?.fit_abs ?? null;
 
     const dS: Record<string, number> = {};
     const dD: Record<string, number> = {};
@@ -96,6 +101,8 @@ serve(async (req) => {
           overlay_to: C.overlay,
         },
         type_changed: P.type_code !== C.type_code,
+        fit_abs: Number(((fitTo ?? 0) - (fitFrom ?? 0)).toFixed(2)),
+        confidence_delta: Number((((C.conf_calibrated ?? 0) - (P.conf_calibrated ?? 0))).toFixed(4)),
       },
     };
 

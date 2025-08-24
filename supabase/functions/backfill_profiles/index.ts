@@ -21,6 +21,16 @@ serve(async (req: Request) => {
 
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
+  // System status gate
+  const { data: statusData } = await supabase.from('scoring_config').select('value').eq('key', 'system_status').maybeSingle();
+  const sys = statusData?.value || { status: "ok" };
+  if (sys.status && String(sys.status).toLowerCase() !== "ok") {
+    return new Response(JSON.stringify({
+      status: "maintenance",
+      message: sys.message || "Backfill paused during maintenance. Please try again soon."
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" }});
+  }
+
   try {
     const body = await req.json().catch(() => ({}));
     const dryRun = !!body.dry_run;

@@ -38,8 +38,8 @@ serve(async (req) => {
         query = query.gte('created_at', fromIso);
       }
     } else {
-      // Default filter: only those missing v1.1 or missing calibrated fit
-      query = query.or(`results_version.neq.v1.1,score_fit_calibrated.is.null`);
+      // only those missing current version or missing calibrated fit
+      query = query.or('results_version.is.null,results_version.neq.v1.1.2,score_fit_calibrated.is.null');
     }
 
     query = query.order('created_at', { ascending: false });
