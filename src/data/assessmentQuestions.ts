@@ -1,3 +1,4 @@
+// Question interface with required metadata fields for validation
 export interface Question {
   id: number;
   text: string;
@@ -5,6 +6,13 @@ export interface Question {
   options?: string[];
   required: boolean;
   section: string;
+  // Metadata for scoring and validation
+  tag?: string;
+  scale_type?: 'likert_1_5' | 'likert_1_7' | 'forced_choice' | 'binary' | 'state' | 'text';
+  pair_group?: string;
+  reverse_scored?: boolean;
+  fc_map?: { [key: string]: string };
+  social_desirability?: boolean;
   parts?: {
     label: string;
     options: string[];
@@ -87,7 +95,7 @@ export const assessmentQuestions: Question[] = [
     text: "Work performance satisfaction (1=Not satisfied … 7=Extremely satisfied)",
     type: 'likert-1-7',
     options: ['1=Not satisfied', '2', '3', '4', '5', '6', '7=Extremely satisfied'],
-    required: true,
+    required: false,
     section: 'Self-Reported Behavioral Outcomes'
   },
   {
@@ -95,7 +103,7 @@ export const assessmentQuestions: Question[] = [
     text: "Frequency of significant stress (1=Never … 7=Very often)",
     type: 'likert-1-7',
     options: ['1=Never', '2', '3', '4', '5', '6', '7=Very often'],
-    required: true,
+    required: false,
     section: 'Self-Reported Behavioral Outcomes'
   },
   {
@@ -103,15 +111,15 @@ export const assessmentQuestions: Question[] = [
     text: "Promotion/recognition/award in past year",
     type: 'yes-no',
     options: ['Yes', 'No'],
-    required: true,
+    required: false,
     section: 'Self-Reported Behavioral Outcomes'
   },
   {
     id: 12,
-    text: "Hours/week in social interaction outside of work",
-    type: 'multiple-choice',
-    options: ['0–2', '3–5', '6–10', '11–15', '16+'],
-    required: true,
+    text: "Changed roles/teams/projects in past year",
+    type: 'yes-no',
+    options: ['Yes', 'No'],
+    required: false,
     section: 'Self-Reported Behavioral Outcomes'
   },
 
@@ -1063,7 +1071,10 @@ export const assessmentQuestions: Question[] = [
       'D) Ask for input; try a fresh angle.'
     ],
     required: true,
-    section: 'Situational Choices'
+    section: 'Situational Choices',
+    tag: 'FC_DEADLINE',
+    scale_type: 'forced_choice',
+    fc_map: { 'A': 'Te', 'B': 'Si_shadow', 'C': 'Se', 'D': 'Ne' }
   },
   {
     id: 130,
@@ -1076,7 +1087,10 @@ export const assessmentQuestions: Question[] = [
       'D) Seek a creative workaround.'
     ],
     required: true,
-    section: 'Situational Choices'
+    section: 'Situational Choices',
+    tag: 'FC_CONFLICT',
+    scale_type: 'forced_choice',
+    fc_map: { 'A': 'Te', 'B': 'Fi_shadow', 'C': 'Se', 'D': 'Ne' }
   },
   {
     id: 131,
@@ -1950,7 +1964,10 @@ export const assessmentQuestions: Question[] = [
     type: 'likert-1-5',
     options: ['Strongly Disagree', '2', '3', '4', 'Strongly Agree'],
     required: true,
-    section: 'Validity & Quality Control'
+    section: 'Validity & Quality Control',
+    tag: 'INC_TI_A',
+    scale_type: 'likert_1_5',
+    pair_group: 'INC_TI'
   },
   {
     id: 231,
@@ -1958,7 +1975,11 @@ export const assessmentQuestions: Question[] = [
     type: 'likert-1-5',
     options: ['Strongly Disagree', '2', '3', '4', 'Strongly Agree'],
     required: true,
-    section: 'Validity & Quality Control'
+    section: 'Validity & Quality Control',
+    tag: 'INC_TI_B',
+    scale_type: 'likert_1_5',
+    pair_group: 'INC_TI',
+    reverse_scored: true
   },
   {
     id: 232,
@@ -1966,7 +1987,10 @@ export const assessmentQuestions: Question[] = [
     type: 'likert-1-5',
     options: ['Strongly Disagree', '2', '3', '4', 'Strongly Agree'],
     required: true,
-    section: 'Validity & Quality Control'
+    section: 'Validity & Quality Control',
+    tag: 'INC_FE_A',
+    scale_type: 'likert_1_5',
+    pair_group: 'INC_FE'
   },
   {
     id: 233,
@@ -1974,7 +1998,11 @@ export const assessmentQuestions: Question[] = [
     type: 'likert-1-5',
     options: ['Strongly Disagree', '2', '3', '4', 'Strongly Agree'],
     required: true,
-    section: 'Validity & Quality Control'
+    section: 'Validity & Quality Control',
+    tag: 'INC_FE_B',
+    scale_type: 'likert_1_5',
+    pair_group: 'INC_FE',
+    reverse_scored: true
   },
   {
     id: 234,
@@ -1982,7 +2010,10 @@ export const assessmentQuestions: Question[] = [
     type: 'likert-1-5',
     options: ['Strongly Disagree', '2', '3', '4', 'Strongly Agree'],
     required: true,
-    section: 'Validity & Quality Control'
+    section: 'Validity & Quality Control',
+    tag: 'INC_SE_A',
+    scale_type: 'likert_1_5',
+    pair_group: 'INC_SE'
   },
   {
     id: 235,
@@ -1990,7 +2021,11 @@ export const assessmentQuestions: Question[] = [
     type: 'likert-1-5',
     options: ['Strongly Disagree', '2', '3', '4', 'Strongly Agree'],
     required: true,
-    section: 'Validity & Quality Control'
+    section: 'Validity & Quality Control',
+    tag: 'INC_SE_B',
+    scale_type: 'likert_1_5',
+    pair_group: 'INC_SE',
+    reverse_scored: true
   },
   {
     id: 236,
@@ -2014,7 +2049,10 @@ export const assessmentQuestions: Question[] = [
     type: 'likert-1-5',
     options: ['Strongly Disagree', '2', '3', '4', 'Strongly Agree'],
     required: true,
-    section: 'Validity & Quality Control'
+    section: 'Validity & Quality Control',
+    tag: 'SD',
+    scale_type: 'likert_1_5',
+    social_desirability: true
   },
   {
     id: 239,
@@ -2022,7 +2060,10 @@ export const assessmentQuestions: Question[] = [
     type: 'likert-1-5',
     options: ['Strongly Disagree', '2', '3', '4', 'Strongly Agree'],
     required: true,
-    section: 'Validity & Quality Control'
+    section: 'Validity & Quality Control',
+    tag: 'SD',
+    scale_type: 'likert_1_5',
+    social_desirability: true
   },
   {
     id: 240,
@@ -2030,7 +2071,10 @@ export const assessmentQuestions: Question[] = [
     type: 'likert-1-5',
     options: ['Strongly Disagree', '2', '3', '4', 'Strongly Agree'],
     required: true,
-    section: 'Validity & Quality Control'
+    section: 'Validity & Quality Control',
+    tag: 'SD',
+    scale_type: 'likert_1_5',
+    social_desirability: true
   },
   {
     id: 241,
@@ -2042,11 +2086,24 @@ export const assessmentQuestions: Question[] = [
   },
   {
     id: 242,
+    text: "Please select '3' for this attention check question. (AC_ATTENTION)",
+    type: 'likert-1-5',
+    options: ['Strongly Disagree', '2', '3', '4', 'Strongly Agree'],
+    required: true,
+    section: 'Validity & Quality Control',
+    tag: 'AC_ATTENTION',
+    scale_type: 'likert_1_5'
+  },
+  {
+    id: 243,
     text: "I never make mistakes. (SD)",
     type: 'likert-1-5',
     options: ['Strongly Disagree', '2', '3', '4', 'Strongly Agree'],
     required: true,
-    section: 'Validity & Quality Control'
+    section: 'Validity & Quality Control',
+    tag: 'SD',
+    scale_type: 'likert_1_5',
+    social_desirability: true
   },
   {
     id: 243,

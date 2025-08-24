@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { validateAssessmentStructure, validateQuestionResponse, ValidationResult } from '@/utils/assessmentValidation';
 import { assessmentQuestions, Question } from "@/data/assessmentQuestions";
 import { QuestionComponent } from "./QuestionComponent";
 import { EmailSavePrompt } from "./EmailSavePrompt";
@@ -376,6 +377,7 @@ try {
   };
 
   const handleNext = async () => {
+    // Validate current question response
     const hasAnswer = Array.isArray(currentAnswer) ? 
       currentAnswer.length > 0 : 
       currentAnswer !== '' && currentAnswer !== null && currentAnswer !== undefined;
@@ -387,6 +389,23 @@ try {
         variant: "destructive",
       });
       return;
+    }
+
+    // Validate individual question response integrity
+    if (hasAnswer) {
+      const questionValidation = validateQuestionResponse(currentQuestion, {
+        questionId: currentQuestion.id,
+        answer: currentAnswer
+      });
+      
+      if (!questionValidation.isValid) {
+        toast({
+          title: "Invalid Response",
+          description: questionValidation.errors[0] || "Please check your response.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     if (!sessionId) {
@@ -476,6 +495,28 @@ try {
       }
 
       if (isLastQuestion) {
+        // Validate structural integrity before completion
+        const finalResponses = responses.filter(r => r.questionId !== currentQuestion.id);
+        finalResponses.push(newResponse);
+        
+        const structuralValidation = validateAssessmentStructure(assessmentQuestions, finalResponses);
+        
+        if (!structuralValidation.isValid) {
+          console.error('❌ STRUCTURAL VALIDATION FAILED:', structuralValidation.errors);
+          toast({
+            title: "Assessment Incomplete",
+            description: structuralValidation.errors[0] || "Please complete all required components.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+        
+        // Log warnings but allow completion
+        if (structuralValidation.warnings.length > 0) {
+          console.warn('⚠️ STRUCTURAL WARNINGS:', structuralValidation.warnings);
+        }
+
         // Mark session as complete
         await supabase
           .from('assessment_sessions')
@@ -486,9 +527,6 @@ try {
           .eq('id', sessionId);
 
         // Complete assessment
-        const finalResponses = responses.filter(r => r.questionId !== currentQuestion.id);
-        finalResponses.push(newResponse);
-        
         console.log('🎯 LAST QUESTION COMPLETE - CALLING onComplete');
         console.log('🎯 Final responses being passed:', finalResponses.length, 'responses');
         console.log('🎯 Session ID being passed:', sessionId);
