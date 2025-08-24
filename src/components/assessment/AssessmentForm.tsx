@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { validateAssessmentStructure, validateQuestionResponse, ValidationResult } from '@/utils/assessmentValidation';
 import { validatePrismAssessment, logValidationEvent, ValidationPayload } from '@/utils/prismValidation';
 import { assessmentQuestions, Question } from "@/data/assessmentQuestions";
+import { getAssessmentLibrary } from "@/lib/questions/getAssessmentLibrary";
 import { QuestionComponent } from "./QuestionComponent";
 import { ProgressCard } from "./ProgressCard";
 import { visibleIf, getVisibleQuestions, getVisibleQuestionCount, getVisibleQuestionIndex } from "@/lib/visibility";
@@ -51,15 +52,36 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
   const [prismConfig, setPrismConfig] = useState<PrismConfig | null>(null);
   const { toast } = useToast();
 
-  // Filter to visible questions
-  const visibleQuestions = getVisibleQuestions(assessmentQuestions);
+  // Filter to visible questions with comprehensive library
+  const [assessmentLibrary, setAssessmentLibrary] = useState<Question[]>([]);
+  const [libraryLoaded, setLibraryLoaded] = useState(false);
+  
+  // Load comprehensive library on mount
+  useEffect(() => {
+    const loadLibrary = async () => {
+      try {
+        const library = await getAssessmentLibrary();
+        setAssessmentLibrary(library);
+        setLibraryLoaded(true);
+        console.log('📚 Assessment library loaded:', library.length, 'questions');
+      } catch (error) {
+        console.error('💥 Library load failed, using fallback:', error);
+        setAssessmentLibrary(assessmentQuestions);
+        setLibraryLoaded(true);
+      }
+    };
+    
+    loadLibrary();
+  }, []);
+  
+  const visibleQuestions = libraryLoaded ? getVisibleQuestions(assessmentLibrary) : [];
   const currentQuestion = visibleQuestions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / visibleQuestions.length) * 100;
+  const progress = visibleQuestions.length > 0 ? ((currentQuestionIndex + 1) / visibleQuestions.length) * 100 : 0;
   const isLastQuestion = currentQuestionIndex === visibleQuestions.length - 1;
   
   // Get current section questions for progress within section
   const currentSection = currentQuestion?.section;
-  const sectionQuestions = assessmentQuestions.filter(q => q.section === currentSection);
+  const sectionQuestions = assessmentLibrary.filter(q => q.section === currentSection);
   const sectionProgress = sectionQuestions.findIndex(q => q.id === currentQuestion?.id) + 1;
 
   
@@ -470,8 +492,16 @@ try {
 
       console.log('🚀 Saving response to Supabase:', newResponse);
 
-      // Save to Supabase
-      await saveResponseToSupabase(newResponse, responseTime);
+      // Save to Supabase using idempotent save
+      await saveResponseIdempotent({
+        sessionId: sessionId,
+        questionId: currentQuestion.id,
+        answer: currentAnswer,
+        questionText: currentQuestion.text,
+        questionType: currentQuestion.type,
+        questionSection: currentQuestion.section,
+        responseTime
+      });
 
       // Update local state
       setResponses(prev => {
@@ -538,9 +568,12 @@ try {
         console.log('🚀 Final responses count:', finalResponses.length);
         console.log('🚀 Session ID for validation:', sessionId);
         
+        // Skip processing if library not loaded yet
+        if (!libraryLoaded) return;
+        
         // Run final validation with comprehensive library
         console.log('🚀 Calling validatePrismAssessment...');
-        const prismValidation = await validatePrismAssessment(finalResponses);
+        const prismValidation = await validatePrismAssessment(finalResponses, assessmentLibrary);
         console.log('🚀 Validation completed. Result:', prismValidation);
         
         if (!prismValidation.ok) {
@@ -712,7 +745,15 @@ try {
         };
         
         console.log('Saving response:', newResponse);
-        await saveResponseToSupabase(newResponse, responseTime);
+        await saveResponseIdempotent({
+          sessionId: sessionId,
+          questionId: currentQuestion.id,
+          answer: currentAnswer,
+          questionText: currentQuestion.text,
+          questionType: currentQuestion.type,
+          questionSection: currentQuestion.section,
+          responseTime
+        });
       }
 
       // Update session with email and progress
@@ -770,6 +811,23 @@ try {
       setIsSaving(false);
     }
   };
+
+  // Show loading state while library is being loaded
+  if (!libraryLoaded || visibleQuestions.length === 0) {
+    return (
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardContent className="p-8">
+          <div className="text-center">
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+            </div>
+            <p className="text-muted-foreground mt-4">Loading assessment library...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!currentQuestion) {
     return (
@@ -829,9 +887,9 @@ try {
             <CardContent>
               {/* Progress Card with Config/Validation Info */}
               <ProgressCard 
-                validation={validationResult}
-                config={prismConfig}
-                isLoading={!prismConfig}
+                validation={validationResult} 
+                config={prismConfig} 
+                isLoading={!libraryLoaded || isLoading}
               />
               
               <QuestionComponent

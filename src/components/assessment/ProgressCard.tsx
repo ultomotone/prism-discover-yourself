@@ -95,7 +95,9 @@ export function ProgressCard({ validation, config, isLoading }: ProgressCardProp
         {formatProgressItem(
           "Forced-Choice", 
           counts.fc_answered, 
-          counts.fc_expected
+          counts.fc_expected,
+          false,
+          true
         )}
         {formatProgressItem(
           "INC Pairs", 

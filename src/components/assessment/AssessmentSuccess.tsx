@@ -1,108 +1,115 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle } from "lucide-react";
 import { ValidationPayload } from "@/utils/prismValidation";
 
 interface AssessmentSuccessProps {
-  validation?: ValidationPayload;
+  validation: ValidationPayload;
+  sessionId: string;
   onViewResults?: () => void;
   onReturnHome?: () => void;
 }
 
-export function AssessmentSuccess({ validation, onViewResults, onReturnHome }: AssessmentSuccessProps) {
-  const isDeferredScoring = validation?.defer_scoring === true;
-  const hasWarnings = validation?.warnings && validation.warnings.length > 0;
-
+export function AssessmentSuccess({ 
+  validation, 
+  sessionId, 
+  onViewResults, 
+  onReturnHome 
+}: AssessmentSuccessProps) {
+  const isDeferred = validation.defer_scoring === true;
+  const isComplete = validation.validation_status === 'complete';
+  
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-6">
-      <Card className={`${isDeferredScoring ? 'border-amber-200 bg-amber-50' : 'border-green-200 bg-green-50'}`}>
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4">
-            {isDeferredScoring ? (
-              <Clock className="h-16 w-16 text-amber-600" />
-            ) : (
-              <CheckCircle className="h-16 w-16 text-green-600" />
-            )}
-          </div>
-          <CardTitle className={`text-2xl ${isDeferredScoring ? 'text-amber-800' : 'text-green-800'}`}>
-            {isDeferredScoring ? 'Submission Received' : 'Assessment Complete!'}
-          </CardTitle>
-        </CardHeader>
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader className="text-center">
+        <div className="flex justify-center mb-4">
+          {isDeferred ? (
+            <Clock className="h-16 w-16 text-blue-500" />
+          ) : isComplete ? (
+            <CheckCircle className="h-16 w-16 text-green-500" />
+          ) : (
+            <AlertTriangle className="h-16 w-16 text-amber-500" />
+          )}
+        </div>
         
-        <CardContent className="space-y-4">
-          {isDeferredScoring ? (
-            <div className="text-center space-y-3">
-              <p className="text-amber-700">
-                Your assessment has been successfully submitted and saved.
+        <CardTitle className="text-2xl">
+          {isDeferred 
+            ? "Assessment Submitted Successfully" 
+            : "Assessment Complete!"
+          }
+        </CardTitle>
+      </CardHeader>
+      
+      <CardContent className="space-y-6">
+        <div className="text-center">
+          {isDeferred ? (
+            <div className="space-y-3">
+              <p className="text-muted-foreground">
+                Your responses have been saved successfully. Your PRISM profile will be generated once the assessment library is fully synchronized.
               </p>
-              <p className="text-amber-700 font-medium">
-                Scoring will run automatically after the assessment library is synced.
-              </p>
-              <p className="text-sm text-amber-600">
-                You'll receive your results via email once processing is complete.
-              </p>
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>What happens next:</strong> You'll receive your detailed PRISM results via email once scoring is complete. This typically takes 1-2 business days.
+                </p>
+              </div>
             </div>
           ) : (
-            <div className="text-center space-y-3">
-              <p className="text-green-700">
-                Thank you for completing the PRISM assessment!
+            <div className="space-y-3">
+              <p className="text-muted-foreground">
+                Thank you for completing the PRISM assessment! Your personality profile has been generated based on your responses.
               </p>
-              <p className="text-green-700">
-                Your personalized results are now ready.
-              </p>
-            </div>
-          )}
-
-          {hasWarnings && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <div className="flex items-start">
-                <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
-                <div className="text-sm">
-                  <p className="font-medium text-blue-800">Additional Information:</p>
-                  <ul className="mt-1 text-blue-700 list-disc list-inside">
-                    {validation?.warnings.map((warning, index) => (
-                      <li key={index}>{warning}</li>
-                    ))}
-                  </ul>
-                </div>
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-800">
+                  Your results are ready to view. You'll also receive a copy via email.
+                </p>
               </div>
             </div>
           )}
+        </div>
 
-          <div className="flex justify-center space-x-4 pt-4">
-            {!isDeferredScoring && onViewResults && (
-              <Button onClick={onViewResults} className="px-6">
-                View Results
-              </Button>
-            )}
-            
+        {validation.warnings.length > 0 && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <h4 className="text-sm font-medium text-amber-800 mb-2">Notes:</h4>
+            <ul className="text-sm text-amber-700 space-y-1">
+              {validation.warnings.map((warning, i) => (
+                <li key={i}>• {warning}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          {!isDeferred && onViewResults && (
+            <Button 
+              onClick={onViewResults}
+              className="flex items-center gap-2"
+            >
+              <CheckCircle className="h-4 w-4" />
+              View My Results
+            </Button>
+          )}
+          
+          {onReturnHome && (
             <Button 
               variant="outline" 
               onClick={onReturnHome}
-              className="px-6"
+              className="flex items-center gap-2"
             >
               Return to Home
             </Button>
-          </div>
-        </CardContent>
-      </Card>
-      
-      {isDeferredScoring && (
-        <Card className="border-gray-200">
-          <CardContent className="pt-6">
-            <div className="text-sm text-gray-600 space-y-2">
-              <p><strong>What happens next?</strong></p>
-              <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>Your responses are securely stored</li>
-                <li>Assessment library will be synchronized</li>
-                <li>Scoring will run automatically</li>
-                <li>Results will be emailed when ready</li>
-              </ul>
+          )}
+        </div>
+
+        <div className="text-center text-xs text-muted-foreground">
+          Session ID: {sessionId.slice(0, 8)}...
+          {isDeferred && (
+            <div className="mt-2">
+              Status: {validation.validation_status || 'processing'}
             </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

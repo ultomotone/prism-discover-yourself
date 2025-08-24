@@ -120,23 +120,36 @@ export async function validatePrismAssessment(
     const warnings: string[] = [];
     const responseMap = new Map(responses.map(r => [r.questionId, r.answer]));
     
-    // FC validation
-    const fcQuestions = visibleQuestions.filter(q => 
+    // FC Block validation (count blocks, not options)
+    const fcBlocks = visibleQuestions.filter(q => 
       q.type?.startsWith('forced-choice-') && 
-      q.section?.toLowerCase().includes('work')
+      (q.section?.toLowerCase().includes('work') || 
+       q.section?.toLowerCase().includes('situational') ||
+       q.section?.toLowerCase().includes('polarity'))
     );
-    const fcAnswered = fcQuestions.filter(q => responseMap.has(q.id)).length;
+    const fcAnswered = fcBlocks.filter(q => {
+      const response = responseMap.get(q.id);
+      return response !== undefined && response !== null && response !== '';
+    }).length;
     const fcExpectedMin = config.fc_expected_min;
     
-    console.log('=== FC VALIDATION DEBUG ===');
-    console.log('FC questions found:', fcQuestions.length);
-    console.log('FC answered:', fcAnswered, '/', fcExpectedMin);
+    console.log('=== FC BLOCK VALIDATION DEBUG ===');
+    console.log('FC blocks found:', fcBlocks.length);
+    console.log('FC blocks answered:', fcAnswered, '/', fcExpectedMin);
+    console.log('FC block sections:', [...new Set(fcBlocks.map(q => q.section))]);
+    console.log('FC block types:', [...new Set(fcBlocks.map(q => q.type))]);
     
-    if (fcQuestions.length === 0) {
+    if (fcBlocks.length === 0) {
       if (config.gate_strict_mode !== false) {
-        errors.push('Library issue: Forced-choice items missing (contact support)');
+        errors.push('Library issue: Forced-choice blocks missing (contact support)');
       } else {
-        warnings.push('Forced-choice items not available - will score after sync');
+        warnings.push('Forced-choice blocks not available - will score after sync');
+      }
+    } else if (fcBlocks.length < fcExpectedMin) {
+      if (config.gate_strict_mode !== false) {
+        errors.push(`Library issue: only ${fcBlocks.length}/${fcExpectedMin} forced-choice blocks available`);
+      } else {
+        warnings.push(`Insufficient FC blocks in library (${fcBlocks.length}/${fcExpectedMin}) - will score after sync`);
       }
     } else if (fcAnswered < fcExpectedMin) {
       errors.push(`Answer at least ${fcExpectedMin} forced-choice blocks (${fcAnswered}/${fcExpectedMin})`);

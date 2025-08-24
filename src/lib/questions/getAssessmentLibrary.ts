@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { assessmentQuestions, Question } from "@/data/assessmentQuestions";
+import { buildForcedChoiceLibrary, analyzeFCLibrary } from "@/lib/fc/buildForcedChoiceLibrary";
 
 /**
  * Single source of truth for assessment question library
@@ -17,8 +18,33 @@ export async function getAssessmentLibrary(): Promise<Question[]> {
       console.log('📊 In-memory sections:', sections);
       
       if (sections.length > 1 && !isOnlyDemographics(sections)) {
-        console.log('✅ Using in-memory questions:', assessmentQuestions.length, 'items');
-        return assessmentQuestions;
+        // Check FC block coverage in existing library
+        const existingFC = assessmentQuestions.filter(q => 
+          q.type?.startsWith('forced-choice-') && 
+          (q.section?.toLowerCase().includes('work') || 
+           q.section?.toLowerCase().includes('situational') ||
+           q.section?.toLowerCase().includes('polarity'))
+        );
+        
+        console.log('🔍 Existing FC blocks in library:', existingFC.length);
+        
+        if (existingFC.length >= 24) {
+          console.log('✅ Using in-memory questions with sufficient FC blocks:', assessmentQuestions.length, 'items');
+          return assessmentQuestions;
+        } else {
+          console.log('🔧 FC deficit detected, building comprehensive library...');
+          const fcBlocks = await buildForcedChoiceLibrary();
+          const fcAnalysis = analyzeFCLibrary(fcBlocks);
+          console.log('📊 FC library built:', fcAnalysis);
+          
+          // Merge existing questions with generated FC blocks (avoid duplicates)
+          const existingIds = new Set(assessmentQuestions.map(q => q.id));
+          const uniqueFCBlocks = fcBlocks.filter(fc => !existingIds.has(fc.id));
+          
+          const mergedLibrary = [...assessmentQuestions, ...uniqueFCBlocks];
+          console.log('✅ Using merged library with FC blocks:', mergedLibrary.length, 'items');
+          return mergedLibrary;
+        }
       }
     }
     
