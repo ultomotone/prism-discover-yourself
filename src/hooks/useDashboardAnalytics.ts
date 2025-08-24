@@ -65,19 +65,32 @@ export const useDashboardAnalytics = () => {
       console.log('🔍 Dashboard: Final profiles count:', profiles.length);
       console.log('🔍 Dashboard: Sample profiles:', profiles.slice(0, 3));
 
-      // Process type distribution - show actual PRISM type codes
+      // Process type distribution - show all 16 PRISM type codes
+      const allPrismTypes = [
+        'ILE', 'LII', 'SEI', 'ESE', 'SLE', 'LSI', 'IEI', 'EIE',
+        'LIE', 'ILI', 'SEE', 'ESI', 'LSE', 'SLI', 'IEE', 'EII'
+      ];
+      
+      // Initialize all types with 0 count
       const typeStats: Record<string, number> = {};
+      allPrismTypes.forEach(type => {
+        typeStats[type] = 0;
+      });
+      
+      // Count actual profiles
       profiles.forEach(profile => {
-        const displayType = profile.type_code?.substring(0, 3) || 'Unknown';
-        typeStats[displayType] = (typeStats[displayType] || 0) + 1;
+        const displayType = profile.type_code?.substring(0, 3);
+        if (displayType && allPrismTypes.includes(displayType)) {
+          typeStats[displayType] += 1;
+        }
       });
 
       console.log('🔍 Dashboard: Type stats:', typeStats);
 
-      const typeDistData = Object.entries(typeStats)
-        .map(([type, count]) => ({ type, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10);
+      // Create distribution data with all 16 types, sorted by count (highest first)
+      const typeDistData = allPrismTypes
+        .map(type => ({ type, count: typeStats[type] }))
+        .sort((a, b) => b.count - a.count);
 
       console.log('🔍 Dashboard: Type distribution:', typeDistData);
 
