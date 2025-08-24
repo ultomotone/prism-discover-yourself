@@ -65,10 +65,10 @@ export const useDashboardAnalytics = () => {
       console.log('🔍 Dashboard: Final profiles count:', profiles.length);
       console.log('🔍 Dashboard: Sample profiles:', profiles.slice(0, 3));
 
-      // Process type distribution
+      // Process type distribution - show actual PRISM type codes
       const typeStats: Record<string, number> = {};
       profiles.forEach(profile => {
-        const displayType = profile.overlay ? `N${profile.overlay}` : profile.type_code?.substring(0, 3) || 'Unknown';
+        const displayType = profile.type_code?.substring(0, 3) || 'Unknown';
         typeStats[displayType] = (typeStats[displayType] || 0) + 1;
       });
 

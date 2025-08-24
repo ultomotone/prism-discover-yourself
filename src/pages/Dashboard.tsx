@@ -249,12 +249,59 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Type Distribution Chart */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-base font-medium">Type Distribution</CardTitle>
+        {/* Type Distribution Chart - Full Width */}
+        <Card className="mb-8">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-base font-medium">PRISM Type Distribution</CardTitle>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={refreshData}
+              disabled={loading}
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="h-64 flex items-center justify-center">
+                <div className="animate-pulse text-muted-foreground">Loading chart...</div>
+              </div>
+            ) : typeDistribution.length > 0 ? (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={typeDistribution}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="type" />
+                    <YAxis />
+                    <ChartTooltip />
+                    <Bar dataKey="count" fill="hsl(var(--primary))" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : analyticsError ? (
+              <div className="h-64 flex items-center justify-center text-destructive">
+                Error loading data: {analyticsError}
+              </div>
+            ) : (
+              <div className="h-64 flex items-center justify-center text-muted-foreground">
+                No type distribution data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Latest Assessments - Full Width */}
+        <Card className="mb-8">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-base font-medium">Latest Assessments</CardTitle>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-40"
+              />
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -263,139 +310,89 @@ const Dashboard = () => {
               >
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               </Button>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="h-64 flex items-center justify-center">
-                  <div className="animate-pulse text-muted-foreground">Loading chart...</div>
-                </div>
-              ) : typeDistribution.length > 0 ? (
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={typeDistribution}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="type" />
-                      <YAxis />
-                      <ChartTooltip />
-                      <Bar dataKey="count" fill="hsl(var(--primary))" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : analyticsError ? (
-                <div className="h-64 flex items-center justify-center text-destructive">
-                  Error loading data: {analyticsError}
-                </div>
-              ) : (
-                <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  No type distribution data available
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Latest Assessments */}
-          <Card className="col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-base font-medium">Latest Assessments</CardTitle>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-40"
-                />
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={refreshData}
-                  disabled={loading}
-                >
-                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-center space-x-4">
+                    <div className="h-4 bg-muted rounded w-20 animate-pulse"></div>
+                    <div className="h-4 bg-muted rounded w-16 animate-pulse"></div>
+                    <div className="h-4 bg-muted rounded w-24 animate-pulse"></div>
+                    <div className="h-4 bg-muted rounded w-12 animate-pulse"></div>
+                  </div>
+                ))}
               </div>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="space-y-2">
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className="flex items-center space-x-4">
-                      <div className="h-4 bg-muted rounded w-20 animate-pulse"></div>
-                      <div className="h-4 bg-muted rounded w-16 animate-pulse"></div>
-                      <div className="h-4 bg-muted rounded w-24 animate-pulse"></div>
-                      <div className="h-4 bg-muted rounded w-12 animate-pulse"></div>
-                    </div>
-                  ))}
-                </div>
-              ) : filteredAssessments.length > 0 ? (
-                <div className="space-y-2 max-h-80 overflow-y-auto">
-                  {filteredAssessments.slice(page * 10, (page + 1) * 10).map((assessment, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <Badge variant="outline" className="text-xs">
-                          {assessment.type_code || 'Unknown'}
+            ) : filteredAssessments.length > 0 ? (
+              <div className="space-y-2 max-h-80 overflow-y-auto">
+                {filteredAssessments.slice(page * 10, (page + 1) * 10).map((assessment, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <Badge variant="outline" className="text-xs">
+                        {assessment.type_code || 'Unknown'}
+                      </Badge>
+                      {assessment.overlay && (
+                        <Badge variant={assessment.overlay === '+' ? 'default' : 'secondary'} className="text-xs">
+                          N{assessment.overlay}
                         </Badge>
-                        {assessment.overlay && (
-                          <Badge variant={assessment.overlay === '+' ? 'default' : 'secondary'} className="text-xs">
-                            N{assessment.overlay}
-                          </Badge>
-                        )}
-                        <span className="text-sm text-muted-foreground">
-                          {assessment.country || 'Unknown'}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {assessment.fit_band && (
-                          <Badge 
-                            variant={assessment.fit_band === 'Great' ? 'default' : 
-                                   assessment.fit_band === 'Good' ? 'secondary' : 'outline'}
-                            className="text-xs"
-                          >
-                            {assessment.fit_band}
-                          </Badge>
-                        )}
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(assessment.finished_at || assessment.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {filteredAssessments.length > 10 && (
-                    <div className="flex justify-center space-x-2 pt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage(Math.max(0, page - 1))}
-                        disabled={page === 0}
-                      >
-                        Previous
-                      </Button>
-                      <span className="py-2 px-3 text-sm">
-                        Page {page + 1} of {Math.ceil(filteredAssessments.length / 10)}
+                      )}
+                      <span className="text-sm text-muted-foreground">
+                        {assessment.country || 'Unknown'}
                       </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage(Math.min(Math.ceil(filteredAssessments.length / 10) - 1, page + 1))}
-                        disabled={page >= Math.ceil(filteredAssessments.length / 10) - 1}
-                      >
-                        Next
-                      </Button>
                     </div>
-                  )}
-                </div>
-              ) : analyticsError ? (
-                <div className="text-center py-8 text-destructive">
-                  Error loading assessments: {analyticsError}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No recent assessments found
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                    <div className="flex items-center space-x-2">
+                      {assessment.fit_band && (
+                        <Badge 
+                          variant={assessment.fit_band === 'Great' ? 'default' : 
+                                 assessment.fit_band === 'Good' ? 'secondary' : 'outline'}
+                          className="text-xs"
+                        >
+                          {assessment.fit_band}
+                        </Badge>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(assessment.finished_at || assessment.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                
+                {filteredAssessments.length > 10 && (
+                  <div className="flex justify-center space-x-2 pt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(Math.max(0, page - 1))}
+                      disabled={page === 0}
+                    >
+                      Previous
+                    </Button>
+                    <span className="py-2 px-3 text-sm">
+                      Page {page + 1} of {Math.ceil(filteredAssessments.length / 10)}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(Math.min(Math.ceil(filteredAssessments.length / 10) - 1, page + 1))}
+                      disabled={page >= Math.ceil(filteredAssessments.length / 10) - 1}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : analyticsError ? (
+              <div className="text-center py-8 text-destructive">
+                Error loading assessments: {analyticsError}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No recent assessments found
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Country Distribution */}
         {data?.countryDistribution && data.countryDistribution.length > 0 && (
