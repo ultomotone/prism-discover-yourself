@@ -159,7 +159,7 @@ const Assessment = () => {
   };
 
   // Temporary maintenance mode - set to false to re-enable
-  const MAINTENANCE_MODE = true;
+  const MAINTENANCE_MODE = false;
   const isAdmin = window.location.search.includes('admin_bypass=true');
 
   if (MAINTENANCE_MODE && !isAdmin) {
