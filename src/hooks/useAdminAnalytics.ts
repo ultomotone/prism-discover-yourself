@@ -171,8 +171,64 @@ export const useAdminAnalytics = () => {
   };
 
   const fetchChartData = async () => {
-    // Skip chart data fetching - removed KPIs don't need this data
-    setChartData(defaultChartData);
+    try {
+      // Fetch confidence distribution from v_conf_dist
+      const { data: confDist } = await supabase
+        .from('v_conf_dist')
+        .select('*');
+
+      // Fetch overlay distribution from v_kpi_overlay  
+      const { data: overlayDist } = await supabase
+        .from('v_kpi_overlay')
+        .select('*');
+
+      // Fetch type distribution from v_profiles_ext (use type_code not filtered)
+      const { data: typeRaw } = await supabase
+        .from('v_profiles_ext')
+        .select('type_code')
+        .not('type_code', 'is', null)
+        .neq('type_code', 'UNK');
+
+      // Process type distribution
+      const typeCounts: Record<string, number> = {};
+      if (typeRaw) {
+        typeRaw.forEach((row: any) => {
+          const type = row.type_code?.substring(0, 3); // Get 3-letter prefix
+          if (type) {
+            typeCounts[type] = (typeCounts[type] || 0) + 1;
+          }
+        });
+      }
+
+      // Fetch throughput trend from v_kpi_throughput  
+      const { data: throughputRaw } = await supabase
+        .from('v_kpi_throughput')
+        .select('*')
+        .order('d', { ascending: false })
+        .limit(14);
+
+      setChartData({
+        confidenceDistribution: confDist?.map((item: any) => ({
+          confidence: item.confidence,
+          count: item.n
+        })) || [],
+        overlayDistribution: overlayDist?.map((item: any) => ({
+          overlay: item.overlay,  
+          count: item.n
+        })) || [],
+        typeDistribution: Object.entries(typeCounts)
+          .map(([type, count]) => ({ type, count }))
+          .sort((a, b) => b.count - a.count),
+        throughputTrend: throughputRaw?.map((item: any) => ({
+          date: format(new Date(item.d), 'MMM dd'),
+          completions: item.completions,
+          sessions: item.completions // Alias for consistency
+        })) || []
+      });
+    } catch (error) {
+      console.error('Error fetching chart data:', error);
+      setChartData(defaultChartData);
+    }
   };
 
   const fetchSessionData = async () => {

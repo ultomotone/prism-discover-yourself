@@ -35,13 +35,19 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ data, onExport }) 
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.confidenceDistribution}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="confidence" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="count" fill="hsl(var(--primary))" />
-            </BarChart>
+            {data.confidenceDistribution.length > 0 ? (
+              <BarChart data={data.confidenceDistribution}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="confidence" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="hsl(var(--primary))" />
+              </BarChart>
+            ) : (
+              <div className="h-full flex items-center justify-center text-muted-foreground">
+                No confidence data available
+              </div>
+            )}
           </ResponsiveContainer>
         </CardContent>
       </Card>
@@ -60,23 +66,29 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ data, onExport }) 
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={data.overlayDistribution}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ overlay, count }) => `${overlay}: ${count}`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="count"
-              >
-                {data.overlayDistribution.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
+            {data.overlayDistribution.length > 0 ? (
+              <PieChart>
+                <Pie
+                  data={data.overlayDistribution}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ overlay, count }) => `${overlay}: ${count}`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="count"
+                >
+                  {data.overlayDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            ) : (
+              <div className="h-full flex items-center justify-center text-muted-foreground">
+                No overlay data available
+              </div>
+            )}
           </ResponsiveContainer>
         </CardContent>
       </Card>
@@ -95,13 +107,19 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ data, onExport }) 
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.typeDistribution.slice(0, 10)} layout="horizontal">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis dataKey="type" type="category" width={60} />
-              <Tooltip />
-              <Bar dataKey="count" fill="hsl(var(--accent))" />
-            </BarChart>
+            {data.typeDistribution.length > 0 ? (
+              <BarChart data={data.typeDistribution.slice(0, 10)} layout="horizontal">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis dataKey="type" type="category" width={60} />
+                <Tooltip />
+                <Bar dataKey="count" fill="hsl(var(--accent))" />
+              </BarChart>
+            ) : (
+              <div className="h-full flex items-center justify-center text-muted-foreground">
+                No type distribution data available
+              </div>
+            )}
           </ResponsiveContainer>
         </CardContent>
       </Card>
@@ -120,19 +138,25 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ data, onExport }) 
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={data.throughputTrend}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Line 
-                type="monotone" 
-                dataKey="sessions" 
-                stroke="hsl(var(--primary))" 
-                strokeWidth={2}
-                dot={{ fill: 'hsl(var(--primary))' }}
-              />
-            </LineChart>
+            {data.throughputTrend.length > 0 ? (
+              <LineChart data={data.throughputTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line 
+                  type="monotone" 
+                  dataKey="sessions" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={2}
+                  dot={{ fill: 'hsl(var(--primary))' }}
+                />
+              </LineChart>
+            ) : (
+              <div className="h-full flex items-center justify-center text-muted-foreground">
+                No throughput data available
+              </div>
+            )}
           </ResponsiveContainer>
         </CardContent>
       </Card>
