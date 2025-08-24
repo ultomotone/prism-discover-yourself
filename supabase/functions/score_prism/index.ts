@@ -129,7 +129,7 @@ serve(async (req) => {
   try {
     // Phase 3: Enhanced partial-session handling with robust JSON validation
     const requestBody = await req.json().catch(() => ({}));
-    const { user_id, session_id, debug, partial_session = false } = requestBody;
+    const { user_id, session_id, debug, partial_session = false, force_recompute = false } = requestBody;
     const debugMode = !!debug;
     
     if (!session_id || typeof session_id !== 'string') {
@@ -203,21 +203,34 @@ serve(async (req) => {
       }
     });
 
-    const cfg = async (k:string) => {
+    const cfg = async (k: string) => {
       const { data } = await supabase.from("scoring_config").select("value").eq("key", k).maybeSingle();
       return data?.value ?? null;
     };
-    let dimThresh: any = await cfg("dim_thresholds");         // { one, two, three } on 1..5
-    const neuroNorms: any = await cfg("neuro_norms") || { mean: 3, sd: 1 };
+    const resultsVersion = (await cfg("results_version")) || "v1.1.2";
+    let dimThresh: any = (await cfg("dim_thresholds")) || { one: 2.1, two: 3.0, three: 3.8 };
+    const neuroNorms: any = (await cfg("neuro_norms")) || { mean: 3, sd: 1 };
     const fcBlockDefault: any = await cfg("fc_block_map_default");
     const stateQids: any = await cfg("state_qids");           // { stress,time,sleep,focus }
     const fcExpectedMinCfg: any = await cfg("fc_expected_min");
-    const fcExpectedMin: number = typeof fcExpectedMinCfg === 'number' ? fcExpectedMinCfg : 16;
+    const fcExpectedMin: number = typeof fcExpectedMinCfg === 'number' ? fcExpectedMinCfg : 24;
+    const softmaxTempCfg: any = await cfg("softmax_temp");
+    const softmaxTemp: number = typeof softmaxTempCfg === 'number' ? softmaxTempCfg : 1.0;
+    const confParams: any = (await cfg("conf_raw_params")) || { a: 0.25, b: 0.35, c: 0.20 };
+    const bandCuts: any = (await cfg("conf_band_cuts")) || { high: 0.75, moderate: 0.55 };
+    const requiredTags: string[] = (await cfg("required_question_tags")) || [];
     const attentionQids: number[] = Array.isArray(await cfg("attention_qids")) ? await cfg("attention_qids") : null;
     // Phase 4: Fit band thresholds from config
     const fitBandCfg: any = await cfg("fit_band_thresholds");
     const fitBandThresholds = fitBandCfg || { high_fit: 60, moderate_fit: 45, high_gap: 5, moderate_gap: 2 };
-
+    // System status gate
+    const sys = (await cfg("system_status")) || { status: "ok" };
+    if (sys.status && String(sys.status).toLowerCase() !== "ok" && !debugMode) {
+      return new Response(JSON.stringify({
+        status: "maintenance",
+        message: sys.message || "Scoring temporarily paused. Please try again soon."
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" }});
+    }
 
     if (!dimThresh || dimThresh.one == null || dimThresh.two == null || dimThresh.three == null) {
       dimThresh = { one: 2.1, two: 3.0, three: 3.8 };
@@ -225,10 +238,6 @@ serve(async (req) => {
       // ensure config exists with defaults
       await supabase.from('scoring_config').upsert({ key: 'dim_thresholds', value: dimThresh });
     }
-    if (typeof fcExpectedMinCfg !== 'number') {
-      await supabase.from('scoring_config').upsert({ key: 'fc_expected_min', value: 16 });
-    }
-
 
     // ---- aggregation buckets ----
     const likert: Record<string, number[]> = {};
@@ -572,13 +581,23 @@ serve(async (req) => {
     const z = (nMean - (neuroNorms.mean ?? 3)) / sdSafe;
     const overlay = z >= 0 ? "+" : "–";
 
+    // Required tag coverage check
+    let missingTags: string[] = [];
+    try {
+      if (Array.isArray(requiredTags) && requiredTags.length > 0) {
+        const haveTags = new Set((skey || []).map((r: any) => r?.tag).filter(Boolean));
+        missingTags = requiredTags.filter((t: string) => !haveTags.has(t));
+      }
+    } catch (_e) { missingTags = []; }
+
     // NEW: Enhanced validity status with tuned gates
     const validity = {
       attention: attentionFailed,
       inconsistency: Number(inconsIdx.toFixed(3)),
       sd_index: Number(sdIndex.toFixed(3)),
       duplicates: duplicateCount,
-      state_modifiers: { stress:sStress, time:sTime, sleep:sSleep, focus:sFocus }
+      state_modifiers: { stress:sStress, time:sTime, sleep:sSleep, focus:sFocus },
+      required_tag_gaps: missingTags
     };
 
     // NEW: Tuned validity gates (loosened SD band by +0.3, attention warning)
@@ -728,7 +747,7 @@ serve(async (req) => {
       
       console.log(`evt:insufficient_cohort_per_type,session_id:${session_id},cohort_size:${cohortFitScores.length},using_fallback`);
     }
-    const temp = 1.0;
+    const temp = softmaxTemp;
     const exps = Object.fromEntries(Object.entries(rawScores).map(([k,v])=>[k, Math.exp(v/temp)]));
     const sumExp = Object.values(exps).reduce((a,b)=>a+b,0);
     const sharePct: Record<string, number> = {};

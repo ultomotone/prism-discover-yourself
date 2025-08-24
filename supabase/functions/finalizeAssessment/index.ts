@@ -76,18 +76,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Update session status to completed
-    const { error: updateError } = await supabase
-      .from('assessment_sessions')
-      .update({ 
-        status: 'completed',
-        completed_at: new Date().toISOString()
-      })
-      .eq('id', session_id);
-
-    if (updateError) {
-      console.error('Session update error:', updateError);
-    }
+    // Do not set session completed here; score_prism is the single writer of completion state
 
     // Invoke the 'score_prism' Supabase function to generate assessment results
     console.log('Invoking score_prism function');
