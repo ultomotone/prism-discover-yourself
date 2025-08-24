@@ -117,7 +117,7 @@ const Footer = () => {
                   </a>
                 </li>
                 <li>
-                  <a href="https://chatgpt.com/g/g-675b5288dcfc8191bf08a6f560c22af7-prism-ai-coach" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
+                  <a href="https://chatgpt.com/g/g-68a233600af0819182cfa8c558a63112-prism-personality-ai-coach" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
                     PRISM AI Coach
                   </a>
                 </li>
