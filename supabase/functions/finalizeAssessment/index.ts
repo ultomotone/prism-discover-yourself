@@ -45,13 +45,24 @@ Deno.serve(async (req) => {
 
     if (existingProfile) {
       console.log('Profile already exists, returning cached result');
-      const resultsUrl = `https://de95f929-2a16-4b73-9441-1460cd22bde1.lovableproject.com/results/${session_id}`;
+      const origin = req.headers.get('origin') || 'https://prism-discover-yourself.lovable.app';
+      const resultsUrl = `${origin.replace(/\/$/, '')}/results/${session_id}`;
+
+      const profileOut = {
+        session_id,
+        type_code: (existingProfile as any).type_code,
+        results_version: (existingProfile as any).results_version ?? (existingProfile as any).version ?? 'v1.2.0',
+        score_fit_calibrated: (existingProfile as any).score_fit_calibrated ?? null,
+        top_types: (existingProfile as any).top_types ?? [],
+        type_scores: (existingProfile as any).type_scores ?? {},
+        ...(existingProfile as any)
+      };
+
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           status: 'success',
-          profile: existingProfile,
           resultsUrl,
-          message: 'Assessment completed successfully (cached)'
+          profile: profileOut
         }),
         { 
           status: 200, 
@@ -98,7 +109,8 @@ Deno.serve(async (req) => {
       console.error('Scoring error:', scoringError);
       return new Response(
         JSON.stringify({ 
-          error: 'Scoring failed',
+          status: 'error',
+          message: 'Scoring failed',
           details: scoringError.message 
         }),
         { 
@@ -114,9 +126,9 @@ Deno.serve(async (req) => {
       console.error('Invalid scoring result shape:', scoringData);
       return new Response(
         JSON.stringify({ 
-          error: 'Invalid scoring result shape',
-          details: 'Missing profile or type_code',
-          got: scoringData
+          status: 'error',
+          message: 'Invalid scoring result shape',
+          details: 'Missing profile or type_code'
         }),
         { 
           status: 500, 
@@ -126,16 +138,26 @@ Deno.serve(async (req) => {
     }
 
     // Construct and return a results URL along with the profile data
-    const resultsUrl = `https://de95f929-2a16-4b73-9441-1460cd22bde1.lovableproject.com/results/${session_id}`;
+    const origin = req.headers.get('origin') || 'https://prism-discover-yourself.lovable.app';
+    const resultsUrl = `${origin.replace(/\/$/, '')}/results/${session_id}`;
     
     console.log('Assessment finalization completed successfully');
+    
+    const profileOut = {
+      session_id,
+      type_code: (profile as any).type_code,
+      results_version: (profile as any).results_version ?? (profile as any).version ?? 'v1.2.0',
+      score_fit_calibrated: (profile as any).score_fit_calibrated ?? null,
+      top_types: (profile as any).top_types ?? [],
+      type_scores: (profile as any).type_scores ?? {},
+      ...(profile as any)
+    };
     
     return new Response(
       JSON.stringify({ 
         status: 'success',
-        profile: profile,  // Return the actual profile object, not the wrapper
         resultsUrl,
-        message: 'Assessment completed successfully'
+        profile: profileOut
       }),
       { 
         status: 200, 

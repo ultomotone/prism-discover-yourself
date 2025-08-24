@@ -1666,6 +1666,15 @@ export type Database = {
           sessions: number
         }[]
       }
+      save_assessment_response: {
+        Args: {
+          p_answer: Json
+          p_question_id: number
+          p_session_id: string
+          p_source?: string
+        }
+        Returns: undefined
+      }
       update_dashboard_statistics: {
         Args: Record<PropertyKey, never>
         Returns: undefined

@@ -96,9 +96,26 @@ async function performIdempotentSave(params: SaveResponseParams): Promise<void> 
     responseData.response_time_ms = responseTime;
   }
 
-  // Call Edge Function to bypass RLS safely with service role
-  const { data, error } = await supabase.functions.invoke('save_response', {
-    body: responseData,
+  // Call RPC to bypass RLS via SECURITY DEFINER function
+  const answerJson: any = {
+    question_text: questionText,
+    question_type: questionType,
+    question_section: questionSection,
+  };
+
+  if (Array.isArray(answer)) {
+    answerJson.answer_array = answer;
+  } else if (typeof answer === 'number') {
+    answerJson.answer_numeric = answer;
+  } else if (answer != null) {
+    answerJson.answer_value = String(answer);
+  }
+
+  const { data, error } = await supabase.rpc('save_assessment_response', {
+    p_session_id: sessionId,
+    p_question_id: Number(questionId),
+    p_answer: answerJson,
+    p_source: 'web'
   });
 
   if (error) {
