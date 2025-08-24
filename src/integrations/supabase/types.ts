@@ -287,6 +287,21 @@ export type Database = {
         }
         Relationships: []
       }
+      country_mapping: {
+        Row: {
+          country_name: string
+          iso2_code: string
+        }
+        Insert: {
+          country_name: string
+          iso2_code: string
+        }
+        Update: {
+          country_name?: string
+          iso2_code?: string
+        }
+        Relationships: []
+      }
       dashboard_statistics: {
         Row: {
           daily_assessments: number
@@ -661,7 +676,7 @@ export type Database = {
       }
       v_activity_country_30d: {
         Row: {
-          country_label: string | null
+          country_name: string | null
           iso2: string | null
           sessions: number | null
         }
