@@ -610,31 +610,6 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Global Assessment Heatmap - Full Width */}
-        <div className="mb-8">
-          <Card className="prism-shadow-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
-                Global Assessment Activity
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Real-time visualization of where people are taking PRISM assessments worldwide
-              </p>
-            </CardHeader>
-            <CardContent>
-              {React.createElement(() => {
-                try {
-                  console.log("🔍 Rendering CountryDistributionChart");
-                  return <CountryDistributionChart />;
-                } catch (error) {
-                  console.error("🚨 Error in CountryDistributionChart:", error);
-                  return <div className="text-center py-4 text-muted-foreground">Chart unavailable</div>;
-                }
-              })}
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Latest Assessments */}
         <div className="mb-8">
