@@ -79,6 +79,13 @@ export async function validatePrismAssessment(
       meta: q.meta
     } as any));
     
+    console.log('=== VALIDATION DEBUG ===');
+    console.log('Total library questions:', questions.length);
+    console.log('Visible questions after filter:', visibleQuestions.length);
+    console.log('User responses count:', responses.length);
+    console.log('Config source:', config.source);
+    console.log('Config fc_expected_min:', config.fc_expected_min);
+    
     console.log('Validation config:', config);
     console.log('Visible questions count:', visibleQuestions.length);
     console.log('Config source:', config.source);
@@ -95,6 +102,14 @@ export async function validatePrismAssessment(
     );
     const fcAnswered = fcQuestions.filter(q => responseMap.has(q.id)).length;
     const fcExpectedMin = config.fc_expected_min;
+    
+    console.log('=== FC VALIDATION DEBUG ===');
+    console.log('FC questions found:', fcQuestions.length);
+    console.log('FC questions:', fcQuestions.map(q => ({ id: q.id, type: q.type, section: q.section })));
+    console.log('FC answers found:', fcAnswered);
+    console.log('FC expected minimum:', fcExpectedMin);
+    console.log('Response map keys:', Array.from(responseMap.keys()));
+    console.log('Response map sample:', Object.fromEntries(Array.from(responseMap.entries()).slice(0, 5)));
     
     if (fcAnswered < fcExpectedMin) {
       errors.push(`Answer at least ${fcExpectedMin} forced-choice blocks (${fcAnswered}/${fcExpectedMin})`);
@@ -150,6 +165,28 @@ export async function validatePrismAssessment(
       q.section?.toLowerCase().includes('validity') && q.tag?.includes('SD')
     );
     
+    console.log('=== LIBRARY INTEGRITY DEBUG ===');
+    console.log('SD questions found:', sdQuestions.length);
+    console.log('SD questions:', sdQuestions.map(q => ({ id: q.id, tag: q.tag, section: q.section })));
+    
+    // Library integrity checks (visible questions only)
+    const neuroQuestions = visibleQuestions.filter(q => 
+      q.tag === 'N' || q.tag === 'N_R' || 
+      (q.section?.toLowerCase().includes('neuro') && q.type?.includes('likert'))
+    );
+    
+    console.log('Neuro questions found:', neuroQuestions.length);
+    console.log('Neuro questions:', neuroQuestions.map(q => ({ id: q.id, tag: q.tag, section: q.section })));
+
+    // VQC (Validity & Quality Control) presence (visible questions only)
+    const vqcQuestions = visibleQuestions.filter(q => 
+      q.section?.toLowerCase().includes('validity')
+    );
+    
+    console.log('VQC questions found:', vqcQuestions.length);
+    console.log('VQC questions:', vqcQuestions.map(q => ({ id: q.id, section: q.section })));
+    console.log('All sections found:', [...new Set(visibleQuestions.map(q => q.section))]);
+    
     if (sdQuestions.length === 0) {
       errors.push('Library issue: SD items missing (contact support)');
     }
@@ -162,21 +199,10 @@ export async function validatePrismAssessment(
       warnings.push('Optional state assessment section not completed');
     }
 
-    // Library integrity checks (visible questions only)
-    const neuroQuestions = visibleQuestions.filter(q => 
-      q.tag === 'N' || q.tag === 'N_R' || 
-      (q.section?.toLowerCase().includes('neuro') && q.type?.includes('likert'))
-    );
-    
     if (neuroQuestions.length === 0) {
       errors.push('Library issue: Neuro items missing (contact support)');
     }
 
-    // VQC (Validity & Quality Control) presence (visible questions only)
-    const vqcQuestions = visibleQuestions.filter(q => 
-      q.section?.toLowerCase().includes('validity')
-    );
-    
     if (vqcQuestions.length === 0) {
       errors.push('Library issue: VQC items missing (contact support)');
     }
