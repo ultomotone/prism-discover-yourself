@@ -184,6 +184,7 @@ export type Database = {
           completed_at: string | null
           completed_at_original: string | null
           completed_questions: number | null
+          country_iso2: string | null
           created_at: string
           created_at_original: string | null
           email: string | null
@@ -204,6 +205,7 @@ export type Database = {
           completed_at?: string | null
           completed_at_original?: string | null
           completed_questions?: number | null
+          country_iso2?: string | null
           created_at?: string
           created_at_original?: string | null
           email?: string | null
@@ -224,6 +226,7 @@ export type Database = {
           completed_at?: string | null
           completed_at_original?: string | null
           completed_questions?: number | null
+          country_iso2?: string | null
           created_at?: string
           created_at_original?: string | null
           email?: string | null
@@ -1221,6 +1224,17 @@ export type Database = {
         }
         Relationships: []
       }
+      v_quality_summary: {
+        Row: {
+          fit_mean: number | null
+          function_balance_mean: number | null
+          gap_mean: number | null
+          inconsistency_mean: number | null
+          n_sessions: number | null
+          sd_index_mean: number | null
+        }
+        Relationships: []
+      }
       v_recent_assessments_safe: {
         Row: {
           country_display: string | null
@@ -1499,6 +1513,13 @@ export type Database = {
           overlay?: string | null
           session_id?: string | null
           type_code?: string | null
+        }
+        Relationships: []
+      }
+      v_type_distribution: {
+        Row: {
+          n: number | null
+          type_code: string | null
         }
         Relationships: []
       }

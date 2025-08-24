@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
-        profile: scoringData,
+        profile: scoringData.profile,
         resultsUrl,
         message: 'Assessment completed successfully'
       }),

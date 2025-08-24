@@ -170,7 +170,7 @@ const Dashboard = () => {
       const { data: typeData } = await supabase
         .from('profiles')
         .select('type_code')
-        .eq('results_version', 'v1.1')
+        .eq('results_version', 'v1.2.0')
         .not('type_code', 'is', null);
 
       const typeDistribution = typeData ? 
@@ -204,7 +204,7 @@ const Dashboard = () => {
           type_scores,
           top_types
         `)
-        .eq('results_version', 'v1.1')
+        .eq('results_version', 'v1.2.0')
         .not('type_code', 'is', null)
         .order('created_at', { ascending: false })
         .limit(50);

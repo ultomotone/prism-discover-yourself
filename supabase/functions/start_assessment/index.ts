@@ -32,9 +32,10 @@ serve(async (req) => {
       );
     }
 
-    // Get IP and User-Agent for hashing
+    // Get IP and User-Agent for hashing, plus country
     const clientIP = req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '0.0.0.0';
     const userAgent = req.headers.get('user-agent') || 'unknown';
+    const countryIso2 = req.headers.get('cf-ipcountry') || null;
     
     // Create simple hashes (in production, use proper crypto)
     const encoder = new TextEncoder();
@@ -95,6 +96,7 @@ serve(async (req) => {
         status: 'in_progress',
         ip_hash: ipHash,
         ua_hash: uaHash,
+        country_iso2: countryIso2,
         started_at: new Date().toISOString()
       })
       .select()

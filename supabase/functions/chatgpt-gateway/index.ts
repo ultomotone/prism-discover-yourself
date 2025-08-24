@@ -537,33 +537,38 @@ serve(async (req) => {
         });
       }
 
-      // GET /quality - Quality metrics
+      // GET /quality - Quality metrics summary for dashboard cards
       case path === '/quality' && method === 'GET': {
-        try {
-          const { data, error } = await supabase
-            .from('v_quality')
-            .select('*')
-            .order('session_id')
-            .limit(1000);
-
-          if (error) throw error;
-          
-          return new Response(JSON.stringify({ data, source: 'v_quality' }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        } catch (e) {
-          console.warn('v_quality unavailable, falling back to v_kpi_quality:', e?.message || e);
-          const { data, error } = await supabase
+        const { data, error } = await supabase
+          .from('v_quality_summary')
+          .select('*')
+          .maybeSingle();
+        
+        if (error) {
+          console.warn('v_quality_summary unavailable, falling back to v_kpi_quality:', error.message);
+          const { data: fallbackData, error: fallbackError } = await supabase
             .from('v_kpi_quality')
             .select('*')
-            .limit(1);
-
-          if (error) throw error;
-          
-          return new Response(JSON.stringify({ data, source: 'v_kpi_quality' }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
+            .maybeSingle();
+          if (fallbackError) throw fallbackError;
+          return new Response(JSON.stringify({ summary: fallbackData, source: 'v_kpi_quality' }), { headers });
         }
+        
+        return new Response(JSON.stringify({ 
+          summary: data, 
+          source: 'v_quality_summary' 
+        }), { headers });
+      }
+
+      // GET /types - Type distribution for dashboard  
+      case path === '/types' && method === 'GET': {
+        const { data, error } = await supabase
+          .from('v_type_distribution')
+          .select('*');
+        
+        if (error) throw error;
+        
+        return new Response(JSON.stringify({ data }), { headers });
       }
 
       // GET /config - Scoring configuration

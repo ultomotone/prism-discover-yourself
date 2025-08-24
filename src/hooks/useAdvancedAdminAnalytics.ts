@@ -211,7 +211,7 @@ export const useAdvancedAdminAnalytics = () => {
           validity,
           validity_status
         `)
-        .eq('results_version', 'v1.1')
+        .eq('results_version', 'v1.2.0')
         .not('score_fit_calibrated', 'is', null);
 
       if (profilesData && profilesData.length > 0) {

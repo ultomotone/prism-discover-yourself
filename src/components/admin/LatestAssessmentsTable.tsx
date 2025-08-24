@@ -65,7 +65,7 @@ export const LatestAssessmentsTable = () => {
       const { count } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
-        .eq('results_version', 'v1.1')
+        .eq('results_version', 'v1.2.0')
         .not('type_code', 'is', null);
       
       setTotalCount(count || 0);
@@ -86,7 +86,7 @@ export const LatestAssessmentsTable = () => {
           results_version,
           overlay
         `)
-        .eq('results_version', 'v1.1')
+        .eq('results_version', 'v1.2.0')
         .not('type_code', 'is', null)
         .range(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE - 1)
         .order('submitted_at', { ascending: false });
@@ -193,7 +193,7 @@ export const LatestAssessmentsTable = () => {
           event: '*', // Listen to INSERT, UPDATE, DELETE
           schema: 'public',
           table: 'profiles',
-          filter: 'results_version=eq.v1.1'
+          filter: 'results_version=eq.v1.2.0'
         },
         (payload) => {
           console.log('Real-time update received:', payload);
