@@ -324,7 +324,7 @@ const Dashboard = () => {
     }
   };
 
-  // Subscribe to real-time updates
+  // Subscribe to real-time updates for all relevant tables
   useEffect(() => {
     fetchDashboardData();
 
@@ -345,18 +345,39 @@ const Dashboard = () => {
       }
     })();
 
+    // Set up comprehensive real-time subscriptions
     const channel = supabase
-      .channel('profiles-changes')
+      .channel('dashboard-realtime')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'profiles' },
-        () => {
+        (payload) => {
+          console.log('🔄 Profiles changed:', payload);
           fetchDashboardData();
         }
       )
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'dashboard_statistics' },
-        () => {
+        (payload) => {
+          console.log('🔄 Dashboard statistics changed:', payload);
           fetchDashboardData();
+        }
+      )
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'assessment_sessions' },
+        (payload) => {
+          console.log('🔄 Assessment sessions changed:', payload);
+          // Only refetch if session status changed to completed
+          if (payload.eventType === 'UPDATE' && payload.new?.status === 'completed') {
+            fetchDashboardData();
+          }
+        }
+      )
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'assessment_responses' },
+        (payload) => {
+          console.log('🔄 New assessment response:', payload);
+          // Debounced refetch to avoid too many calls during assessment taking
+          setTimeout(fetchDashboardData, 5000);
         }
       )
       .subscribe();

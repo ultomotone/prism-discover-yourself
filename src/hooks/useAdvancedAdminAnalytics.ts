@@ -553,19 +553,33 @@ export const useAdvancedAdminAnalytics = () => {
     refreshData();
   }, [filters]);
 
-  // Realtime: refresh on new completions and stats updates
+  // Enhanced realtime: refresh on new completions and stats updates
   useEffect(() => {
     const channel = supabase
       .channel('admin-realtime')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, () => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, (payload) => {
+        console.log('🔄 Admin: New profile created:', payload);
+        refreshData();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload) => {
+        console.log('🔄 Admin: Profile updated:', payload);
         refreshData();
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'assessment_sessions' }, (payload: any) => {
         // If a session just completed, refresh
         const newStatus = (payload?.new as any)?.status;
-        if (newStatus === 'completed') refreshData();
+        if (newStatus === 'completed') {
+          console.log('🔄 Admin: Session completed:', payload);
+          refreshData();
+        }
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'dashboard_statistics' }, () => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'assessment_sessions' }, (payload) => {
+        console.log('🔄 Admin: New session started:', payload);
+        // Debounced refresh for new sessions
+        setTimeout(refreshData, 2000);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'dashboard_statistics' }, (payload) => {
+        console.log('🔄 Admin: Dashboard statistics updated:', payload);
         refreshData();
       })
       .subscribe();
