@@ -99,8 +99,8 @@ export class PrismCalibration {
       const { data: calibrationData, error: calError } = await this.supabase
         .from('calibration_model')
         .select('knots, method, version, trained_at')
-        .eq('stratum->dim_band', dimBand)
-        .eq('stratum->overlay', overlayStr)
+        .eq('stratum->>dim_band', dimBand)
+        .eq('stratum->>overlay', overlayStr)
         .eq('version', this.version)
         .order('trained_at', { ascending: false })
         .limit(1)

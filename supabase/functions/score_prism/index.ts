@@ -214,6 +214,10 @@ serve(async (req) => {
     const fcExpectedMinCfg: any = await cfg("fc_expected_min");
     const fcExpectedMin: number = typeof fcExpectedMinCfg === 'number' ? fcExpectedMinCfg : 16;
     const attentionQids: number[] = Array.isArray(await cfg("attention_qids")) ? await cfg("attention_qids") : null;
+    // Phase 4: Fit band thresholds from config
+    const fitBandCfg: any = await cfg("fit_band_thresholds");
+    const fitBandThresholds = fitBandCfg || { high_fit: 60, moderate_fit: 45, high_gap: 5, moderate_gap: 2 };
+
 
     if (!dimThresh || dimThresh.one == null || dimThresh.two == null || dimThresh.three == null) {
       dimThresh = { one: 2.1, two: 3.0, three: 3.8 };
@@ -789,11 +793,12 @@ serve(async (req) => {
     const calibratedConf = confidenceResult.calibrated;
     const confBand = confidenceResult.band;
     
-    // Enhanced fit band logic from config
+    // Phase 4: Fit band logic driven by config thresholds
+    const { high_fit, moderate_fit, high_gap, moderate_gap } = fitBandThresholds;
     let fitBand = "Low";
-    if (topFit >= 60 && topGap >= 5) {
+    if (topFit >= high_fit && topGap >= high_gap) {
       fitBand = "High";
-    } else if ((topFit >= 45 && topFit < 60) || (topGap >= 2 && topGap < 5)) {
+    } else if ((topFit >= moderate_fit && topFit < high_fit) || (topGap >= moderate_gap && topGap < high_gap)) {
       fitBand = "Moderate"; 
     }
 
