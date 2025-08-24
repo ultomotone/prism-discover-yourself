@@ -48,24 +48,34 @@ export async function validatePrismAssessment(
   responses: AssessmentResponse[], 
   library?: QuestionLibrary[]
 ): Promise<ValidationPayload> {
+  console.log('🚀 validatePrismAssessment called with', responses.length, 'responses');
+  
   try {
+    console.log('🚀 Loading config...');
     // Load config with fallback (never fails)
     const config = await getPrismConfig();
+    console.log('🚀 Config loaded:', config);
     
     // Load library from backend if not provided
     let questions: QuestionLibrary[] = [];
     if (library) {
       questions = library;
+      console.log('🚀 Using provided library:', questions.length, 'questions');
     } else {
+      console.log('🚀 Fetching library from backend...');
       const libraryResult = await supabase.functions.invoke('getView', {
         body: { view_name: 'questions', limit: 2000 }
       });
       
+      console.log('🚀 Library fetch result:', libraryResult);
+      
       if ('error' in libraryResult && libraryResult.error) {
+        console.error('❌ Library fetch failed:', libraryResult.error);
         throw new Error(`Library fetch failed: ${libraryResult.error.message}`);
       }
       
       questions = libraryResult.data?.data || [];
+      console.log('🚀 Backend library loaded:', questions.length, 'questions');
     }
 
     // Filter to visible questions only

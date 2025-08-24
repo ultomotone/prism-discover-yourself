@@ -520,7 +520,11 @@ try {
         finalResponses.push(newResponse);
         
         console.log('🔍 Running pre-submit validation...');
+        console.log('🔍 Final responses being validated:', finalResponses.length);
+        console.log('🔍 Sample responses:', finalResponses.slice(0, 3));
+        
         const prismValidation = await validatePrismAssessment(finalResponses);
+        console.log('🔍 Validation completed with result:', prismValidation);
         
         // Log validation event
         await logValidationEvent(sessionId, prismValidation, 'pre_submit');
