@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { CountrySelect } from "@/components/ui/country-select";
 import { ForcedChoiceBlock } from "./ForcedChoiceBlock";
 import { cn } from "@/lib/utils";
+import { visibleIf } from "@/lib/visibility";
 
 interface QuestionComponentProps {
   question: Question;
@@ -15,6 +16,11 @@ interface QuestionComponentProps {
 }
 
 export function QuestionComponent({ question, value, onChange, hasError = false }: QuestionComponentProps) {
+  // Hide question if not visible (e.g., id 133, Ni tagged)
+  if (!visibleIf(question)) {
+    return null;
+  }
+
   const handleLikertClick = (optionValue: number) => {
     onChange(optionValue);
   };

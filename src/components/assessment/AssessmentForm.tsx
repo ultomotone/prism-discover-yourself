@@ -7,6 +7,9 @@ import { validateAssessmentStructure, validateQuestionResponse, ValidationResult
 import { validatePrismAssessment, logValidationEvent, ValidationPayload } from '@/utils/prismValidation';
 import { assessmentQuestions, Question } from "@/data/assessmentQuestions";
 import { QuestionComponent } from "./QuestionComponent";
+import { ProgressCard } from "./ProgressCard";
+import { visibleIf, getVisibleQuestions, getVisibleQuestionCount, getVisibleQuestionIndex } from "@/lib/visibility";
+import { getPrismConfig, PrismConfig } from "@/services/prismConfig";
 import { ErrorSummary } from "./ErrorSummary";
 import { EmailSavePrompt } from "./EmailSavePrompt";
 import { SessionConflictModal } from "./SessionConflictModal";
@@ -44,11 +47,14 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
   }>({ type: null, email: '' });
   const [validationResult, setValidationResult] = useState<ValidationPayload | null>(null);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
+  const [prismConfig, setPrismConfig] = useState<PrismConfig | null>(null);
   const { toast } = useToast();
 
-  const currentQuestion = assessmentQuestions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / assessmentQuestions.length) * 100;
-  const isLastQuestion = currentQuestionIndex === assessmentQuestions.length - 1;
+  // Filter to visible questions
+  const visibleQuestions = getVisibleQuestions(assessmentQuestions);
+  const currentQuestion = visibleQuestions[currentQuestionIndex];
+  const progress = ((currentQuestionIndex + 1) / visibleQuestions.length) * 100;
+  const isLastQuestion = currentQuestionIndex === visibleQuestions.length - 1;
   
   // Get current section questions for progress within section
   const currentSection = currentQuestion?.section;
@@ -212,7 +218,7 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
             id: newId,
             user_id: user?.id || null,
             session_type: 'prism',
-            total_questions: assessmentQuestions.length,
+            total_questions: visibleQuestions.length,
             share_token: shareToken,
             metadata: {
               browser: navigator.userAgent,
@@ -260,6 +266,16 @@ try {
 
     initializeSession();
   }, [toast, resumeSessionId]);
+  useEffect(() => {
+    const loadConfig = async () => {
+      const config = await getPrismConfig();
+      setPrismConfig(config);
+      console.log('Loaded PRISM config:', config);
+    };
+    
+    loadConfig();
+  }, []);
+  
   useEffect(() => {
     console.log('Question change useEffect triggered. Current question index:', currentQuestionIndex);
     console.log('Current question ID:', currentQuestion?.id);
@@ -539,7 +555,7 @@ try {
           .from('assessment_sessions')
           .update({
             completed_at: new Date().toISOString(),
-            completed_questions: assessmentQuestions.length
+            completed_questions: visibleQuestions.length
           })
           .eq('id', sessionId);
 
@@ -727,7 +743,7 @@ try {
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-2xl font-bold text-primary">PRISM Assessment</h1>
               <span className="text-sm text-muted-foreground">
-                Question {currentQuestionIndex + 1} of {assessmentQuestions.length}
+                Question {currentQuestionIndex + 1} of {visibleQuestions.length}
               </span>
             </div>
             
@@ -764,6 +780,13 @@ try {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Progress Card with Config/Validation Info */}
+              <ProgressCard 
+                validation={validationResult}
+                config={prismConfig}
+                isLoading={!prismConfig}
+              />
+              
               <QuestionComponent
                 question={currentQuestion}
                 value={currentAnswer}

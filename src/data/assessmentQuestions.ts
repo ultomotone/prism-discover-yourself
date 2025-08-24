@@ -13,6 +13,11 @@ export interface Question {
   reverse_scored?: boolean;
   fc_map?: { [key: string]: string };
   social_desirability?: boolean;
+  meta?: {
+    hidden?: boolean;
+    correct_answer?: any;
+    [key: string]: any;
+  };
   parts?: {
     label: string;
     options: string[];
