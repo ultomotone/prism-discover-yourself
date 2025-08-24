@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, ArrowLeft, ExternalLink, Copy, Users } from "lucide-react";
+import { Download, ArrowLeft, ExternalLink, Copy, Users, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ResultsV2 } from "@/components/assessment/ResultsV2";
 import { useToast } from "@/hooks/use-toast";
@@ -341,25 +341,6 @@ export default function Results() {
           {/* Enhanced Results */}
           <ResultsV2 profile={scoring} />
 
-          {/* Show retest banner for low confidence or close calls */}
-          {(scoring?.fit_band === 'Low' || (scoring?.top_gap && scoring.top_gap < 3)) && (
-            <Card className="max-w-4xl mx-auto border-amber-200 bg-amber-50">
-              <CardContent className="p-6 text-center">
-                <h3 className="font-semibold text-amber-800 mb-2">Consider a Retest</h3>
-                <p className="text-amber-700 mb-4">
-                  Your results show a close call between types. Consider retesting in 30 days for a clearer picture.
-                </p>
-                <Button 
-                  onClick={() => navigate('/assessment')}
-                  variant="outline"
-                  className="border-amber-300 text-amber-800 hover:bg-amber-100"
-                >
-                  Take New Assessment
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Type Guard Notice */}
           {scoring?.invalid_combo_flag && (
             <Card className="max-w-4xl mx-auto border-blue-200 bg-blue-50">
@@ -371,79 +352,93 @@ export default function Results() {
             </Card>
           )}
 
-          {/* Support Section */}
-          <Card className="max-w-4xl mx-auto">
-            <CardContent className="p-6 text-center">
-              <h2 className="text-2xl font-bold mb-4">Support PRISM</h2>
-              <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                Help us run the assessment, refine the algorithms, and publish open research. 
-                Every contribution keeps the lights on and improves personality science.
-              </p>
-              
-              <p className="text-sm text-muted-foreground mb-6">
-                If PRISM helped you see yourself clearer, toss a coin to your typologist 🪙
-              </p>
-              
-              <div className="flex justify-center">
-                <div 
-                  dangerouslySetInnerHTML={{
-                    __html: `<stripe-buy-button
-                      buy-button-id="buy_btn_1RxsnID9AJFeFtOvkMbrRpMA"
-                      publishable-key="pk_live_q3JAuI9omI8O6TFmtfpQyq0p">
-                    </stripe-buy-button>`
-                  }}
-                />
-              </div>
-            </CardContent>
-          </Card>
+          {/* Next Steps Section - Four Centered Cards */}
+          <div className="max-w-4xl mx-auto space-y-8">
+            
+            {/* 1. Consider a Retest - Yellow callout */}
+            {(scoring?.close_call === true || scoring?.fit_band === 'Low' || (scoring?.top_gap && scoring.top_gap < 3)) && (
+              <Card className="rounded-xl shadow-sm" style={{ backgroundColor: '#FFF8E6' }}>
+                <CardContent className="p-8 md:p-10 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <Clock className="h-5 w-5" />
+                    <h2 className="text-2xl font-bold">Consider a Retest</h2>
+                  </div>
+                  <p className="text-muted-foreground mb-6">
+                    Your results show a close call between types. Consider retesting in 30 days for a clearer picture.
+                  </p>
+                  <Button 
+                    onClick={() => navigate('/assessment')}
+                    size="lg"
+                    className="rounded-full font-bold"
+                  >
+                    Take New Assessment
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
 
-          {/* Next Steps Section */}
-          <Card className="max-w-4xl mx-auto">
-            <CardContent className="p-6 text-center">
-              <h2 className="text-2xl font-bold mb-4">Continue Your Journey</h2>
-              <p className="text-muted-foreground mb-6">
-                Use our AI Coach to dive deeper into your personality insights
-              </p>
-              <div className="flex flex-col items-center gap-4">
+            {/* 2. Support PRISM - Stripe */}
+            <Card className="rounded-xl shadow-sm bg-white">
+              <CardContent className="p-8 md:p-10 text-center">
+                <h2 className="text-2xl font-bold mb-4">Support PRISM</h2>
+                <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+                  Help us run the assessment, refine the algorithms, and publish open research. Every contribution keeps the lights on and improves personality science. If PRISM helped you see yourself clearer, toss a coin to your typologist.
+                </p>
+                <Button 
+                  onClick={() => window.open('https://donate.stripe.com/3cI6oHdR3cLg4n0eK56Ri04', '_blank')}
+                  size="lg"
+                  className="rounded-full font-bold"
+                  rel="noopener noreferrer"
+                >
+                  Donate to PRISM
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* 3. Continue Your Journey - AI Coach */}
+            <Card className="rounded-xl shadow-sm bg-white">
+              <CardContent className="p-8 md:p-10 text-center">
+                <h2 className="text-2xl font-bold mb-4">Continue Your Journey</h2>
+                <p className="text-muted-foreground mb-6">
+                  Use our AI Coach to dive deeper into your personality insights.
+                </p>
                 <Button 
                   onClick={() => window.open('https://chatgpt.com/g/g-68a233600af0819182cfa8c558a63112-prism-personality-ai-coach', '_blank')}
                   size="lg"
-                  className="flex items-center gap-2"
+                  className="rounded-full font-bold flex items-center gap-2 mx-auto"
+                  rel="noopener noreferrer"
                 >
-                  <ExternalLink className="h-4 w-4" />
                   PRISM AI Coach
+                  <ExternalLink className="h-4 w-4" />
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Community Invitation */}
-          <Card className="max-w-4xl mx-auto border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5">
-            <CardContent className="p-6 text-center">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <Users className="h-6 w-6 text-primary" />
-                <h2 className="text-2xl font-bold text-primary">Join Our Community</h2>
-              </div>
-              <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                Connect with thousands of like-minded individuals exploring their personality journey. 
-                Share insights, ask questions, and deepen your understanding of PRISM and personality theory.
-              </p>
-              <div className="flex flex-col items-center space-y-4">
+            {/* 4. Join Our Community - Skool */}
+            <Card className="rounded-xl shadow-sm bg-white">
+              <CardContent className="p-8 md:p-10 text-center">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <Users className="h-5 w-5" />
+                  <h2 className="text-2xl font-bold">Join Our Community</h2>
+                </div>
+                <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+                  Connect with thousands exploring their personality journey. Share insights, ask questions, and deepen your understanding of PRISM and personality theory.
+                </p>
                 <Button 
                   onClick={() => window.open('https://www.skool.com/your-personality-blueprint/about?ref=931e57f033d34f3eb64db45f22b1389e', '_blank')}
                   size="lg"
-                  className="flex items-center gap-2 bg-gradient-to-r from-primary to-secondary hover:from-primary-dark hover:to-secondary-dark mx-auto"
+                  className="rounded-full font-bold mb-4"
+                  rel="noopener noreferrer"
                 >
-                  <Users className="h-4 w-4" />
                   Join Personality Blueprint Community
-                  <ExternalLink className="h-4 w-4" />
                 </Button>
                 <p className="text-sm text-muted-foreground">
                   Free to join • Expert discussions • Type-focused groups
                 </p>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+          </div>
 
           {/* Action Buttons */}
           <Card className="max-w-4xl mx-auto">
