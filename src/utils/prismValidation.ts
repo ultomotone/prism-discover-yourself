@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getPrismConfig, PrismConfig } from "@/services/prismConfig";
 import { visibleIf } from "@/lib/visibility";
+import { getAssessmentLibrary, LibraryQuestion, getLibraryCounts } from "@/lib/questions/getAssessmentLibrary";
 
 export interface ValidationPayload {
   ok: boolean;
@@ -77,6 +78,10 @@ export async function validatePrismAssessment(
       questions = libraryResult.data?.data || [];
       console.log('🚀 Backend library loaded:', questions.length, 'questions');
     }
+
+    // Check if we're in strict mode
+    const strictMode = config.gate_strict_mode !== false; // Default to true
+    console.log('🔒 Strict mode:', strictMode);
 
     // Filter to visible questions only
     const visibleQuestions = questions.filter((q: any) => visibleIf({
@@ -217,8 +222,8 @@ export async function validatePrismAssessment(
       errors.push('Library issue: VQC items missing (contact support)');
     }
 
-    // Return validation payload
-    return {
+    // Return validation payload with strict/non-strict awareness
+    const finalResult = {
       ok: errors.length === 0,
       errors,
       warnings,
@@ -233,9 +238,13 @@ export async function validatePrismAssessment(
       },
       config: {
         fc_expected_min: fcExpectedMin,
-        source: config.source
+        source: config.source,
+        strict_mode: strictMode
       }
     };
+
+    console.log('🏁 Final validation result:', finalResult);
+    return finalResult;
 
   } catch (error) {
     console.error('Validation error:', error);

@@ -123,6 +123,12 @@ export function ProgressCard({ validation, config, isLoading }: ProgressCardProp
             Running with fallback config. Your responses will still be validated.
           </div>
         )}
+
+        {config.gate_strict_mode === false && validation.warnings.length > 0 && (
+          <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+            Non-strict mode: Assessment can be submitted with incomplete library sections.
+          </div>
+        )}
       </CardContent>
     </Card>
   );

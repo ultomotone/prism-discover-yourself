@@ -10,6 +10,7 @@ import { QuestionComponent } from "./QuestionComponent";
 import { ProgressCard } from "./ProgressCard";
 import { visibleIf, getVisibleQuestions, getVisibleQuestionCount, getVisibleQuestionIndex } from "@/lib/visibility";
 import { getPrismConfig, PrismConfig } from "@/services/prismConfig";
+import { saveResponseIdempotent, loadSessionResponses, calculateNextQuestionIndex } from "@/services/assessmentSaves";
 import { ErrorSummary } from "./ErrorSummary";
 import { EmailSavePrompt } from "./EmailSavePrompt";
 import { SessionConflictModal } from "./SessionConflictModal";
@@ -67,18 +68,23 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
       console.log('Loading existing session:', sessionId);
       setIsResumingSession(true);
       
-      // Load session data
-      const { data: session, error: sessionError } = await supabase
-        .from('assessment_sessions')
-        .select('*')
-        .eq('id', sessionId)
-        .maybeSingle();
+      // Load session data and responses
+      const [sessionResult, responsesData] = await Promise.all([
+        supabase
+          .from('assessment_sessions')
+          .select('*')
+          .eq('id', sessionId)
+          .maybeSingle(),
+        loadSessionResponses(sessionId)
+      ]);
+
+      const { data: session, error: sessionError } = sessionResult;
 
       if (sessionError || !session) {
         console.error('Session load issue, falling back to local cache:', sessionError);
         try {
           const cached = JSON.parse(localStorage.getItem('prism_last_session') || '{}');
-          const idx = Math.min(Number(cached?.completed_questions) || 0, assessmentQuestions.length - 1);
+          const idx = Math.min(Number(cached?.completed_questions) || 0, visibleQuestions.length - 1);
           setSessionId(sessionId);
           setResponses([]); // responses will be re-captured going forward
           setCurrentQuestionIndex(idx);
@@ -102,8 +108,17 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
       }
 
       console.log('Loaded session data:', session);
+      console.log('Loaded responses:', responsesData.length);
 
-      // Load existing responses
+      // Use actual responses to calculate next question, not just completed_questions count
+      const nextIndex = calculateNextQuestionIndex(visibleQuestions.length, responsesData);
+      console.log('Calculated next question index:', nextIndex);
+
+      // Set state with loaded data
+      setSessionId(sessionId);
+      setResponses(responsesData);
+      setCurrentQuestionIndex(nextIndex);
+      setQuestionStartTime(Date.now());
       const { data: responses, error: responsesError } = await supabase
         .from('assessment_responses')
         .select('question_id, answer_value, answer_numeric, answer_array, answer_object')
