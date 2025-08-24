@@ -4,15 +4,17 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { CountrySelect } from "@/components/ui/country-select";
+import { ForcedChoiceBlock } from "./ForcedChoiceBlock";
 import { cn } from "@/lib/utils";
 
 interface QuestionComponentProps {
   question: Question;
   value: string | number | string[] | number[];
   onChange: (value: string | number | string[] | number[]) => void;
+  hasError?: boolean;
 }
 
-export function QuestionComponent({ question, value, onChange }: QuestionComponentProps) {
+export function QuestionComponent({ question, value, onChange, hasError = false }: QuestionComponentProps) {
   const handleLikertClick = (optionValue: number) => {
     onChange(optionValue);
   };
@@ -221,6 +223,15 @@ export function QuestionComponent({ question, value, onChange }: QuestionCompone
     case 'forced-choice-2':
     case 'forced-choice-4':
     case 'forced-choice-5':
+      return (
+        <ForcedChoiceBlock
+          question={question}
+          value={value}
+          onChange={(selectedValue) => onChange(selectedValue)}
+          isRequired={question.required}
+          hasError={hasError}
+        />
+      );
     case 'categorical-5':
     case 'frequency':
       return (

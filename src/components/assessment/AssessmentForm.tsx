@@ -4,8 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { validateAssessmentStructure, validateQuestionResponse, ValidationResult } from '@/utils/assessmentValidation';
+import { validatePrismAssessment, logValidationEvent, ValidationPayload } from '@/utils/prismValidation';
 import { assessmentQuestions, Question } from "@/data/assessmentQuestions";
 import { QuestionComponent } from "./QuestionComponent";
+import { ErrorSummary } from "./ErrorSummary";
 import { EmailSavePrompt } from "./EmailSavePrompt";
 import { SessionConflictModal } from "./SessionConflictModal";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +42,8 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
     email: string;
     daysSinceCompletion?: number;
   }>({ type: null, email: '' });
+  const [validationResult, setValidationResult] = useState<ValidationPayload | null>(null);
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
   const { toast } = useToast();
 
   const currentQuestion = assessmentQuestions[currentQuestionIndex];
@@ -495,17 +499,26 @@ try {
       }
 
       if (isLastQuestion) {
-        // Validate structural integrity before completion
+        // Validate PRISM integrity before completion
         const finalResponses = responses.filter(r => r.questionId !== currentQuestion.id);
         finalResponses.push(newResponse);
         
-        const structuralValidation = validateAssessmentStructure(assessmentQuestions, finalResponses);
+        console.log('🔍 Running pre-submit validation...');
+        const prismValidation = await validatePrismAssessment(finalResponses);
         
-        if (!structuralValidation.isValid) {
-          console.error('❌ STRUCTURAL VALIDATION FAILED:', structuralValidation.errors);
+        // Log validation event
+        await logValidationEvent(sessionId, prismValidation, 'pre_submit');
+        
+        if (!prismValidation.ok) {
+          console.error('❌ PRISM VALIDATION FAILED:', prismValidation.errors);
+          setValidationResult(prismValidation);
+          setShowValidationErrors(true);
+          
+          await logValidationEvent(sessionId, prismValidation, 'block_submit');
+          
           toast({
             title: "Assessment Incomplete",
-            description: structuralValidation.errors[0] || "Please complete all required components.",
+            description: `${prismValidation.errors.length} issue(s) must be resolved before submission.`,
             variant: "destructive",
           });
           setIsLoading(false);
@@ -513,9 +526,13 @@ try {
         }
         
         // Log warnings but allow completion
-        if (structuralValidation.warnings.length > 0) {
-          console.warn('⚠️ STRUCTURAL WARNINGS:', structuralValidation.warnings);
+        if (prismValidation.warnings.length > 0) {
+          console.warn('⚠️ PRISM VALIDATION WARNINGS:', prismValidation.warnings);
+          setValidationResult(prismValidation);
+          // Show warnings but don't block submission
         }
+        
+        await logValidationEvent(sessionId, prismValidation, 'allow_submit');
 
         // Mark session as complete
         await supabase
@@ -729,6 +746,15 @@ try {
               </div>
             )}
           </div>
+
+          {/* Error Summary */}
+          {validationResult && showValidationErrors && (
+            <ErrorSummary 
+              validation={validationResult}
+              show={showValidationErrors}
+              onDismiss={() => setShowValidationErrors(false)}
+            />
+          )}
 
           {/* Question Card */}
           <Card className="mb-8 prism-shadow-card">
