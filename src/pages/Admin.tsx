@@ -7,6 +7,7 @@ import { ChartsSection } from "@/components/admin/ChartsSection";
 import { MethodHealthSection } from "@/components/admin/MethodHealthSection";
 import { EvidenceTab } from "@/components/admin/evidence/EvidenceTab";
 import { SystemStatusControl } from "@/components/admin/SystemStatusControl";
+import { LatestAssessmentsTable } from "@/components/admin/LatestAssessmentsTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -317,11 +318,76 @@ const Admin: React.FC = () => {
             />
           </div>
 
-          {/* Quality Panel */}
-          <QualityPanel 
-            data={qualityData} 
-            onExport={exportToCSV}
-          />
+          {/* Quality Metrics Panel */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Quality Metrics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <KPICard
+                  title="Top-1 Fit Median"
+                  value={`${qualityData.top1FitMedian.toFixed(1)}`}
+                  tooltip="Median fit score for the top type prediction. Higher values indicate better type matches."
+                  onExport={() => exportToCSV('v_quality')}
+                />
+                
+                <KPICard
+                  title="Top-Gap Median"  
+                  value={`${qualityData.topGapMedian.toFixed(1)}`}
+                  status={qualityData.topGapMedian < 2.0 ? 'danger' : qualityData.topGapMedian < 3.0 ? 'warning' : 'good'}
+                  tooltip="Median gap between top 2 type scores. Target: >3.0 ✅, 2.0-3.0 ⚠️, <2.0 ❌"
+                  onExport={() => exportToCSV('v_quality')}
+                />
+                
+                <KPICard
+                  title="Confidence Margin"
+                  value={`${qualityData.confidenceMarginMedian.toFixed(1)}%`}
+                  tooltip="Median confidence margin between top predictions. Higher values indicate more decisive results."
+                  onExport={() => exportToCSV('v_quality')}
+                />
+                
+                <KPICard
+                  title="Close Calls %"
+                  value={`${qualityData.closeCallsPercent.toFixed(1)}%`}
+                  status={qualityData.closeCallsPercent > 20 ? 'danger' : qualityData.closeCallsPercent > 10 ? 'warning' : 'good'}
+                  tooltip="Percentage of close calls (gap < 3). Target: <10% ✅, 10-20% ⚠️, >20% ❌"
+                  onExport={() => exportToCSV('v_quality')}
+                />
+                
+                <KPICard
+                  title="Inconsistency Mean"
+                  value={`${qualityData.inconsistencyMean.toFixed(2)}`}
+                  status={qualityData.inconsistencyMean > 1.5 ? 'danger' : qualityData.inconsistencyMean > 1.0 ? 'warning' : 'good'}
+                  tooltip="Mean inconsistency score. Target: <1.0 ✅, 1.0-1.5 ⚠️, >1.5 ❌"
+                  onExport={() => exportToCSV('v_quality')}
+                />
+                
+                <KPICard
+                  title="SD Index Mean"
+                  value={`${qualityData.sdIndexMean.toFixed(2)}`}
+                  status={qualityData.sdIndexMean > 4.3 ? 'danger' : qualityData.sdIndexMean > 3.8 ? 'warning' : 'good'}
+                  tooltip="Mean social desirability index. Target: <3.8 ✅, 3.8-4.3 ⚠️, >4.3 ❌"
+                  onExport={() => exportToCSV('v_quality')}
+                />
+                
+                <KPICard
+                  title="Function Balance"
+                  value={`${qualityData.funcBalanceMedian.toFixed(1)}`}
+                  tooltip="Median function balance across assessments. Higher values indicate more balanced cognitive function usage."
+                  onExport={() => exportToCSV('v_quality')}
+                />
+                
+                <KPICard
+                  title="Validity Pass Rate"
+                  value={`${kpiData.validityPassRate.toFixed(1)}%`}
+                  status={getValidityStatus(kpiData.validityPassRate)}
+                  tooltip="Percentage passing validity checks. Target: >85% ✅, 70-84% ⚠️, <70% ❌"
+                  onExport={() => exportToCSV('v_validity')}
+                />
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Charts Section */}
           <Card>
@@ -333,6 +399,16 @@ const Admin: React.FC = () => {
                 data={chartData} 
                 onExport={exportToCSV}
               />
+            </CardContent>
+          </Card>
+
+          {/* Latest Assessments */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Latest Assessments</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <LatestAssessmentsTable />
             </CardContent>
           </Card>
 
