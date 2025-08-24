@@ -306,7 +306,7 @@ try {
     // Reset question start time when moving to a new question
     setQuestionStartTime(Date.now());
     
-    // Load existing response if it exists
+    // Load existing response if it exists - use CONTROLLED state always
     const existingResponse = responses.find(r => r.questionId === currentQuestion?.id);
     console.log('Found existing response for question', currentQuestion?.id, ':', existingResponse);
     
@@ -314,13 +314,13 @@ try {
       console.log('Setting current answer to existing response:', existingResponse.answer);
       setCurrentAnswer(existingResponse.answer);
     } else {
-      // Initialize based on question type
+      // Initialize based on question type - ALWAYS controlled (never undefined)
       if (currentQuestion?.type === 'matrix' || currentQuestion?.type === 'select-all' || currentQuestion?.type === 'ranking') {
-        console.log('Initializing array answer for question type:', currentQuestion?.type);
-        setCurrentAnswer([]);
+        console.log('Initializing controlled array answer for question type:', currentQuestion?.type);
+        setCurrentAnswer([]); // Controlled array
       } else {
-        console.log('Initializing empty string answer');
-        setCurrentAnswer('');
+        console.log('Initializing controlled string answer');
+        setCurrentAnswer(''); // Controlled string (never null or undefined)
       }
     }
   }, [currentQuestionIndex, responses, currentQuestion?.id, isResumingSession]);
@@ -530,22 +530,21 @@ try {
       }
 
       if (isLastQuestion) {
-        // Validate PRISM integrity before completion
+        // Prepare final responses for validation
         const finalResponses = responses.filter(r => r.questionId !== currentQuestion.id);
         finalResponses.push(newResponse);
         
-        console.log('🔍 Running pre-submit validation...');
-        console.log('🔍 Final responses being validated:', finalResponses.length);
-        console.log('🔍 Sample responses:', finalResponses.slice(0, 3));
+        console.log('🚀 LAST QUESTION - Starting final validation');
+        console.log('🚀 Final responses count:', finalResponses.length);
+        console.log('🚀 Session ID for validation:', sessionId);
         
+        // Run final validation with comprehensive library
+        console.log('🚀 Calling validatePrismAssessment...');
         const prismValidation = await validatePrismAssessment(finalResponses);
-        console.log('🔍 Validation completed with result:', prismValidation);
-        
-        // Log validation event
-        await logValidationEvent(sessionId, prismValidation, 'pre_submit');
+        console.log('🚀 Validation completed. Result:', prismValidation);
         
         if (!prismValidation.ok) {
-          console.error('❌ PRISM VALIDATION FAILED:', prismValidation.errors);
+          console.log('❌ Final validation BLOCKED submission:', prismValidation.errors);
           setValidationResult(prismValidation);
           setShowValidationErrors(true);
           
@@ -557,6 +556,35 @@ try {
             variant: "destructive",
           });
           setIsLoading(false);
+          return;
+        }
+        
+        console.log('✅ Final validation passed');
+        
+        // Handle deferred scoring case
+        if (prismValidation.defer_scoring) {
+          console.log('🟨 Deferred scoring mode - completing without immediate scoring');
+          
+          // Mark session with special status
+          await supabase
+            .from('assessment_sessions')
+            .update({
+              completed_at: new Date().toISOString(),
+              completed_questions: visibleQuestions.length,
+              metadata: {
+                validation_status: prismValidation.validation_status,
+                defer_scoring: true,
+                browser: navigator.userAgent,
+                completed_at: new Date().toISOString()
+              }
+            })
+            .eq('id', sessionId);
+
+          await logValidationEvent(sessionId, prismValidation, 'allow_submit');
+          
+          // Show deferred success instead of normal completion
+          setValidationResult(prismValidation);
+          onComplete(finalResponses, sessionId);
           return;
         }
         

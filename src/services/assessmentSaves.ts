@@ -11,10 +11,11 @@ interface SaveResponseParams {
 }
 
 // Track in-flight saves to prevent duplicates
-const inflightSaves = new Set<string>();
+const inflightSaves = new Map<string, Promise<void>>();
 
 /**
  * Idempotent response save using upsert to prevent 409 conflicts
+ * Uses proper in-flight tracking and controlled state management
  */
 export async function saveResponseIdempotent(params: SaveResponseParams): Promise<void> {
   const {
@@ -33,57 +34,82 @@ export async function saveResponseIdempotent(params: SaveResponseParams): Promis
   // Check if this save is already in progress
   if (inflightSaves.has(saveKey)) {
     console.log('🔄 Save already in progress for:', saveKey);
-    return;
+    return inflightSaves.get(saveKey)!;
   }
 
-  // Mark as in-flight
-  inflightSaves.add(saveKey);
+  // Create the save promise
+  const savePromise = performIdempotentSave(params);
+  
+  // Track the save
+  inflightSaves.set(saveKey, savePromise);
 
   try {
-    console.log('💾 Saving response (idempotent):', { sessionId, questionId, answer });
-
-    // Prepare the response data
-    const responseData: any = {
-      session_id: sessionId,
-      question_id: questionId,
-      question_text: questionText,
-      question_type: questionType,
-      question_section: questionSection,
-      updated_at: new Date().toISOString()
-    };
-
-    // Handle different answer types
-    if (Array.isArray(answer)) {
-      responseData.answer_array = answer;
-      responseData.answer_value = JSON.stringify(answer);
-    } else if (typeof answer === 'number') {
-      responseData.answer_numeric = answer;
-      responseData.answer_value = answer.toString();
-    } else {
-      responseData.answer_value = String(answer);
-    }
-
-    if (responseTime !== undefined) {
-      responseData.response_time_ms = responseTime;
-    }
-
-    // Use upsert to avoid conflicts
-    const { error } = await supabase
-      .from('assessment_responses')
-      .upsert(responseData, {
-        onConflict: 'session_id,question_id'
-      });
-
-    if (error) {
-      console.error('💥 Response save failed:', error);
-      throw error;
-    }
-
-    console.log('✅ Response saved successfully');
+    await savePromise;
   } finally {
-    // Always remove from in-flight tracking
+    // Always clean up tracking
     inflightSaves.delete(saveKey);
   }
+}
+
+/**
+ * Perform the actual idempotent save operation
+ */
+async function performIdempotentSave(params: SaveResponseParams): Promise<void> {
+  const {
+    sessionId,
+    questionId,
+    answer,
+    questionText,
+    questionType,
+    questionSection,
+    responseTime
+  } = params;
+
+  console.log('💾 Saving response (idempotent):', { 
+    sessionId, 
+    questionId, 
+    answer: typeof answer === 'string' && answer.length > 50 ? 
+      answer.substring(0, 50) + '...' : answer 
+  });
+
+  // Prepare the response data
+  const responseData: any = {
+    session_id: sessionId,
+    question_id: questionId,
+    question_text: questionText,
+    question_type: questionType,
+    question_section: questionSection,
+    updated_at: new Date().toISOString()
+  };
+
+  // Handle different answer types properly
+  if (Array.isArray(answer)) {
+    responseData.answer_array = answer;
+    responseData.answer_value = JSON.stringify(answer);
+  } else if (typeof answer === 'number') {
+    responseData.answer_numeric = answer;
+    responseData.answer_value = answer.toString();
+  } else {
+    responseData.answer_value = String(answer);
+  }
+
+  if (responseTime !== undefined) {
+    responseData.response_time_ms = responseTime;
+  }
+
+  // Use upsert to avoid conflicts (Supabase handles merge-duplicates)
+  const { error } = await supabase
+    .from('assessment_responses')
+    .upsert(responseData, {
+      onConflict: 'session_id,question_id'
+    });
+
+  if (error) {
+    console.error('💥 Response save failed:', error);
+    throw error;
+  }
+
+  console.log('✅ Response saved successfully (upserted)');
 }
 
 /**
