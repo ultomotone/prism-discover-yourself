@@ -21,8 +21,20 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const body = req.method === 'POST' ? await req.json() : {};
-    const { keys }: ConfigRequest = body;
+    // Safely parse JSON body, handle empty bodies
+    let body: ConfigRequest = {};
+    if (req.method === 'POST') {
+      try {
+        const text = await req.text();
+        if (text && text.trim() !== '') {
+          body = JSON.parse(text);
+        }
+      } catch (parseError) {
+        console.warn('Failed to parse request body, using empty object:', parseError);
+      }
+    }
+    
+    const { keys } = body;
 
     console.log(`getConfig called with keys:`, keys);
 

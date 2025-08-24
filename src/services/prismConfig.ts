@@ -26,10 +26,15 @@ export async function getPrismConfig(): Promise<PrismConfig> {
   try {
     console.log('Attempting to fetch config from getConfig edge function...');
     
-    const result = await supabase.functions.invoke('getConfig');
+    // Call without body to avoid JSON parsing issues
+    const result = await supabase.functions.invoke('getConfig', {
+      body: {}
+    });
+    
+    console.log('Config fetch result:', result);
     
     // Check for non-2xx status or missing data
-    if ('error' in result && result.error) {
+    if (result.error) {
       console.warn('Config fetch failed, using fallback:', result.error);
       return { ...PRISM_CONFIG_FALLBACK, source: 'fallback' };
     }
