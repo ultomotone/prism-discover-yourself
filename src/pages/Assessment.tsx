@@ -158,6 +158,34 @@ const Assessment = () => {
     setCurrentState('intro');
   };
 
+  // Temporary maintenance mode - set to false to re-enable
+  const MAINTENANCE_MODE = true;
+  const isAdmin = window.location.search.includes('admin_bypass=true');
+
+  if (MAINTENANCE_MODE && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="pt-24 pb-8">
+          <div className="prism-container">
+            <div className="max-w-2xl mx-auto text-center">
+              <div className="bg-card rounded-lg border p-8">
+                <h1 className="text-2xl font-bold mb-4">Assessment Temporarily Unavailable</h1>
+                <p className="text-muted-foreground mb-6">
+                  We're currently performing maintenance on the assessment system. 
+                  Please check back shortly.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Admin: Add <code>?admin_bypass=true</code> to the URL to bypass this message.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {(() => {
