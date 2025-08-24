@@ -1023,8 +1023,8 @@ export type Database = {
           score_fit_raw?: number | null
           session_id?: string | null
           share_pct?: never
-          type_code?: never
-          version?: never
+          type_code?: string | null
+          version?: string | null
         }
         Update: {
           confidence?: string | null
@@ -1038,8 +1038,8 @@ export type Database = {
           score_fit_raw?: number | null
           session_id?: string | null
           share_pct?: never
-          type_code?: never
-          version?: never
+          type_code?: string | null
+          version?: string | null
         }
         Relationships: []
       }

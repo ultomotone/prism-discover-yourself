@@ -20,16 +20,15 @@ interface Assessment {
   version: string;
 }
 
-const formatFitValue = (calibratedFit: number | null, sessionId?: string): string => {
-  if (calibratedFit === null || calibratedFit === undefined || !isFinite(calibratedFit) || isNaN(calibratedFit)) {
+const formatFitValue = (absoluteFit: number | null, sessionId?: string): string => {
+  if (absoluteFit === null || absoluteFit === undefined || !isFinite(absoluteFit) || isNaN(absoluteFit)) {
     if (sessionId) {
-      console.warn(`Missing calibrated fit for session: ${sessionId}`);
+      console.warn(`Missing absolute fit for session: ${sessionId}`);
     }
     return "—";
   }
-  // Convert calibrated (~20..85) to 1..100 look
-  const fitForUI = Math.round((calibratedFit - 20) * (100 / 65));
-  return `${Math.max(1, fitForUI)}%`;
+  // Show absolute fit as-is (0-100 scale), round to whole number for display
+  return `${Math.round(absoluteFit)}`;
 };
 
 const getFitBadgeVariant = (band: string | null) => {
@@ -242,9 +241,9 @@ export const LatestAssessmentsTable = () => {
             )}
           </div>
         </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Recent assessment results with calibrated fit scores
-        </p>
+          <p className="text-sm text-muted-foreground">
+            Recent assessment results with absolute fit scores (0-100 scale)
+          </p>
       </CardHeader>
       <CardContent>
         {assessments.length === 0 ? (
@@ -287,7 +286,7 @@ export const LatestAssessmentsTable = () => {
                         Fit <HelpCircle className="h-3 w-3 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>How well responses match the assigned type (calibrated score 1-100%)</p>
+                        <p>Absolute fit score (0-100): How well responses match this type's prototype</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -308,10 +307,10 @@ export const LatestAssessmentsTable = () => {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger className="flex items-center gap-1">
-                        Band <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                        Confidence <HelpCircle className="h-3 w-3 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Overall confidence level: High (strong fit), Moderate (decent fit), Low (weak fit)</p>
+                        <p>Overall confidence level based on fit gap, validity checks, and coverage: High/Moderate/Low</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
