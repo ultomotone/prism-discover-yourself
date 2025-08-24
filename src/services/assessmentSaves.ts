@@ -96,12 +96,10 @@ async function performIdempotentSave(params: SaveResponseParams): Promise<void> 
     responseData.response_time_ms = responseTime;
   }
 
-  // Use upsert to avoid conflicts (Supabase handles merge-duplicates)
-  const { error } = await supabase
-    .from('assessment_responses')
-    .upsert(responseData, {
-      onConflict: 'session_id,question_id'
-    });
+  // Call Edge Function to bypass RLS safely with service role
+  const { data, error } = await supabase.functions.invoke('save_response', {
+    body: responseData,
+  });
 
   if (error) {
     console.error('💥 Response save failed:', error);

@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.import_questions]
 verify_jwt = false
+
+[functions.save_response]
+verify_jwt = false
