@@ -1,7 +1,9 @@
-// supabase/functions/score_prism/index.ts - PRISM v1.2.0 Enhanced Scoring Engine
+// supabase/functions/score_prism/index.ts - PRISM v1.2.0 Enhanced Scoring Engine - Phase 3
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { PrismCalibration } from "../_shared/calibration.ts";
+// Phase 3: Import validation utilities
+import { validateJSON, validateFCMap, validateMeta, sanitizeResponseValue } from "./validateJSON.ts";
 
 const FUNCS = ["Ti","Te","Fi","Fe","Ni","Ne","Si","Se"] as const;
 const OPP: Record<string,string> = { Ti:"Fe", Fe:"Ti", Te:"Fi", Fi:"Te", Ni:"Se", Se:"Ni", Ne:"Si", Si:"Ne" };
@@ -125,10 +127,13 @@ const isP = (x:string)=>["Ni","Ne","Si","Se"].includes(x);
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { user_id, session_id, debug } = await req.json();
+    // Phase 3: Enhanced partial-session handling with robust JSON validation
+    const requestBody = await req.json().catch(() => ({}));
+    const { user_id, session_id, debug, partial_session = false } = requestBody;
     const debugMode = !!debug;
-    if (!session_id) {
-      return new Response(JSON.stringify({ status:"error", error:"session_id required" }), { status:400, headers:{...corsHeaders,"Content-Type":"application/json"}});
+    
+    if (!session_id || typeof session_id !== 'string') {
+      return new Response(JSON.stringify({ status:"error", error:"Valid session_id required" }), { status:400, headers:{...corsHeaders,"Content-Type":"application/json"}});
     }
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -149,7 +154,16 @@ serve(async (req) => {
       console.error("Error fetching responses", aerr);
       return new Response(JSON.stringify({ status:"error", error:"Failed to fetch responses" }), { status:500, headers:{...corsHeaders,"Content-Type":"application/json"}});
     }
+    // Phase 3: Enhanced partial session handling
     if (!rawRows || rawRows.length === 0) {
+      if (partial_session) {
+        console.log(`evt:partial_session_empty,session_id:${session_id}`);
+        return new Response(JSON.stringify({ 
+          status: "partial", 
+          profile: { empty: true, partial_session: true },
+          message: "No responses yet - continue assessment"
+        }), { headers:{...corsHeaders,"Content-Type":"application/json"}});
+      }
       return new Response(JSON.stringify({ status:"success", profile:{ empty:true } }), { headers:{...corsHeaders,"Content-Type":"application/json"}});
     }
 
@@ -172,8 +186,22 @@ serve(async (req) => {
       console.error("Error fetching scoring key", kerr);
       return new Response(JSON.stringify({ status:"error", error:"Failed to fetch scoring key" }), { status:500, headers:{...corsHeaders,"Content-Type":"application/json"}});
     }
+    // Phase 3: Enhanced JSON schema validation for scoring key
     const keyByQ: Record<string, any> = {};
-    skey?.forEach((r:any)=> keyByQ[String(r.question_id)] = r);
+    skey?.forEach((r:any)=> {
+      try {
+        // Validate and sanitize JSON fields
+        const sanitizedRecord = {
+          ...r,
+          fc_map: validateJSON(r.fc_map, 'fc_map'),
+          meta: validateJSON(r.meta, 'meta', {})
+        };
+        keyByQ[String(r.question_id)] = sanitizedRecord;
+      } catch (error) {
+        console.warn(`evt:scoring_key_validation_error,session_id:${session_id},question_id:${r.question_id},error:${error.message}`);
+        keyByQ[String(r.question_id)] = { ...r, fc_map: null, meta: {} }; // Safe fallback
+      }
+    });
 
     const cfg = async (k:string) => {
       const { data } = await supabase.from("scoring_config").select("value").eq("key", k).maybeSingle();
@@ -223,7 +251,7 @@ serve(async (req) => {
       return toCommon5(vRev, scale);
     };
 
-    // ---- pass 1: normalize + aggregate ----
+    // Phase 3: Enhanced answer processing with JSON validation and sanitization
     for (const row of answers) {
       const qid = String(row.question_id);
       const rec = keyByQ[qid]; if (!rec) continue;
@@ -232,11 +260,16 @@ serve(async (req) => {
       const pair  = rec.pair_group as (string | null);
       const sd    = !!rec.social_desirability;
 
-      const raw = parseNum(row.answer_value);
+      // Phase 3: Sanitize response value before processing
+      const sanitizedValue = sanitizeResponseValue(row.answer_value);
+      const raw = parseNum(sanitizedValue);
       if (raw == null) continue;
 
       // Skip invalid values for scale type
-      if (!isValidForScale(raw, scale)) continue;
+      if (!isValidForScale(raw, scale)) {
+        console.warn(`evt:invalid_scale_value,session_id:${session_id},qid:${qid},value:${raw},scale:${scale}`);
+        continue;
+      }
 
       // reverse on native, then normalize to 1..5
       const v5 = toCommon5(rec.reverse_scored ? reverseOnNative(raw, scale) : raw, scale);
@@ -249,32 +282,50 @@ serve(async (req) => {
       if (sd) { sdSum += v5; sdN += 1; }
       if (pair) (pairs[pair] ||= []).push(v5);
 
-      // NEW: forced-choice mapping with numeric fallback and tracking
+      // Phase 3: Enhanced forced-choice mapping with safer JSON handling and numeric fallback
       if (scale?.startsWith("FORCED_CHOICE")) {
         fcAnsweredCount++; // Count FC answers
-        const rawChoice = String(row.answer_value).trim().toUpperCase();
+        const rawChoice = String(sanitizedValue).trim().toUpperCase();
         // NEW: Map numeric inputs to letters as fallback
         const letterMap: Record<string, string> = {"1":"A","2":"B","3":"C","4":"D","5":"E"};
         const choice = letterMap[rawChoice] || rawChoice;
         
-        const map = rec.fc_map ?? (scale === "FORCED_CHOICE_4" ? fcBlockDefault : null);
+        // Phase 3: Use validated fc_map from keyByQ
+        const map = validateFCMap(rec.fc_map) ?? (scale === "FORCED_CHOICE_4" ? fcBlockDefault : null);
         if (map && map[choice]) {
           const m = map[choice];
           if (["Core","Critic","Hidden","Instinct"].includes(m)) blockFCCount[m] = (blockFCCount[m] || 0) + 1;
           else if (FUNCS.includes(m)) fcFuncCount[m] = (fcFuncCount[m] || 0) + 1;
+        } else if (map) {
+          console.warn(`evt:fc_mapping_miss,session_id:${session_id},qid:${qid},choice:${choice},available:${Object.keys(map).join(',')}`);
         }
       }
 
       // attention checks handled after aggregation via attention_qids
     }
 
-    // FC completeness using configurable minimum
+    // Phase 3: Enhanced FC completeness with partial session support
     let fcCompleteness = "complete";
+    const fcCompletionRate = Math.min(1, fcAnsweredCount / fcExpectedMin);
+    
     if (fcAnsweredCount < fcExpectedMin) {
-      console.log(`evt:incomplete_fc,session_id:${session_id},fc_count:${fcAnsweredCount},expected_min:${fcExpectedMin}`);
+      console.log(`evt:incomplete_fc,session_id:${session_id},fc_count:${fcAnsweredCount},expected_min:${fcExpectedMin},completion_rate:${fcCompletionRate}`);
       fcCompleteness = "incomplete";
-      // Avoid mutating session status to a custom value that may violate DB CHECK constraints.
-      // If needed, consider storing a flag in session metadata instead.
+      
+      // Phase 3: Allow partial scoring if we have minimum viable data (>30% complete)
+      if (partial_session && fcCompletionRate < 0.3) {
+        console.log(`evt:insufficient_partial_data,session_id:${session_id},completion_rate:${fcCompletionRate}`);
+        return new Response(JSON.stringify({ 
+          status: "partial_insufficient", 
+          profile: { 
+            partial_session: true, 
+            completion_rate: fcCompletionRate,
+            fc_answered: fcAnsweredCount,
+            fc_expected: fcExpectedMin
+          },
+          message: "Need more responses for reliable results"
+        }), { headers:{...corsHeaders,"Content-Type":"application/json"}});
+      }
     }
 
     // Attention checks from config
