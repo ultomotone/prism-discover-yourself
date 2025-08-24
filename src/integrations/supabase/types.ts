@@ -244,27 +244,42 @@ export type Database = {
       }
       calibration_model: {
         Row: {
+          brier_score: number | null
+          calibration_error: number | null
           id: number
           knots: Json
           method: string
           stratum: Json
+          total_sample_size: number | null
           trained_at: string
+          training_size: number | null
+          validation_size: number | null
           version: string
         }
         Insert: {
+          brier_score?: number | null
+          calibration_error?: number | null
           id?: number
           knots: Json
           method?: string
           stratum: Json
+          total_sample_size?: number | null
           trained_at?: string
+          training_size?: number | null
+          validation_size?: number | null
           version?: string
         }
         Update: {
+          brier_score?: number | null
+          calibration_error?: number | null
           id?: number
           knots?: Json
           method?: string
           stratum?: Json
+          total_sample_size?: number | null
           trained_at?: string
+          training_size?: number | null
+          validation_size?: number | null
           version?: string
         }
         Relationships: []
