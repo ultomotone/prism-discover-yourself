@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      assessment_questions: {
+        Row: {
+          created_at: string
+          fc_map: Json | null
+          id: number
+          meta: Json | null
+          order_index: number | null
+          pair_group: string | null
+          required: boolean | null
+          reverse_scored: boolean | null
+          scale_type: string | null
+          section: string
+          tag: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fc_map?: Json | null
+          id: number
+          meta?: Json | null
+          order_index?: number | null
+          pair_group?: string | null
+          required?: boolean | null
+          reverse_scored?: boolean | null
+          scale_type?: string | null
+          section: string
+          tag?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fc_map?: Json | null
+          id?: number
+          meta?: Json | null
+          order_index?: number | null
+          pair_group?: string | null
+          required?: boolean | null
+          reverse_scored?: boolean | null
+          scale_type?: string | null
+          section?: string
+          tag?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       assessment_responses: {
         Row: {
           answer_array: string[] | null
@@ -589,6 +637,54 @@ export type Database = {
           top_gap: number | null
           type_code: string | null
           validity_pass: boolean | null
+        }
+        Relationships: []
+      }
+      assessment_questions_view: {
+        Row: {
+          created_at: string | null
+          fc_map: Json | null
+          id: number | null
+          meta: Json | null
+          order_index: number | null
+          pair_group: string | null
+          required: boolean | null
+          reverse_scored: boolean | null
+          scale_type: string | null
+          section: string | null
+          tag: string | null
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          fc_map?: Json | null
+          id?: number | null
+          meta?: Json | null
+          order_index?: number | null
+          pair_group?: string | null
+          required?: boolean | null
+          reverse_scored?: boolean | null
+          scale_type?: string | null
+          section?: string | null
+          tag?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          fc_map?: Json | null
+          id?: number | null
+          meta?: Json | null
+          order_index?: number | null
+          pair_group?: string | null
+          required?: boolean | null
+          reverse_scored?: boolean | null
+          scale_type?: string | null
+          section?: string | null
+          tag?: string | null
+          type?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -1483,6 +1579,14 @@ export type Database = {
       }
     }
     Functions: {
+      check_question_library_integrity: {
+        Args: { p_fc_expected_min?: number }
+        Returns: {
+          errors: string[]
+          ok: boolean
+          warnings: string[]
+        }[]
+      }
       check_recent_completion: {
         Args: { threshold_days?: number; user_email: string }
         Returns: {
@@ -1490,6 +1594,10 @@ export type Database = {
           has_recent_completion: boolean
           last_completion_date: string
         }[]
+      }
+      get_config_number: {
+        Args: { p_default: number; p_key: string }
+        Returns: number
       }
       get_dashboard_country_stats: {
         Args: { days_back?: number }

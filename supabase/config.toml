@@ -20,3 +20,12 @@ verify_jwt = false
 
 [functions.updateSystemStatus]
 verify_jwt = false
+
+[functions.getConfig]
+verify_jwt = false
+
+[functions.getView]
+verify_jwt = false
+
+[functions.import_questions]
+verify_jwt = false
