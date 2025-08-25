@@ -78,17 +78,20 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
         // Check if user is authenticated
         const { data: { user } } = await supabase.auth.getUser();
         
-        if (!user) {
-          setScoreError('Authentication required for scoring. Please sign up or log in to see your results.');
-          setLoadingScore(false);
-          return;
+        console.log('🔄 Proceeding with scoring, user authenticated:', !!user);
+
+        // Try to get scores using the new SQL function first (for authenticated users only)
+        let scoresData = null;
+        let scoresError = null;
+        
+        if (user) {
+          const result = await supabase.rpc('get_user_assessment_scores', { p_session_id: sessionId });
+          scoresData = result.data;
+          scoresError = result.error;
+        } else {
+          // For anonymous users, skip the SQL function and go straight to edge function
+          scoresError = new Error('Anonymous user - using edge function');
         }
-
-        console.log('✅ User authenticated, proceeding with scoring');
-
-        // Try to get scores using the new SQL function first (for authenticated users)
-        const { data: scoresData, error: scoresError } = await supabase
-          .rpc('get_user_assessment_scores', { p_session_id: sessionId });
 
         if (scoresError) {
           console.error('❌ Direct scoring failed:', scoresError);
