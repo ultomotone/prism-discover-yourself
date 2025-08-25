@@ -43,12 +43,10 @@ const Assessment = () => {
       console.log('ALL email-based sessions in database:', allEmailSessions);
       console.log('All email sessions error:', allError);
       
-      // Check for incomplete sessions with progress - including sessions marked complete but missing answers
+      // Check for incomplete sessions with progress using the new view
       const { data: sessions, error } = await supabase
-        .from('assessment_sessions')
-        .select('id, completed_questions, total_questions, created_at, email, user_id, completed_at, status')
-        .gt('completed_questions', 0)
-        .eq('status', 'in_progress')
+        .from('v_incomplete_sessions')
+        .select('id, completed_questions, total_questions, created_at, email, user_id, status')
         .order('created_at', { ascending: false })
         .limit(10);
 

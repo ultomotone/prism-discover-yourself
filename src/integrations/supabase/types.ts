@@ -132,6 +132,13 @@ export type Database = {
             foreignKeyName: "assessment_responses_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
             referencedRelation: "v_user_sessions_chrono"
             referencedColumns: ["session_id"]
           },
@@ -683,6 +690,13 @@ export type Database = {
             foreignKeyName: "assessment_responses_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
             referencedRelation: "v_user_sessions_chrono"
             referencedColumns: ["session_id"]
           },
@@ -776,6 +790,13 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -881,6 +902,13 @@ export type Database = {
             foreignKeyName: "assessment_responses_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
             referencedRelation: "v_user_sessions_chrono"
             referencedColumns: ["session_id"]
           },
@@ -902,6 +930,39 @@ export type Database = {
           top1_code: string | null
           top1_fit: number | null
           top2_fit: number | null
+        }
+        Relationships: []
+      }
+      v_incomplete_sessions: {
+        Row: {
+          completed_at: string | null
+          completed_questions: number | null
+          created_at: string | null
+          email: string | null
+          id: string | null
+          status: string | null
+          total_questions: number | null
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_questions?: number | null
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          status?: string | null
+          total_questions?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          completed_questions?: number | null
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          status?: string | null
+          total_questions?: number | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1090,6 +1151,13 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -1327,6 +1395,13 @@ export type Database = {
             foreignKeyName: "assessment_responses_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
             referencedRelation: "v_user_sessions_chrono"
             referencedColumns: ["session_id"]
           },
@@ -1352,6 +1427,13 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -1456,6 +1538,13 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
             referencedColumns: ["id"]
           },
           {

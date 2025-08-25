@@ -1,5 +1,8 @@
 project_id = "gnkuikentdtnatazeriu"
 
+[functions.getResultsBySession]
+verify_jwt = false
+
 [functions.score_prism]
 verify_jwt = false
 

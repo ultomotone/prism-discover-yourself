@@ -36,66 +36,48 @@ export default function Results() {
         const urlParams = new URLSearchParams(window.location.search);
         const shareToken = urlParams.get('token');
 
-        // First check if the session exists
-        console.log('Fetching session data for:', sessionId);
-        const { data: sessionData, error: sessionError } = await supabase
-          .from('assessment_sessions')
-          .select('completed_at, share_token, status')
-          .eq('id', sessionId)
-          .maybeSingle();
-
-        console.log('Session data:', sessionData, 'Session error:', sessionError);
-
-        if (sessionError) {
-          console.error('Session error:', sessionError);
-          setError('Assessment session not found: ' + sessionError.message);
-          setLoading(false);
-          return;
-        }
-
-        if (!sessionData) {
-          setError('No session found with the provided ID');
-          setLoading(false);
-          return;
-        }
-
-        // Enhanced routing - don't depend on email, check if completed
-        if (!sessionData.completed_at && sessionData.status !== 'completed') {
-          setError('Assessment not completed yet');
-          setLoading(false);
-          return;
-        }
-
-        // Use share token from URL or session data for access
-        const validToken = shareToken || sessionData.share_token;
-
-        // Try to get profile data using secure RPC with versioned URL to break cache
-        const version = urlParams.get('v') || 'v1.1';
-        
-        console.log('Calling get_profile_by_session with:', {
+        console.log('Calling getResultsBySession edge function with:', {
           sessionId,
-          validToken,
-          shareToken,
-          sessionToken: sessionData.share_token
+          shareToken: !!shareToken
         });
-        
-        const { data: profileData, error: profileError } = await supabase
-          .rpc('get_profile_by_session', {
-            p_session_id: sessionId,
-            p_share_token: validToken || ''
-          });
 
-        console.log('Profile data received:', profileData);
-        console.log('Profile error:', profileError);
+        // Use the secure edge function instead of direct database access
+        const { data, error } = await supabase.functions.invoke('getResultsBySession', {
+          body: { 
+            session_id: sessionId, 
+            share_token: shareToken 
+          },
+          headers: { 'cache-control': 'no-cache' }
+        });
 
-        if (profileError || !profileData) {
-          console.error('Profile fetch failed:', profileError);
-          // Show recovery UI instead of hard error
+        console.log('getResultsBySession response:', { data, error });
+
+        if (error) {
+          console.error('Edge function error:', error);
+          setError('Failed to load results: ' + error.message);
           setLoading(false);
-          setError('recovery_needed');
           return;
         }
 
+        if (!data?.ok) {
+          console.error('Access denied:', data?.reason);
+          const reason = data?.reason || 'unknown_error';
+          
+          if (reason === 'session_not_found') {
+            setError('No session found with the provided ID');
+          } else if (reason === 'access_denied') {
+            setError('recovery_needed');
+          } else if (reason === 'profile_not_found') {
+            setError('recovery_needed');
+          } else {
+            setError('Unable to load results');
+          }
+          setLoading(false);
+          return;
+        }
+
+        const profileData = data.profile;
+        
         // Check if we have an invalid UNK result and force re-scoring
         if (profileData.type_code === 'UNK') {
           console.log('Detected UNK result, triggering re-score with updated algorithm');
@@ -104,18 +86,18 @@ export default function Results() {
           console.log('[PRISM] rescore payload', { session_id: sessionId, force_recompute: true });
           
           // Force re-scoring with new algorithm
-          const { data, error } = await supabase.functions.invoke('score_prism', {
+          const { data: rescoreData, error: rescoreError } = await supabase.functions.invoke('score_prism', {
             body: { session_id: sessionId, force_recompute: true },
           });
 
           console.timeEnd('PRISM rescore');
-          console.log('[PRISM] rescore result', JSON.stringify(data, null, 2));
+          console.log('[PRISM] rescore result', JSON.stringify(rescoreData, null, 2));
 
-          if (error || !data || data.status !== 'success') {
-            console.error('[PRISM] rescore failed', error || data?.error);
-            setError(error?.message || data?.error || 'Failed to re-score results');
+          if (rescoreError || !rescoreData || rescoreData.status !== 'success') {
+            console.error('[PRISM] rescore failed', rescoreError || rescoreData?.error);
+            setError(rescoreError?.message || rescoreData?.error || 'Failed to re-score results');
           } else {
-            setScoring(data.profile);
+            setScoring(rescoreData.profile);
           }
           setLoading(false);
           return;
