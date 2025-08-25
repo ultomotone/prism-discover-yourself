@@ -93,55 +93,32 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
           scoresError = new Error('Anonymous user - using edge function');
         }
 
-        if (scoresError) {
-          console.error('❌ Direct scoring failed:', scoresError);
-          // Fallback to edge function
-          const { data, error } = await supabase.functions.invoke('finalizeAssessment', {
-            body: { session_id: sessionId }
-          });
+        // Always use edge function for proper completion and scoring
+        const { data, error } = await supabase.functions.invoke('finalizeAssessment', {
+          body: { session_id: sessionId }
+        });
 
-          if (error) {
-            throw new Error(error.message || 'Failed to finalize assessment');
-          }
+        if (error) {
+          throw new Error(error.message || 'Failed to finalize assessment');
+        }
 
-          if (data?.error) {
-            setScoreError(data.error);
-          } else if (data?.status === 'success' && data?.profile) {
-            setScoring(data.profile);
-          } else {
-            throw new Error('Invalid response from scoring service');
-          }
-        } else if ((scoresData as any)?.error) {
-          setScoreError((scoresData as any).error);
+        if (data?.error) {
+          setScoreError(data.error);
+        } else if (data?.status === 'success' && data?.profile) {
+          console.log('✅ Assessment finalized successfully:', data);
+          setScoring(data.profile);
+          
+          // Mark session as completed
+          await supabase
+            .from('assessment_sessions')
+            .update({ 
+              status: 'completed', 
+              completed_at: new Date().toISOString(),
+              completed_questions: responses?.length || 0 
+            })
+            .eq('id', sessionId);
         } else {
-          console.log('✅ Direct SQL scoring successful:', scoresData);
-          
-          // Type-safe access to the scores data
-          const typedScoresData = scoresData as any;
-          
-          // Transform scores into profile format expected by ResultsV2
-          const profile = {
-            session_id: sessionId,
-            type_code: 'pending', // Will be calculated from dimension scores
-            confidence: 'moderate',
-            dimension_scores: typedScoresData.dimension_scores,
-            forced_choice_scores: typedScoresData.forced_choice_scores,
-            likert_scores: typedScoresData.likert_scores,
-            response_count: typedScoresData.response_count,
-            calculated_at: typedScoresData.calculated_at
-          };
-
-          // Fallback to edge function for full profile generation if needed
-          const { data, error } = await supabase.functions.invoke('finalizeAssessment', {
-            body: { session_id: sessionId, dimension_scores: typedScoresData.dimension_scores }
-          });
-
-          if (!error && data?.profile) {
-            setScoring(data.profile);
-          } else {
-            // Use basic profile with direct scores
-            setScoring(profile);
-          }
+          throw new Error('Invalid response from scoring service');
         }
       } catch (err) {
         console.error('💥 Assessment scoring failed:', err);
