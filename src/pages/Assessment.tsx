@@ -46,9 +46,9 @@ const Assessment = () => {
       // Check for incomplete sessions with progress - including sessions marked complete but missing answers
       const { data: sessions, error } = await supabase
         .from('assessment_sessions')
-        .select('id, completed_questions, total_questions, created_at, email, user_id, completed_at')
+        .select('id, completed_questions, total_questions, created_at, email, user_id, completed_at, status')
         .gt('completed_questions', 0)
-        .or('completed_at.is.null,completed_questions.lt.total_questions')
+        .eq('status', 'in_progress')
         .order('created_at', { ascending: false })
         .limit(10);
 
