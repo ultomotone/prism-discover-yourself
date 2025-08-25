@@ -650,23 +650,20 @@ try {
     console.log('Current question index:', currentQuestionIndex);
     
     try {
-      // Check for session conflicts first
-      const { data, error } = await supabase.functions.invoke('start_assessment', {
-        body: { email, force_new: false }
-      });
-
-      if (error) {
-        console.error('❌ Error checking session conflicts:', error);
-        toast({
-          title: "Error",
-          description: "Failed to check existing sessions. Please try again.",
-          variant: "destructive",
+      // Check for session conflicts via edge function, but do not block on failure
+      let conflictData: any | null = null;
+      try {
+        const { data, error } = await supabase.functions.invoke('start_assessment', {
+          body: { email, force_new: false }
         });
-        return;
+        if (error) throw error;
+        conflictData = data as any;
+      } catch (err) {
+        console.warn('⚠️ start_assessment check failed, proceeding without conflict gate:', err);
       }
 
-      // Handle different response scenarios
-      if (data.status === 'resumed') {
+      // Handle different response scenarios when edge function is available
+      if (conflictData?.status === 'resumed') {
         // User has an active session
         setSessionConflict({
           type: 'resume',
@@ -675,12 +672,12 @@ try {
         return;
       }
 
-      if (data.has_recent_completion) {
+      if (conflictData?.has_recent_completion) {
         // User has recent completion
         setSessionConflict({
           type: 'recent_completion',
           email: email,
-          daysSinceCompletion: data.days_since_completion
+          daysSinceCompletion: conflictData.days_since_completion
         });
         return;
       }
