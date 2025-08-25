@@ -1,13 +1,26 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0'
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+type ScoreInput = { session_id: string; responses: any[] };
+
+const url = Deno.env.get("SUPABASE_URL")!;
+const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const supabase = createClient(url, key);
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',  
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Cache-Control': 'no-store'
-}
+};
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const json = (body: any, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 
+      "Content-Type": "application/json", 
+      ...corsHeaders
+    },
+  });
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -30,8 +43,7 @@ Deno.serve(async (req) => {
 
     console.log('finalizeAssessment called for session:', session_id, 'responses:', responses?.length || 0)
 
-    // Create service role client to bypass RLS
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    // Use the service role client defined at module level
 
     // Check if profile already exists for this session
     const { data: existingProfile } = await supabase
