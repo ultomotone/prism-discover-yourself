@@ -78,6 +78,7 @@ export type Database = {
           response_time_ms: number | null
           section_id: string | null
           session_id: string
+          updated_at: string | null
           valid_bool: boolean | null
           value_coded: string | null
         }
@@ -96,6 +97,7 @@ export type Database = {
           response_time_ms?: number | null
           section_id?: string | null
           session_id: string
+          updated_at?: string | null
           valid_bool?: boolean | null
           value_coded?: string | null
         }
@@ -114,6 +116,7 @@ export type Database = {
           response_time_ms?: number | null
           section_id?: string | null
           session_id?: string
+          updated_at?: string | null
           valid_bool?: boolean | null
           value_coded?: string | null
         }
