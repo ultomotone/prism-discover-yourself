@@ -1,182 +1,183 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { PrismConfigManager } from '../_shared/config.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': '*',  
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Cache-Control': 'no-store'
 }
+
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    // Initialize Supabase client and configuration manager
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-    
-    const configManager = new PrismConfigManager(supabase);
-
-    // Parse session_id from the request JSON body
-    const { session_id } = await req.json();
+    const { session_id, responses } = await req.json()
     
     if (!session_id) {
       return new Response(
-        JSON.stringify({ error: 'session_id is required' }),
+        JSON.stringify({ ok: false, error: 'session_id is required' }),
         { 
           status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      );
+      )
     }
 
-    console.log(`Processing finalization for session: ${session_id} using PRISM ${configManager.getVersion()}`);
+    console.log('finalizeAssessment called for session:', session_id, 'responses:', responses?.length || 0)
 
-    // Check if a profile already exists for the given session_id and return cached results if it does
+    // Create service role client to bypass RLS
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Check if profile already exists for this session
     const { data: existingProfile } = await supabase
       .from('profiles')
       .select('*')
       .eq('session_id', session_id)
-      .maybeSingle();
+      .single()
 
     if (existingProfile) {
-      console.log('Profile already exists, returning cached result');
-      const origin = req.headers.get('origin') || 'https://prism-discover-yourself.lovable.app';
-      const resultsUrl = `${origin.replace(/\/$/, '')}/results/${session_id}`;
-
-      const profileOut = {
-        session_id,
-        type_code: (existingProfile as any).type_code,
-        results_version: (existingProfile as any).results_version ?? (existingProfile as any).version ?? 'v1.2.0',
-        score_fit_calibrated: (existingProfile as any).score_fit_calibrated ?? null,
-        top_types: (existingProfile as any).top_types ?? [],
-        type_scores: (existingProfile as any).type_scores ?? {},
-        ...(existingProfile as any)
-      };
+      console.log('Profile already exists for session:', session_id)
+      // Update session status and return existing profile
+      const { data: sessionData } = await supabase
+        .from('assessment_sessions')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          completed_questions: responses?.length || existingProfile.fc_answered_ct || 0
+        })
+        .eq('id', session_id)
+        .select('share_token')
+        .single()
 
       return new Response(
-        JSON.stringify({
+        JSON.stringify({ 
+          ok: true, 
           status: 'success',
-          resultsUrl,
-          profile: profileOut
+          session_id, 
+          share_token: sessionData?.share_token,
+          profile: existingProfile
         }),
         { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      );
+      )
     }
 
-    // Retrieve assessment session data and update its status to 'completed'
+    // Fetch session data
     const { data: sessionData, error: sessionError } = await supabase
       .from('assessment_sessions')
       .select('*')
       .eq('id', session_id)
-      .single();
+      .single()
 
-    if (sessionError) {
-      console.error('Session retrieval error:', sessionError);
+    if (sessionError || !sessionData) {
+      console.error('Session not found:', sessionError)
       return new Response(
-        JSON.stringify({ error: 'Session not found' }),
+        JSON.stringify({ ok: false, error: 'Session not found' }),
         { 
           status: 404, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      );
+      )
     }
 
-    // Mark session as completed (best effort)
-    await supabase
-      .from('assessment_sessions')
-      .update({ 
-        status: 'completed', 
-        completed_at: new Date().toISOString() 
-      })
-      .eq('id', session_id);
+    console.log('Processing finalization for session:', session_id, 'using PRISM v1.2.0')
 
-    // Invoke the 'score_prism' Supabase function to generate assessment results
-    console.log('Invoking score_prism function');
-    const { data: scoringData, error: scoringError } = await supabase.functions.invoke('score_prism', {
+    // Invoke the score_prism function to compute results
+    console.log('Invoking score_prism function')
+    const { data: scoringResult, error: scoringError } = await supabase.functions.invoke('score_prism', {
       body: { session_id }
-    });
+    })
 
-    // Handle errors during scoring or if the scoring result is invalid
     if (scoringError) {
-      console.error('Scoring error:', scoringError);
+      console.error('Scoring function error:', scoringError)
       return new Response(
         JSON.stringify({ 
-          status: 'error',
-          message: 'Scoring failed',
-          details: scoringError.message 
+          ok: false, 
+          error: `Scoring failed: ${scoringError.message}` 
+        }),
+        { 
+          status: 422, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    if (!scoringResult || scoringResult.status !== 'success') {
+      console.error('Invalid scoring result shape:', JSON.stringify(scoringResult, null, 2))
+      return new Response(
+        JSON.stringify({ 
+          ok: false, 
+          error: `Invalid scoring result: ${scoringResult?.error || 'Unknown error'}` 
+        }),
+        { 
+          status: 422, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Update session as completed with share token
+    const shareToken = sessionData.share_token || crypto.randomUUID()
+    
+    const { error: sessionUpdateError } = await supabase
+      .from('assessment_sessions')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        completed_questions: responses?.length || scoringResult.profile?.fc_answered_ct || 0,
+        share_token: shareToken
+      })
+      .eq('id', session_id)
+
+    if (sessionUpdateError) {
+      console.error('Session update error:', sessionUpdateError)
+      return new Response(
+        JSON.stringify({ 
+          ok: false, 
+          error: `Failed to update session: ${sessionUpdateError.message}` 
         }),
         { 
           status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      );
+      )
     }
 
-    // Extract the actual profile from the scoring response
-    const profile = scoringData?.profile;
-    if (!profile?.type_code) {
-      console.error('Invalid scoring result shape:', scoringData);
-      return new Response(
-        JSON.stringify({ 
-          status: 'error',
-          message: 'Invalid scoring result shape',
-          details: 'Missing profile or type_code'
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
+    console.log('Assessment finalized successfully for session:', session_id)
 
-    // Construct and return a results URL along with the profile data
-    const origin = req.headers.get('origin') || 'https://prism-discover-yourself.lovable.app';
-    const resultsUrl = `${origin.replace(/\/$/, '')}/results/${session_id}`;
-    
-    console.log('Assessment finalization completed successfully');
-    
-    const profileOut = {
-      session_id,
-      type_code: (profile as any).type_code,
-      results_version: (profile as any).results_version ?? (profile as any).version ?? 'v1.2.0',
-      score_fit_calibrated: (profile as any).score_fit_calibrated ?? null,
-      top_types: (profile as any).top_types ?? [],
-      type_scores: (profile as any).type_scores ?? {},
-      ...(profile as any)
-    };
-    
+    const resultsUrl = `${req.headers.get('origin') || 'https://prismassessment.com'}/results/${session_id}?token=${shareToken}`
+
     return new Response(
       JSON.stringify({ 
+        ok: true,
         status: 'success',
-        resultsUrl,
-        profile: profileOut
+        session_id,
+        share_token: shareToken,
+        profile: scoringResult.profile,
+        results_url: resultsUrl
       }),
       { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
-    );
+    )
 
   } catch (error) {
-    // Include error handling for unexpected issues during the process
-    console.error('Unexpected error in finalizeAssessment:', error);
+    console.error('Error in finalizeAssessment:', error)
     return new Response(
       JSON.stringify({ 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        ok: false, 
+        error: error.message || 'Internal server error' 
       }),
       { 
         status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
-    );
+    )
   }
 })

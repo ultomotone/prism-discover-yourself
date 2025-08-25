@@ -93,9 +93,9 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
           scoresError = new Error('Anonymous user - using edge function');
         }
 
-        // Always use edge function for proper completion and scoring
+        // Use finalizeAssessment edge function for proper completion and scoring
         const { data, error } = await supabase.functions.invoke('finalizeAssessment', {
-          body: { session_id: sessionId }
+          body: { session_id: sessionId, responses }
         });
 
         if (error) {
@@ -104,21 +104,16 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
 
         if (data?.error) {
           setScoreError(data.error);
-        } else if (data?.status === 'success' && data?.profile) {
+        } else if (data?.ok && data?.profile) {
           console.log('✅ Assessment finalized successfully:', data);
           setScoring(data.profile);
           
-          // Mark session as completed
-          await supabase
-            .from('assessment_sessions')
-            .update({ 
-              status: 'completed', 
-              completed_at: new Date().toISOString(),
-              completed_questions: responses?.length || 0 
-            })
-            .eq('id', sessionId);
+          // Store share token for URL generation
+          if (data.share_token) {
+            setShareToken(data.share_token);
+          }
         } else {
-          throw new Error('Invalid response from scoring service');
+          throw new Error(data?.error || 'Invalid response from scoring service');
         }
       } catch (err) {
         console.error('💥 Assessment scoring failed:', err);
@@ -271,8 +266,13 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
                 <code className="text-muted-foreground">{sessionId}</code>
                 <Button
                   onClick={() => {
-                    navigator.clipboard.writeText(sessionId);
-                    toast({ title: "Session ID copied to clipboard" });
+                    const diagnostics = {
+                      session_id: sessionId,
+                      error: scoreError,
+                      timestamp: new Date().toISOString()
+                    };
+                    navigator.clipboard.writeText(JSON.stringify(diagnostics, null, 2));
+                    toast({ title: "Diagnostics copied to clipboard" });
                   }}
                   variant="ghost"
                   size="sm"

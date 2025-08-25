@@ -3,6 +3,9 @@ project_id = "gnkuikentdtnatazeriu"
 [functions.getResultsBySession]
 verify_jwt = false
 
+[functions.finalizeAssessment]
+verify_jwt = false
+
 [functions.score_prism]
 verify_jwt = false
 
@@ -16,9 +19,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.chatgpt-gateway]
-verify_jwt = false
-
-[functions.finalizeAssessment]
 verify_jwt = false
 
 [functions.updateSystemStatus]
