@@ -18,7 +18,7 @@ const PRISMRelationalFit = () => {
     {
       dimension: "State Overlay (N+/N0/N–)",
       focus: "Current emotional/cognitive state weighting",
-      influence: "Partners' typical positivity vs. stress. Dominant N+ states (good emotion regulation) enhance harmony; dominant N– states (stress) strain interactions."
+      influence: "Partners' typical regulation vs. stress. Dominant N− states (good regulation) enhance harmony; dominant N+ states (stress) strain interactions."
     },
     {
       dimension: "Trait Modifiers (Big Five)",
@@ -46,10 +46,10 @@ const PRISMRelationalFit = () => {
       term: "Core Alignment",
       definition: "The baseline compatibility from each person's core personality type or dominant style. High core alignment means both partners' main approaches naturally fit together."
     },
-    {
-      term: "State Overlay",
-      definition: "A layer describing each partner's typical state balance (N+, N0, N–). N+ indicates frequent positive/reactive states; N– indicates stress/negativity. This overlay adjusts fit based on day‑to‑day moods and regulation."
-    },
+      {
+        term: "State Overlay",
+        definition: "A layer describing each partner's typical state balance (N+, N0, N−). N− indicates frequent calm/regulated states (lifts fit); N+ indicates stress/reactivity (lowers fit). This overlay adjusts fit based on day‑to‑day moods and regulation."
+      },
     {
       term: "Trait Modifiers",
       definition: "The influence of Big Five personality traits on fit. For example, high agreeableness or conscientiousness tends to strengthen fit, while high neuroticism tends to weaken it."
@@ -246,6 +246,7 @@ const PRISMRelationalFit = () => {
               <p className="text-lg leading-relaxed">
                 <strong>State Overlay (N+/N0/N–)</strong> adds a dynamic layer of each person&apos;s current emotional/cognitive state. 
                 Daily mood and regulation affect fit: effective emotion regulation promotes emotional stability and relationship resilience.
+                N− (calm) lifts fit; N+ (stress) lowers fit.
               </p>
               <p className="text-lg leading-relaxed">
                 <strong>Trait Modifiers (Big Five Overlays)</strong> further adjust fit through personality dimensions that 
@@ -267,20 +268,44 @@ const PRISMRelationalFit = () => {
               <div className="grid grid-cols-[120px_1fr] gap-3 items-center">
                 <div className="text-right text-muted-foreground">Person A</div>
                 <div className="flex h-4 rounded-lg overflow-hidden border border-border">
-                  <div className="flex-[60] bg-rf-supportive" title="N+ 60%"></div>
-                  <div className="flex-[25] bg-muted" title="N0 25%"></div>
-                  <div className="flex-[15] bg-rf-friction" title="N– 15%"></div>
+                  <div className="flex-[60] bg-rf-supportive" title="N- 60% (Reg+: Calm)"></div>
+                  <div className="flex-[25] bg-muted" title="N0 25% (Reg0: Neutral)"></div>
+                  <div className="flex-[15] bg-rf-friction" title="N+ 15% (Reg-: Stressed)"></div>
                 </div>
                 <div className="text-right text-muted-foreground">Person B</div>
                 <div className="flex h-4 rounded-lg overflow-hidden border border-border">
-                  <div className="flex-[50] bg-rf-supportive" title="N+ 50%"></div>
-                  <div className="flex-[30] bg-muted" title="N0 30%"></div>
-                  <div className="flex-[20] bg-rf-friction" title="N– 20%"></div>
+                  <div className="flex-[50] bg-rf-supportive" title="N- 50% (Reg+: Calm)"></div>
+                  <div className="flex-[30] bg-muted" title="N0 30% (Reg0: Neutral)"></div>
+                  <div className="flex-[20] bg-rf-friction" title="N+ 20% (Reg-: Stressed)"></div>
                 </div>
               </div>
             </div>
-            <p className="text-center text-muted-foreground text-sm mt-4">
-              More N+ generally lifts fit; more N– generally lowers it (by lane, not just globally).
+            <p className="text-sm text-muted-foreground mt-4">
+              <strong>State Overlay.</strong> We show <em>Reg+/0/−</em> as a friendlier alias for Neuroticism states:
+              <em> Reg+ = N− (calm)</em>, <em>Reg0 = N0</em>, <em>Reg− = N+ (stressed)</em>.
+              More Reg+ generally raises fit; more Reg− generally lowers it.
+            </p>
+            <div className="mt-3 flex justify-center">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm bg-green-500 text-white">
+                  <strong>Reg+</strong>
+                  <span className="opacity-90">(N−)</span>
+                  <span className="opacity-80">· Calm, well-regulated</span>
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm bg-gray-300 text-gray-900">
+                  <strong>Reg0</strong>
+                  <span className="opacity-90">(N0)</span>
+                  <span className="opacity-80">· Neutral</span>
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm bg-red-500 text-white">
+                  <strong>Reg−</strong>
+                  <span className="opacity-90">(N+)</span>
+                  <span className="opacity-80">· Stressed, reactive</span>
+                </span>
+              </div>
+            </div>
+            <p className="text-center text-muted-foreground text-sm mt-2">
+              <strong>Rule:</strong> More N− (Reg+) generally raises fit; more N+ (Reg−) generally lowers it (weighted per lane).
             </p>
           </Card>
         </section>
@@ -348,7 +373,7 @@ const PRISMRelationalFit = () => {
             <CardContent>
               <ul className="space-y-2 text-sm">
                 <li><strong>Core Alignment:</strong> High (adjacent–complementary)</li>
-                <li><strong>State Overlay:</strong> Mostly N+ / N0 → uplift; occasional N– dips stall pacing</li>
+                <li><strong>State Overlay:</strong> Mostly N− / N0 → uplift; occasional N+ dips lower fit</li>
                 <li><strong>Trait Modifiers:</strong> High Agreeableness (+), Moderate Conscientiousness (+), Low Neuroticism (+)</li>
                 <li><strong>Supply↔Demand:</strong> 3 lanes green, 1 yellow (Care/Boundaries), 1 red (Sensing/Timing)</li>
                 <li><strong>Fit Band:</strong> 🟨 Stretch → close to 🟩 with pacing rituals</li>
@@ -477,7 +502,7 @@ const PRISMRelationalFit = () => {
               {
                 step: 3,
                 title: "Weigh by Regulation State",
-                description: "N+ lifts capacity to supply and tolerance for unmet demand. N– shrinks supply and inflates demand."
+                description: "N− lifts capacity to supply and tolerance for unmet demand. N+ shrinks supply and inflates demand."
               },
               {
                 step: 4,
@@ -531,8 +556,8 @@ const PRISMRelationalFit = () => {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-semibold mb-2">States:</h4>
-                    <p className="text-sm text-muted-foreground">A: 65% N+, 25% N0, 10% N–</p>
-                    <p className="text-sm text-muted-foreground">B: 55% N+, 30% N0, 15% N–</p>
+                    <p className="text-sm text-muted-foreground">A: 65% N− (Reg+), 25% N0, 10% N+ (Reg−)</p>
+                    <p className="text-sm text-muted-foreground">B: 55% N− (Reg+), 30% N0, 15% N+ (Reg−)</p>
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">Traits:</h4>
@@ -559,8 +584,8 @@ const PRISMRelationalFit = () => {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-semibold mb-2">States:</h4>
-                    <p className="text-sm text-muted-foreground">A: 25% N+, 35% N0, 40% N– (under stress)</p>
-                    <p className="text-sm text-muted-foreground">B: 60% N+, 25% N0, 15% N–</p>
+                    <p className="text-sm text-muted-foreground">A: 25% N− (Reg+), 35% N0, 40% N+ (Reg−) (under stress)</p>
+                    <p className="text-sm text-muted-foreground">B: 60% N− (Reg+), 25% N0, 15% N+ (Reg−)</p>
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">Traits:</h4>

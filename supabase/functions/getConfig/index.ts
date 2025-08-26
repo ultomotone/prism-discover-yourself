@@ -68,6 +68,12 @@ serve(async (req) => {
     const defaults = {
       results_version: "v1.1.2",
       fc_expected_min: 24,
+      // State weighting used by fit/scoring UIs (can be tuned later)
+      state_weights: {
+        "N+": -0.15,  // higher neuroticism (stress) lowers fit
+        "N0":  0.00,
+        "N-":  0.15   // lower neuroticism (calm) raises fit
+      },
       dim_thresholds: { one: 2.1, two: 3.0, three: 3.8 },
       neuro_norms: { mean: 3, sd: 1 },
       system_status: { status: "ok", message: "PRISM online", last_updated: null, updated_by: "admin" },

@@ -81,8 +81,9 @@ export const AdminFilters: React.FC<AdminFiltersProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Overlays</SelectItem>
-                <SelectItem value="+">Positive (+)</SelectItem>
-                <SelectItem value="–">Negative (–)</SelectItem>
+                <SelectItem value="+">Reg− (N+) - Stressed</SelectItem>
+                <SelectItem value="0">Reg0 (N0) - Neutral</SelectItem>
+                <SelectItem value="-">Reg+ (N−) - Calm</SelectItem>
               </SelectContent>
             </Select>
           </div>

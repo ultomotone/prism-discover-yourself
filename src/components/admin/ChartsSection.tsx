@@ -68,16 +68,22 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ data, onExport }) 
           <ResponsiveContainer width="100%" height={300}>
             {data.overlayDistribution.length > 0 ? (
               <PieChart>
-                <Pie
-                  data={data.overlayDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ overlay, count }) => `${overlay}: ${count}`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
-                >
+                  <Pie
+                    data={data.overlayDistribution.map(item => ({
+                      ...item,
+                      displayOverlay: item.overlay === '+' ? 'Reg− (N+) - Stressed' : 
+                                      item.overlay === '0' ? 'Reg0 (N0) - Neutral' :
+                                      item.overlay === '-' ? 'Reg+ (N−) - Calm' : 
+                                      item.overlay
+                    }))}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ displayOverlay, count }) => `${displayOverlay}: ${count}`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="count"
+                  >
                   {data.overlayDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}

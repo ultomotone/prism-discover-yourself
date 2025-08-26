@@ -262,7 +262,7 @@ export const LatestAssessmentsTable = () => {
                         Type <HelpCircle className="h-3 w-3 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>PRISM personality type (e.g., LIE, IEI) with overlay (+/−) indicating stress state</p>
+                        <p>PRISM personality type (e.g., LIE, IEI) with overlay indicating regulation state: N− (Reg+) = calm/regulated, N+ (Reg−) = stressed/reactive</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

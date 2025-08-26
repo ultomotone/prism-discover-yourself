@@ -172,9 +172,9 @@ export function coreScore(A: string, B: string): number {
 
 // State interface
 export interface StateProfile {
-  Np: number; // N+ positive state %
+  Np: number; // N− calm/regulated state %
   N0: number; // N0 neutral state %
-  Nn: number; // N- negative state %
+  Nn: number; // N+ stressed/reactive state %
 }
 
 // Trait interface
@@ -214,6 +214,7 @@ export interface FitInput {
 export function fitScore(input: FitInput): number {
   const core = coreScore(input.A, input.B); // 0-50
   
+  // Corrected state adjustment: N− (calm) positive, N+ (stress) negative
   const stateAdj = Math.round(10 * (
     (input.state.A.Np - input.state.A.Nn) + 
     (input.state.B.Np - input.state.B.Nn)
@@ -246,7 +247,7 @@ export function band(score: number): "Supportive" | "Stretch" | "Friction" {
 }
 
 // Default neutral profiles for demos
-export const defaultState: StateProfile = { Np: 50, N0: 30, Nn: 20 };
+export const defaultState: StateProfile = { Np: 50, N0: 30, Nn: 20 }; // 50% calm, 30% neutral, 20% stressed
 export const defaultTraits: TraitProfile = { O: 50, C: 50, E: 50, A: 50, N: 50 };
 export const defaultLanes: LanesProfile = { structure: 0, care: 0, energy: 0, sensing: 0, insight: 0 };
 

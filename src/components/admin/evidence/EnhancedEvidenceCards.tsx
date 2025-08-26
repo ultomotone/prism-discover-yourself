@@ -35,7 +35,7 @@ export const OverlayInvarianceCard: React.FC<{
   onExportCSV: () => void;
   loading?: boolean;
 }> = ({ data, onExportCSV, loading = false }) => {
-  const definition = "Consistency of type calls across positive (+) and negative (–) overlay states. Lower delta indicates overlay doesn't bias core type assessment.";
+  const definition = "Consistency of type calls across regulation states. N− (Reg+) = calm/regulated, N+ (Reg−) = stressed/reactive. Lower delta indicates overlay doesn't bias core type assessment.";
   
   return (
     <EvidenceKPICard
@@ -49,7 +49,7 @@ export const OverlayInvarianceCard: React.FC<{
       loading={loading}
     >
       <div className="text-sm text-muted-foreground p-4 text-center">
-        Analysis of type stability across neuroticism overlay conditions.
+        Analysis of type stability across regulation state conditions: N− (calm) lifts fit; N+ (stress) lowers fit.
       </div>
     </EvidenceKPICard>
   );

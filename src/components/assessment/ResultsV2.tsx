@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, Check, Square, TrendingUp, TrendingDown, Users,
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TYPE_CORE_DESCRIPTIONS } from "@/data/typeCoreDescriptions";
 import { prismTypes } from "@/data/prismTypes";
+import { StateLegend } from "@/components/common/StateLegend";
 
 // thresholds for labels (tune later)
 const LABEL_THRESH = {
@@ -171,7 +172,7 @@ const GLOSSARY = {
   },
   overlay: {
     label: "Neuro Overlay",
-    text: "'+' = more reactive (higher neuroticism), '–' = steadier (lower). Tints how your type expresses under pressure."
+    text: "'+' = more reactive (higher neuroticism/stress), '–' = steadier (lower neuroticism/calm). Tints how your type expresses under pressure."
   },
   states: {
     label: "States",
@@ -192,7 +193,7 @@ const GLOSSARY = {
   },
   overlayDetailed: {
     label: "Overlay ±",
-    text: "Day-state tint; '+' = more reactive; '–' = steadier. Core type doesn't change."
+    text: "Regulation state tint; '+' = more reactive/stressed (N+); '–' = calmer/regulated (N−). Core type doesn't change."
   }
 };
 
@@ -740,9 +741,18 @@ function StateOverlaySection({ overlay }: { overlay: string }) {
           <h2 className="text-xl font-bold mb-2 text-primary">
             State Overlay: {data.label} ({overlay})
           </h2>
-          <p className="text-lg leading-relaxed text-muted-foreground">
+          <p className="text-lg leading-relaxed text-muted-foreground mb-4">
             {data.description}
           </p>
+          
+          <div className="mb-2">
+            <p className="text-sm text-muted-foreground mb-3">
+              <strong>State Overlay.</strong> We show <em>Reg+/0/−</em> as a friendlier alias for Neuroticism states:
+              <em> Reg+ = N− (calm)</em>, <em>Reg0 = N0</em>, <em>Reg− = N+ (stressed)</em>.
+              More Reg+ generally raises fit; more Reg− generally lowers it.
+            </p>
+            <StateLegend />
+          </div>
         </div>
       </div>
     </section>
