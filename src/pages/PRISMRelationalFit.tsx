@@ -179,8 +179,57 @@ const PRISMRelationalFit = () => {
           </Card>
         </section>
 
+        {/* Table of Contents */}
+        <nav id="toc" className="mb-8 p-4 border border-border rounded-lg bg-muted/30">
+          <div className="font-semibold mb-3">On this page</div>
+          <ol className="ml-5 space-y-1 text-sm">
+            <li><a href="#overview" className="text-primary hover:underline">Overview</a></li>
+            <li>
+              <a href="#fit-dimensions" className="text-primary hover:underline">PRISM Fit Dimensions</a>
+              <ul className="ml-4 mt-1 space-y-1">
+                <li><a href="#core-alignment" className="text-primary hover:underline">Core Alignment (Level-1 fit)</a></li>
+                <li><a href="#state-overlay" className="text-primary hover:underline">State Overlay (N+/N0/N–)</a></li>
+                <li><a href="#trait-modifiers" className="text-primary hover:underline">Trait Modifiers (Big Five)</a></li>
+                <li><a href="#supply-demand" className="text-primary hover:underline">Supply ↔ Demand Balance</a></li>
+                <li><a href="#fit-bands" className="text-primary hover:underline">Fit Bands (Supportive • Stretch • Friction)</a></li>
+              </ul>
+            </li>
+            <li><a href="#flow" className="text-primary hover:underline">How It Works: 7-Step Flow</a></li>
+            <li><a href="#examples" className="text-primary hover:underline">Examples</a></li>
+            <li><a href="#definitions" className="text-primary hover:underline">Key Definitions</a></li>
+          </ol>
+        </nav>
+
+        {/* TL;DR Section */}
+        <section className="max-w-4xl mx-auto mb-8 p-4 border border-border rounded-lg text-center bg-muted/20">
+          <h2 className="text-xl font-bold mb-2">PRISM Relational Fit — TL;DR</h2>
+          <p className="text-muted-foreground">
+            We estimate how two people connect using five layers: <strong>Core Alignment</strong> (baseline type match), 
+            <strong> State Overlay</strong> (N+/N0/N– regulation), <strong> Trait Modifiers</strong> (Big Five), 
+            <strong> Supply↔Demand</strong> (what you give vs. need), and a simple <strong> Fit Band</strong> (Supportive • Stretch • Friction).
+          </p>
+        </section>
+
+        {/* Visual Key */}
+        <section className="max-w-4xl mx-auto mb-8">
+          <div className="flex gap-3 justify-center flex-wrap mb-3">
+            <span className="px-3 py-2 rounded-full bg-rf-supportive/20 border border-rf-supportive/30 text-sm">
+              🟩 Supportive
+            </span>
+            <span className="px-3 py-2 rounded-full bg-rf-stretch/20 border border-rf-stretch/30 text-sm">
+              🟨 Stretch
+            </span>
+            <span className="px-3 py-2 rounded-full bg-rf-friction/20 border border-rf-friction/30 text-sm">
+              🟥 Friction
+            </span>
+          </div>
+          <p className="text-center text-muted-foreground text-sm">
+            Colors reflect the overall roll-up after weighting Core, State, Traits, and Supply↔Demand.
+          </p>
+        </section>
+
         {/* Overview */}
-        <section className="mb-12">
+        <section id="overview" className="mb-12">
           <Card className="prism-shadow-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
@@ -195,20 +244,124 @@ const PRISMRelationalFit = () => {
                 personality types and roles. People tend to feel secure when their partner complements their preferred style.
               </p>
               <p className="text-lg leading-relaxed">
-                <strong>State Overlay (N+/N0/N–)</strong> adds a dynamic layer of each person's current emotional/cognitive state. 
+                <strong>State Overlay (N+/N0/N–)</strong> adds a dynamic layer of each person&apos;s current emotional/cognitive state. 
                 Daily mood and regulation affect fit: effective emotion regulation promotes emotional stability and relationship resilience.
               </p>
               <p className="text-lg leading-relaxed">
                 <strong>Trait Modifiers (Big Five Overlays)</strong> further adjust fit through personality dimensions that 
                 influence how partners communicate and handle conflict. Supply–Demand Balance considers what each partner 
-                brings vs. needs, requiring balance where each partner's supply meets the other's demand.
+                brings vs. needs, requiring balance where each partner&apos;s supply meets the other&apos;s demand.
+              </p>
+              <p className="text-lg leading-relaxed italic text-muted-foreground">
+                PRISM does not prescribe relationships; it highlights patterns so you can choose wiser.
               </p>
             </CardContent>
           </Card>
         </section>
 
+        {/* State Overlay Visualization */}
+        <section className="max-w-4xl mx-auto mb-8">
+          <h3 id="state-overlay" className="text-2xl font-bold text-center mb-4">State Overlay (N+/N0/N–)</h3>
+          <Card className="p-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-[120px_1fr] gap-3 items-center">
+                <div className="text-right text-muted-foreground">Person A</div>
+                <div className="flex h-4 rounded-lg overflow-hidden border border-border">
+                  <div className="flex-[60] bg-rf-supportive" title="N+ 60%"></div>
+                  <div className="flex-[25] bg-muted" title="N0 25%"></div>
+                  <div className="flex-[15] bg-rf-friction" title="N– 15%"></div>
+                </div>
+                <div className="text-right text-muted-foreground">Person B</div>
+                <div className="flex h-4 rounded-lg overflow-hidden border border-border">
+                  <div className="flex-[50] bg-rf-supportive" title="N+ 50%"></div>
+                  <div className="flex-[30] bg-muted" title="N0 30%"></div>
+                  <div className="flex-[20] bg-rf-friction" title="N– 20%"></div>
+                </div>
+              </div>
+            </div>
+            <p className="text-center text-muted-foreground text-sm mt-4">
+              More N+ generally lifts fit; more N– generally lowers it (by lane, not just globally).
+            </p>
+          </Card>
+        </section>
+
+        {/* Supply-Demand Grid */}
+        <section id="supply-demand" className="max-w-4xl mx-auto mb-8">
+          <h3 className="text-2xl font-bold text-center mb-4">Supply ↔ Demand Balance</h3>
+          <Card className="overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-3 font-medium">Lane</th>
+                    <th className="text-center p-3 font-medium">Person A supplies</th>
+                    <th className="text-center p-3 font-medium">Person B needs</th>
+                    <th className="text-center p-3 font-medium">Match</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-muted">
+                    <td className="p-3">Structure / Clarity</td>
+                    <td className="text-center p-3">High</td>
+                    <td className="text-center p-3">Medium</td>
+                    <td className="text-center p-3">🟩</td>
+                  </tr>
+                  <tr className="border-b border-muted">
+                    <td className="p-3">Care / Boundaries</td>
+                    <td className="text-center p-3">Low</td>
+                    <td className="text-center p-3">High</td>
+                    <td className="text-center p-3">🟨</td>
+                  </tr>
+                  <tr className="border-b border-muted">
+                    <td className="p-3">Energy / Initiation</td>
+                    <td className="text-center p-3">High</td>
+                    <td className="text-center p-3">Low</td>
+                    <td className="text-center p-3">🟩</td>
+                  </tr>
+                  <tr className="border-b border-muted">
+                    <td className="p-3">Sensing / Timing</td>
+                    <td className="text-center p-3">Low</td>
+                    <td className="text-center p-3">Low</td>
+                    <td className="text-center p-3">🟥</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3">Insight / Meaning</td>
+                    <td className="text-center p-3">Medium</td>
+                    <td className="text-center p-3">Medium</td>
+                    <td className="text-center p-3">🟩</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="p-3 text-center text-muted-foreground text-sm border-t border-muted">
+              Green = supply meets demand; Yellow = partial; Red = unmet or mismatched.
+            </div>
+          </Card>
+        </section>
+
+        {/* Relationship Summary Card */}
+        <section className="max-w-4xl mx-auto mb-8">
+          <Card className="p-4 border-2">
+            <CardHeader className="pb-2">
+              <CardTitle>Relationship Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-sm">
+                <li><strong>Core Alignment:</strong> High (adjacent–complementary)</li>
+                <li><strong>State Overlay:</strong> Mostly N+ / N0 → uplift; occasional N– dips stall pacing</li>
+                <li><strong>Trait Modifiers:</strong> High Agreeableness (+), Moderate Conscientiousness (+), Low Neuroticism (+)</li>
+                <li><strong>Supply↔Demand:</strong> 3 lanes green, 1 yellow (Care/Boundaries), 1 red (Sensing/Timing)</li>
+                <li><strong>Fit Band:</strong> 🟨 Stretch → close to 🟩 with pacing rituals</li>
+              </ul>
+              <div className="mt-3 text-sm text-muted-foreground">
+                <strong>Two tiny habits:</strong> (1) 15-min weekly pacing sync. (2) "Pause word" when values feel overridden.
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
         {/* Fit Dimensions Table */}
-        <section className="mb-12">
+        <section id="fit-dimensions" className="mb-12">
           <h2 className="text-3xl font-bold mb-6 text-center">PRISM Fit Dimensions</h2>
           <div className="overflow-x-auto">
             <div className="min-w-full space-y-4">
@@ -228,7 +381,7 @@ const PRISMRelationalFit = () => {
         </section>
 
         {/* Fit Bands */}
-        <section className="mb-12">
+        <section id="fit-bands" className="mb-12">
           <h2 className="text-3xl font-bold mb-6 text-center">Fit Bands</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <Card className="prism-shadow-card border-green-200 bg-green-50/50">
@@ -307,7 +460,7 @@ const PRISMRelationalFit = () => {
         </section>
 
         {/* 7-Step Flow */}
-        <section className="mb-12">
+        <section id="flow" className="mb-12">
           <h2 className="text-3xl font-bold mb-6 text-center">How It Works: 7-Step Flow</h2>
           <div className="space-y-6">
             {[
@@ -365,7 +518,7 @@ const PRISMRelationalFit = () => {
         </section>
 
         {/* Examples */}
-        <section className="mb-12">
+        <section id="examples" className="mb-12">
           <h2 className="text-3xl font-bold mb-6 text-center">Examples</h2>
           <div className="space-y-8">
             {/* Example A */}
@@ -427,7 +580,7 @@ const PRISMRelationalFit = () => {
         </section>
 
         {/* Definitions */}
-        <section className="mb-12">
+        <section id="definitions" className="mb-12">
           <h2 className="text-3xl font-bold mb-6 text-center">Key Definitions</h2>
           <div className="space-y-4">
             {definitions.map((def, index) => (
