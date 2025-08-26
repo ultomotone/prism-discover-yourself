@@ -1,62 +1,71 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Brain, ArrowLeft, ArrowRight } from "lucide-react";
-import Header from "@/components/Header";
+import { Link } from "react-router-dom";
+import InfoElementLayout from "@/components/InfoElementLayout";
 
 const Signals = () => {
   const elements = [
     { 
       code: "Ti", 
-      name: "Internal Logic", 
+      name: "Structural Logic", 
+      path: "/ti",
       desc: "Make it make sense",
       details: "Seeks internal consistency and logical frameworks. Asks 'Does this fit together logically?' and builds systematic understanding.",
       examples: "Debugging code, creating taxonomies, spotting logical inconsistencies in arguments"
     },
     { 
       code: "Te", 
-      name: "Effectiveness", 
+      name: "Pragmatic Logic", 
+      path: "/te",
       desc: "What works in the real world",
       details: "Focused on practical results and efficiency. Asks 'What gets results?' and optimizes for measurable outcomes.",
       examples: "Project management, process optimization, metrics-driven decision making"
     },
     { 
       code: "Fi", 
-      name: "Personal Values", 
+      name: "Relational Ethics", 
+      path: "/fi",
       desc: "Does this fit who I am?",
       details: "Evaluates alignment with personal values and authenticity. Asks 'Is this true to who I am?' and maintains identity consistency.",
       examples: "Career choices based on values, authentic self-expression, personal boundary setting"
     },
     { 
       code: "Fe", 
-      name: "Shared Emotion", 
+      name: "Interpersonal Dynamics", 
+      path: "/fe",
       desc: "What's happening between us?",
       details: "Attunes to group dynamics and emotional climate. Asks 'How are we all feeling?' and manages collective emotional states.",
       examples: "Reading room atmosphere, team morale management, social harmony facilitation"
     },
     { 
       code: "Ni", 
-      name: "Patterns Over Time", 
+      name: "Convergent Synthesis", 
+      path: "/ni",
       desc: "Where is this heading?",
       details: "Sees long-term trajectories and underlying patterns. Asks 'What's the deeper trend?' and anticipates future convergence.",
       examples: "Strategic planning, trend forecasting, seeing the 'big picture' development"
     },
     { 
       code: "Ne", 
-      name: "Possibilities", 
+      name: "Divergent Exploration", 
+      path: "/ne",
       desc: "What else could this be?",
       details: "Generates alternative interpretations and potential connections. Asks 'What if?' and explores creative possibilities.",
       examples: "Brainstorming sessions, creative problem-solving, seeing potential in people or situations"
     },
     { 
       code: "Si", 
-      name: "Steadiness & Comfort", 
+      name: "Experiential Memory", 
+      path: "/si",
       desc: "Is this sustainable?",
       details: "Maintains stability and consistent quality. Asks 'Can we keep this up?' and preserves what works well.",
       examples: "Routine maintenance, quality control, creating comfortable environments"
     },
     { 
       code: "Se", 
-      name: "Decisive Action", 
+      name: "Kinesthetic Responsiveness", 
+      path: "/se",
       desc: "What can I move now?",
       details: "Responds to immediate opportunities and physical realities. Asks 'What needs action right now?' and acts decisively.",
       examples: "Crisis response, seizing opportunities, hands-on problem solving"
@@ -64,8 +73,7 @@ const Signals = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <InfoElementLayout>
       <div className="prism-container pt-24 pb-16">
         <div className="max-w-6xl mx-auto">
           
@@ -118,8 +126,9 @@ const Signals = () => {
             <h2 className="prism-heading-md text-primary mb-12 text-center">The Eight Information Elements</h2>
             <div className="grid lg:grid-cols-2 gap-8">
               {elements.map((element, index) => (
-                <Card key={index} className="prism-hover-lift prism-shadow-card">
-                  <CardContent className="p-8">
+                <Link key={index} to={element.path}>
+                  <Card className="prism-hover-lift prism-shadow-card h-full cursor-pointer transition-transform hover:scale-105">
+                    <CardContent className="p-8">
                     <div className="flex items-start mb-4">
                       <div className="w-12 h-12 prism-gradient-secondary rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
                         <span className="text-white font-bold text-lg">{element.code}</span>
@@ -142,8 +151,9 @@ const Signals = () => {
                       <h4 className="font-semibold text-primary text-sm mb-2">Real-world examples:</h4>
                       <p className="text-sm text-muted-foreground">{element.examples}</p>
                     </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           </section>
@@ -191,7 +201,7 @@ const Signals = () => {
           </div>
         </div>
       </div>
-    </div>
+    </InfoElementLayout>
   );
 };
 
