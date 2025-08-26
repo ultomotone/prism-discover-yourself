@@ -1,5 +1,4 @@
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, BookOpen, Users, GraduationCap } from "lucide-react";
@@ -191,7 +190,6 @@ const Education = () => {
           </div>
         </section>
       </main>
-      <Footer />
     </div>
   );
 };
