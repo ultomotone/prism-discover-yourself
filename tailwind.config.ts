@@ -76,6 +76,17 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				rf: {
+					navy: 'hsl(var(--rf-navy))',
+					'navy-foreground': 'hsl(var(--rf-navy-foreground))',
+					teal: 'hsl(var(--rf-teal))',
+					'teal-foreground': 'hsl(var(--rf-teal-foreground))',
+					gold: 'hsl(var(--rf-gold))',
+					'gold-foreground': 'hsl(var(--rf-gold-foreground))',
+					supportive: 'hsl(var(--rf-supportive))',
+					stretch: 'hsl(var(--rf-stretch))',
+					friction: 'hsl(var(--rf-friction))'
 				}
 			},
 			borderRadius: {

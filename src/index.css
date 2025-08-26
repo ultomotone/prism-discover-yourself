@@ -41,6 +41,17 @@ All colors MUST be HSL.
     --warm-light: 35 75% 65%;
     --warm-dark: 35 95% 45%;
 
+    /* Relational Fit Colors */
+    --rf-navy: 210 60% 16%;
+    --rf-navy-foreground: 0 0% 98%;
+    --rf-teal: 180 50% 50%;
+    --rf-teal-foreground: 0 0% 98%;
+    --rf-gold: 45 85% 55%;
+    --rf-gold-foreground: 0 0% 15%;
+    --rf-supportive: 120 60% 50%;
+    --rf-stretch: 45 85% 55%;
+    --rf-friction: 0 70% 55%;
+
     --muted: 225 10% 95%;
     --muted-foreground: 225 15% 45%;
 

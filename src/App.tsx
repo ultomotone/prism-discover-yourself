@@ -62,6 +62,10 @@ import Roadmap from "./pages/Roadmap";
 import Admin from "./pages/Admin";
 import YourPersonalityBlueprint from "./pages/YourPersonalityBlueprint";
 import PRISMRelationalFit from "./pages/PRISMRelationalFit";
+import RelationalFitHome from "./pages/relational-fit/RelationalFitHome";
+import RelationalFitHeatmap from "./pages/relational-fit/RelationalFitHeatmap";
+import RelationalFitTypes from "./pages/relational-fit/RelationalFitTypes";
+import RelationalFitPair from "./pages/relational-fit/RelationalFitPair";
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -198,8 +202,14 @@ const App = () => (
                 <Route path="/core-alignments" element={<CoreAlignments />} />
                 <Route path="/resources" element={<Resources />} />
                 <Route path="/roadmap" element={<Roadmap />} />
-          <Route path="/your-personality-blueprint" element={<YourPersonalityBlueprint />} />
-          <Route path="/prism-relational-fit" element={<PRISMRelationalFit />} />
+                <Route path="/your-personality-blueprint" element={<YourPersonalityBlueprint />} />
+                <Route path="/prism-relational-fit" element={<PRISMRelationalFit />} />
+                
+                {/* Relational Fit Mini-App Routes */}
+                <Route path="/relational-fit" element={<RelationalFitHome />} />
+                <Route path="/relational-fit/heatmap" element={<RelationalFitHeatmap />} />
+                <Route path="/relational-fit/types" element={<RelationalFitTypes />} />
+                <Route path="/relational-fit/pair/:pairId" element={<RelationalFitPair />} />
                 {/* PRISM Type Routes */}
                 <Route path="/types/idea-catalyst" element={<IdeaCatalyst />} />
                 <Route path="/types/framework-architect" element={<FrameworkArchitect />} />
