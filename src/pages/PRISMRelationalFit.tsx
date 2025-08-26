@@ -130,6 +130,55 @@ const PRISMRelationalFit = () => {
           </p>
         </section>
 
+        {/* Interactive Tool CTA */}
+        <section className="mb-12">
+          <Card className="prism-shadow-card border-2 border-rf-teal/30 bg-gradient-to-br from-rf-teal/5 to-rf-gold/5">
+            <CardHeader className="text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-rf-teal/10 rounded-lg mx-auto mb-4">
+                <Users className="w-6 h-6 text-rf-teal" />
+              </div>
+              <CardTitle className="text-2xl text-rf-teal">Try the Interactive Relational Fit Tool</CardTitle>
+              <CardDescription className="text-lg">
+                Explore the complete 16×16 compatibility heatmap and get detailed analysis for any type pair
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center space-y-6">
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="p-4 bg-background/60 rounded-lg">
+                  <h4 className="font-semibold text-rf-navy mb-2">16×16 Heatmap</h4>
+                  <p className="text-sm text-muted-foreground">Interactive grid showing all 256 type combinations with color-coded compatibility scores</p>
+                </div>
+                <div className="p-4 bg-background/60 rounded-lg">
+                  <h4 className="font-semibold text-rf-navy mb-2">Detailed Analysis</h4>
+                  <p className="text-sm text-muted-foreground">Complete breakdown of Core Alignment, lanes, and specific relationship guidance</p>
+                </div>
+                <div className="p-4 bg-background/60 rounded-lg">
+                  <h4 className="font-semibold text-rf-navy mb-2">Actionable Habits</h4>
+                  <p className="text-sm text-muted-foreground">7-day experiments tailored to strengthen your specific type combination</p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  size="lg" 
+                  className="bg-rf-teal hover:bg-rf-teal/90 text-rf-teal-foreground"
+                  onClick={() => navigate('/relational-fit')}
+                >
+                  Launch Interactive Tool
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={() => navigate('/relational-fit/heatmap')}
+                >
+                  View Heatmap Directly
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
         {/* Overview */}
         <section className="mb-12">
           <Card className="prism-shadow-card">
