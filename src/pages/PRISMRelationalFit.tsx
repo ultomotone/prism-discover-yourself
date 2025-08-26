@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, ArrowRight, Heart, TrendingUp, TrendingDown, Users, Target, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import RelationalFitHero from '@/components/relational/RelationalFitHero';
+import { StateOscillationMatrix } from '@/components/relational/StateOscillationMatrix';
 
 const PRISMRelationalFit = () => {
   const navigate = useNavigate();
@@ -97,6 +99,8 @@ const PRISMRelationalFit = () => {
       />
       
       <Header />
+      
+      <RelationalFitHero />
       
       <main className="container mx-auto px-4 py-8">
         {/* Navigation */}
@@ -260,54 +264,68 @@ const PRISMRelationalFit = () => {
           </Card>
         </section>
 
-        {/* State Overlay Visualization */}
-        <section className="max-w-4xl mx-auto mb-8">
-          <h3 id="state-overlay" className="text-2xl font-bold text-center mb-4">State Overlay (N+/N0/N–)</h3>
-          <Card className="p-4">
-            <div className="space-y-4">
-              <div className="grid grid-cols-[120px_1fr] gap-3 items-center">
-                <div className="text-right text-muted-foreground">Person A</div>
-                <div className="flex h-4 rounded-lg overflow-hidden border border-border">
-                  <div className="flex-[60] bg-rf-supportive" title="N- 60% (Reg+: Calm)"></div>
-                  <div className="flex-[25] bg-muted" title="N0 25% (Reg0: Neutral)"></div>
-                  <div className="flex-[15] bg-rf-friction" title="N+ 15% (Reg-: Stressed)"></div>
-                </div>
-                <div className="text-right text-muted-foreground">Person B</div>
-                <div className="flex h-4 rounded-lg overflow-hidden border border-border">
-                  <div className="flex-[50] bg-rf-supportive" title="N- 50% (Reg+: Calm)"></div>
-                  <div className="flex-[30] bg-muted" title="N0 30% (Reg0: Neutral)"></div>
-                  <div className="flex-[20] bg-rf-friction" title="N+ 20% (Reg-: Stressed)"></div>
-                </div>
+        {/* State Oscillations Section */}
+        <section id="state-overlay" className="max-w-4xl mx-auto mb-12">
+          <div className="p-6 border border-border rounded-lg bg-muted/30">
+            <h3 className="text-2xl font-bold mb-4 text-center">State Oscillations (why "one state" is never the full story)</h3>
+            <p className="text-muted-foreground mb-4">
+              In real life we don't stay in one mode. PRISM models each person's top 2–3 recurring states and how often they happen. 
+              We use the Neuroticism overlay codes but show friendly labels:
+            </p>
+            
+            <div className="space-y-2 mb-4">
+              <p><strong>Reg+ (N−)</strong> = calm / well-regulated</p>
+              <p><strong>Reg0 (N0)</strong> = neutral</p>
+              <p><strong>Reg− (N+)</strong> = stressed / reactive</p>
+            </div>
+            
+            <p className="text-sm text-muted-foreground mb-4">
+              <strong>Key idea:</strong> Fit isn't just "your type vs their type." It's also which state you're both in at the same time. 
+              So we compute a state-pair map (your most common states × their most common states) and weight that by how often those pairings actually occur.
+            </p>
+            
+            <div className="border border-border rounded-lg p-4 bg-background">
+              <h4 className="font-semibold mb-2">Example (LIE × ESI)</h4>
+              <div className="text-sm space-y-2">
+                <p><strong>LIE State Mix:</strong> Reg0 50%, Reg+ 35%, Reg− 15%</p>
+                <p><strong>ESI State Mix:</strong> Reg+ 55%, Reg0 30%, Reg− 15%</p>
+              </div>
+              
+              <div className="mt-4 space-y-2 text-sm">
+                <p><strong>What this means:</strong></p>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Their most frequent pairing is LIE Reg0 × ESI Reg+ → usually smooth: decisions land and care stays warm.</li>
+                  <li>Less common but important: LIE Reg− × ESI Reg+ → ESI can steady things briefly, but set limits so support doesn't become burnout.</li>
+                  <li>Rare friction: Reg− × Reg− → both depleted; hit pause, down-shift, and reschedule anything high-stakes.</li>
+                </ul>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground mt-4">
-              <strong>State Overlay.</strong> We show <em>Reg+/0/−</em> as a friendlier alias for Neuroticism states:
-              <em> Reg+ = N− (calm)</em>, <em>Reg0 = N0</em>, <em>Reg− = N+ (stressed)</em>.
-              More Reg+ generally raises fit; more Reg− generally lowers it.
+          </div>
+          
+          <div className="mt-8">
+            <StateOscillationMatrix 
+              aName="LIE"
+              bName="ESI"
+              aMix={{ Nminus: 0.35, N0: 0.50, Nplus: 0.15 }}
+              bMix={{ Nminus: 0.55, N0: 0.30, Nplus: 0.15 }}
+            />
+          </div>
+          
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mt-6">
+            <p className="text-sm mb-2">
+              <strong>How we score it (simple version):</strong>
             </p>
-            <div className="mt-3 flex justify-center">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm bg-green-500 text-white">
-                  <strong>Reg+</strong>
-                  <span className="opacity-90">(N−)</span>
-                  <span className="opacity-80">· Calm, well-regulated</span>
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm bg-gray-300 text-gray-900">
-                  <strong>Reg0</strong>
-                  <span className="opacity-90">(N0)</span>
-                  <span className="opacity-80">· Neutral</span>
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm bg-red-500 text-white">
-                  <strong>Reg−</strong>
-                  <span className="opacity-90">(N+)</span>
-                  <span className="opacity-80">· Stressed, reactive</span>
-                </span>
-              </div>
-            </div>
-            <p className="text-center text-muted-foreground text-sm mt-2">
-              <strong>Rule:</strong> More N− (Reg+) generally raises fit; more N+ (Reg−) generally lowers it (weighted per lane).
+            <ul className="list-disc list-inside text-sm mt-2 space-y-1">
+              <li>We keep your Core Alignment (type-to-type baseline).</li>
+              <li>For each state pairing, we apply state weights (Reg+ lifts fit a bit, Reg− lowers it a bit).</li>
+              <li>We multiply by how often each pairing happens and sum it up → your practical fit (what you actually feel most days).</li>
+              <li>We label the result as Supportive, Stretch, or Friction and show where the score comes from (top pairings + watch-outs).</li>
+            </ul>
+            <p className="text-sm mt-3 font-medium">
+              <strong>Rule of thumb:</strong> More Reg+ and Reg0 in your common pairings → higher real-world fit. 
+              More Reg− × Reg− time → more friction even for great core matches.
             </p>
-          </Card>
+          </div>
         </section>
 
         {/* Supply-Demand Grid */}
