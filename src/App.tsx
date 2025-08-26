@@ -61,6 +61,7 @@ import IntegrityGuide from "./pages/types/IntegrityGuide";
 import Roadmap from "./pages/Roadmap";
 import Admin from "./pages/Admin";
 import YourPersonalityBlueprint from "./pages/YourPersonalityBlueprint";
+import PRISMRelationalFit from "./pages/PRISMRelationalFit";
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -197,7 +198,8 @@ const App = () => (
                 <Route path="/core-alignments" element={<CoreAlignments />} />
                 <Route path="/resources" element={<Resources />} />
                 <Route path="/roadmap" element={<Roadmap />} />
-                <Route path="/your-personality-blueprint" element={<YourPersonalityBlueprint />} />
+          <Route path="/your-personality-blueprint" element={<YourPersonalityBlueprint />} />
+          <Route path="/prism-relational-fit" element={<PRISMRelationalFit />} />
                 {/* PRISM Type Routes */}
                 <Route path="/types/idea-catalyst" element={<IdeaCatalyst />} />
                 <Route path="/types/framework-architect" element={<FrameworkArchitect />} />
