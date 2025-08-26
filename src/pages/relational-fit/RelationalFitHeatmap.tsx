@@ -75,13 +75,13 @@ const RelationalFitHeatmap = () => {
               {/* Column Headers */}
               <div className="flex">
                 <div className="w-16 h-12 flex-shrink-0" /> {/* Empty corner */}
-                {typeOrder.map(typeB => (
-                  <div key={typeB} className="w-12 h-12 flex-shrink-0 flex items-center justify-center">
-                    <span className="text-xs font-medium writing-vertical-rl rotate-180">
-                      {typeB}
-                    </span>
-                  </div>
-                ))}
+                  {typeOrder.map(typeB => (
+                    <div key={typeB} className="w-12 h-12 flex-shrink-0 flex items-center justify-center">
+                      <span className="text-xs font-medium writing-vertical-rl">
+                        {typeB}
+                      </span>
+                    </div>
+                  ))}
               </div>
               
               {/* Rows */}
