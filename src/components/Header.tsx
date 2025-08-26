@@ -35,6 +35,7 @@ const Header = () => {
     { name: "Dimensionality", href: "/dimensionality" },
     { name: "Block Dynamics", href: "/blocks" },
     { name: "State Overlay", href: "/state-overlay" },
+    { name: "Relational Fit", href: "/prism-relational-fit" },
   ];
 
   return (
