@@ -54,49 +54,112 @@ export const relationLabels: Record<string, RelationLabel> = {
   "conflict":{"display":"Opposition","base":-30}
 };
 
-export const inQuadraPairs = {
-  "dual":[["ILE","SEI"],["LII","ESE"],["SLE","IEI"],["LSI","EIE"],["SEE","ILI"],["ESI","LIE"],["LSE","IEE"],["SLI","EII"]],
-  "mirror":[["ILE","LII"],["SEI","ESE"],["SLE","LSI"],["IEI","EIE"],["SEE","ESI"],["ILI","LIE"],["LSE","SLI"],["IEE","EII"]],
-  "activity":[["ILE","ESE"],["LII","SEI"],["SLE","EIE"],["LSI","IEI"],["SEE","LIE"],["ESI","ILI"],["LSE","EII"],["SLI","IEE"]]
+// Complete 16×16 relation matrix (PRISM v1 mapping)
+export const relationMatrix: Record<string, Record<string, string>> = {
+  "ILE": {
+    "ILE": "identity", "LII": "mirror", "SEI": "dual", "ESE": "activity",
+    "SLE": "contrary", "LSI": "conflict", "IEI": "conflict", "EIE": "mirage",
+    "SEE": "contrary", "ESI": "conflict", "ILI": "comparative", "LIE": "kindred",
+    "LSE": "mirage", "SLI": "conflict", "IEE": "contrary", "EII": "conflict"
+  },
+  "LII": {
+    "ILE": "mirror", "LII": "identity", "SEI": "activity", "ESE": "dual",
+    "SLE": "conflict", "LSI": "contrary", "IEI": "mirage", "EIE": "conflict",
+    "SEE": "conflict", "ESI": "contrary", "ILI": "kindred", "LIE": "comparative",
+    "LSE": "conflict", "SLI": "mirage", "IEE": "conflict", "EII": "contrary"
+  },
+  "SEI": {
+    "ILE": "dual", "LII": "activity", "SEI": "identity", "ESE": "mirror",
+    "SLE": "mirage", "LSI": "super_ego", "IEI": "contrary", "EIE": "conflict",
+    "SEE": "comparative", "ESI": "kindred", "ILI": "conflict", "LIE": "contrary",
+    "LSE": "activity", "SLI": "dual", "IEE": "mirage", "EII": "super_ego"
+  },
+  "ESE": {
+    "ILE": "activity", "LII": "dual", "SEI": "mirror", "ESE": "identity",
+    "SLE": "super_ego", "LSI": "mirage", "IEI": "conflict", "EIE": "contrary",
+    "SEE": "kindred", "ESI": "comparative", "ILI": "contrary", "LIE": "conflict",
+    "LSE": "dual", "SLI": "activity", "IEE": "super_ego", "EII": "mirage"
+  },
+  "SLE": {
+    "ILE": "contrary", "LII": "conflict", "SEI": "mirage", "ESE": "super_ego",
+    "SLE": "identity", "LSI": "mirror", "IEI": "dual", "EIE": "activity",
+    "SEE": "kindred", "ESI": "comparative", "ILI": "supervision_supervised", "LIE": "quasi_identical",
+    "LSE": "conflict", "SLI": "contrary", "IEE": "mirage", "EII": "super_ego"
+  },
+  "LSI": {
+    "ILE": "conflict", "LII": "contrary", "SEI": "super_ego", "ESE": "mirage",
+    "SLE": "mirror", "LSI": "identity", "IEI": "activity", "EIE": "dual",
+    "SEE": "comparative", "ESI": "kindred", "ILI": "quasi_identical", "LIE": "supervision_supervises",
+    "LSE": "contrary", "SLI": "conflict", "IEE": "super_ego", "EII": "mirage"
+  },
+  "IEI": {
+    "ILE": "conflict", "LII": "mirage", "SEI": "contrary", "ESE": "conflict",
+    "SLE": "dual", "LSI": "activity", "IEI": "identity", "EIE": "mirror",
+    "SEE": "super_ego", "ESI": "mirage", "ILI": "kindred", "LIE": "comparative",
+    "LSE": "supervision_supervised", "SLI": "quasi_identical", "IEE": "contrary", "EII": "conflict"
+  },
+  "EIE": {
+    "ILE": "mirage", "LII": "conflict", "SEI": "conflict", "ESE": "contrary",
+    "SLE": "activity", "LSI": "dual", "IEI": "mirror", "EIE": "identity",
+    "SEE": "mirage", "ESI": "super_ego", "ILI": "comparative", "LIE": "kindred",
+    "LSE": "quasi_identical", "SLI": "supervision_supervises", "IEE": "conflict", "EII": "contrary"
+  },
+  "SEE": {
+    "ILE": "contrary", "LII": "conflict", "SEI": "comparative", "ESE": "kindred",
+    "SLE": "kindred", "LSI": "comparative", "IEI": "super_ego", "EIE": "mirage",
+    "SEE": "identity", "ESI": "mirror", "ILI": "dual", "LIE": "activity",
+    "LSE": "conflict", "SLI": "contrary", "IEE": "supervision_supervised", "EII": "quasi_identical"
+  },
+  "ESI": {
+    "ILE": "conflict", "LII": "contrary", "SEI": "kindred", "ESE": "comparative",
+    "SLE": "comparative", "LSI": "kindred", "IEI": "mirage", "EIE": "super_ego",
+    "SEE": "mirror", "ESI": "identity", "ILI": "activity", "LIE": "dual",
+    "LSE": "contrary", "SLI": "conflict", "IEE": "quasi_identical", "EII": "supervision_supervises"
+  },
+  "ILI": {
+    "ILE": "comparative", "LII": "kindred", "SEI": "conflict", "ESE": "contrary",
+    "SLE": "supervision_supervised", "LSI": "quasi_identical", "IEI": "kindred", "EIE": "comparative",
+    "SEE": "dual", "ESI": "activity", "ILI": "identity", "LIE": "mirror",
+    "LSE": "mirage", "SLI": "super_ego", "IEE": "conflict", "EII": "contrary"
+  },
+  "LIE": {
+    "ILE": "kindred", "LII": "comparative", "SEI": "contrary", "ESE": "conflict",
+    "SLE": "quasi_identical", "LSI": "supervision_supervises", "IEI": "comparative", "EIE": "kindred",
+    "SEE": "activity", "ESI": "dual", "ILI": "mirror", "LIE": "identity",
+    "LSE": "super_ego", "SLI": "mirage", "IEE": "conflict", "EII": "contrary"
+  },
+  "LSE": {
+    "ILE": "mirage", "LII": "conflict", "SEI": "activity", "ESE": "dual",
+    "SLE": "conflict", "LSI": "contrary", "IEI": "supervision_supervised", "EIE": "quasi_identical",
+    "SEE": "conflict", "ESI": "contrary", "ILI": "mirage", "LIE": "super_ego",
+    "LSE": "identity", "SLI": "mirror", "IEE": "dual", "EII": "activity"
+  },
+  "SLI": {
+    "ILE": "conflict", "LII": "mirage", "SEI": "dual", "ESE": "activity",
+    "SLE": "contrary", "LSI": "conflict", "IEI": "quasi_identical", "EIE": "supervision_supervises",
+    "SEE": "contrary", "ESI": "conflict", "ILI": "super_ego", "LIE": "mirage",
+    "LSE": "mirror", "SLI": "identity", "IEE": "activity", "EII": "dual"
+  },
+  "IEE": {
+    "ILE": "contrary", "LII": "conflict", "SEI": "mirage", "ESE": "super_ego",
+    "SLE": "mirage", "LSI": "super_ego", "IEI": "contrary", "EIE": "conflict",
+    "SEE": "supervision_supervised", "ESI": "quasi_identical", "ILI": "conflict", "LIE": "conflict",
+    "LSE": "dual", "SLI": "activity", "IEE": "identity", "EII": "mirror"
+  },
+  "EII": {
+    "ILE": "conflict", "LII": "contrary", "SEI": "super_ego", "ESE": "mirage",
+    "SLE": "super_ego", "LSI": "mirage", "IEI": "conflict", "EIE": "contrary",
+    "SEE": "quasi_identical", "ESI": "supervision_supervises", "ILI": "contrary", "LIE": "contrary",
+    "LSE": "activity", "SLI": "dual", "IEE": "mirror", "EII": "identity"
+  }
 };
 
 // Helper to map types by code
 export const T = Object.fromEntries(types.map(t => [t.code, t]));
 
-// Relation classifier
+// Precise relation lookup using the complete matrix
 export function relationKey(A: string, B: string): string {
-  if (A === B) return "identity";
-  
-  const inPair = (arr: string[][]) => arr.some(([x, y]) => (x === A && y === B) || (x === B && y === A));
-  
-  if (inPair(inQuadraPairs.dual)) return "dual";
-  if (inPair(inQuadraPairs.mirror)) return "mirror";
-  if (inPair(inQuadraPairs.activity)) return "activity";
-
-  const a = T[A], b = T[B];
-  if (a.club === b.club && a.att === b.att) return "kindred";
-  if (a.club === b.club && a.att !== b.att) return "comparative";
-  
-  const sameFunctions = (a.lead === b.lead && a.crea === b.crea) || (a.lead === b.crea && a.crea === b.lead);
-  if (sameFunctions) return "quasi_identical";
-  
-  const oppositeValues = (
-    (["Fe","Fi"].includes(a.lead) && ["Te","Ti"].includes(b.lead)) ||
-    (["Te","Ti"].includes(a.lead) && ["Fe","Fi"].includes(b.lead))
-  ) && (a.rat === b.rat);
-  if (oppositeValues) return "super_ego";
-
-  // Supervision direction
-  const je = (x: any) => (x.rat === "J" && ["Fe","Te"].includes(x.lead));
-  const ji = (x: any) => (x.rat === "J" && ["Fi","Ti"].includes(x.lead));
-  if (je(a) && ji(b)) return "supervision_supervises";
-  if (je(b) && ji(a)) return "supervision_supervised";
-
-  // High tension
-  if (a.quadra !== b.quadra && a.att !== b.att && a.club !== b.club) return "conflict";
-
-  if (a.rat === b.rat) return "contrary";
-  return "mirage";
+  return relationMatrix[A]?.[B] || "identity";
 }
 
 // Core Alignment scoring (0-50)
