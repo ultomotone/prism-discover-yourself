@@ -121,6 +121,11 @@ const Footer = () => {
                     PRISM AI Coach
                   </a>
                 </li>
+                <li>
+                  <a href="/your-personality-blueprint" className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
+                    Your Personality Blueprint
+                  </a>
+                </li>
                 {popularLinks.support.map((link) => (
                   <li key={link.name}>
                     <a href={link.href} className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
