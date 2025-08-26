@@ -51,9 +51,11 @@ export default function Results() {
         });
 
         console.log('getResultsBySession response:', { data, error });
+        console.log('Full response data:', JSON.stringify(data, null, 2));
 
         if (error) {
           console.error('Edge function error:', error);
+          console.log('Error details:', JSON.stringify(error, null, 2));
           setError('Failed to load results: ' + error.message);
           setLoading(false);
           return;
@@ -61,6 +63,7 @@ export default function Results() {
 
         if (!data?.ok) {
           console.error('Access denied:', data?.reason);
+          console.log('Full error response:', JSON.stringify(data, null, 2));
           const reason = data?.reason || 'unknown_error';
           
           if (reason === 'session_not_found') {
