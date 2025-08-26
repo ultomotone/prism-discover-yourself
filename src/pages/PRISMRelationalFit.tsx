@@ -100,8 +100,6 @@ const PRISMRelationalFit = () => {
       
       <Header />
       
-      <RelationalFitHero />
-      
       <main className="container mx-auto px-4 py-8">
         {/* Navigation */}
         <div className="flex justify-between items-center mb-8">
@@ -188,6 +186,7 @@ const PRISMRelationalFit = () => {
           <div className="font-semibold mb-3">On this page</div>
           <ol className="ml-5 space-y-1 text-sm">
             <li><a href="#overview" className="text-primary hover:underline">Overview</a></li>
+            <li><a href="#state-example" className="text-primary hover:underline">State Oscillations Example</a></li>
             <li>
               <a href="#fit-dimensions" className="text-primary hover:underline">PRISM Fit Dimensions</a>
               <ul className="ml-4 mt-1 space-y-1">
@@ -262,6 +261,47 @@ const PRISMRelationalFit = () => {
               </p>
             </CardContent>
           </Card>
+        </section>
+
+        {/* State Oscillations Example */}
+        <section id="state-example" className="max-w-4xl mx-auto mb-12">
+          <div className="text-center space-y-6">
+            <h2 className="text-3xl font-bold">Relational Fit = Core Alignment × State Oscillations</h2>
+            <p className="text-muted-foreground">
+              People don't stay in one mode. PRISM models each person's top states and how often they happen, then maps how those states interact.
+              That's your practical, day-to-day fit—not just a label.
+            </p>
+
+            <div className="flex items-center justify-center gap-3 text-sm">
+              <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: "hsl(120 75% 45%)" }} />
+                Reg+ (N−) lifts fit
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: "hsl(60 75% 45%)" }} />
+                Reg0 (N0) neutral
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: "hsl(0 75% 45%)" }} />
+                Reg− (N+) lowers fit
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold">Example: IEI ↔ SLE (dual) — state-pair map</h3>
+              <p className="text-sm text-muted-foreground">
+                We weight the IEI's and SLE's common states by frequency, compute the nudge for each pairing,
+                and roll that into the overall fit band alongside core alignment.
+              </p>
+            </div>
+
+            <StateOscillationMatrix 
+              aName="IEI" 
+              bName="SLE" 
+              aMix={{ Nminus: 0.45, N0: 0.35, Nplus: 0.20 }}
+              bMix={{ Nminus: 0.35, N0: 0.40, Nplus: 0.25 }}
+            />
+          </div>
         </section>
 
         {/* State Oscillations Section */}
