@@ -518,10 +518,25 @@ serve(async (req) => {
       return 4;
     };
     const dimensions: Record<string, number> = {};
+    let dimFallbackUsed = false;
     for (const f of FUNCS) {
       const L = dims[f] || [];
       const avg5 = L.length ? (L.reduce((a,b)=>a+b,0)/L.length) : 0;
-      dimensions[f] = avg5 ? mapDim(avg5) : 0;
+      if (avg5) {
+        dimensions[f] = mapDim(avg5);
+      } else {
+        // Fallback: if we have any answers but no direct dimensional items, derive from strengths (1..5 -> 1..4)
+        if ((answers?.length || 0) > 0) {
+          const s = strengths[f] || 0;
+          dimensions[f] = s ? mapDim(s) : 0;
+          if (s) dimFallbackUsed = true;
+        } else {
+          dimensions[f] = 0;
+        }
+      }
+    }
+    if (dimFallbackUsed) {
+      console.log(`evt:dimensions_fallback_strengths,session_id:${session_id}`);
     }
 
     // ---- PROTOTYPE-BASED TYPE SCORING (v2) ----
@@ -940,6 +955,35 @@ serve(async (req) => {
     const typeCode = top3[0];
     const { base, creative } = TYPE_MAP[typeCode];
 
+    // Compute final blocks_norm with fallback when no block tags were present
+    let blocks_norm_final = blocks_norm_blend;
+    const blocksZero = (blocks_norm_blend.Core + blocks_norm_blend.Critic + blocks_norm_blend.Hidden + blocks_norm_blend.Instinct) === 0;
+    if (blocksZero && (answers?.length || 0) > 0) {
+      // Fallback: estimate blocks from function strengths by ranking
+      const sortedFuncs = [...FUNCS].sort((a,b) => (strengths[b]||0) - (strengths[a]||0));
+      const groups: Record<string, string[]> = {
+        Core: sortedFuncs.slice(0,2),
+        Instinct: sortedFuncs.slice(2,4),
+        Hidden: sortedFuncs.slice(4,6),
+        Critic: sortedFuncs.slice(6,8),
+      };
+      const sums: Record<string, number> = { Core:0, Critic:0, Hidden:0, Instinct:0 };
+      let total = 0;
+      for (const [k, fs] of Object.entries(groups)) {
+        const s = fs.reduce((acc,f)=> acc + (strengths[f]||0), 0);
+        sums[k as keyof typeof sums] = s; total += s;
+      }
+      if (total > 0) {
+        blocks_norm_final = {
+          Core: Math.round((sums.Core/total)*1000)/10,
+          Critic: Math.round((sums.Critic/total)*1000)/10,
+          Hidden: Math.round((sums.Hidden/total)*1000)/10,
+          Instinct: Math.round((sums.Instinct/total)*1000)/10,
+        };
+        console.log(`evt:blocks_fallback_strengths,session_id:${session_id}`);
+      }
+    }
+
     // Enhanced profile data with v1.1 fields (timestamps & recompute handling)
     const now = new Date().toISOString();
     const profileData = {
@@ -991,7 +1035,7 @@ serve(async (req) => {
       type_scores: type_scores,
       top_types: top3,
       dims_highlights: dims_highlights,
-      blocks_norm: blocks_norm_blend,
+      blocks_norm: blocks_norm_final,
       blocks: { likert: blocks_norm_likert, fc: blocks_norm_fc },
       version: "v1.2.0",
       
