@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.get_progress]
 verify_jwt = false
+
+[functions.score_fc_session]
+verify_jwt = false
