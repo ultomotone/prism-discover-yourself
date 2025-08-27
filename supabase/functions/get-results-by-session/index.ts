@@ -107,6 +107,13 @@ serve(async (req) => {
     }
 
     if (!profile) {
+      if (isWhitelisted) {
+        console.warn("get-results-by-session: Whitelisted session but profile not found", session_id);
+        return new Response(JSON.stringify({ ok: false, reason: "profile_not_found" }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       return new Response(JSON.stringify({ ok: false, reason: "profile_not_found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

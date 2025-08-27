@@ -123,6 +123,16 @@ Deno.serve(async (req) => {
 
     if (profileError || !profileData) {
       console.error('Profile fetch failed:', profileError)
+      if (isWhitelisted) {
+        console.warn('Whitelisted session but profile not found:', session_id)
+        return new Response(
+          JSON.stringify({ ok: false, reason: 'profile_not_found' }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
       return new Response(
         JSON.stringify({ ok: false, reason: 'profile_not_found' }),
         { 
