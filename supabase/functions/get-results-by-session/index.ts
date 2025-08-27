@@ -67,10 +67,23 @@ serve(async (req) => {
     const tokenMatch = hasShare && session.share_token && session.share_token === share_token;
 
     if (!isCompleted && !tokenMatch) {
-      return new Response(JSON.stringify({ ok: false, reason: "access_denied" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      // Back-compat: if a profile exists for this session, allow viewing
+      const { data: probe, error: probeErr } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("session_id", session_id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (probeErr || !probe) {
+        return new Response(JSON.stringify({ ok: false, reason: "access_denied" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } else {
+        console.log("get-results-by-session: Access granted via existing profile", session_id);
+      }
     }
 
     // 3) Get latest profile for this session

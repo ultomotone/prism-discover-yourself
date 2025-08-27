@@ -88,13 +88,26 @@ Deno.serve(async (req) => {
     })
 
     if (!isCompleted && !isOwner && !hasValidShareToken) {
-      return new Response(
-        JSON.stringify({ ok: false, reason: 'access_denied' }),
-        { 
-          status: 403, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
+      // Back-compat: if a profile exists for this session, allow viewing
+      const { data: probe, error: probeErr } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('session_id', session_id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (probeErr || !probe) {
+        return new Response(
+          JSON.stringify({ ok: false, reason: 'access_denied' }),
+          { 
+            status: 403, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      } else {
+        console.log('Access granted via existing profile for session:', session_id)
+      }
     }
 
     // Fetch profile data if session is accessible
