@@ -388,11 +388,11 @@ serve(async (req) => {
 
     // Phase 3: Enhanced FC completeness with partial session support
     let fcCompleteness = "complete";
-    const fcExpectedMin = Math.max(4, get_config_number('fc_expected_min', 4)); // Updated for real FC blocks (4 blocks)
-    const fcCompletionRate = Math.min(1, fcAnsweredCount / fcExpectedMin);
+    const fcExpectedMinUsed = Math.max(4, typeof fcExpectedMin === 'number' ? fcExpectedMin : get_config_number('fc_expected_min', 4)); // Use config value if available
+    const fcCompletionRate = Math.min(1, fcAnsweredCount / fcExpectedMinUsed);
     
-    if (fcAnsweredCount < fcExpectedMin) {
-      console.log(`evt:incomplete_fc,session_id:${session_id},fc_count:${fcAnsweredCount},expected_min:${fcExpectedMin},completion_rate:${fcCompletionRate}`);
+    if (fcAnsweredCount < fcExpectedMinUsed) {
+      console.log(`evt:incomplete_fc,session_id:${session_id},fc_count:${fcAnsweredCount},expected_min:${fcExpectedMinUsed},completion_rate:${fcCompletionRate}`);
       fcCompleteness = "incomplete";
       
       // Phase 3: Allow partial scoring if we have minimum viable data (>50% complete for real FC blocks)
@@ -404,7 +404,7 @@ serve(async (req) => {
             partial_session: true, 
             completion_rate: fcCompletionRate,
             fc_answered: fcAnsweredCount,
-            fc_expected: fcExpectedMin
+            fc_expected: fcExpectedMinUsed
           },
           message: "Need more responses for reliable results"
         }), { headers:{...corsHeaders,"Content-Type":"application/json"}});
@@ -512,7 +512,7 @@ serve(async (req) => {
       
       // Enhanced reliability-weighted blending for MAI
       const qualityBonus = (inconsIdx < 1.5 && sdIndex < 4.6) ? 0.1 : 0;
-      const fcCoverage = Math.min(1, fcAnsweredCount / Math.max(1, fcExpectedMin));
+      const fcCoverage = Math.min(1, fcAnsweredCount / Math.max(1, (typeof fcExpectedMin === 'number' ? fcExpectedMin : 4)));
       const wFcEnhanced = Math.min(0.55, Math.max(0.2, fcCoverage * 0.4 + qualityBonus));
       const wLikertEnhanced = 1 - wFcEnhanced;
       

@@ -81,16 +81,21 @@ serve(async (req) => {
           // Handle date range filters
           if (key === 'dateRange' && typeof value === 'object' && value.from && value.to) {
             const fromDate = new Date(value.from).toISOString();
-            const toDate = new Date(value.to).toISOString();
-            // Try multiple common timestamp column names
-            const timestampColumns = ['created_at', 'd', 'timestamp', 'finished_at'];
-            for (const col of timestampColumns) {
-              try {
-                query = query.gte(col, fromDate).lte(col, toDate);
-                break;
-              } catch (e) {
-                // Continue to next column if this one doesn't exist
-              }
+            const toDate   = new Date(value.to).toISOString();
+
+            // Map views to their date/timestamp column. If none, skip filtering to avoid 42703 errors.
+            const dateColMap: Record<string, string> = {
+              'v_kpi_throughput': 'd',
+              'v_latest_assessments_v11': 'finished_at',
+              'v_profiles_ext': 'created_at',
+              'v_kpi_metrics_v11': 'created_at',
+              'v_overlay_invariance': 'created_at'
+            };
+            const dateCol = dateColMap[actualViewName];
+            if (dateCol) {
+              query = query.gte(dateCol, fromDate).lte(dateCol, toDate);
+            } else {
+              console.log(`no_date_column_for_view:${actualViewName}, skipping dateRange filter`);
             }
           } else if (typeof value === 'string' && value !== 'all') {
             // Simple equality filter for non-'all' values
