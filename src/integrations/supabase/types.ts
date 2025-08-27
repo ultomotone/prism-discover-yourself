@@ -345,6 +345,140 @@ export type Database = {
         }
         Relationships: []
       }
+      fc_blocks: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          order_index: number
+          title: string
+          version: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          order_index: number
+          title: string
+          version?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          title?: string
+          version?: string
+        }
+        Relationships: []
+      }
+      fc_options: {
+        Row: {
+          block_id: string
+          created_at: string
+          id: string
+          option_code: string
+          order_index: number
+          prompt: string
+          weights_json: Json
+        }
+        Insert: {
+          block_id: string
+          created_at?: string
+          id?: string
+          option_code: string
+          order_index: number
+          prompt: string
+          weights_json: Json
+        }
+        Update: {
+          block_id?: string
+          created_at?: string
+          id?: string
+          option_code?: string
+          order_index?: number
+          prompt?: string
+          weights_json?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fc_options_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "fc_blocks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fc_responses: {
+        Row: {
+          answered_at: string
+          block_id: string
+          option_id: string
+          session_id: string
+        }
+        Insert: {
+          answered_at?: string
+          block_id: string
+          option_id: string
+          session_id: string
+        }
+        Update: {
+          answered_at?: string
+          block_id?: string
+          option_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fc_responses_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "fc_blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fc_responses_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "fc_options"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fc_scores: {
+        Row: {
+          blocks_answered: number
+          created_at: string
+          fc_kind: string
+          scores_json: Json
+          session_id: string
+          version: string
+        }
+        Insert: {
+          blocks_answered: number
+          created_at?: string
+          fc_kind: string
+          scores_json: Json
+          session_id: string
+          version?: string
+        }
+        Update: {
+          blocks_answered?: number
+          created_at?: string
+          fc_kind?: string
+          scores_json?: Json
+          session_id?: string
+          version?: string
+        }
+        Relationships: []
+      }
       kb_definitions: {
         Row: {
           content: Json
