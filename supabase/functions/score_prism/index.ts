@@ -290,6 +290,36 @@ serve(async (req) => {
     let fcAnsweredCount = 0;
     let attentionFailed = 0;
 
+    // NEW: Try to load FC scores from the new fc_scores table first
+    const { data: fcScores } = await supabase
+      .from('fc_scores')
+      .select('scores_json, blocks_answered')
+      .eq('session_id', session_id)
+      .eq('version', 'v1.1')
+      .eq('fc_kind', 'functions')
+      .maybeSingle();
+
+    let usedRealFCScores = false;
+    if (fcScores && fcScores.scores_json) {
+      console.log(`evt:fc_scores_loaded,session_id:${session_id},blocks:${fcScores.blocks_answered}`);
+      
+      // Use real FC scores (already normalized 0-100)
+      const realFCScores = fcScores.scores_json as Record<string, number>;
+      fcAnsweredCount = fcScores.blocks_answered || 0;
+      usedRealFCScores = true;
+      
+      // Convert 0-100 scores to counts (approximate for compatibility)
+      const maxScore = Math.max(...Object.values(realFCScores));
+      for (const func of FUNCS) {
+        const score = realFCScores[func] || 0;
+        fcFuncCount[func] = Math.round((score / 100) * 10); // Scale to reasonable count range
+      }
+      
+      console.log(`evt:fc_real_scores,session_id:${session_id},scores:${JSON.stringify(realFCScores)}`);
+    } else {
+      console.log(`evt:fc_fallback_legacy,session_id:${session_id}`);
+    }
+
     // helper to read normalized 1..5 for a specific qid
     const getV5 = (qid: number | string): number | null => {
       const r = answers.find(x => String(x.question_id) === String(qid));
@@ -335,8 +365,8 @@ serve(async (req) => {
       if (pair) (pairs[pair] ||= []).push(v5);
 
       // Phase 3: Enhanced forced-choice mapping with safer JSON handling and numeric fallback
-      if (scale?.startsWith("FORCED_CHOICE")) {
-        fcAnsweredCount++; // Count FC answers
+      if (scale?.startsWith("FORCED_CHOICE") && !usedRealFCScores) {
+        fcAnsweredCount++; // Count FC answers only if not using real FC scores
         const rawChoice = String(sanitizedValue).trim().toUpperCase();
         // NEW: Map numeric inputs to letters as fallback
         const letterMap: Record<string, string> = {"1":"A","2":"B","3":"C","4":"D","5":"E"};
@@ -358,14 +388,15 @@ serve(async (req) => {
 
     // Phase 3: Enhanced FC completeness with partial session support
     let fcCompleteness = "complete";
+    const fcExpectedMin = Math.max(4, get_config_number('fc_expected_min', 4)); // Updated for real FC blocks (4 blocks)
     const fcCompletionRate = Math.min(1, fcAnsweredCount / fcExpectedMin);
     
     if (fcAnsweredCount < fcExpectedMin) {
       console.log(`evt:incomplete_fc,session_id:${session_id},fc_count:${fcAnsweredCount},expected_min:${fcExpectedMin},completion_rate:${fcCompletionRate}`);
       fcCompleteness = "incomplete";
       
-      // Phase 3: Allow partial scoring if we have minimum viable data (>30% complete)
-      if (partial_session && fcCompletionRate < 0.3) {
+      // Phase 3: Allow partial scoring if we have minimum viable data (>50% complete for real FC blocks)
+      if (partial_session && fcCompletionRate < 0.5) {
         console.log(`evt:insufficient_partial_data,session_id:${session_id},completion_rate:${fcCompletionRate}`);
         return new Response(JSON.stringify({ 
           status: "partial_insufficient", 

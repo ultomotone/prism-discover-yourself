@@ -9,9 +9,11 @@ import { assessmentQuestions, Question } from "@/data/assessmentQuestions";
 import { getAssessmentLibrary } from "@/lib/questions/getAssessmentLibrary";
 import { QuestionComponent } from "./QuestionComponent";
 import { ProgressCard } from "./ProgressCard";
+import { FCBlockManager } from "./FCBlockManager";
 import { visibleIf, getVisibleQuestions, getVisibleQuestionCount, getVisibleQuestionIndex } from "@/lib/visibility";
 import { getPrismConfig, PrismConfig } from "@/services/prismConfig";
 import { saveResponseIdempotent, loadSessionResponses, firstUnansweredIndex, responsesToMap } from "@/services/assessmentSaves";
+import { isRealFCBlock } from "@/services/fcBlockService";
 import { ErrorSummary } from "./ErrorSummary";
 import { EmailSavePrompt } from "./EmailSavePrompt";
 import { SessionConflictModal } from "./SessionConflictModal";
@@ -50,6 +52,9 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
   const [validationResult, setValidationResult] = useState<ValidationPayload | null>(null);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
   const [prismConfig, setPrismConfig] = useState<PrismConfig | null>(null);
+  const [showFCBlocks, setShowFCBlocks] = useState(false);
+  const [fcCompleted, setFCCompleted] = useState(false);
+  const [fcData, setFCData] = useState<any>(null);
   const { toast } = useToast();
 
   // Filter to visible questions with comprehensive library
@@ -292,6 +297,13 @@ try {
       console.log('Skipping question change logic because we are resuming session');
       return;
     }
+
+    // Check if we've reached the FC section
+    if (currentQuestion && isRealFCBlock(currentQuestion) && !showFCBlocks && !fcCompleted) {
+      console.log('Detected real FC block, switching to FC block manager');
+      setShowFCBlocks(true);
+      return;
+    }
     
     // Reset question start time when moving to a new question
     setQuestionStartTime(Date.now());
@@ -313,12 +325,65 @@ try {
         setCurrentAnswer(''); // Controlled string (never null or undefined)
       }
     }
-  }, [currentQuestionIndex, responses, currentQuestion?.id, isResumingSession]);
+  }, [currentQuestionIndex, responses, currentQuestion?.id, isResumingSession, showFCBlocks, fcCompleted]);
 
   const saveResponseToSupabase = async (response: AssessmentResponse, responseTime: number) => {
     if (!sessionId) return;
 
     try {
+      // Handle real FC blocks differently - save to fc_responses
+      if (currentQuestion.type?.startsWith('forced-choice-') && 
+          currentQuestion.section?.toLowerCase().includes('work style')) {
+        console.log('Saving FC response to fc_responses table');
+        
+        // For real FC blocks, we need to find the matching block and option
+        const { data: fcBlocks } = await supabase
+          .from('fc_blocks')
+          .select('id, code')
+          .eq('version', 'v1.1')
+          .eq('is_active', true);
+
+        const { data: fcOptions } = await supabase
+          .from('fc_options')
+          .select('id, block_id, option_code, prompt');
+
+        // Try to match the response to a real FC block/option
+        // This is a transitional approach while we migrate to RealFCBlock component
+        if (fcBlocks && fcOptions) {
+          const matchingBlock = fcBlocks.find(b => 
+            currentQuestion.tag?.includes(b.code) || 
+            currentQuestion.text?.includes(b.code)
+          );
+          
+          if (matchingBlock) {
+            const blockOptions = fcOptions.filter(o => o.block_id === matchingBlock.id);
+            const selectedOption = blockOptions.find(o => 
+              response.answer.toString().includes(o.option_code) ||
+              response.answer.toString().includes(o.prompt.substring(0, 20))
+            );
+
+            if (selectedOption) {
+              const { error: fcError } = await supabase
+                .from('fc_responses')
+                .upsert({
+                  session_id: sessionId,
+                  block_id: matchingBlock.id,
+                  option_id: selectedOption.id,
+                  answered_at: new Date().toISOString()
+                });
+
+              if (fcError) {
+                console.error('Error saving FC response:', fcError);
+              } else {
+                console.log('FC response saved successfully');
+                // Also save to regular responses for compatibility
+              }
+            }
+          }
+        }
+      }
+
+      // Regular response saving (for all questions including FC for compatibility)
       const responseData: any = {
         session_id: sessionId,
         question_id: response.questionId,
@@ -399,6 +464,117 @@ try {
 
   const handleAnswerChange = (answer: string | number | string[] | number[]) => {
     setCurrentAnswer(answer);
+  };
+
+  const handleFCCompletion = (fcCompletionData: any) => {
+    console.log('FC blocks completed:', fcCompletionData);
+    setFCData(fcCompletionData);
+    setFCCompleted(true);
+    setShowFCBlocks(false);
+
+    // Move past all FC questions in the regular flow
+    let nextIndex = currentQuestionIndex;
+    while (nextIndex < visibleQuestions.length && isRealFCBlock(visibleQuestions[nextIndex])) {
+      nextIndex++;
+    }
+    
+    if (nextIndex < visibleQuestions.length) {
+      setCurrentQuestionIndex(nextIndex);
+    } else {
+      // We've completed all questions including FC blocks
+      handleAssessmentCompletion();
+    }
+
+    toast({
+      title: "Forced Choice Complete",
+      description: `Coverage: ${fcCompletionData.coverageBucket} (${fcCompletionData.completedBlocks}/${fcCompletionData.totalBlocks} blocks)`,
+    });
+  };
+
+  const handleAssessmentCompletion = async () => {
+    console.log('Assessment completion triggered');
+    
+    // Prepare final responses
+    const finalResponses = [...responses];
+    
+    // Skip processing if library not loaded yet
+    if (!libraryLoaded) return;
+    
+    // Run final validation with comprehensive library
+    console.log('🚀 Calling validatePrismAssessment...');
+    const prismValidation = await validatePrismAssessment(finalResponses, assessmentLibrary);
+    console.log('🚀 Validation completed. Result:', prismValidation);
+    
+    if (!prismValidation.ok) {
+      console.log('❌ Final validation BLOCKED submission:', prismValidation.errors);
+      setValidationResult(prismValidation);
+      setShowValidationErrors(true);
+      
+      await logValidationEvent(sessionId!, prismValidation, 'block_submit');
+      
+      toast({
+        title: "Assessment Incomplete",
+        description: `${prismValidation.errors.length} issue(s) must be resolved before submission.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    console.log('✅ Final validation passed');
+    
+    // Handle deferred scoring case
+    if (prismValidation.defer_scoring) {
+      console.log('🟨 Deferred scoring mode - completing without immediate scoring');
+      
+      // Mark session with special status
+      await supabase
+        .from('assessment_sessions')
+        .update({
+          completed_at: new Date().toISOString(),
+          completed_questions: visibleQuestions.length,
+          metadata: {
+            validation_status: prismValidation.validation_status,
+            defer_scoring: true,
+            browser: navigator.userAgent,
+            completed_at: new Date().toISOString(),
+            fc_data: fcData
+          }
+        })
+        .eq('id', sessionId!);
+
+      await logValidationEvent(sessionId!, prismValidation, 'allow_submit');
+      
+      // Show deferred success instead of normal completion
+      setValidationResult(prismValidation);
+      onComplete(finalResponses, sessionId!);
+      return;
+    }
+    
+    // Log warnings but allow completion
+    if (prismValidation.warnings.length > 0) {
+      console.warn('⚠️ PRISM VALIDATION WARNINGS:', prismValidation.warnings);
+      setValidationResult(prismValidation);
+    }
+    
+    await logValidationEvent(sessionId!, prismValidation, 'allow_submit');
+
+    // Mark session as complete with FC data
+    await supabase
+      .from('assessment_sessions')
+      .update({
+        completed_at: new Date().toISOString(),
+        completed_questions: visibleQuestions.length,
+        metadata: {
+          browser: navigator.userAgent,
+          completed_at: new Date().toISOString(),
+          fc_data: fcData
+        }
+      })
+      .eq('id', sessionId!);
+
+    // Complete assessment
+    console.log('🎯 ASSESSMENT COMPLETE - CALLING onComplete');
+    onComplete(finalResponses, sessionId!);
   };
 
   const handleNext = async () => {
@@ -842,64 +1018,90 @@ try {
             />
           )}
 
-          {/* Question Card */}
-          <Card className="mb-8 prism-shadow-card">
-            <CardHeader>
-              <CardTitle className="text-lg">
-                {currentQuestion.text}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Progress Card with Config/Validation Info */}
-              <ProgressCard 
-                validation={validationResult} 
-                config={prismConfig} 
-                isLoading={!libraryLoaded || isLoading}
-              />
-              
-              <QuestionComponent
-                question={currentQuestion}
-                value={currentAnswer}
-                onChange={handleAnswerChange}
-              />
-            </CardContent>
-          </Card>
+          {/* Show FC Block Manager when in FC section */}
+          {showFCBlocks && sessionId && (
+            <FCBlockManager
+              sessionId={sessionId}
+              onComplete={handleFCCompletion}
+              onSkip={() => {
+                setShowFCBlocks(false);
+                setFCCompleted(true);
+                // Skip to next non-FC question
+                let nextIndex = currentQuestionIndex;
+                while (nextIndex < visibleQuestions.length && isRealFCBlock(visibleQuestions[nextIndex])) {
+                  nextIndex++;
+                }
+                if (nextIndex < visibleQuestions.length) {
+                  setCurrentQuestionIndex(nextIndex);
+                } else {
+                  handleAssessmentCompletion();
+                }
+              }}
+            />
+          )}
 
-          {/* Navigation */}
-          <div className="flex justify-between items-center">
-            <Button
-              variant="outline"
-              onClick={handlePrevious}
-              className="flex items-center gap-2"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              {currentQuestionIndex === 0 ? 'Back to Intro' : 'Previous'}
-            </Button>
+          {/* Regular Question Card - only show when not in FC mode */}
+          {!showFCBlocks && (
+            <Card className="mb-8 prism-shadow-card">
+              <CardHeader>
+                <CardTitle className="text-lg">
+                  {currentQuestion.text}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Progress Card with Config/Validation Info */}
+                <ProgressCard 
+                  validation={validationResult} 
+                  config={prismConfig} 
+                  isLoading={!libraryLoaded || isLoading}
+                />
+                
+                <QuestionComponent
+                  question={currentQuestion}
+                  value={currentAnswer}
+                  onChange={handleAnswerChange}
+                />
+              </CardContent>
+            </Card>
+          )}
 
-            <div className="flex items-center gap-3">
-              {onSaveAndExit && (
+          {/* Navigation - hide when showing FC blocks */}
+          {!showFCBlocks && (
+            <div className="flex justify-between items-center">
+              <Button
+                variant="outline"
+                onClick={handlePrevious}
+                className="flex items-center gap-2"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                {currentQuestionIndex === 0 ? 'Back to Intro' : 'Previous'}
+              </Button>
+
+              <div className="flex items-center gap-3">
+                {onSaveAndExit && (
+                  <Button
+                    variant="outline"
+                    onClick={handleSaveAndExit}
+                    disabled={isLoading}
+                    className="flex items-center gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    Save & Exit
+                  </Button>
+                )}
+                
                 <Button
-                  variant="outline"
-                  onClick={handleSaveAndExit}
+                  onClick={handleNext}
                   disabled={isLoading}
                   className="flex items-center gap-2"
+                  variant={isLastQuestion ? 'hero' : 'default'}
                 >
-                  <Save className="h-4 w-4" />
-                  Save & Exit
+                  {isLoading ? 'Saving...' : isLastQuestion ? 'Complete Assessment' : 'Next'}
+                  {!isLastQuestion && !isLoading && <ChevronRight className="h-4 w-4" />}
                 </Button>
-              )}
-              
-              <Button
-                onClick={handleNext}
-                disabled={isLoading}
-                className="flex items-center gap-2"
-                variant={isLastQuestion ? 'hero' : 'default'}
-              >
-                {isLoading ? 'Saving...' : isLastQuestion ? 'Complete Assessment' : 'Next'}
-                {!isLastQuestion && !isLoading && <ChevronRight className="h-4 w-4" />}
-              </Button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
       
