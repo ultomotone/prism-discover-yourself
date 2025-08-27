@@ -71,10 +71,12 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Check access permissions
-    const isCompleted = sessionData.status === 'completed'
-    const isOwner = sessionData.user_id && user?.id === sessionData.user_id
-    const hasValidShareToken = share_token && sessionData.share_token === share_token
+    // Check access permissions (accept multiple finalized states or completed_at)
+    const normalizedStatus = (sessionData.status || '').toLowerCase()
+    const doneStatuses = new Set(['completed', 'complete', 'finalized', 'scored'])
+    const isCompleted = doneStatuses.has(normalizedStatus) || !!sessionData.completed_at
+    const isOwner = !!sessionData.user_id && user?.id === sessionData.user_id
+    const hasValidShareToken = !!share_token && sessionData.share_token === share_token
     
     console.log('Access check:', { 
       isCompleted, 

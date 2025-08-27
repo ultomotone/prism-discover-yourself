@@ -40,7 +40,7 @@ serve(async (req) => {
     // 1) Load session
     const { data: session, error: sErr } = await supabase
       .from("assessment_sessions")
-      .select("id, user_id, status, share_token")
+      .select("id, user_id, status, share_token, completed_at")
       .eq("id", session_id)
       .maybeSingle();
 
@@ -59,9 +59,11 @@ serve(async (req) => {
       });
     }
 
-    // 2) Access check: allow if completed or share token matches
-    const isCompleted = session.status === "completed";
-    const hasShare = share_token && typeof share_token === "string" && share_token.length > 0;
+    // 2) Access check: allow if completed/finalized or share token matches
+    const normalizedStatus = (session.status || '').toLowerCase();
+    const doneStatuses = new Set(['completed', 'complete', 'finalized', 'scored']);
+    const isCompleted = doneStatuses.has(normalizedStatus) || !!session.completed_at;
+    const hasShare = !!share_token && typeof share_token === "string" && share_token.length > 0;
     const tokenMatch = hasShare && session.share_token && session.share_token === share_token;
 
     if (!isCompleted && !tokenMatch) {
