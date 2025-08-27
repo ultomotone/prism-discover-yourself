@@ -42,24 +42,45 @@ export default function Results() {
         });
 
         // Use the secure edge function instead of direct database access
-        const { data, error } = await supabase.functions.invoke('getResultsBySession', {
-          body: { 
-            session_id: sessionId, 
-            share_token: shareToken 
-          },
-          headers: { 'cache-control': 'no-cache' }
-        });
+        let invokeError: any = null;
+        let resultData: any = null;
+        try {
+          const res = await supabase.functions.invoke('getResultsBySession', {
+            body: { 
+              session_id: sessionId, 
+              share_token: shareToken 
+            },
+            headers: { 'cache-control': 'no-cache' }
+          });
+          resultData = res.data;
+          invokeError = res.error;
+        } catch (e:any) {
+          invokeError = e;
+        }
 
-        console.log('getResultsBySession response:', { data, error });
-        console.log('Full response data:', JSON.stringify(data, null, 2));
+        // Fallback to kebab-case alias if primary 404s or returns null
+        if (invokeError || !resultData) {
+          console.warn('Primary getResultsBySession failed, trying alias get-results-by-session', invokeError);
+          const { data: dataAlias, error: errorAlias } = await supabase.functions.invoke('get-results-by-session', {
+            body: { session_id: sessionId, share_token: shareToken },
+            headers: { 'cache-control': 'no-cache' }
+          });
+          if (!invokeError) invokeError = errorAlias;
+          if (!resultData) resultData = dataAlias;
+        }
 
-        if (error) {
-          console.error('Edge function error:', error);
-          console.log('Error details:', JSON.stringify(error, null, 2));
-          setError('Failed to load results: ' + error.message);
+        console.log('getResultsBySession response:', { data: resultData, error: invokeError });
+        console.log('Full response data:', JSON.stringify(resultData, null, 2));
+
+        if (invokeError) {
+          console.error('Edge function error:', invokeError);
+          console.log('Error details:', JSON.stringify(invokeError, null, 2));
+          setError('Failed to load results: ' + (invokeError.message || 'unknown'));
           setLoading(false);
           return;
         }
+
+        const data = resultData;
 
         if (!data?.ok) {
           console.error('Access denied:', data?.reason);
