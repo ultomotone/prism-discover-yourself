@@ -22,6 +22,16 @@ serve(async (req) => {
       });
     }
 
+    // Validate UUID format early to avoid 22P02 errors
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(session_id);
+    if (!isValidUUID) {
+      console.error("get-results-by-session: invalid session_id format", { session_id, length: session_id?.length });
+      return new Response(JSON.stringify({ ok: false, reason: "invalid_session_id" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") || "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""

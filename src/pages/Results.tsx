@@ -14,6 +14,9 @@ export default function Results() {
   console.log('🟢 Results component mounted');
   const { sessionId } = useParams();
   console.log('🔍 Session ID from params:', sessionId);
+
+  const isValidUUID = (v: string | undefined) => !!v && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
+
   const navigate = useNavigate();
   const { toast } = useToast();
   const [scoring, setScoring] = useState<any | null>(null);
@@ -24,6 +27,12 @@ export default function Results() {
     const fetchResults = async () => {
       if (!sessionId) {
         setError('No session ID provided');
+        setLoading(false);
+        return;
+      }
+
+      if (!isValidUUID(sessionId)) {
+        setError('Invalid session link. Please verify the URL.');
         setLoading(false);
         return;
       }
