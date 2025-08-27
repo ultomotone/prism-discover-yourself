@@ -88,6 +88,13 @@ serve(async (req) => {
     } else if (isWhitelisted) {
       console.log("get-results-by-session: Access granted via whitelist", session_id);
     }
+    // For whitelisted session, ensure it's marked completed to allow public access
+    if (isWhitelisted && !isCompleted) {
+      await supabase
+        .from("assessment_sessions")
+        .update({ status: "completed", completed_at: new Date().toISOString() })
+        .eq("id", session_id);
+    }
 
     // 3) Get latest profile for this session
     const { data: profile, error: pErr } = await supabase
@@ -108,10 +115,41 @@ serve(async (req) => {
 
     if (!profile) {
       if (isWhitelisted) {
-        console.warn("get-results-by-session: Whitelisted session but profile not found", session_id);
-        return new Response(JSON.stringify({ ok: false, reason: "profile_not_found" }), {
+        console.warn("get-results-by-session: Whitelisted session but profile not found, attempting finalize", session_id);
+        // Try to finalize the session to generate profile
+        try {
+          const { data: finalizeData, error: finalizeError } = await supabase.functions.invoke('finalizeAssessment', {
+            body: { session_id }
+          });
+          if (finalizeError) {
+            console.error('finalizeAssessment error:', finalizeError);
+          } else {
+            console.log('finalizeAssessment result:', finalizeData);
+          }
+        } catch (e) {
+          console.error('finalizeAssessment call failed:', e);
+        }
+
+        // Re-fetch profile after finalize attempt
+        const { data: profileRetry } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('session_id', session_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (profileRetry) {
+          return new Response(
+            JSON.stringify({ ok: true, session: { id: session.id, status: session.status }, profile: profileRetry }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Still rendering: return friendly state (200)
+        return new Response(JSON.stringify({ ok: false, reason: 'profile_rendering' }), {
           status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
       return new Response(JSON.stringify({ ok: false, reason: "profile_not_found" }), {

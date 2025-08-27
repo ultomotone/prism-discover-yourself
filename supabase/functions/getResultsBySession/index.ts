@@ -111,6 +111,13 @@ Deno.serve(async (req) => {
         console.log('Access granted via existing profile for session:', session_id)
       }
     }
+    // For whitelisted session, ensure it's marked completed to allow public access
+    if (isWhitelisted && !isCompleted) {
+      await supabase
+        .from('assessment_sessions')
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
+        .eq('id', session_id);
+    }
 
     // Fetch profile data if session is accessible
     const { data: profileData, error: profileError } = await supabase
@@ -124,9 +131,40 @@ Deno.serve(async (req) => {
     if (profileError || !profileData) {
       console.error('Profile fetch failed:', profileError)
       if (isWhitelisted) {
-        console.warn('Whitelisted session but profile not found:', session_id)
+        console.warn('Whitelisted session but profile not found, attempting finalize:', session_id)
+        // Try to finalize the session to generate a profile
+        try {
+          const { data: finalizeData, error: finalizeError } = await supabase.functions.invoke('finalizeAssessment', {
+            body: { session_id }
+          });
+          if (finalizeError) {
+            console.error('finalizeAssessment error:', finalizeError)
+          } else {
+            console.log('finalizeAssessment result:', finalizeData)
+          }
+        } catch (e) {
+          console.error('finalizeAssessment call failed:', e)
+        }
+
+        // Re-fetch profile after finalize attempt
+        const { data: profileRetry } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('session_id', session_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (profileRetry) {
+          return new Response(
+            JSON.stringify({ ok: true, session: sessionData, profile: profileRetry }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        // Still no profile; return friendly rendering state
         return new Response(
-          JSON.stringify({ ok: false, reason: 'profile_not_found' }),
+          JSON.stringify({ ok: false, reason: 'profile_rendering' }),
           { 
             status: 200, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
