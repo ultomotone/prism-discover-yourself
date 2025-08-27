@@ -1,0 +1,17 @@
+type_code,Ti,Te,Fi,Fe,Ni,Ne,Si,Se
+LIE,mobilizing,base,vulnerable,demonstrative,creative,suggestive,ignoring,role
+ILI,suggestive,creative,role,ignoring,base,mobilizing,demonstrative,vulnerable
+ESE,vulnerable,ignoring,mobilizing,base,suggestive,role,creative,demonstrative
+SEI,role,demonstrative,suggestive,creative,mobilizing,vulnerable,base,ignoring
+LII,base,mobilizing,ignoring,vulnerable,role,creative,suggestive,demonstrative
+ILE,creative,suggestive,demonstrative,role,vulnerable,base,mobilizing,ignoring
+ESI,ignoring,vulnerable,base,mobilizing,role,suggestive,demonstrative,creative
+SEE,demonstrative,role,creative,suggestive,vulnerable,mobilizing,ignoring,base
+LSE,mobilizing,base,vulnerable,demonstrative,ignoring,suggestive,creative,role
+SLI,suggestive,creative,role,ignoring,mobilizing,demonstrative,base,vulnerable
+EIE,vulnerable,ignoring,mobilizing,base,creative,role,suggestive,demonstrative
+IEI,role,demonstrative,suggestive,creative,base,vulnerable,mobilizing,ignoring
+LSI,base,mobilizing,ignoring,vulnerable,role,suggestive,demonstrative,creative
+SLE,creative,suggestive,demonstrative,role,vulnerable,mobilizing,ignoring,base
+EII,demonstrative,vulnerable,base,mobilizing,role,creative,suggestive,ignoring
+IEE,demonstrative,role,creative,suggestive,vulnerable,base,mobilizing,ignoring
