@@ -582,6 +582,30 @@ export type Database = {
         }
         Relationships: []
       }
+      type_prototypes: {
+        Row: {
+          block: string
+          created_at: string
+          func: string
+          type_code: string
+          updated_at: string
+        }
+        Insert: {
+          block: string
+          created_at?: string
+          func: string
+          type_code: string
+          updated_at?: string
+        }
+        Update: {
+          block?: string
+          created_at?: string
+          func?: string
+          type_code?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       assessment_landscape: {

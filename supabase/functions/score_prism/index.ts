@@ -13,7 +13,8 @@ type TypeCode = "LIE"|"ILI"|"ESE"|"SEI"|"LII"|"ILE"|"ESI"|"SEE"|"LSE"|"SLI"|"EIE
 type Func = "Ti"|"Te"|"Fi"|"Fe"|"Ni"|"Ne"|"Si"|"Se";
 type Block = "base"|"creative"|"role"|"vulnerable"|"mobilizing"|"suggestive"|"ignoring"|"demonstrative";
 
-const TYPE_PROTOTYPES: Record<TypeCode, Record<Func, Block>> = {
+// Fallback prototypes (matches database seeded data)
+const FALLBACK_PROTOTYPES: Record<TypeCode, Record<Func, Block>> = {
   LIE: { Te:"base", Ni:"creative", Se:"role", Fi:"vulnerable", Ti:"mobilizing", Ne:"suggestive", Si:"ignoring", Fe:"demonstrative" },
   ILI: { Ni:"base", Te:"creative", Fi:"role", Se:"vulnerable", Ne:"mobilizing", Ti:"suggestive", Fe:"ignoring", Si:"demonstrative" },
   ESE: { Fe:"base", Si:"creative", Ne:"role", Ti:"vulnerable", Fi:"mobilizing", Ni:"suggestive", Te:"ignoring", Se:"demonstrative" },
@@ -31,6 +32,9 @@ const TYPE_PROTOTYPES: Record<TypeCode, Record<Func, Block>> = {
   EII: { Fi:"base", Ne:"creative", Ni:"role", Te:"vulnerable", Fe:"mobilizing", Si:"suggestive", Se:"ignoring", Ti:"demonstrative" },
   IEE: { Ne:"base", Fi:"creative", Te:"role", Ni:"vulnerable", Si:"mobilizing", Fe:"suggestive", Se:"ignoring", Ti:"demonstrative" }
 };
+
+// Dynamic prototypes loaded from database (fallback to hardcoded)
+let TYPE_PROTOTYPES = FALLBACK_PROTOTYPES;
 
 // Block weights for prototype scoring
 const BLOCK_WEIGHTS: Record<Block, number> = {
@@ -144,6 +148,41 @@ serve(async (req) => {
     const calibration = new PrismCalibration(supabase);
 
     console.log(`evt:scoring_start,session_id:${session_id},version:v1.2.0`);
+
+    // ---- Load type prototypes from database ----
+    try {
+      const { data: prototypeData, error: protoErr } = await supabase
+        .from('type_prototypes')
+        .select('type_code, func, block');
+      
+      if (protoErr) {
+        console.warn(`evt:prototype_load_error,session_id:${session_id},error:${protoErr.message}`);
+      } else if (prototypeData && prototypeData.length > 0) {
+        const dbPrototypes: Record<TypeCode, Record<Func, Block>> = {} as Record<TypeCode, Record<Func, Block>>;
+        
+        // Group by type_code and build structure
+        for (const row of prototypeData) {
+          const { type_code, func, block } = row;
+          if (!dbPrototypes[type_code as TypeCode]) {
+            dbPrototypes[type_code as TypeCode] = {} as Record<Func, Block>;
+          }
+          dbPrototypes[type_code as TypeCode][func as Func] = block as Block;
+        }
+        
+        // Only use database data if complete (all 16 types with 8 functions each)
+        const expectedSize = 16 * 8; // 16 types × 8 functions
+        const actualSize = Object.values(dbPrototypes).reduce((sum, type) => sum + Object.keys(type).length, 0);
+        
+        if (actualSize === expectedSize) {
+          TYPE_PROTOTYPES = dbPrototypes;
+          console.log(`evt:prototypes_loaded_db,session_id:${session_id},count:${actualSize}`);
+        } else {
+          console.warn(`evt:prototypes_incomplete_fallback,session_id:${session_id},expected:${expectedSize},actual:${actualSize}`);
+        }
+      }
+    } catch (error) {
+      console.warn(`evt:prototype_load_exception,session_id:${session_id},error:${error.message}`);
+    }
 
     // ---- load answers (with created_at for dedup) ----
     const { data: rawRows, error: aerr } = await supabase
