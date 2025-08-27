@@ -601,6 +601,29 @@ function Dimensions({ p }:{ p:Profile }){
     dimensionsKeys: p.dimensions ? Object.keys(p.dimensions) : 'No dimensions'
   });
 
+  // Check if dimensions exists and has non-zero values
+  const hasValidDimensionsData = p.dimensions && 
+    typeof p.dimensions === 'object' && 
+    Object.values(p.dimensions).some(val => val && val > 0);
+
+  if (!hasValidDimensionsData) {
+    console.warn('🔴 Missing or zero dimensions data in profile:', p.dimensions);
+    return (
+      <section className="p-5 border rounded-2xl bg-card">
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="font-semibold">Dimensionality (1–4)</h3>
+          <InfoTip title={GLOSSARY.dimensionality.label}>
+            <div>{GLOSSARY.dimensionality.text}</div>
+          </InfoTip>
+        </div>
+        <div className="text-center text-muted-foreground py-8">
+          <div className="mb-2">Dimensionality analysis not available</div>
+          <div className="text-sm">This assessment may be incomplete or using test data</div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="p-5 border rounded-2xl bg-card">
       <div className="flex items-center gap-2 mb-3">
@@ -631,19 +654,30 @@ function Blocks({ p }:{ p:Profile }){
     blocks_norm: p.blocks_norm
   });
 
-  // Add null safety checks for blocks data
-  if (!p.blocks_norm || typeof p.blocks_norm !== 'object') {
-    console.warn('🔴 Missing blocks_norm data in profile:', p);
+  // Check if blocks_norm exists and has non-zero values
+  const hasValidBlocksData = p.blocks_norm && 
+    typeof p.blocks_norm === 'object' && 
+    Object.values(p.blocks_norm).some(val => val && val > 0);
+
+  if (!hasValidBlocksData) {
+    console.warn('🔴 Missing or zero blocks_norm data in profile:', p.blocks_norm);
     return (
       <section className="p-5 border rounded-2xl bg-card">
         <div className="flex items-center gap-2 mb-3">
           <h3 className="font-semibold">Blocks (%)</h3>
           <InfoTip title="Block Analysis">
-            <div>Block data is not available for this profile.</div>
+            <div>
+              {GLOSSARY.blocks.items.map(({k,v})=>(
+                <div key={k} className="mb-2">
+                  <b>{k}</b>: {v}
+                </div>
+              ))}
+            </div>
           </InfoTip>
         </div>
         <div className="text-center text-muted-foreground py-8">
-          Block analysis data not available
+          <div className="mb-2">Block analysis data not available</div>
+          <div className="text-sm">This assessment may be incomplete or using test data</div>
         </div>
       </section>
     );
@@ -1021,8 +1055,20 @@ function MetaInfo({ p }:{ p:Profile }){
           {p.close_call && <div className="text-orange-600"><b>Close Call</b>: Top-gap = {p.top_gap?.toFixed(1)}</div>}
         </div>
         <div className="space-y-2">
-          <div><b>Inconsistency</b>: {p.validity?.inconsistency?.toFixed(2) ?? 'Not available'}</div>
-          <div><b>Social desirability</b>: {p.validity?.sd_index?.toFixed(2) ?? 'Not available'}</div>
+          <div><b>Inconsistency</b>: {
+            p.validity?.inconsistency && p.validity.inconsistency > 0 
+              ? p.validity.inconsistency.toFixed(2) 
+              : p.validity?.inconsistency === 0 
+                ? '0 (test/incomplete data)' 
+                : 'Not available'
+          }</div>
+          <div><b>Social desirability</b>: {
+            p.validity?.sd_index && p.validity.sd_index > 0 
+              ? p.validity.sd_index.toFixed(2) 
+              : p.validity?.sd_index === 0 
+                ? '0 (test/incomplete data)' 
+                : 'Not available'
+          }</div>
           {p.fc_answered_ct && <div><b>FC Answered</b>: {p.fc_answered_ct}</div>}
           <div className="flex items-center gap-1">
             <b>Overlay</b>: {p.overlay} 

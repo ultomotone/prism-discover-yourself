@@ -126,5 +126,13 @@ export const TYPE_CORE_DESCRIPTIONS: Record<string, TypeCoreDescription> = {
       "Their Ne provides the curiosity and networking ability to discover opportunities and connections, while their Fi creative adds the personal values and relationship skills to build meaningful connections. IEE Fi is selective and authentic rather than universally accepting – it's about forming genuine connections based on shared values and mutual growth potential. This combination makes them excellent at bringing people and ideas together.",
       "In flow, an IEE resembles an inspiring connector or talent scout: enthusiastically discovering potential in people and situations while building networks of meaningful relationships. They excel in roles where they can help others discover and develop their potential, whether in coaching, business development, or community building. Their Ne-Fi combination gives them both the vision to see what's possible and the authenticity to build trust with others."
     ]
+  },
+  LIE: {
+    title: "Strategic Executor (Te–Ni)",
+    paragraphs: [
+      "LIEs are results-oriented leaders with a Core of extroverted logic (Te) base and introverted intuition (Ni) creative. Their 4D Te base makes them natural optimizers who focus on achieving concrete results through efficient systems and clear metrics. As a \"minus\" Te, LIEs seek to streamline and focus efforts – they're skilled at cutting through complexity to identify what really matters for success.",
+      "Their Te provides the drive to organize resources and people toward clear objectives, while their Ni creative adds strategic foresight and timing. LIE Ni helps them anticipate trends and position for future opportunities rather than just reacting to current conditions. This combination makes them excellent at building successful enterprises and leading organizational change.",
+      "In flow, an LIE resembles a competent CEO or strategic leader: systematically building toward long-term goals while maintaining focus on measurable progress and practical results. They excel in competitive environments where they can apply their combination of strategic thinking and execution skills. Their Te-Ni partnership gives them both the drive to achieve results and the foresight to choose the right battles."
+    ]
   }
-};
+}
