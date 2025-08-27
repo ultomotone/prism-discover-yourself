@@ -309,10 +309,10 @@ serve(async (req) => {
       usedRealFCScores = true;
       
       // Convert 0-100 scores to counts (approximate for compatibility)
-      const maxScore = Math.max(...Object.values(realFCScores));
       for (const func of FUNCS) {
         const score = realFCScores[func] || 0;
-        fcFuncCount[func] = Math.round((score / 100) * 10); // Scale to reasonable count range
+        // Ensure minimum of 1 to avoid zeros, scale appropriately
+        fcFuncCount[func] = Math.max(1, Math.round((score / 100) * 12));
       }
       
       console.log(`evt:fc_real_scores,session_id:${session_id},scores:${JSON.stringify(realFCScores)}`);
@@ -784,7 +784,7 @@ serve(async (req) => {
     const { data: cohortData } = await supabase
       .from('profiles')
       .select('score_fit_raw')
-      .eq('results_version', 'v1.1')
+      .in('results_version', ['v1.1', 'v1.2.0']) // Include both versions
       .gte('created_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
       .not('score_fit_raw', 'is', null);
 
