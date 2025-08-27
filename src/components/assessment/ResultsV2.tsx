@@ -595,6 +595,12 @@ function Strengths({ p }:{ p:Profile }){
 }
 
 function Dimensions({ p }:{ p:Profile }){
+  console.log('🔵 Dimensions component called with profile dimensions data:', {
+    hasDimensions: !!p.dimensions,
+    dimensions: p.dimensions,
+    dimensionsKeys: p.dimensions ? Object.keys(p.dimensions) : 'No dimensions'
+  });
+
   return (
     <section className="p-5 border rounded-2xl bg-card">
       <div className="flex items-center gap-2 mb-3">
@@ -618,9 +624,16 @@ function Dimensions({ p }:{ p:Profile }){
 }
 
 function Blocks({ p }:{ p:Profile }){
+  console.log('🔵 Blocks component called with profile blocks data:', {
+    hasBlocks: !!p.blocks,
+    hasBlocksNorm: !!p.blocks_norm,
+    blocks: p.blocks,
+    blocks_norm: p.blocks_norm
+  });
+
   // Add null safety checks for blocks data
   if (!p.blocks_norm || typeof p.blocks_norm !== 'object') {
-    console.warn('Missing blocks_norm data in profile:', p);
+    console.warn('🔴 Missing blocks_norm data in profile:', p);
     return (
       <section className="p-5 border rounded-2xl bg-card">
         <div className="flex items-center gap-2 mb-3">
@@ -673,17 +686,17 @@ function Blocks({ p }:{ p:Profile }){
 
 // Enhanced Core Description component using centralized data
 function TypeCoreSection({ typeCode }: { typeCode: string }) {
-  console.log('TypeCoreSection called with typeCode:', typeCode);
+  console.log('🔵 TypeCoreSection called with typeCode:', typeCode, 'Available TYPE_CORE_DESCRIPTIONS keys:', Object.keys(TYPE_CORE_DESCRIPTIONS));
   
   if (!typeCode) {
-    console.warn('TypeCoreSection: No typeCode provided');
+    console.warn('🔴 TypeCoreSection: No typeCode provided');
     return null;
   }
   
   const coreData = TYPE_CORE_DESCRIPTIONS[typeCode];
   
   if (!coreData) {
-    console.warn('TypeCoreSection: No core data found for typeCode:', typeCode, 'Available codes:', Object.keys(TYPE_CORE_DESCRIPTIONS));
+    console.warn('🔴 TypeCoreSection: No core data found for typeCode:', typeCode, 'Available codes:', Object.keys(TYPE_CORE_DESCRIPTIONS));
     return (
       <section className="p-6 border rounded-2xl bg-card prism-shadow-card">
         <h2 className="text-xl font-bold mb-4 text-primary">Core</h2>
@@ -693,6 +706,8 @@ function TypeCoreSection({ typeCode }: { typeCode: string }) {
       </section>
     );
   }
+  
+  console.log('🟢 TypeCoreSection: Successfully found core data for', typeCode, 'with', coreData.paragraphs.length, 'paragraphs');
   
   return (
     <section className="p-6 border rounded-2xl bg-card prism-shadow-card">
@@ -948,6 +963,16 @@ function TypeNarrative({ typeCode }:{ typeCode:string }){
 }
 
 function MetaInfo({ p }:{ p:Profile }){
+  console.log('🔵 MetaInfo component called with profile validity data:', {
+    hasValidity: !!p.validity,
+    validity: p.validity,
+    inconsistency: p.validity?.inconsistency,
+    sd_index: p.validity?.sd_index,
+    validityStatus: p.validity_status,
+    confidence: p.confidence,
+    conf_band: p.conf_band
+  });
+
   const validityColor = p.validity_status === "pass" ? "text-green-600" : 
                        p.validity_status === "warning" ? "text-orange-600" : "text-red-600";
   
@@ -996,8 +1021,8 @@ function MetaInfo({ p }:{ p:Profile }){
           {p.close_call && <div className="text-orange-600"><b>Close Call</b>: Top-gap = {p.top_gap?.toFixed(1)}</div>}
         </div>
         <div className="space-y-2">
-          <div><b>Inconsistency</b>: {p.validity.inconsistency}</div>
-          <div><b>Social desirability</b>: {p.validity.sd_index}</div>
+          <div><b>Inconsistency</b>: {p.validity?.inconsistency?.toFixed(2) ?? 'Not available'}</div>
+          <div><b>Social desirability</b>: {p.validity?.sd_index?.toFixed(2) ?? 'Not available'}</div>
           {p.fc_answered_ct && <div><b>FC Answered</b>: {p.fc_answered_ct}</div>}
           <div className="flex items-center gap-1">
             <b>Overlay</b>: {p.overlay} 
@@ -1022,14 +1047,21 @@ function SafeComponent<T extends Record<string, any>>({
   fallbackName: string;
 }) {
   try {
-    console.log(`🔵 Rendering ${fallbackName}...`);
-    return <Component {...props} />;
+    console.log(`🔵 SafeComponent: About to render ${fallbackName} with props:`, props);
+    const result = <Component {...props} />;
+    console.log(`✅ SafeComponent: Successfully rendered ${fallbackName}`);
+    return result;
   } catch (error) {
-    console.error(`🔴 Error in ${fallbackName}:`, error);
+    console.error(`🔴 SafeComponent Error in ${fallbackName}:`, error);
+    console.error(`🔴 SafeComponent Props that caused error:`, props);
     return (
       <div className="p-4 border border-red-300 rounded bg-red-50">
         <h3 className="font-semibold text-red-700">Error in {fallbackName}</h3>
         <p className="text-red-600 text-sm">{error instanceof Error ? error.message : 'Unknown error'}</p>
+        <details className="mt-2 text-xs">
+          <summary className="cursor-pointer">Error Details</summary>
+          <pre className="mt-1 text-red-500">{error instanceof Error ? error.stack : String(error)}</pre>
+        </details>
       </div>
     );
   }
@@ -1077,6 +1109,20 @@ export const ResultsV2: React.FC<{ profile: Profile }> = ({ profile: p }) => {
   }
   
   try {
+    console.log('🟡 About to render components, profile data check:', {
+      hasBlocks: !!p.blocks,
+      hasBlocksNorm: !!p.blocks_norm,
+      hasDimensions: !!p.dimensions,
+      hasStrengths: !!p.strengths,
+      hasValidity: !!p.validity,
+      hasTypeCode: !!p.type_code,
+      primaryType: primary,
+      blocksKeys: p.blocks ? Object.keys(p.blocks) : 'No blocks',
+      blocksNormKeys: p.blocks_norm ? Object.keys(p.blocks_norm) : 'No blocks_norm',
+      dimensionsKeys: p.dimensions ? Object.keys(p.dimensions) : 'No dimensions',
+      strengthsKeys: p.strengths ? Object.keys(p.strengths) : 'No strengths',
+    });
+
     return (
       <div className="max-w-4xl mx-auto space-y-6">
         <SafeComponent component={Top3} props={{ p }} fallbackName="Top3" />
