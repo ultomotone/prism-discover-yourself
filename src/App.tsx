@@ -5,12 +5,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
 import Footer from "./components/Footer";
 import Index from "./pages/Index";
 import Assessment from "./pages/Assessment";
 import Results from "./pages/Results";
 import History from "./pages/History";
-import Dashboard from "./pages/Dashboard";
+import UserDashboard from "./pages/UserDashboard";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import About from "./pages/About";
 import Signals from "./pages/Signals";
 import Ti from "./pages/Ti";
@@ -149,92 +152,96 @@ const queryClient = new QueryClient();
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <div className="min-h-screen flex flex-col">
-            <main className="flex-1">
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/assessment" element={<Assessment />} />
-                <Route path="/results/:sessionId" element={<Results />} />
-                {/* Debug route for Results testing */}
-                <Route path="/results" element={
-                  <div className="min-h-screen bg-background flex items-center justify-center">
-                    <div className="text-center">
-                      <h1 className="text-2xl font-bold mb-4">Results Page - Missing Session ID</h1>
-                      <p className="text-muted-foreground mb-4">You need a session ID to view results</p>
-                      <Button onClick={() => window.location.href = '/'}>Go Home</Button>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <div className="min-h-screen flex flex-col">
+              <main className="flex-1">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/assessment" element={<Assessment />} />
+                  <Route path="/results/:sessionId" element={<Results />} />
+                  {/* Debug route for Results testing */}
+                  <Route path="/results" element={
+                    <div className="min-h-screen bg-background flex items-center justify-center">
+                      <div className="text-center">
+                        <h1 className="text-2xl font-bold mb-4">Results Page - Missing Session ID</h1>
+                        <p className="text-muted-foreground mb-4">You need a session ID to view results</p>
+                        <Button onClick={() => window.location.href = '/'}>Go Home</Button>
+                      </div>
                     </div>
-                  </div>
-                } />
-                <Route path="/history" element={<History />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/admin" element={<Admin />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/signals" element={<Signals />} />
-                <Route path="/ti" element={<Ti />} />
-                <Route path="/te" element={<Te />} />
-                <Route path="/fi" element={<Fi />} />
-                <Route path="/fe" element={<Fe />} />
-                <Route path="/ni" element={<Ni />} />
-                <Route path="/ne" element={<Ne />} />
-                <Route path="/si" element={<Si />} />
-                <Route path="/se" element={<Se />} />
-                <Route path="/dimensionality" element={<Dimensionality />} />
-                <Route path="/blocks" element={<Blocks />} />
-                <Route path="/state-overlay" element={<StateOverlay />} />
-                <Route path="/how-it-works" element={<HowItWorks />} />
-                <Route path="/profiles" element={<Profiles />} />
-                <Route path="/individuals" element={<Individuals />} />
-                <Route path="/teams" element={<Teams />} />
-                <Route path="/consultants" element={<Consultants />} />
-                <Route path="/education" element={<Education />} />
-                <Route path="/insights" element={<Insights />} />
-                <Route path="/research" element={<Research />} />
-                <Route path="/research/first-hundred-study" element={<FirstHundredStudy />} />
-                <Route path="/faq" element={<FAQ />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="/accessibility" element={<Accessibility />} />
-                <Route path="/core-alignments" element={<CoreAlignments />} />
-                <Route path="/resources" element={<Resources />} />
-                <Route path="/roadmap" element={<Roadmap />} />
-                <Route path="/your-personality-blueprint" element={<YourPersonalityBlueprint />} />
-                <Route path="/prism-relational-fit" element={<PRISMRelationalFit />} />
-                
-                {/* Relational Fit Mini-App Routes */}
-                <Route path="/relational-fit" element={<RelationalFitHome />} />
-                <Route path="/relational-fit/heatmap" element={<RelationalFitHeatmap />} />
-                <Route path="/relational-fit/types" element={<RelationalFitTypes />} />
-                <Route path="/relational-fit/pair/:pairId" element={<RelationalFitPair />} />
-                {/* PRISM Type Routes */}
-                <Route path="/types/idea-catalyst" element={<IdeaCatalyst />} />
-                <Route path="/types/framework-architect" element={<FrameworkArchitect />} />
-                <Route path="/types/comfort-harmonizer" element={<ComfortHarmonizer />} />
-                <Route path="/types/atmosphere-host" element={<AtmosphereHost />} />
-                <Route path="/types/tactical-commander" element={<TacticalCommander />} />
-                <Route path="/types/systems-marshal" element={<SystemsMarshal />} />
-                <Route path="/types/vision-muse" element={<VisionMuse />} />
-                <Route path="/types/inspiration-orchestrator" element={<InspirationOrchestrator />} />
-                <Route path="/types/strategic-executor" element={<StrategicExecutor />} />
-                <Route path="/types/foresight-analyst" element={<ForesightAnalyst />} />
-                <Route path="/types/relational-driver" element={<RelationalDriver />} />
-                <Route path="/types/boundary-guardian" element={<BoundaryGuardian />} />
-                <Route path="/types/operations-steward" element={<OperationsSteward />} />
-                <Route path="/types/practical-optimizer" element={<PracticalOptimizer />} />
-                <Route path="/types/possibility-connector" element={<PossibilityConnector />} />
-                <Route path="/types/integrity-guide" element={<IntegrityGuide />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </main>
-            <Footer />
-          </div>
-        </BrowserRouter>
-      </TooltipProvider>
+                  } />
+                  <Route path="/history" element={<History />} />
+                  <Route path="/dashboard" element={<UserDashboard />} />
+                  <Route path="/admin" element={<Admin />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/signals" element={<Signals />} />
+                  <Route path="/ti" element={<Ti />} />
+                  <Route path="/te" element={<Te />} />
+                  <Route path="/fi" element={<Fi />} />
+                  <Route path="/fe" element={<Fe />} />
+                  <Route path="/ni" element={<Ni />} />
+                  <Route path="/ne" element={<Ne />} />
+                  <Route path="/si" element={<Si />} />
+                  <Route path="/se" element={<Se />} />
+                  <Route path="/dimensionality" element={<Dimensionality />} />
+                  <Route path="/blocks" element={<Blocks />} />
+                  <Route path="/state-overlay" element={<StateOverlay />} />
+                  <Route path="/how-it-works" element={<HowItWorks />} />
+                  <Route path="/profiles" element={<Profiles />} />
+                  <Route path="/individuals" element={<Individuals />} />
+                  <Route path="/teams" element={<Teams />} />
+                  <Route path="/consultants" element={<Consultants />} />
+                  <Route path="/education" element={<Education />} />
+                  <Route path="/insights" element={<Insights />} />
+                  <Route path="/research" element={<Research />} />
+                  <Route path="/research/first-hundred-study" element={<FirstHundredStudy />} />
+                  <Route path="/faq" element={<FAQ />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/accessibility" element={<Accessibility />} />
+                  <Route path="/core-alignments" element={<CoreAlignments />} />
+                  <Route path="/resources" element={<Resources />} />
+                  <Route path="/roadmap" element={<Roadmap />} />
+                  <Route path="/your-personality-blueprint" element={<YourPersonalityBlueprint />} />
+                  <Route path="/prism-relational-fit" element={<PRISMRelationalFit />} />
+                  
+                  {/* Relational Fit Mini-App Routes */}
+                  <Route path="/relational-fit" element={<RelationalFitHome />} />
+                  <Route path="/relational-fit/heatmap" element={<RelationalFitHeatmap />} />
+                  <Route path="/relational-fit/types" element={<RelationalFitTypes />} />
+                  <Route path="/relational-fit/pair/:pairId" element={<RelationalFitPair />} />
+                  {/* PRISM Type Routes */}
+                  <Route path="/types/idea-catalyst" element={<IdeaCatalyst />} />
+                  <Route path="/types/framework-architect" element={<FrameworkArchitect />} />
+                  <Route path="/types/comfort-harmonizer" element={<ComfortHarmonizer />} />
+                  <Route path="/types/atmosphere-host" element={<AtmosphereHost />} />
+                  <Route path="/types/tactical-commander" element={<TacticalCommander />} />
+                  <Route path="/types/systems-marshal" element={<SystemsMarshal />} />
+                  <Route path="/types/vision-muse" element={<VisionMuse />} />
+                  <Route path="/types/inspiration-orchestrator" element={<InspirationOrchestrator />} />
+                  <Route path="/types/strategic-executor" element={<StrategicExecutor />} />
+                  <Route path="/types/foresight-analyst" element={<ForesightAnalyst />} />
+                  <Route path="/types/relational-driver" element={<RelationalDriver />} />
+                  <Route path="/types/boundary-guardian" element={<BoundaryGuardian />} />
+                  <Route path="/types/operations-steward" element={<OperationsSteward />} />
+                  <Route path="/types/practical-optimizer" element={<PracticalOptimizer />} />
+                  <Route path="/types/possibility-connector" element={<PossibilityConnector />} />
+                  <Route path="/types/integrity-guide" element={<IntegrityGuide />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </main>
+              <Footer />
+            </div>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   </ErrorBoundary>
 );

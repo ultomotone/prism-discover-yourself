@@ -2,12 +2,14 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, User, LogOut } from "lucide-react";
 import { prismTypes } from "@/data/prismTypes";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { user, loading, signOut } = useAuth();
 
   const navigation = [
     { name: "About", href: "/about" },
@@ -131,13 +133,45 @@ const Header = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button
-              variant="hero" 
-              size="lg"
-              onClick={() => navigate('/assessment')}
-            >
-              Take Assessment
-            </Button>
+            {!loading && (
+              user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      {user.email?.split('@')[0]}
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem asChild>
+                      <Link to="/dashboard" className="w-full">Dashboard</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={signOut} className="text-destructive">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate('/login')}
+                  >
+                    Sign In
+                  </Button>
+                  <Button
+                    variant="hero" 
+                    size="lg"
+                    onClick={() => navigate('/signup')}
+                  >
+                    Get Started
+                  </Button>
+                </div>
+              )
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -218,16 +252,53 @@ const Header = () => {
               
               
               <div className="px-3 py-2 space-y-2">
-                <Button
-                  variant="hero" 
-                  className="w-full"
-                  onClick={() => {
-                    navigate('/assessment');
-                    setIsMenuOpen(false);
-                  }}
-                >
-                  Take Assessment
-                </Button>
+                {!loading && (
+                  user ? (
+                    <>
+                      <Link
+                        to="/dashboard"
+                        className="block px-3 py-2 text-foreground hover:text-primary prism-transition font-medium"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Dashboard
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-destructive hover:text-destructive"
+                        onClick={() => {
+                          signOut();
+                          setIsMenuOpen(false);
+                        }}
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign Out
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="ghost"
+                        className="w-full"
+                        onClick={() => {
+                          navigate('/login');
+                          setIsMenuOpen(false);
+                        }}
+                      >
+                        Sign In
+                      </Button>
+                      <Button
+                        variant="hero" 
+                        className="w-full"
+                        onClick={() => {
+                          navigate('/signup');
+                          setIsMenuOpen(false);
+                        }}
+                      >
+                        Get Started
+                      </Button>
+                    </>
+                  )
+                )}
               </div>
             </div>
           </div>
