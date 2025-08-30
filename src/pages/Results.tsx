@@ -10,6 +10,30 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import Header from '@/components/Header';
 
+type Err =
+  | 'invalid_session_id'
+  | 'session_not_found'  
+  | 'access_denied'
+  | 'profile_not_found'
+  | 'profile_rendering'
+  | 'server_error'
+  | 'unknown_error';
+
+function normalizeReason(reason?: string | null): Err {
+  switch (reason) {
+    case 'session_not_found':   return 'session_not_found';
+    case 'access_denied':       return 'access_denied';
+    case 'profile_not_found':   return 'profile_not_found';
+    case 'profile_rendering':   return 'profile_rendering';
+    // Common backend variants → stable UI buckets:
+    case 'session_id_required': 
+    case 'invalid_session_id':  return 'invalid_session_id';
+    case 'session_fetch_error':
+    case 'profile_fetch_error': return 'server_error';
+    default:                    return 'unknown_error';
+  }
+}
+
 export default function Results() {
   console.log('🟢 Results component mounted');
   const { sessionId } = useParams();
@@ -21,23 +45,23 @@ export default function Results() {
   const { toast } = useToast();
   const [scoring, setScoring] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Err | null>(null);
 
   useEffect(() => {
-    const fetchResults = async () => {
-      if (!sessionId) {
-        setError('invalid_session_id');
-        setLoading(false);
-        return;
-      }
+    let cancelled = false;
 
-      if (!isValidUUID(sessionId)) {
-        setError('invalid_session_id');
-        setLoading(false);
-        return;
-      }
-
+    const run = async () => {
       try {
+        if (!sessionId) {
+          if (!cancelled) { setError('invalid_session_id'); setLoading(false); }
+          return;
+        }
+
+        if (!isValidUUID(sessionId)) {
+          if (!cancelled) { setError('invalid_session_id'); setLoading(false); }
+          return;
+        }
+
         setLoading(true);
         setError(null);
 
@@ -54,31 +78,29 @@ export default function Results() {
         const { data: resultData, error: invokeError } = await supabase.functions.invoke('get-results-by-session', {
           body: { 
             session_id: sessionId, 
-            share_token: shareToken 
+            share_token: shareToken ?? null 
           },
           headers: { 'cache-control': 'no-cache' }
         });
 
         console.log('get-results-by-session response:', { data: resultData, error: invokeError });
 
-        if (invokeError) {
-          console.error('Edge function error:', invokeError);
-          setError('server_error');
-          setLoading(false);
+        if (invokeError || !resultData) {
+          if (!cancelled) { setError('server_error'); setLoading(false); }
           return;
         }
 
-        if (!resultData?.ok) {
-          console.error('Function returned error:', resultData?.reason);
-          setError(resultData?.reason || 'unknown_error');
-          setLoading(false);
+        if (!resultData.ok) {
+          console.error('Function returned error:', resultData.reason);
+          const err = normalizeReason(resultData.reason);
+          if (!cancelled) { setError(err); setLoading(false); }
           return;
         }
 
         const profileData = resultData.profile;
         
         // Check if we have an invalid UNK result and force re-scoring
-        if (profileData.type_code === 'UNK') {
+        if (profileData?.type_code === 'UNK') {
           console.log('Detected UNK result, triggering re-score with updated algorithm');
           
           const { data: rescoreData, error: rescoreError } = await supabase.functions.invoke('score_prism', {
@@ -87,24 +109,22 @@ export default function Results() {
 
           if (rescoreError || !rescoreData || rescoreData.status !== 'success') {
             console.error('Rescore failed', rescoreError || rescoreData?.error);
-            setError('server_error');
-          } else {
-            setScoring(rescoreData.profile);
+            if (!cancelled) { setError('server_error'); setLoading(false); }
+            return;
           }
-          setLoading(false);
+          if (!cancelled) { setScoring(rescoreData.profile); setLoading(false); }
           return;
         }
 
-        setScoring(profileData);
-        setLoading(false);
+        if (!cancelled) { setScoring(profileData); setLoading(false); }
       } catch (err) {
         console.error('Error fetching results:', err);
-        setError('server_error');
-        setLoading(false);
+        if (!cancelled) { setError('server_error'); setLoading(false); }
       }
     };
 
-    fetchResults();
+    run();
+    return () => { cancelled = true; };
   }, [sessionId]);
 
   // Load Stripe script
