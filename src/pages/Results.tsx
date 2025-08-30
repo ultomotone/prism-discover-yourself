@@ -26,13 +26,13 @@ export default function Results() {
   useEffect(() => {
     const fetchResults = async () => {
       if (!sessionId) {
-        setError('No session ID provided');
+        setError('invalid_session_id');
         setLoading(false);
         return;
       }
 
       if (!isValidUUID(sessionId)) {
-        setError('Invalid session link. Please verify the URL.');
+        setError('invalid_session_id');
         setLoading(false);
         return;
       }
@@ -45,90 +45,49 @@ export default function Results() {
         const urlParams = new URLSearchParams(window.location.search);
         const shareToken = urlParams.get('token');
 
-        console.log('Calling getResultsBySession edge function with:', {
+        console.log('Calling get-results-by-session edge function with:', {
           sessionId,
           shareToken: !!shareToken
         });
 
-        // Use the secure edge function instead of direct database access
-        let invokeError: any = null;
-        let resultData: any = null;
-        try {
-          const res = await supabase.functions.invoke('getResultsBySession', {
-            body: { 
-              session_id: sessionId, 
-              share_token: shareToken 
-            },
-            headers: { 'cache-control': 'no-cache' }
-          });
-          resultData = res.data;
-          invokeError = res.error;
-        } catch (e:any) {
-          invokeError = e;
-        }
+        // Call the secure edge function - only use get-results-by-session
+        const { data: resultData, error: invokeError } = await supabase.functions.invoke('get-results-by-session', {
+          body: { 
+            session_id: sessionId, 
+            share_token: shareToken 
+          },
+          headers: { 'cache-control': 'no-cache' }
+        });
 
-        // Fallback to kebab-case alias if primary 404s or returns null
-        if (invokeError || !resultData) {
-          console.warn('Primary getResultsBySession failed, trying alias get-results-by-session', invokeError);
-          const { data: dataAlias, error: errorAlias } = await supabase.functions.invoke('get-results-by-session', {
-            body: { session_id: sessionId, share_token: shareToken },
-            headers: { 'cache-control': 'no-cache' }
-          });
-          if (!invokeError) invokeError = errorAlias;
-          if (!resultData) resultData = dataAlias;
-        }
-
-        console.log('getResultsBySession response:', { data: resultData, error: invokeError });
-        console.log('Full response data:', JSON.stringify(resultData, null, 2));
+        console.log('get-results-by-session response:', { data: resultData, error: invokeError });
 
         if (invokeError) {
           console.error('Edge function error:', invokeError);
-          console.log('Error details:', JSON.stringify(invokeError, null, 2));
-          setError('Failed to load results: ' + (invokeError.message || 'unknown'));
+          setError('server_error');
           setLoading(false);
           return;
         }
 
-        const data = resultData;
-
-        if (!data?.ok) {
-          console.error('Access denied:', data?.reason);
-          console.log('Full error response:', JSON.stringify(data, null, 2));
-          const reason = data?.reason || 'unknown_error';
-          
-          if (reason === 'session_not_found') {
-            setError('No session found with the provided ID');
-          } else if (reason === 'access_denied') {
-            setError('recovery_needed');
-          } else if (reason === 'profile_not_found') {
-            setError('recovery_needed');
-          } else {
-            setError('Unable to load results');
-          }
+        if (!resultData?.ok) {
+          console.error('Function returned error:', resultData?.reason);
+          setError(resultData?.reason || 'unknown_error');
           setLoading(false);
           return;
         }
 
-        const profileData = data.profile;
+        const profileData = resultData.profile;
         
         // Check if we have an invalid UNK result and force re-scoring
         if (profileData.type_code === 'UNK') {
           console.log('Detected UNK result, triggering re-score with updated algorithm');
           
-          console.time('PRISM rescore');
-          console.log('[PRISM] rescore payload', { session_id: sessionId, force_recompute: true });
-          
-          // Force re-scoring with new algorithm
           const { data: rescoreData, error: rescoreError } = await supabase.functions.invoke('score_prism', {
             body: { session_id: sessionId, force_recompute: true },
           });
 
-          console.timeEnd('PRISM rescore');
-          console.log('[PRISM] rescore result', JSON.stringify(rescoreData, null, 2));
-
           if (rescoreError || !rescoreData || rescoreData.status !== 'success') {
-            console.error('[PRISM] rescore failed', rescoreError || rescoreData?.error);
-            setError(rescoreError?.message || rescoreData?.error || 'Failed to re-score results');
+            console.error('Rescore failed', rescoreError || rescoreData?.error);
+            setError('server_error');
           } else {
             setScoring(rescoreData.profile);
           }
@@ -139,8 +98,8 @@ export default function Results() {
         setScoring(profileData);
         setLoading(false);
       } catch (err) {
-        setError('An unexpected error occurred');
         console.error('Error fetching results:', err);
+        setError('server_error');
         setLoading(false);
       }
     };
@@ -224,9 +183,12 @@ export default function Results() {
       <div className="min-h-screen bg-background">
         <Header />
         <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p>Loading your results...</p>
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <div className="space-y-2">
+              <p className="font-medium">Loading your results...</p>
+              <p className="text-sm text-muted-foreground">This may take a moment</p>
+            </div>
           </div>
         </div>
       </div>
@@ -234,8 +196,42 @@ export default function Results() {
   }
 
   if (error) {
-    // Enhanced error handling with recovery UI
-    if (error === 'recovery_needed') {
+    // Handle profile_rendering state
+    if (error === 'profile_rendering') {
+      return (
+        <div className="min-h-screen bg-background">
+          <Header />
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <Card className="max-w-md">
+              <CardContent className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <div className="mb-4">
+                  <p className="font-semibold">Generating results…</p>
+                  <p className="text-sm mt-1 text-muted-foreground">Your responses are being processed. This can take a moment.</p>
+                </div>
+                <Button 
+                  onClick={() => {
+                    setError(null);
+                    setLoading(true);
+                    window.location.reload();
+                  }} 
+                  className="w-full"
+                >
+                  Retry Loading
+                </Button>
+                <div className="mt-4 p-3 bg-muted rounded text-xs">
+                  <p className="font-medium mb-1">Session ID:</p>
+                  <code className="text-muted-foreground">{sessionId}</code>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
+    // Handle access_denied state
+    if (error === 'access_denied') {
       return (
         <div className="min-h-screen bg-background">
           <Header />
@@ -243,37 +239,53 @@ export default function Results() {
             <Card className="max-w-md">
               <CardContent className="text-center py-8">
                 <div className="mb-4">
-                  <p className="font-semibold">We found your submission but need a minute to render.</p>
-                  <p className="text-sm mt-1 text-muted-foreground">Your responses are safely stored.</p>
+                  <p className="font-semibold">Results aren't ready</p>
+                  <p className="text-sm mt-1 text-muted-foreground">
+                    Please finish the assessment or use your share link to access results.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Button onClick={() => navigate('/assessment')} className="w-full">
+                    Continue Assessment
+                  </Button>
+                  <Button onClick={() => navigate('/')} variant="outline" className="w-full">
+                    Go Home
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
+    // Handle profile_not_found state
+    if (error === 'profile_not_found') {
+      return (
+        <div className="min-h-screen bg-background">
+          <Header />
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <Card className="max-w-md">
+              <CardContent className="text-center py-8">
+                <div className="mb-4">
+                  <p className="font-semibold">No profile yet</p>
+                  <p className="text-sm mt-1 text-muted-foreground">
+                    Your assessment results haven't been generated yet.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Button 
                     onClick={() => {
                       setError(null);
                       setLoading(true);
-                      // Trigger a retry by calling fetchResults again
-                      const retry = async () => {
-                        const fetchResults = async () => {
-                          // Retry logic here... (same as above)
-                          window.location.reload(); // Simple retry for now
-                        };
-                        await fetchResults();
-                      };
-                      retry();
+                      window.location.reload();
                     }} 
                     className="w-full"
                   >
                     Retry Loading
                   </Button>
-                  <Button 
-                    onClick={() => window.open('mailto:support@prismassessment.com?subject=Results%20Recovery&body=Session%20ID:%20' + sessionId, '_blank')}
-                    variant="outline" 
-                    className="w-full"
-                  >
-                    Contact Support
-                  </Button>
-                  <Button onClick={() => navigate('/')} variant="ghost" className="w-full">
-                    Go Home
+                  <Button onClick={() => navigate('/assessment')} variant="outline" className="w-full">
+                    Take New Assessment
                   </Button>
                 </div>
                 <div className="mt-4 p-3 bg-muted rounded text-xs">
@@ -287,7 +299,39 @@ export default function Results() {
       );
     }
 
-    // Regular error display
+    // Handle invalid_session_id and session_not_found
+    if (error === 'invalid_session_id' || error === 'session_not_found') {
+      return (
+        <div className="min-h-screen bg-background">
+          <Header />
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <Card className="max-w-md">
+              <CardContent className="text-center py-8">
+                <div className="text-destructive mb-4">
+                  <p className="font-semibold">Invalid Session</p>
+                  <p className="text-sm mt-1">
+                    {error === 'invalid_session_id' 
+                      ? 'The session ID format is invalid. Please check your link.'
+                      : 'No session found with this ID. The link may have expired.'
+                    }
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Button onClick={() => navigate('/assessment')} className="w-full">
+                    Take New Assessment
+                  </Button>
+                  <Button onClick={() => navigate('/')} variant="outline" className="w-full">
+                    Go Home
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
+    // Handle server_error and other errors
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -296,11 +340,23 @@ export default function Results() {
             <CardContent className="text-center py-8">
               <div className="text-destructive mb-4">
                 <p className="font-semibold">Unable to Load Results</p>
-                <p className="text-sm mt-1">{error}</p>
+                <p className="text-sm mt-1">
+                  {error === 'server_error' 
+                    ? 'A server error occurred. Please try again.' 
+                    : 'An unexpected error occurred.'
+                  }
+                </p>
               </div>
               <div className="space-y-2">
-                <Button onClick={() => navigate('/assessment')} className="w-full">
-                  Take Assessment
+                <Button 
+                  onClick={() => {
+                    setError(null);
+                    setLoading(true);
+                    window.location.reload();
+                  }} 
+                  className="w-full"
+                >
+                  Try Again
                 </Button>
                 <Button onClick={() => navigate('/')} variant="outline" className="w-full">
                   Go Home
