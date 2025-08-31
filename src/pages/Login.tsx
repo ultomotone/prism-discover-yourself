@@ -104,6 +104,11 @@ export default function Login() {
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Signing In..." : "Sign In"}
               </Button>
+              <div className="mt-2 text-right">
+                <Link to="/reset-password" className="text-sm text-primary hover:underline">
+                  Forgot your password?
+                </Link>
+              </div>
             </form>
             
             <div className="mt-6 text-center space-y-2">

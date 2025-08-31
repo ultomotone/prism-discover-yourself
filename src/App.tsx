@@ -14,6 +14,7 @@ import History from "./pages/History";
 import UserDashboard from "./pages/UserDashboard";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ResetPassword from "./pages/ResetPassword";
 import About from "./pages/About";
 import Signals from "./pages/Signals";
 import Ti from "./pages/Ti";
@@ -162,7 +163,8 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<Signup />} />
+<Route path="/signup" element={<Signup />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/assessment" element={<Assessment />} />
                   <Route path="/results/:sessionId" element={<Results />} />
                   {/* Debug route for Results testing */}
