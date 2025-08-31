@@ -17,7 +17,10 @@ import { isRealFCBlock } from "@/services/fcBlockService";
 import { ErrorSummary } from "./ErrorSummary";
 import { EmailSavePrompt } from "./EmailSavePrompt";
 import { SessionConflictModal } from "./SessionConflictModal";
+import { AccountLinkPrompt } from "./AccountLinkPrompt";
 import { useToast } from "@/hooks/use-toast";
+import { useEmailSessionManager } from "@/hooks/useEmailSessionManager";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Save } from "lucide-react";
 
@@ -44,6 +47,8 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
   const [isSaving, setIsSaving] = useState(false);
   const [isResumingSession, setIsResumingSession] = useState(false);
   const [showEmailPrompt, setShowEmailPrompt] = useState(false);
+  const [showAccountPrompt, setShowAccountPrompt] = useState(false);
+  const [capturedEmail, setCapturedEmail] = useState<string>('');
   const [sessionConflict, setSessionConflict] = useState<{
     type: 'resume' | 'recent_completion' | null;
     email: string;
@@ -56,6 +61,8 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
   const [fcCompleted, setFCCompleted] = useState(false);
   const [fcData, setFCData] = useState<any>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { startAssessmentSession, linkSessionToAccount } = useEmailSessionManager();
 
   // Filter to visible questions with comprehensive library
   const [assessmentLibrary, setAssessmentLibrary] = useState<Question[]>([]);
@@ -466,6 +473,28 @@ try {
     setCurrentAnswer(answer);
   };
 
+  const handleAccountCreated = async (email: string, password: string) => {
+    setShowAccountPrompt(false);
+    
+    // Link current session to the new account
+    if (sessionId && user) {
+      await linkSessionToAccount(sessionId, user.id, email);
+    }
+    
+    toast({
+      title: "Account Created",
+      description: "Your progress has been linked to your new account. Check your email to verify.",
+    });
+  };
+
+  const handleSkipAccount = () => {
+    setShowAccountPrompt(false);
+    toast({
+      title: "Continuing Without Account",
+      description: "Your progress is saved locally. You can create an account later.",
+    });
+  };
+
   const handleFCCompletion = (fcCompletionData: any) => {
     console.log('FC blocks completed:', fcCompletionData);
     setFCData(fcCompletionData);
@@ -658,6 +687,8 @@ try {
         console.log('🔥 DETECTED EMAIL ON FIRST QUESTION:', currentAnswer);
         console.log('🔥 SESSION ID:', sessionId);
         
+        setCapturedEmail(currentAnswer);
+        
         const updateResult = await supabase
           .from('assessment_sessions')
           .update({ 
@@ -692,6 +723,11 @@ try {
             title: "Progress Saved",
             description: "Your email has been saved. Your progress will be automatically saved as you continue.",
           });
+
+          // Show account creation prompt after a few questions if not authenticated
+          if (!user && currentQuestionIndex >= 2 && Math.random() < 0.7) {
+            setTimeout(() => setShowAccountPrompt(true), 2000);
+          }
         }
       } else {
         console.log('🔥 REGULAR PROGRESS UPDATE');
@@ -1138,6 +1174,15 @@ try {
             onSaveAndExit();
           }
         }}
+      />
+
+      {/* Account Link Prompt */}
+      <AccountLinkPrompt
+        isOpen={showAccountPrompt}
+        onClose={() => setShowAccountPrompt(false)}
+        onAccountCreated={handleAccountCreated}
+        onSkip={handleSkipAccount}
+        currentEmail={capturedEmail}
       />
     </div>
   );

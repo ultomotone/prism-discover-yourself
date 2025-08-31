@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
@@ -13,119 +13,143 @@ interface AssessmentStartRequest {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseClient = createClient(
+    const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { email, user_id, force_new = false }: AssessmentStartRequest = await req.json();
+    const body = await req.json() as AssessmentStartRequest;
+    const { email, user_id, force_new } = body;
 
-    if (!email) {
-      return new Response(
-        JSON.stringify({ error: 'Email is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    console.log('Starting assessment session for:', { email, user_id, force_new });
 
-    // Get IP and User-Agent for hashing, plus country
-    const clientIP = req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '0.0.0.0';
+    // Get client info
+    const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
     const userAgent = req.headers.get('user-agent') || 'unknown';
-    const countryIso2 = req.headers.get('cf-ipcountry') || null;
-    
-    // Create simple hashes (in production, use proper crypto)
+    const country = req.headers.get('cf-ipcountry') || req.headers.get('x-vercel-ip-country') || 'unknown';
+
+    // Generate hashed versions for privacy
     const encoder = new TextEncoder();
-    const ipHash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', encoder.encode(clientIP))))
-      .map(b => b.toString(16).padStart(2, '0')).join('');
-    const uaHash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', encoder.encode(userAgent))))
-      .map(b => b.toString(16).padStart(2, '0')).join('');
+    const ipHash = await crypto.subtle.digest('SHA-256', encoder.encode(clientIP));
+    const uaHash = await crypto.subtle.digest('SHA-256', encoder.encode(userAgent));
 
-    // Check for existing in-progress session
-    const { data: existingSession, error: sessionError } = await supabaseClient
-      .from('assessment_sessions')
-      .select('*')
-      .eq('email', email)
-      .eq('status', 'in_progress')
-      .maybeSingle();
+    const ipHashHex = Array.from(new Uint8Array(ipHash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    const uaHashHex = Array.from(new Uint8Array(uaHash)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-    if (sessionError) {
-      console.error('Error checking existing session:', sessionError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to check existing sessions' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // If email provided, check for existing sessions
+    if (email && !force_new) {
+      const { data: existingSession, error: existingError } = await supabase
+        .from('assessment_sessions')
+        .select('id, status, completed_questions, total_questions, created_at')
+        .eq('email', email)
+        .eq('status', 'in_progress')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    // If existing session found and not forcing new
-    if (existingSession && !force_new) {
-      return new Response(
-        JSON.stringify({ 
+      if (existingSession) {
+        console.log('Found existing session for email:', email);
+        return new Response(JSON.stringify({
+          success: true,
           session_id: existingSession.id,
-          status: 'resumed',
-          message: 'Existing session found'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+          existing_session: true,
+          progress: {
+            completed: existingSession.completed_questions || 0,
+            total: existingSession.total_questions || 0
+          }
+        }), {
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        });
+      }
     }
 
-    // If forcing new, mark old session as abandoned
-    if (existingSession && force_new) {
-      await supabaseClient
+    // If force_new and email exists, mark old sessions as abandoned
+    if (email && force_new) {
+      await supabase
         .from('assessment_sessions')
         .update({ status: 'abandoned' })
-        .eq('id', existingSession.id);
+        .eq('email', email)
+        .eq('status', 'in_progress');
     }
 
-    // Check for recent completions (30-day threshold)
-    const { data: recentCheck } = await supabaseClient
-      .rpc('check_recent_completion', { user_email: email, threshold_days: 30 });
-
-    const hasRecentCompletion = recentCheck?.[0]?.has_recent_completion || false;
-    const daysSinceCompletion = recentCheck?.[0]?.days_since_completion || null;
+    // Check for recent completion to avoid spam
+    let recentCompletion = null;
+    if (email) {
+      const { data } = await supabase.rpc('check_recent_completion', {
+        user_email: email,
+        threshold_days: 30
+      });
+      
+      if (data && data.length > 0) {
+        recentCompletion = data[0];
+      }
+    }
 
     // Create new session
-    const { data: newSession, error: createError } = await supabaseClient
+    const sessionId = crypto.randomUUID();
+    const shareToken = crypto.randomUUID();
+
+    const { data: newSession, error } = await supabase
       .from('assessment_sessions')
       .insert({
-        email,
-        user_id,
-        status: 'in_progress',
-        ip_hash: ipHash,
-        ua_hash: uaHash,
-        country_iso2: countryIso2,
-        started_at: new Date().toISOString()
+        id: sessionId,
+        user_id: user_id || null,
+        email: email || null,
+        session_type: 'prism',
+        share_token: shareToken,
+        ip_hash: ipHashHex,
+        ua_hash: uaHashHex,
+        country_iso2: country,
+        total_questions: 0, // Will be updated when assessment loads
+        metadata: {
+          client_ip: clientIP.substring(0, 10) + '...', // Partial IP for debugging
+          user_agent: userAgent.substring(0, 50),
+          country: country,
+          timestamp: new Date().toISOString()
+        }
       })
       .select()
       .single();
 
-    if (createError) {
-      console.error('Error creating session:', createError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to create session' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (error) {
+      console.error('Error creating session:', error);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Failed to create assessment session',
+        details: error.message
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
     }
 
-    return new Response(
-      JSON.stringify({ 
-        session_id: newSession.id,
-        status: 'new',
-        has_recent_completion: hasRecentCompletion,
-        days_since_completion: daysSinceCompletion,
-        message: 'New session created'
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.log('Created new session:', sessionId);
+
+    return new Response(JSON.stringify({
+      success: true,
+      session_id: sessionId,
+      share_token: shareToken,
+      existing_session: false,
+      recent_completion: recentCompletion
+    }), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
 
   } catch (error) {
-    console.error('Error in start_assessment function:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.error('Error in start_assessment:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Internal server error',
+      details: error.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
   }
 });

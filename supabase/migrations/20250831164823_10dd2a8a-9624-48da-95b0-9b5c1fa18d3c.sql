@@ -1,0 +1,2 @@
+-- Create edge function to handle email-based session management
+-- This will be called from the frontend to manage assessment sessions
