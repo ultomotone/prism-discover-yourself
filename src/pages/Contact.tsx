@@ -129,7 +129,7 @@ const Contact = () => {
                       <Mail className="h-5 w-5 text-secondary mr-3" />
                       <div>
                         <p className="font-medium text-primary">Email</p>
-                        <p className="text-muted-foreground">daniel.joseph.speiss@gmail.com</p>
+                        <p className="text-muted-foreground">team@prismpersonality.com</p>
                       </div>
                     </div>
                     <div className="flex items-center">
@@ -143,7 +143,7 @@ const Contact = () => {
                       <MapPin className="h-5 w-5 text-secondary mr-3" />
                       <div>
                         <p className="font-medium text-primary">Location</p>
-                        <p className="text-muted-foreground">San Francisco, CA</p>
+                        <p className="text-muted-foreground">New York, NY</p>
                       </div>
                     </div>
                   </div>
