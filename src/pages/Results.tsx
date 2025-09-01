@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import Header from '@/components/Header';
+import OverlayChips from "@/components/Results/OverlayChips";
+import TraitPanel from "@/components/Results/TraitPanel";
 
 type Err =
   | 'invalid_session_id'
@@ -429,6 +431,8 @@ export default function Results() {
         </div>
 
         <div id="results-content" className="space-y-6">
+          <OverlayChips overlay_neuro={scoring?.overlay_neuro ?? scoring?.overlay} overlay_state={scoring?.overlay_state} />
+          <TraitPanel neuro_mean={scoring?.neuro_mean} neuro_z={scoring?.neuro_z} />
           {/* Enhanced Results */}
           <ResultsV2 profile={scoring} />
 
