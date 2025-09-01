@@ -21,7 +21,7 @@ import { AccountLinkPrompt } from "./AccountLinkPrompt";
 import { useToast } from "@/hooks/use-toast";
 import { useEmailSessionManager } from "@/hooks/useEmailSessionManager";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 import { Save } from "lucide-react";
 import { trackAssessmentStart, trackAssessmentProgress } from "@/lib/analytics";
 
@@ -64,6 +64,7 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
   const { toast } = useToast();
   const { user } = useAuth();
   const { startAssessmentSession, linkSessionToAccount } = useEmailSessionManager();
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Filter to visible questions with comprehensive library
   const [assessmentLibrary, setAssessmentLibrary] = useState<Question[]>([]);
@@ -278,15 +279,25 @@ try {
       } catch (error) {
         console.error('Error initializing session:', error);
         toast({
-          title: "Failed to Initialize", 
+          title: "Failed to Initialize",
           description: "An unexpected error occurred. Please refresh the page and try again.",
           variant: "destructive",
         });
+        setLoadError('Failed to start assessment. Please try again.');
       }
     };
 
     initializeSession();
   }, [toast, resumeSessionId]);
+
+  useEffect(() => {
+    if (loadError || currentQuestion) return;
+    const t = setTimeout(
+      () => setLoadError('Failed to load assessment. Please try again.'),
+      30000,
+    );
+    return () => clearTimeout(t);
+  }, [currentQuestion, loadError]);
   useEffect(() => {
     const loadConfig = async () => {
       const config = await getPrismConfig();
@@ -1010,6 +1021,22 @@ try {
             </div>
             <p className="text-muted-foreground mt-4">Loading assessment library...</p>
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <Card className="max-w-2xl mx-auto">
+        <CardContent className="p-8 text-center">
+          <p className="text-muted-foreground mb-4">{loadError}</p>
+          <Button onClick={() => window.location.reload()}>Try again</Button>
+          {onSaveAndExit && (
+            <Button variant="outline" className="ml-2" onClick={onSaveAndExit}>
+              Resume later
+            </Button>
+          )}
         </CardContent>
       </Card>
     );

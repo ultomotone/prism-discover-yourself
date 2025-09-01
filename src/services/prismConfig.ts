@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 
 export const PRISM_CONFIG_FALLBACK = {
   fc_expected_min: 24,

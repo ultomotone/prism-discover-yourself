@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, Download, RotateCcw, Link, Copy } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { AssessmentResponse } from "./AssessmentForm";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 import { ResultsV2 } from "./ResultsV2";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';

@@ -5,7 +5,7 @@ import { AssessmentIntro } from "@/components/assessment/AssessmentIntro";
 import { AssessmentForm, AssessmentResponse } from "@/components/assessment/AssessmentForm";
 import { AssessmentComplete } from "@/components/assessment/AssessmentComplete";
 import { SavedAssessments } from "@/components/assessment/SavedAssessments";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 
 type AssessmentState = 'intro' | 'form' | 'complete' | 'saved';
 

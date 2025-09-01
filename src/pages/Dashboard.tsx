@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import { CountryDistributionChart } from "@/components/CountryDistributionChart";
 import { useDashboardAnalytics } from "@/hooks/useDashboardAnalytics";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 
 interface DashboardData {
   totalAssessments: number;

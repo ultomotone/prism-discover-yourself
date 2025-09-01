@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { admin as supabase } from "@/lib/supabase/admin";
 
 export async function rescoreBrokenProfiles() {
   console.log('Starting rescore of broken profiles with 99.4 fit scores...');

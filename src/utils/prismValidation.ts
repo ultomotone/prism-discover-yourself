@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { admin as supabase } from "@/lib/supabase/admin";
 import { getPrismConfig, PrismConfig } from "@/services/prismConfig";
 import { visibleIf } from "@/lib/visibility";
 import { getAssessmentLibrary, analyzeLibrary, groupBySection } from "@/lib/questions/getAssessmentLibrary";

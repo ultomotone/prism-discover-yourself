@@ -1,0 +1,20 @@
+{
+  "distribution": {
+    "error": "TypeError: fetch failed"
+  },
+  "latestVariety": {
+    "error": "TypeError: fetch failed"
+  },
+  "modelGuard": {
+    "error": "TypeError: fetch failed"
+  },
+  "kpiAnon": {
+    "error": "TypeError: fetch failed"
+  },
+  "sharePct": {
+    "error": "TypeError: fetch failed"
+  },
+  "missingCal": {
+    "error": "TypeError: fetch failed"
+  }
+}

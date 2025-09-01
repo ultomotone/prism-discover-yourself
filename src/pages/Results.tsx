@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Download, ArrowLeft, ExternalLink, Copy, Users, Clock } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 import { ResultsV2 } from "@/components/assessment/ResultsV2";
 import { useToast } from "@/hooks/use-toast";
 import html2canvas from 'html2canvas';

@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { admin as supabase } from "@/lib/supabase/admin";
 
 export async function backfillSessionTotalQuestions() {
   console.log('Starting session total_questions backfill...');
