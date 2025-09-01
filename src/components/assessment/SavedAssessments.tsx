@@ -8,20 +8,21 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase/client";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { TOTAL_PRISM_QUESTIONS } from "@/services/prismConfig";
 
 interface SavedSession {
   id: string;
   created_at: string;
+  updated_at: string;
   completed_questions: number;
   total_questions: number;
 }
 
 interface SavedAssessmentsProps {
-  onResumeAssessment: (sessionId: string) => void;
   onStartNew: () => void;
 }
 
-export function SavedAssessments({ onResumeAssessment, onStartNew }: SavedAssessmentsProps) {
+export function SavedAssessments({ onStartNew }: SavedAssessmentsProps) {
   const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
@@ -34,31 +35,24 @@ export function SavedAssessments({ onResumeAssessment, onStartNew }: SavedAssess
 
   const loadSavedSessions = async () => {
     try {
-      console.log('SavedAssessments: Loading saved sessions...');
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('SavedAssessments: Current user:', user?.id || 'anonymous');
-      
-      // Load incomplete sessions using the updated view
-      const { data: sessions, error } = await supabase
-        .from('v_incomplete_sessions')
-        .select('id, created_at, completed_questions, total_questions')
-        .order('created_at', { ascending: false });
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
 
-      console.log('SavedAssessments: Query result:', sessions);
-      console.log('SavedAssessments: Query error:', error);
+      const { data: sessions, error } = await supabase
+        .from('assessment_sessions')
+        .select('id, created_at, updated_at, completed_questions, total_questions')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false });
 
       if (error) {
         console.error('Error loading saved sessions:', error);
         return;
       }
 
-      // Filter out sessions where total_questions is 0 or null (shouldn't happen with new view)
-      const validSessions = (sessions || []).filter(s => 
-        s.total_questions && s.total_questions > 0 && s.completed_questions < s.total_questions
-      );
-
-      setSavedSessions(validSessions);
-      console.log('SavedAssessments: Set saved sessions to:', validSessions);
+      setSavedSessions(sessions || []);
     } catch (error) {
       console.error('Error loading saved sessions:', error);
     } finally {
@@ -69,21 +63,9 @@ export function SavedAssessments({ onResumeAssessment, onStartNew }: SavedAssess
   const deleteSavedSession = async (sessionId: string) => {
     try {
       setDeletingSessionId(sessionId);
-      
-      // Delete responses first
-      await supabase
-        .from('assessment_responses')
-        .delete()
-        .eq('session_id', sessionId);
-
-      // Delete session
-      const { error } = await supabase
-        .from('assessment_sessions')
-        .delete()
-        .eq('id', sessionId);
+      const { error } = await supabase.from('assessment_sessions').delete().eq('id', sessionId);
 
       if (error) {
-        console.error('Error deleting session:', error);
         toast({
           title: "Delete Failed",
           description: "Could not delete saved assessment. Please try again.",
@@ -92,13 +74,8 @@ export function SavedAssessments({ onResumeAssessment, onStartNew }: SavedAssess
         return;
       }
 
-      // Remove from local state
       setSavedSessions(prev => prev.filter(s => s.id !== sessionId));
-      
-      toast({
-        title: "Assessment Deleted",
-        description: "Saved assessment has been removed.",
-      });
+      toast({ title: "Assessment Deleted", description: "Saved assessment has been removed." });
     } catch (error) {
       console.error('Error deleting session:', error);
       toast({
@@ -111,12 +88,24 @@ export function SavedAssessments({ onResumeAssessment, onStartNew }: SavedAssess
     }
   };
 
-  const handleContinueAssessment = (sessionId: string) => {
-    console.log('Continue button clicked for session:', sessionId);
-    // Navigate directly to assessment with resume parameter
+  const handleContinue = async (sessionId: string) => {
+    const total = TOTAL_PRISM_QUESTIONS;
+    const { count, error: countErr } = await supabase
+      .from('assessment_responses')
+      .select('id', { count: 'exact', head: true })
+      .eq('session_id', sessionId);
+
+    if (countErr) {
+      console.warn('Count responses error, continuing anyway:', countErr);
+    }
+
+    const answered = count ?? 0;
+    if (answered >= total) {
+      navigate(`/results/${sessionId}`);
+      return;
+    }
+
     navigate(`/assessment?resume=${sessionId}`);
-    // Also call the parent callback for any additional handling
-    onResumeAssessment(sessionId);
   };
 
   if (isLoading) {
@@ -145,7 +134,9 @@ export function SavedAssessments({ onResumeAssessment, onStartNew }: SavedAssess
           <h2 className="text-xl font-semibold">Saved Assessments</h2>
           
           {savedSessions.map((session) => {
-            const progress = Math.round((session.completed_questions / session.total_questions) * 100);
+            const total = session.total_questions || TOTAL_PRISM_QUESTIONS;
+            const answered = session.completed_questions || 0;
+            const progress = Math.round((answered / total) * 100);
             const isDeleting = deletingSessionId === session.id;
             
             return (
@@ -159,13 +150,13 @@ export function SavedAssessments({ onResumeAssessment, onStartNew }: SavedAssess
                       <div className="flex items-center gap-3 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
-                          {format(new Date(session.created_at), 'MMM d, yyyy')}
+                          {format(new Date(session.updated_at || session.created_at), 'MMM d, yyyy')}
                         </div>
                         <Badge variant="secondary">
                           {progress}% Complete
                         </Badge>
                         <span>
-                          {session.completed_questions} of {session.total_questions} questions
+                          {answered} of {total} questions
                         </span>
                       </div>
                     </div>
@@ -195,7 +186,7 @@ export function SavedAssessments({ onResumeAssessment, onStartNew }: SavedAssess
                       </Button>
                       
                       <Button
-                        onClick={() => handleContinueAssessment(session.id)}
+                        onClick={() => handleContinue(session.id)}
                         className="flex items-center gap-2"
                       >
                         <Play className="h-4 w-4" />

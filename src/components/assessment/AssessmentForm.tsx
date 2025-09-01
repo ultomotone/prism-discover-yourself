@@ -12,7 +12,7 @@ import { ProgressCard } from "./ProgressCard";
 import { FCBlockManager } from "./FCBlockManager";
 import { visibleIf, getVisibleQuestions, getVisibleQuestionCount, getVisibleQuestionIndex } from "@/lib/visibility";
 import { getPrismConfig, PrismConfig } from "@/services/prismConfig";
-import { saveResponseIdempotent, loadSessionResponses, firstUnansweredIndex, responsesToMap } from "@/services/assessmentSaves";
+import { saveResponseIdempotent } from "@/services/assessmentSaves";
 import { isRealFCBlock } from "@/services/fcBlockService";
 import { ErrorSummary } from "./ErrorSummary";
 import { EmailSavePrompt } from "./EmailSavePrompt";
@@ -28,6 +28,30 @@ import { trackAssessmentStart, trackAssessmentProgress } from "@/lib/analytics";
 export interface AssessmentResponse {
   questionId: number | string;
   answer: string | number | string[] | number[];
+}
+
+async function loadResponsesForSession(sessionId: string) {
+  try {
+    const { data: fnData, error: fnErr } = await supabase.functions.invoke(
+      "load-session-responses",
+      { body: { session_id: sessionId } }
+    );
+    if (!fnErr && Array.isArray(fnData) && fnData.length > 0) return fnData;
+  } catch (e) {
+    console.warn("Edge function failed; falling back to direct query.", e);
+  }
+
+  const { data, error } = await supabase
+    .from("assessment_responses")
+    .select("*")
+    .eq("session_id", sessionId)
+    .order("question_order", { ascending: true });
+
+  if (error) {
+    console.error("Direct responses query failed:", error);
+    return [];
+  }
+  return data ?? [];
 }
 
 interface AssessmentFormProps {
@@ -101,84 +125,29 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
   
   const loadExistingSession = async (sessionId: string) => {
     try {
-      console.log('Loading existing session:', sessionId);
       setIsResumingSession(true);
-      
-      // Load session data and responses
-      const [sessionResult, responsesData] = await Promise.all([
-        supabase
-          .from('assessment_sessions')
-          .select('*')
-          .eq('id', sessionId)
-          .maybeSingle(),
-        loadSessionResponses(sessionId)
-      ]);
+      const data = await loadResponsesForSession(sessionId);
 
-      const { data: session, error: sessionError } = sessionResult;
-
-      if (sessionError || !session) {
-        console.error('Session load issue, falling back to local cache:', sessionError);
-        try {
-          const cached = JSON.parse(localStorage.getItem('prism_last_session') || '{}');
-          const idx = Math.min(Number(cached?.completed_questions) || 0, visibleQuestions.length - 1);
-          setSessionId(sessionId);
-          setResponses([]); // responses will be re-captured going forward
-          setCurrentQuestionIndex(idx);
-          setQuestionStartTime(Date.now());
-          toast({
-            title: "Resumed Locally",
-            description: `Continuing from question ${idx + 1}. Your progress is saved locally and will sync as you continue.`,
-          });
-        } catch (e) {
-          console.warn('No valid local cache available; returning to intro');
-          localStorage.removeItem('prism_last_session');
-          toast({
-            title: "Session Expired",
-            description: "Your saved assessment could not be found. Please start a new assessment.",
-            variant: "destructive",
-          });
-          if (onBack) onBack();
-        }
+      if (!data || data.length === 0) {
         setIsResumingSession(false);
+        setSessionId(sessionId);
+        setResponses([]);
+        setCurrentQuestionIndex(0);
         return;
       }
 
-      console.log('Loaded session data:', session);
-      console.log('Loaded responses:', responsesData.length);
-
-      // Convert responses to map for firstUnansweredIndex calculation
-      const responsesMap = responsesToMap(responsesData);
-      
-      // Use proper first unanswered index calculation with library order
-      const nextIndex = firstUnansweredIndex(visibleQuestions, responsesMap);
-      console.log('Calculated next question index using library order:', nextIndex);
-      
-      // If session reports high completed_questions but we have 0 responses, trust the responses
-      if (Object.keys(responsesMap).length === 0 && (session.completed_questions || 0) > 0) {
-        console.warn('⚠️ Session counters inconsistent; recalculating from responses');
-        console.log('Session reported completed_questions:', session.completed_questions, 'but responses loaded:', Object.keys(responsesMap).length);
-      }
-
-      // Set state with loaded data
+      const mapped = data.map((r: any) => ({
+        questionId: r.question_id,
+        answer: r.answer_array || r.answer_numeric || r.answer_value || ''
+      }));
+      const last = Math.max(0, data.reduce((m: number, r: any) => Math.max(m, r.question_order ?? 0), 0));
       setSessionId(sessionId);
-      setResponses(responsesData);
-      setCurrentQuestionIndex(nextIndex);
+      setResponses(mapped);
+      setCurrentQuestionIndex(last);
       setQuestionStartTime(Date.now());
-
-      console.log('Current question index set, showing toast...');
-      toast({
-        title: "Assessment Resumed",
-        description: `Continuing from question ${nextIndex + 1}`,
-      });
-      
       setIsResumingSession(false);
     } catch (error) {
       console.error('Error loading existing session:', error);
-      toast({
-        title: "Failed to Load",
-        description: "Could not load saved assessment. Starting a new one.",
-        variant: "destructive",
-      });
       setIsResumingSession(false);
     }
   };

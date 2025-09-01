@@ -58,3 +58,10 @@ export async function getPrismConfig(): Promise<PrismConfig> {
     return { ...PRISM_CONFIG_FALLBACK, source: 'fallback' };
   }
 }
+
+// Total number of questions in the PRISM assessment
+export const TOTAL_PRISM_QUESTIONS = 248;
+
+export function getPrismTotalQuestions(): number {
+  return TOTAL_PRISM_QUESTIONS;
+}
