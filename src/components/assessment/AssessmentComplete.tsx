@@ -99,7 +99,9 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
         });
 
         if (error) {
-          throw new Error(error.message || 'Failed to finalize assessment');
+          // Surface HTTP status and context for better debugging
+          const status = error?.context?.status || 'unknown';
+          throw new Error(`${error.message || 'finalize failed'} (status ${status})`);
         }
 
         if (data?.error) {

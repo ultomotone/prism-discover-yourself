@@ -10,6 +10,7 @@ const supabase = createClient(url, key);
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Cache-Control': 'no-store'
 };
 
@@ -72,9 +73,11 @@ Deno.serve(async (req) => {
           status: 'success',
           session_id, 
           share_token: sessionData?.share_token,
-          profile: existingProfile
+          profile: existingProfile,
+          results_url: `${req.headers.get('origin') || 'https://prismassessment.com'}/results/${session_id}?token=${sessionData?.share_token}`
         }),
         { 
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
@@ -120,12 +123,31 @@ Deno.serve(async (req) => {
       )
     }
 
-    if (!scoringResult || scoringResult.status !== 'success') {
+    // Handle different scoring result shapes - be tolerant to maintenance mode and various formats
+    const isValidResult = (scoringResult?.status === 'success') || (scoringResult?.ok === true);
+    const hasProfile = scoringResult?.profile;
+    
+    // Handle maintenance mode gracefully
+    if (scoringResult?.status === 'maintenance') {
+      console.error('PRISM scoring is in maintenance mode:', scoringResult.message)
+      return new Response(
+        JSON.stringify({ 
+          ok: false, 
+          error: `Assessment system is temporarily unavailable: ${scoringResult.message || 'Maintenance mode'}` 
+        }),
+        { 
+          status: 503, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+    
+    if (!isValidResult || !hasProfile) {
       console.error('Invalid scoring result shape:', JSON.stringify(scoringResult, null, 2))
       return new Response(
         JSON.stringify({ 
           ok: false, 
-          error: `Invalid scoring result: ${scoringResult?.error || 'Unknown error'}` 
+          error: `Invalid scoring result: ${scoringResult?.error || scoringResult?.message || 'Unknown error'}` 
         }),
         { 
           status: 422, 
@@ -175,6 +197,7 @@ Deno.serve(async (req) => {
         results_url: resultsUrl
       }),
       { 
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     )
