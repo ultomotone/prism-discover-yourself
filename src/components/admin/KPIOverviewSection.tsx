@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { KPICard } from "./KPICard";
-import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, AlertTriangle } from "lucide-react";
@@ -61,22 +60,18 @@ export const KPIOverviewSection = () => {
       setLoading(true);
       
       // Get KPI overview data using the new v1.1 view - force no cache
-      const { data: kpiOverview } = await supabase
-        .from('v_kpi_overview_30d_v11')
-        .select('*')
-        .single();
+      const resp = await fetch("/api/admin/v_kpi_overview_30d_v11", { headers: { "Cache-Control": "no-store" }});
+      const kpiOverview = await resp.json();
 
       if (kpiOverview) {
         setKpiData(kpiOverview);
-        
+
         // Get fit spread for diagnostics - use calibrated fits only
-        const { data: fitSpread } = await supabase
-          .from('v_latest_assessments_v11')
-          .select('fit_value')
-          .not('fit_value', 'is', null);
+        const fitResp = await fetch("/api/admin/v_latest_assessments_v11", { headers: { "Cache-Control": "no-store" }});
+        const fitSpread = await fitResp.json();
 
         if (fitSpread && fitSpread.length > 0) {
-          const values = fitSpread.map(f => f.fit_value).filter(v => v !== null);
+          const values = fitSpread.map((f:any) => f.fit_value).filter((v:any) => v !== null);
           const n = values.length;
           const min_val = Math.min(...values);
           const max_val = Math.max(...values);

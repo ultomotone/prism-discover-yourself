@@ -97,10 +97,9 @@ serve(async (req) => {
         try {
           // Call score_prism edge function to recompute with v1.1 calibration
           const { data: scoreResult, error: scoreError } = await supabase.functions.invoke('score_prism', {
-            body: { 
-              session_id: profile.session_id, 
-              debug: false,
-              force_recompute: true
+            body: {
+              session_id: profile.session_id,
+              debug: false
             }
           });
 

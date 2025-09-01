@@ -105,7 +105,12 @@ export const useAdminAnalytics = () => {
   const [sessionData, setSessionData] = useState<SessionData>(defaultSessionData);
   const [retestData, setRetestData] = useState<RetestData>(defaultRetestData);
   const [loading, setLoading] = useState(false);
-  const [alerts, setAlerts] = useState<string[]>([]);
+const [alerts, setAlerts] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch("/api/admin/v_latest_assessments_v11", { headers: { "Cache-Control": "no-store" }});
+    fetch("/api/admin/v_kpi_overview_30d_v11", { headers: { "Cache-Control": "no-store" }});
+  }, []);
 
   // Update date range when preset changes
   useEffect(() => {

@@ -113,6 +113,10 @@ BT
 0 -30 Td
 (Confidence: ${profile.confidence || 'Unknown'}) Tj
 0 -30 Td
+(Neuro overlay: ${profile.overlay_neuro || profile.overlay || '0'}) Tj
+0 -30 Td
+(State overlay: ${profile.overlay_state || '0'}) Tj
+0 -30 Td
 (Generated: ${new Date().toLocaleDateString()}) Tj
 ET
 endstream

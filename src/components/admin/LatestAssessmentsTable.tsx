@@ -17,32 +17,10 @@ interface Assessment {
   fit_value: number | null;
   share_pct: number | null;
   fit_band: string | null;
+  overlay: string | null;
+  overlay_state: string | null;
   version: string;
 }
-
-const formatFitValue = (absoluteFit: number | null, sessionId?: string): string => {
-  if (absoluteFit === null || absoluteFit === undefined || !isFinite(absoluteFit) || isNaN(absoluteFit)) {
-    if (sessionId) {
-      console.warn(`Missing absolute fit for session: ${sessionId}`);
-    }
-    return "—";
-  }
-  // Show absolute fit as-is (0-100 scale), round to whole number for display
-  return `${Math.round(absoluteFit)}`;
-};
-
-const getFitBadgeVariant = (band: string | null) => {
-  switch (band) {
-    case 'High':
-      return 'default';
-    case 'Moderate': 
-      return 'secondary';
-    case 'Low':
-      return 'outline';
-    default:
-      return 'outline';
-  }
-};
 
 const getVersionBadgeVariant = (version: string) => {
   return version === 'v1.1' ? 'default' : 'outline';
@@ -83,7 +61,8 @@ export const LatestAssessmentsTable = () => {
           top_types,
           fit_band,
           results_version,
-          overlay
+          overlay,
+          overlay_state
         `)
         .eq('results_version', 'v1.2.0')
         .not('type_code', 'is', null)
@@ -149,10 +128,12 @@ export const LatestAssessmentsTable = () => {
               finished_at: completedAt,
               started_at: startedAt,
               country: country,
-              type_code: `${row.type_code}${row.overlay || ''}`,
+              type_code: row.type_code,
               fit_value: individualFit,
               share_pct: sharePercentage,
               fit_band: row.fit_band,
+              overlay: row.overlay,
+              overlay_state: row.overlay_state,
               version: row.results_version
             };
           })
@@ -303,18 +284,8 @@ export const LatestAssessmentsTable = () => {
                     </Tooltip>
                   </TooltipProvider>
                 </TableHead>
-                <TableHead>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger className="flex items-center gap-1">
-                        Confidence <HelpCircle className="h-3 w-3 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Overall confidence level based on fit gap, validity checks, and coverage: High/Moderate/Low</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </TableHead>
+                <TableHead>Band</TableHead>
+                <TableHead>Overlays</TableHead>
                 <TableHead>
                   <TooltipProvider>
                     <Tooltip>
@@ -360,15 +331,15 @@ export const LatestAssessmentsTable = () => {
                     {assessment.country || '—'}
                   </TableCell>
                   <TableCell className="font-mono">
-                    {formatFitValue(assessment.fit_value, assessment.session_id)}
+                    {assessment.fit_value != null ? `${assessment.fit_value}%` : '—'}
                   </TableCell>
                   <TableCell className="font-mono">
-                    {assessment.share_pct ? `${Math.round(assessment.share_pct)}%` : '—'}
+                    {assessment.share_pct != null ? `${Number(assessment.share_pct).toFixed(1)}%` : '—'}
                   </TableCell>
+                  <TableCell>{assessment.fit_band ?? '—'}</TableCell>
                   <TableCell>
-                    <Badge variant={getFitBadgeVariant(assessment.fit_band)}>
-                      {assessment.fit_band || 'Unknown'}
-                    </Badge>
+                    <span className="mr-1" title="Neuro overlay">{assessment.overlay}</span>
+                    <span title="State overlay">{assessment.overlay_state ?? '0'}</span>
                   </TableCell>
                   <TableCell>
                     <Badge variant={getVersionBadgeVariant(assessment.version)} className="text-xs">

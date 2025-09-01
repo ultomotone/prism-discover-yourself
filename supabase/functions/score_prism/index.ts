@@ -660,11 +660,29 @@ serve(async (req) => {
 
     // Defer type selection until after distance-based scoring
 
-    // ---- neuro overlay ----
-    const nMean = neuroVals.length ? neuroVals.reduce((a,b)=>a+b,0)/neuroVals.length : 0; // 1..5
-    const sdSafe = neuroNorms.sd && Number(neuroNorms.sd) !== 0 ? Number(neuroNorms.sd) : 1;
-    const z = (nMean - (neuroNorms.mean ?? 3)) / sdSafe;
-    const overlay = z >= 0 ? "+" : "–";
+    // ---- trait: Neuroticism (N) + overlays ----
+    const nMean = neuroVals.length ? neuroVals.reduce((a,b)=>a+b,0) / neuroVals.length : 0; // 1..5
+    const sdSafe = neuroNorms?.sd && Number(neuroNorms.sd) !== 0 ? Number(neuroNorms.sd) : 1;
+    const zN = (nMean - (neuroNorms?.mean ?? 3)) / sdSafe;
+
+    // neuro overlay: ± by cut
+    const cut = Number((await cfg("overlay_neuro_cut")) ?? 0.50);
+    let overlay_neuro: "+"|"–"|"0" = "0";
+    if (zN >= +cut) overlay_neuro = "+";
+    else if (zN <= -cut) overlay_neuro = "–";
+
+    // state overlay: weighted index from stress/time/sleep/focus
+    const wStateCfg = await cfg("overlay_state_weights");
+    const W = wStateCfg ?? {stress:0.35, time:0.25, sleep:-0.20, focus:-0.20};
+    const c = (v:number|null)=> (v ?? 3) - 3;
+    const state_index = (W.stress||0)*c(sStress) + (W.time||0)*c(sTime) + (W.sleep||0)*c(sSleep) + (W.focus||0)*c(sFocus);
+
+    let overlay_state: "+"|"–"|"0" = "0";
+    if (state_index >= +cut) overlay_state = "+";
+    else if (state_index <= -cut) overlay_state = "–";
+
+    // Legacy alias to avoid breaking UI that expects 'overlay'
+    const overlay = overlay_neuro;
 
     // Required tag coverage check
     let missingTags: string[] = [];
@@ -780,57 +798,43 @@ serve(async (req) => {
       fitRaw[code] = mapFitRaw(s);
     }
 
-    // NEW: Fit Calibration - use raw cohort fits for calibration
+    // --- Fit Calibration (v1.1.2): z-score against cohort RAW fits ---
     const { data: cohortData } = await supabase
       .from('profiles')
       .select('score_fit_raw')
-      .in('results_version', ['v1.1', 'v1.2.0']) // Include both versions
-      .gte('created_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
-      .not('score_fit_raw', 'is', null);
+      .gte('created_at', new Date(Date.now() - 90*24*60*60*1000).toISOString())
+      .not('score_fit_raw','is',null);
 
-    const cohortFitScores: number[] = (cohortData ?? [])
+    const cohortRaw = (cohortData||[])
       .map(r => Number(r.score_fit_raw))
       .filter(v => Number.isFinite(v));
 
-    // Compute cohort stats from raw fits - FIXED: Apply calibration per type, not globally
-    let fitAbs: Record<string, number> = {};
+    function zScaleTo50_15(x:number, mean:number, sd:number) {
+      const z = sd > 0 ? (x - mean) / sd : 0;
+      return 50 + 15*z;
+    }
 
-    if (cohortFitScores.length >= 50) {
-      // Calculate cohort statistics for calibration
-      cohortFitScores.sort((a,b)=>a-b);
-      const n = cohortFitScores.length;
-      
-      // Apply calibration individually to each type's raw score
+    const fitAbs: Record<string, number> = {};
+    const topRawFit = fitRaw[Object.keys(fitRaw).sort((a,b)=>fitRaw[b]-fitRaw[a])[0]] ?? 50;
+
+    if (cohortRaw.length >= 50) {
+      const cMean = cohortRaw.reduce((a,b)=>a+b,0)/cohortRaw.length;
+      const cSd = Math.sqrt(cohortRaw.reduce((s,v)=>s + Math.pow(v - cMean,2), 0) / Math.max(1,cohortRaw.length-1));
       for (const [code, rawFit] of Object.entries(fitRaw)) {
-        // Find percentile of this type's raw fit in cohort
-        const rank = cohortFitScores.filter(v => v <= rawFit).length;
-        const percentile = Math.max(0, Math.min(1, rank / n));
-        
-        // Map percentile into a calibrated band (35..75 typical)
-        const targetMin = 35, targetMax = 75;
-        const calibratedFit = targetMin + percentile * (targetMax - targetMin);
-        
-        // Apply z-score clamp for extremes
-        const zApprox = Math.abs((rawFit - 50) / 15);
-        const finalFit = zApprox <= 2.0 ? Math.max(20, Math.min(85, calibratedFit)) : calibratedFit;
-        
-        fitAbs[code] = Math.round(finalFit * 10) / 10;
+        let v = zScaleTo50_15(rawFit, cMean, cSd); // center ~50
+        // clamp sensibly to 20..85 for UI stability
+        v = Math.max(20, Math.min(85, v));
+        fitAbs[code] = Math.round(v*10)/10;
       }
-      
-      console.log(`evt:fit_calibrated_per_type,session_id:${session_id},cohort_size:${cohortFitScores.length},top_fits:${Object.keys(fitRaw).sort((a,b)=>fitRaw[b]-fitRaw[a]).slice(0,3).map(code => `${code}:${fitAbs[code]}`).join(',')}`);
+      console.log(`evt:fit_calibrated_z,session_id:${session_id},cohort_n:${cohortRaw.length},mean:${cMean.toFixed(2)},sd:${cSd.toFixed(2)},raw_top:${topRawFit}`);
     } else {
-      // Fallback: apply z-score calibration per type
-      const mean = cohortFitScores.length ? (cohortFitScores.reduce((a,b)=>a+b,0)/cohortFitScores.length) : 50;
-      const sd = Math.max(5, Math.sqrt(cohortFitScores.reduce((a,b)=>a+(b-mean)**2,0)/(cohortFitScores.length||1)));
-      
+      // fallback: mild shrink + offset
       for (const [code, rawFit] of Object.entries(fitRaw)) {
-        const z = (rawFit - mean) / sd;
-        let cal = 50 + 15*z;
-        cal = Math.max(20, Math.min(85, cal));
-        fitAbs[code] = Math.round(cal * 10) / 10;
+        let v = rawFit * 0.65 + 20;
+        v = Math.max(20, Math.min(85, v));
+        fitAbs[code] = Math.round(v*10)/10;
       }
-      
-      console.log(`evt:insufficient_cohort_per_type,session_id:${session_id},cohort_size:${cohortFitScores.length},using_fallback`);
+      console.log(`evt:fit_calibrated_fallback,session_id:${session_id},cohort_n:${cohortRaw.length}`);
     }
     const temp = softmaxTemp;
     const exps = Object.fromEntries(Object.entries(rawScores).map(([k,v])=>[k, Math.exp(v/temp)]));
@@ -1023,10 +1027,9 @@ serve(async (req) => {
       type_code: typeCode,
       base_func: base,
       creative_func: creative,
-      overlay: overlay,
       confidence: confidence,
       validity_status: validityStatus,
-      
+
       // NEW v1.2.0 fields with unified calibration
       results_version: "v1.2.0",
       score_fit_raw: fitRaw[typeCode] || 0,
@@ -1034,10 +1037,10 @@ serve(async (req) => {
       fit_band: fitBand,
       top_gap: topGap,
       invalid_combo_flag: invalidComboAttempts > 0,
-      
+
       close_call: closeCall,
       fc_answered_ct: fcAnsweredCount,
-      
+
       // Enhanced confidence fields
       conf_raw: Number(rawConf.toFixed(4)),
       conf_calibrated: Number(calibratedConf.toFixed(4)),
@@ -1045,9 +1048,9 @@ serve(async (req) => {
       top_3_fits: top3Fits,
       fit_explainer: {
         top_3_comparison: top3Fits,
-        interpretation: { 
-          fit_band: fitBand, 
-          close_call: closeCall, 
+        interpretation: {
+          fit_band: fitBand,
+          close_call: closeCall,
           top_gap: topGap,
           confidence_margin: confidenceMargin,
           calibration_note: "Fit is calibrated to typical PRISM ranges; 35≈weak, 55≈solid, 75≈strong"
@@ -1061,7 +1064,14 @@ serve(async (req) => {
       },
       strengths: strengths,
       dimensions: dimensions,
-      neuroticism: { raw_mean: nMean, z: z },
+      neuroticism: { raw_mean: nMean, z: zN },
+      neuro_mean: nMean,
+      neuro_z: Number(zN.toFixed(3)),
+      overlay_neuro: overlay_neuro,
+      overlay_state: overlay_state,
+      state_index: Number(state_index.toFixed(3)),
+      trait_scores: { N: Number(nMean?.toFixed(3)) },
+      overlay: overlay,
       validity: validity,
       type_scores: type_scores,
       top_types: top3,
