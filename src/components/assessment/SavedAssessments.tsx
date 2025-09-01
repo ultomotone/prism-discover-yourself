@@ -14,7 +14,6 @@ interface SavedSession {
   created_at: string;
   completed_questions: number;
   total_questions: number;
-  session_type: string;
 }
 
 interface SavedAssessmentsProps {
@@ -42,7 +41,7 @@ export function SavedAssessments({ onResumeAssessment, onStartNew }: SavedAssess
       // Load incomplete sessions using the updated view
       const { data: sessions, error } = await supabase
         .from('v_incomplete_sessions')
-        .select('id, created_at, completed_questions, total_questions, session_type')
+        .select('id, created_at, completed_questions, total_questions')
         .order('created_at', { ascending: false });
 
       console.log('SavedAssessments: Query result:', sessions);
