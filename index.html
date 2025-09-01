@@ -10,10 +10,90 @@
       gtag('config', 'G-J2XXMC9VWV');
     </script>
 
+    <!-- Reddit Pixel (init) -->
+    <script>
+      !function(w,d){if(!w.rdt){var p=w.rdt=function(){p.sendEvent?p.sendEvent.apply(p,arguments):p.callQueue.push(arguments)};p.callQueue=[];
+      var t=d.createElement("script");t.src="https://www.redditstatic.com/ads/pixel.js";t.async=!0;
+      var s=d.getElementsByTagName("script")[0];s.parentNode.insertBefore(t,s)}}(window,document);
+      rdt('init','a2_hisg7r10d2ta');
+    </script>
+    <!-- End Reddit Pixel (init) -->
+
+    <!-- Reddit Pixel helpers: unique conversion_id + SPA route tracking -->
+    <script>
+      // RFC4122-ish UUID for conversion_id
+      function convUUID(){
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
+          const r=(crypto.getRandomValues(new Uint8Array(1))[0]&15);
+          const v=c==='x'?r:(r&0x3)|0x8; return v.toString(16);
+        });
+      }
+      // Wrapper to always attach a conversion_id; returns the id we used
+      window.rdtTrack = function(eventName, props){
+        props = props || {};
+        if (!props.conversion_id) props.conversion_id = convUUID();
+        if (window.rdt) rdt('track', eventName, props);
+        window.__lastConversionId = props.conversion_id; // for CAPI dedup
+        return props.conversion_id;
+      };
+
+      // Fire initial page view
+      window.rdtTrack('PageVisit');
+
+      // SPA route tracking + business events
+      (function(){
+        function onRoute(){
+          window.rdtTrack('PageVisit');
+
+          const path = (location.pathname || '').toLowerCase();
+
+          // Assessment start
+          if (path.startsWith('/assessment')) {
+            window.rdtTrack('ViewContent', { content_name: 'Assessment' });
+          }
+          // Completion (tune to your actual results/complete paths)
+          if (path.includes('result') || path.includes('complete') || path.includes('done')) {
+            window.rdtTrack('Custom', { event_name: 'AssessmentComplete' });
+          }
+          // Post-signup destinations
+          if (
+            path.startsWith('/signup/complete') ||
+            path.startsWith('/welcome') ||
+            path.includes('/account/create/complete')
+          ) {
+            window.rdtTrack('SignUp');
+          }
+        }
+
+        // initial load
+        onRoute();
+
+        // watch SPA nav
+        ['pushState','replaceState'].forEach(method=>{
+          const orig = history[method];
+          history[method] = function(){
+            const ret = orig.apply(this, arguments);
+            setTimeout(onRoute, 0);
+            return ret;
+          };
+        });
+        addEventListener('popstate', onRoute);
+
+        // Optional explicit app hooks
+        addEventListener('app:assessment:complete', ()=> {
+          window.rdtTrack('Custom', { event_name: 'AssessmentComplete' });
+        });
+        addEventListener('app:user:signup', ()=> {
+          window.rdtTrack('SignUp');
+        });
+      })();
+    </script>
+    <!-- End Reddit helpers -->
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>About PRISM — Model, Methods, and Confidence</title>
-    <meta name="description" content="Learn how PRISM (Personality • Regulation • Information System Mapping) measures information elements, dimensionality (1D–4D), block dynamics, and a ± overlay, using multi‑method items and confidence‑based scoring." />
+    <meta name="description" content="Learn how PRISM (Personality • Regulation • Information System Mapping) measures information elements, dimensionality (1D–4D), block dynamics, and a ± overlay, using multi-method items and confidence-based scoring." />
     <meta name="author" content="PRISM Personality System" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
