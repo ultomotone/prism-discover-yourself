@@ -1,6 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+
+type Metrics = {
+  [key: string]: unknown;
+  rlsAnonSession?: number;
+  rlsOwnerEmail?: string | null;
+  scoringConfigAnon?: number;
+};
 
 dotenv.config({ path: '.env.local', override: true });
 dotenv.config();
@@ -84,7 +92,11 @@ async function runQuery(sql: string): Promise<unknown> {
   return res.json();
 }
 
-async function testRls() {
+async function testRls(
+  _client: SupabaseClient,
+  _admin: SupabaseClient,
+  metrics: Metrics,
+) {
   const id = crypto.randomUUID();
   await fetch(`${SUPABASE_URL}/rest/v1/assessment_sessions`, {
     method: 'POST',
@@ -127,7 +139,9 @@ async function main() {
   const runNumber = getRunNumber();
   const timestamp = new Date().toISOString();
   const report: string[] = [`## Run #${runNumber} - ${timestamp}`];
-  const metrics: Record<string, unknown> = {};
+  const metrics: Metrics = {};
+  const client = createClient(SUPABASE_URL, ANON_KEY);
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
   const funcs = ['start_assessment', 'finalizeAssessment', 'score_prism'];
   const queries: Record<string, string> = {
@@ -186,7 +200,7 @@ where score_fit_calibrated is null
       }
     }
 
-    await testRls();
+    await testRls(client, admin, metrics);
 
     const views = ['v_latest_assessments_v11', 'v_kpi_overview_30d_v11'];
     const viewStatus: Record<string, number> = {};
