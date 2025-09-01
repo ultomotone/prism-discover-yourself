@@ -111,6 +111,12 @@
 
   <body>
     <div id="root"></div>
+    <script id="app-config">
+      window.__APP_CONFIG__ = {
+        SUPABASE_URL: "REPLACE_WITH_YOUR_URL",
+        SUPABASE_ANON_KEY: "REPLACE_WITH_YOUR_PUBLISHABLE_KEY"
+      };
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

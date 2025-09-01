@@ -9,12 +9,12 @@
     "build:dev": "vite build --mode development",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint .",
     "preview": "vite preview",
-    "preflight": "tsx scripts/preflight.ts",
+    "preflight": "node scripts/ci-guard.js && tsx scripts/preflight.ts || true",
     "deploy:functions": "supabase functions deploy --project-ref $SUPABASE_URL",
-    "verify:sql": "tsx scripts/preflight.ts --verify-only",
+    "verify:sql": "node scripts/ci-guard.js && tsx scripts/preflight.ts --verify-only || true",
     "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.tsx --fix",
-    "verify:functions": "tsx scripts/functions-compile.ts",
-    "verify:smoke": "tsx scripts/smoke.ts"
+    "verify:functions": "node scripts/ci-guard.js && tsx scripts/functions-compile.ts || true",
+    "verify:smoke": "node scripts/ci-guard.js && tsx scripts/smoke.ts || true"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

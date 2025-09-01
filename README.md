@@ -89,16 +89,24 @@ npm run verify:smoke
 
 ## Environment
 
-Set GitHub secrets (Repository Settings → Secrets and variables → Actions):
-
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY` (Publishable)
-- `SUPABASE_SERVICE_ROLE_KEY` (Secret)
-
 Local `.env` needs:
 
 ```
-SUPABASE_URL=
-SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
 ```
+
+If your host doesn't support env vars, set values in `index.html` via `window.__APP_CONFIG__`.
+
+## Lovable deploy
+
+Set your Supabase values in `index.html` → `window.__APP_CONFIG__`:
+
+```
+SUPABASE_URL: https://YOUR-PROJECT.supabase.co
+SUPABASE_ANON_KEY: (Supabase "anon" key)
+```
+
+Only use the publishable (anon) key; never embed the service role key.
+
+Redeploy.
