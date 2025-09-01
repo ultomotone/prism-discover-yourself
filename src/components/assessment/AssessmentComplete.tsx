@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ResultsV2 } from "./ResultsV2";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { trackAssessmentComplete, trackResultsViewed } from "@/lib/analytics";
 
 interface AssessmentCompleteProps {
   responses: AssessmentResponse[];
@@ -109,6 +110,12 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
         } else if (data?.ok && data?.profile) {
           console.log('✅ Assessment finalized successfully:', data);
           setScoring(data.profile);
+          
+          // Track assessment completion
+          trackAssessmentComplete(sessionId, responses?.length || 0);
+          
+          // Track results viewed
+          trackResultsViewed(sessionId, data.profile?.type_code);
           
           // Store share token for URL generation
           if (data.share_token) {

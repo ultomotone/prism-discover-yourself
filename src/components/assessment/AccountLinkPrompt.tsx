@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Loader2, Mail, Lock, User, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { trackAccountCreation } from "@/lib/analytics";
 
 interface AccountLinkPromptProps {
   isOpen: boolean;
@@ -88,12 +89,14 @@ export function AccountLinkPrompt({
           title: "Account Created!",
           description: "Please check your email to verify your account. Your progress will be saved.",
         });
+        trackAccountCreation(email);
         onAccountCreated(email, password);
       } else {
         toast({
           title: "Please Check Your Email",
           description: "A verification link has been sent to your email address.",
         });
+        trackAccountCreation(email);
         onAccountCreated(email, password);
       }
     } catch (error) {

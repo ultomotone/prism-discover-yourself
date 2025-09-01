@@ -23,6 +23,7 @@ import { useEmailSessionManager } from "@/hooks/useEmailSessionManager";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Save } from "lucide-react";
+import { trackAssessmentStart, trackAssessmentProgress } from "@/lib/analytics";
 
 export interface AssessmentResponse {
   questionId: number | string;
@@ -258,6 +259,9 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
 console.log('Session initialized successfully:', newId);
 setSessionId(newId);
 setQuestionStartTime(Date.now());
+
+// Track assessment start
+trackAssessmentStart(newId);
 
 // Local fallback: remember latest session
 try {
@@ -737,6 +741,11 @@ try {
         // Update session progress normally
         const progressResult = await updateSessionProgress();
         console.log('🔥 PROGRESS UPDATE RESULT:', progressResult);
+        
+        // Track assessment progress
+        if (sessionId) {
+          trackAssessmentProgress(currentQuestionIndex, visibleQuestions.length, sessionId);
+        }
       }
 
       if (isLastQuestion) {
