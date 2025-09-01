@@ -23,6 +23,8 @@ const Assessment = () => {
       console.log('🔗 URL resume parameter found:', resumeParam);
       setResumeSessionId(resumeParam);
       setCurrentState('form');
+      // Update URL state to reflect the resume action
+      window.history.replaceState({}, '', `/assessment?resume=${resumeParam}`);
     } else {
       checkForSavedAssessments();
     }
@@ -34,55 +36,59 @@ const Assessment = () => {
       const { data: { user } } = await supabase.auth.getUser();
       console.log('Current user:', user?.id || 'anonymous');
       
-      // First, let's see ALL email-based sessions to debug
-      const { data: allEmailSessions, error: allError } = await supabase
-        .from('assessment_sessions')
-        .select('id, completed_questions, total_questions, created_at, completed_at, email, user_id')
-        .not('email', 'is', null);
-        
-      console.log('ALL email-based sessions in database:', allEmailSessions);
-      console.log('All email sessions error:', allError);
-      
-      // Check for incomplete sessions with progress using the new view
+      // Check for incomplete sessions using the updated view
       const { data: sessions, error } = await supabase
         .from('v_incomplete_sessions')
         .select('id, completed_questions, total_questions, created_at, email, user_id, status')
         .order('created_at', { ascending: false })
         .limit(10);
 
-      console.log('FILTERED incomplete sessions with email and progress:', sessions);
+      console.log('FILTERED incomplete sessions:', sessions);
       console.log('Query error:', error);
       console.log('Sessions found:', sessions?.length || 0);
 
       if (!error && sessions && sessions.length > 0) {
-        console.log('✅ Found', sessions.length, 'saved sessions, showing saved state');
-        setCurrentState('saved');
-      } else {
-        // Local fallback: auto-resume last session if present
-        try {
-          const cachedRaw = localStorage.getItem('prism_last_session');
-          const cached = cachedRaw ? JSON.parse(cachedRaw) : null;
-          console.log('🗄️ Local cached session:', cached);
-          if (cached?.id && (cached?.completed_questions ?? 0) > 0) {
-            console.log('🗄️ Auto-resuming local cached session:', cached.id);
-            setResumeSessionId(cached.id);
-            setCurrentState('form');
-            return;
-          }
-        } catch (e) {
-          console.warn('Failed to read local session cache', e);
+        // Filter out sessions with invalid question counts
+        const validSessions = sessions.filter(s => 
+          s.total_questions && s.total_questions > 0 && s.completed_questions < s.total_questions
+        );
+        
+        if (validSessions.length > 0) {
+          console.log('✅ Found', validSessions.length, 'valid saved sessions, showing saved state');
+          setCurrentState('saved');
+        } else {
+          console.log('❌ No valid saved sessions found, checking local cache');
+          checkLocalCache();
         }
-        console.log('❌ No saved sessions found, showing intro');
-        console.log('Error:', !!error);
-        console.log('Sessions null:', !sessions);
-        console.log('Sessions empty:', sessions?.length === 0);
-        setCurrentState('intro');
+      } else {
+        checkLocalCache();
       }
       console.log('=== END CHECKING SAVED ASSESSMENTS ===');
     } catch (error) {
       console.error('❌ Error checking for saved assessments:', error);
       setCurrentState('intro');
     }
+  };
+
+  const checkLocalCache = () => {
+    // Local fallback: auto-resume last session if present
+    try {
+      const cachedRaw = localStorage.getItem('prism_last_session');
+      const cached = cachedRaw ? JSON.parse(cachedRaw) : null;
+      console.log('🗄️ Local cached session:', cached);
+      if (cached?.id && (cached?.completed_questions ?? 0) > 0) {
+        console.log('🗄️ Auto-resuming local cached session:', cached.id);
+        setResumeSessionId(cached.id);
+        setCurrentState('form');
+        // Update URL to reflect auto-resume
+        window.history.replaceState({}, '', `/assessment?resume=${cached.id}`);
+        return;
+      }
+    } catch (e) {
+      console.warn('Failed to read local session cache', e);
+    }
+    console.log('❌ No saved sessions found, showing intro');
+    setCurrentState('intro');
   };
 
   const handleStartAssessment = () => {
@@ -93,6 +99,7 @@ const Assessment = () => {
         console.log('🚫 Preventing new assessment - resuming existing session:', cached.id);
         setResumeSessionId(cached.id);
         setCurrentState('form');
+        window.history.replaceState({}, '', `/assessment?resume=${cached.id}`);
         return;
       }
     } catch (e) {
@@ -101,6 +108,8 @@ const Assessment = () => {
     
     setResumeSessionId(undefined);
     setCurrentState('form');
+    // Clear resume parameter when starting fresh
+    window.history.replaceState({}, '', '/assessment');
   };
 
   const handleAssessmentComplete = (assessmentResponses: AssessmentResponse[], sessionId: string) => {
@@ -128,6 +137,7 @@ const Assessment = () => {
 
   const handleReturnToIntro = () => {
     setCurrentState('intro');
+    window.history.replaceState({}, '', '/assessment');
   };
 
   const handleReturnHome = () => {
@@ -138,22 +148,27 @@ const Assessment = () => {
     setCurrentState('intro');
     setResponses([]);
     setSessionId('');
+    window.history.replaceState({}, '', '/assessment');
   };
 
   const handleResumeAssessment = (savedSessionId: string) => {
     console.log('Resuming assessment with session ID:', savedSessionId);
     setResumeSessionId(savedSessionId);
     setCurrentState('form');
+    // Update URL to reflect resume action
+    window.history.replaceState({}, '', `/assessment?resume=${savedSessionId}`);
   };
 
   const handleSaveAndExit = () => {
     setCurrentState('intro');
     setResumeSessionId(undefined);
+    window.history.replaceState({}, '', '/assessment');
   };
 
   const handleStartNewAssessment = () => {
     setResumeSessionId(undefined);
     setCurrentState('intro');
+    window.history.replaceState({}, '', '/assessment');
   };
 
   // Temporary maintenance mode - set to false to re-enable

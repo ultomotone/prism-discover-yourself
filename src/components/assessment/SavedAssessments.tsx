@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +7,7 @@ import { Trash2, Play, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 interface SavedSession {
   id: string;
@@ -25,6 +27,7 @@ export function SavedAssessments({ onResumeAssessment, onStartNew }: SavedAssess
   const [isLoading, setIsLoading] = useState(true);
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadSavedSessions();
@@ -36,13 +39,10 @@ export function SavedAssessments({ onResumeAssessment, onStartNew }: SavedAssess
       const { data: { user } } = await supabase.auth.getUser();
       console.log('SavedAssessments: Current user:', user?.id || 'anonymous');
       
-      // Load incomplete sessions (both for authenticated and anonymous users)
+      // Load incomplete sessions using the updated view
       const { data: sessions, error } = await supabase
-        .from('assessment_sessions')
+        .from('v_incomplete_sessions')
         .select('id, created_at, completed_questions, total_questions, session_type')
-        .is('completed_at', null)
-        .gt('completed_questions', 0)
-        .eq('user_id', user?.id || null)
         .order('created_at', { ascending: false });
 
       console.log('SavedAssessments: Query result:', sessions);
@@ -53,8 +53,13 @@ export function SavedAssessments({ onResumeAssessment, onStartNew }: SavedAssess
         return;
       }
 
-      setSavedSessions(sessions || []);
-      console.log('SavedAssessments: Set saved sessions to:', sessions || []);
+      // Filter out sessions where total_questions is 0 or null (shouldn't happen with new view)
+      const validSessions = (sessions || []).filter(s => 
+        s.total_questions && s.total_questions > 0 && s.completed_questions < s.total_questions
+      );
+
+      setSavedSessions(validSessions);
+      console.log('SavedAssessments: Set saved sessions to:', validSessions);
     } catch (error) {
       console.error('Error loading saved sessions:', error);
     } finally {
@@ -105,6 +110,14 @@ export function SavedAssessments({ onResumeAssessment, onStartNew }: SavedAssess
     } finally {
       setDeletingSessionId(null);
     }
+  };
+
+  const handleContinueAssessment = (sessionId: string) => {
+    console.log('Continue button clicked for session:', sessionId);
+    // Navigate directly to assessment with resume parameter
+    navigate(`/assessment?resume=${sessionId}`);
+    // Also call the parent callback for any additional handling
+    onResumeAssessment(sessionId);
   };
 
   if (isLoading) {
@@ -183,10 +196,7 @@ export function SavedAssessments({ onResumeAssessment, onStartNew }: SavedAssess
                       </Button>
                       
                       <Button
-                        onClick={() => {
-                          console.log('Continue button clicked for session:', session.id);
-                          onResumeAssessment(session.id);
-                        }}
+                        onClick={() => handleContinueAssessment(session.id)}
                         className="flex items-center gap-2"
                       >
                         <Play className="h-4 w-4" />
