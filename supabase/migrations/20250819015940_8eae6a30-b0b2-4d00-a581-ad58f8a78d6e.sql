@@ -3,28 +3,28 @@ DELETE FROM assessment_scoring_key;
 
 -- Demographics & Contact (1-8) - META (unscored)
 INSERT INTO assessment_scoring_key (question_id, scale_type, tag, reverse_scored, pair_group, social_desirability, fc_map, weight) VALUES
-(1, 'META', NULL, false, NULL, false, NULL, 0),
-(2, 'META', NULL, false, NULL, false, NULL, 0),
-(3, 'META', NULL, false, NULL, false, NULL, 0),
-(4, 'META', NULL, false, NULL, false, NULL, 0),
-(5, 'META', NULL, false, NULL, false, NULL, 0),
-(6, 'META', NULL, false, NULL, false, NULL, 0),
-(7, 'META', NULL, false, NULL, false, NULL, 0),
-(8, 'META', NULL, false, NULL, false, NULL, 0);
+(1, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(2, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(3, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(4, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(5, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(6, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(7, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(8, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0);
 
 -- Self-Reported Behavioral Outcomes (9-12) - META
 INSERT INTO assessment_scoring_key (question_id, scale_type, tag, reverse_scored, pair_group, social_desirability, fc_map, weight) VALUES
 (9, 'LIKERT_1_7', NULL, false, NULL, false, NULL, 0),
 (10, 'LIKERT_1_7', NULL, false, NULL, false, NULL, 0),
-(11, 'META', NULL, false, NULL, false, NULL, 0),
-(12, 'META', NULL, false, NULL, false, NULL, 0);
+(11, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(12, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0);
 
 -- Life Events & Mindset (13-16) - META
 INSERT INTO assessment_scoring_key (question_id, scale_type, tag, reverse_scored, pair_group, social_desirability, fc_map, weight) VALUES
-(13, 'META', NULL, false, NULL, false, NULL, 0),
-(14, 'META', NULL, false, NULL, false, NULL, 0),
-(15, 'META', NULL, false, NULL, false, NULL, 0),
-(16, 'META', NULL, false, NULL, false, NULL, 0);
+(13, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(14, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(15, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(16, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0);
 
 -- Core PRISM Functions (1/2) - Questions 17-64 (Strength items)
 INSERT INTO assessment_scoring_key (question_id, scale_type, tag, reverse_scored, pair_group, social_desirability, fc_map, weight) VALUES
@@ -235,34 +235,34 @@ INSERT INTO assessment_scoring_key (question_id, scale_type, tag, reverse_scored
 
 -- Growth Over Time (189-196) - META
 INSERT INTO assessment_scoring_key (question_id, scale_type, tag, reverse_scored, pair_group, social_desirability, fc_map, weight) VALUES
-(189, 'META', NULL, false, NULL, false, NULL, 0),
-(190, 'META', NULL, false, NULL, false, NULL, 0),
-(191, 'META', NULL, false, NULL, false, NULL, 0),
-(192, 'META', NULL, false, NULL, false, NULL, 0),
-(193, 'META', NULL, false, NULL, false, NULL, 0),
-(194, 'META', NULL, false, NULL, false, NULL, 0),
-(195, 'META', NULL, false, NULL, false, NULL, 0),
-(196, 'META', NULL, false, NULL, false, NULL, 0);
+(189, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(190, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(191, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(192, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(193, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(194, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(195, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(196, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0);
 
 -- Self-Regulation & Boundaries (197-204) - META
 INSERT INTO assessment_scoring_key (question_id, scale_type, tag, reverse_scored, pair_group, social_desirability, fc_map, weight) VALUES
-(197, 'META', NULL, false, NULL, false, NULL, 0),
-(198, 'META', NULL, false, NULL, false, NULL, 0),
-(199, 'META', NULL, false, NULL, false, NULL, 0),
-(200, 'META', NULL, false, NULL, false, NULL, 0),
-(201, 'META', NULL, false, NULL, false, NULL, 0),
-(202, 'META', NULL, false, NULL, false, NULL, 0),
-(203, 'META', NULL, false, NULL, false, NULL, 0),
-(204, 'META', NULL, false, NULL, false, NULL, 0);
+(197, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(198, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(199, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(200, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(201, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(202, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(203, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(204, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0);
 
 -- Trauma / Healing Context (205-210) - META
 INSERT INTO assessment_scoring_key (question_id, scale_type, tag, reverse_scored, pair_group, social_desirability, fc_map, weight) VALUES
-(205, 'META', NULL, false, NULL, false, NULL, 0),
-(206, 'META', NULL, false, NULL, false, NULL, 0),
-(207, 'META', NULL, false, NULL, false, NULL, 0),
-(208, 'META', NULL, false, NULL, false, NULL, 0),
-(209, 'META', NULL, false, NULL, false, NULL, 0),
-(210, 'META', NULL, false, NULL, false, NULL, 0);
+(205, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(206, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(207, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(208, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(209, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0),
+(210, 'META'::assessment_scale_type, NULL, false, NULL, false, NULL, 0);
 
 -- Work Context & Style (211-216) - META forced choice
 INSERT INTO assessment_scoring_key (question_id, scale_type, tag, reverse_scored, pair_group, social_desirability, fc_map, weight) VALUES
@@ -319,4 +319,4 @@ UPDATE scoring_config SET value = '{"stress":217,"mood":218,"sleep":219,"time":2
 
 -- Add unique constraint and validation check
 ALTER TABLE assessment_scoring_key ADD CONSTRAINT unique_question_id UNIQUE (question_id);
-ALTER TABLE assessment_scoring_key ADD CONSTRAINT meta_tag_check CHECK (scale_type <> 'META' OR tag IS NULL);
+ALTER TABLE assessment_scoring_key ADD CONSTRAINT meta_tag_check CHECK (scale_type <> 'META'::assessment_scale_type OR tag IS NULL);
