@@ -1,0 +1,4 @@
+- In Supabase Dashboard → Authentication → Providers/Email:
+  - Set "Email OTP expiry" to 10 minutes or less (e.g., 600s).
+  - Enable "Leaked password protection / HIBP".
+- If your project uses the CLI config, ensure `supabase/config.toml` matches prod.

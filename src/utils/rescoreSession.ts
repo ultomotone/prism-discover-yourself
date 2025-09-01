@@ -1,5 +1,5 @@
 // Utility to trigger re-scoring for invalid UNK results
-import { supabase } from '@/integrations/supabase/client';
+import { admin as supabase } from '@/lib/supabase/admin';
 
 export async function rescoreSession(sessionId: string) {
   try {

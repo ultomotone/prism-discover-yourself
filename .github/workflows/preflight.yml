@@ -1,0 +1,40 @@
+name: Preflight
+
+on:
+  pull_request_target:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - name: Check env presence
+        run: |
+          echo URL=${SUPABASE_URL:+set}
+          echo ANON=${SUPABASE_ANON_KEY:+set}
+          echo SERVICE=${SUPABASE_SERVICE_ROLE_KEY:+set}
+      - run: npm run verify:functions
+      - run: npm run preflight
+      - run: npm run verify:sql
+      - run: npm run verify:smoke
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: preflight-report
+          path: |
+            PRE-FLIGHT/REPORT.md
+            PRE-FLIGHT/metrics.json

@@ -9,6 +9,11 @@
     "paths": {
       "@/*": ["./src/*"]
     },
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"],
     "noImplicitAny": false,
     "noUnusedParameters": false,
     "skipLibCheck": true,

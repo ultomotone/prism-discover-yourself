@@ -71,3 +71,34 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Preflight
+
+To run the preflight checks locally:
+
+```sh
+cp .env.example .env.local
+# fill in values
+npm i
+npm run lint:fix
+npm run preflight
+npm run verify:sql
+npm run verify:functions
+npm run verify:smoke
+```
+
+## Environment
+
+Set GitHub secrets (Repository Settings → Secrets and variables → Actions):
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY` (Publishable)
+- `SUPABASE_SERVICE_ROLE_KEY` (Secret)
+
+Local `.env` needs:
+
+```
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+```

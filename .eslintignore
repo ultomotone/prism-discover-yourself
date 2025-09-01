@@ -1,0 +1,7 @@
+node_modules
+dist
+src
+supabase
+tailwind.config.ts
+postcss.config.js
+vite.config.ts
