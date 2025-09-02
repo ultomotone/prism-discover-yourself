@@ -71,7 +71,7 @@ export default function Results() {
         const urlParams = new URLSearchParams(window.location.search);
         const shareToken = urlParams.get('token');
 
-        console.log('Calling get-results-by-session edge function with:', {
+        console.log('Calling getResultsBySession edge function with:', {
           sessionId,
           shareToken: !!shareToken
         });
@@ -125,8 +125,8 @@ export default function Results() {
           if (!cancelled) { setScoring(profile); setLoading(false); }
         };
 
-        // Call the secure edge function - only use get-results-by-session
-        const { data: resultData, error: invokeError } = await supabase.functions.invoke('get-results-by-session', {
+        // Call the secure edge function - only use getResultsBySession
+        const { data: resultData, error: invokeError } = await supabase.functions.invoke('getResultsBySession', {
           body: {
             session_id: sessionId,
             share_token: shareToken ?? null
@@ -134,7 +134,7 @@ export default function Results() {
           headers: { 'cache-control': 'no-cache' }
         });
 
-        console.log('get-results-by-session response:', { data: resultData, error: invokeError });
+        console.log('getResultsBySession response:', { data: resultData, error: invokeError });
 
         if (invokeError) {
           if ((invokeError as any).status === 404) {
