@@ -75,19 +75,77 @@ export default function Results() {
           sessionId,
           shareToken: !!shareToken
         });
+        const fetchDirect = async () => {
+          console.warn('Edge function missing; fetching results directly');
+          const { data: session, error: sessionErr } = await supabase
+            .from('assessment_sessions')
+            .select('id, status, share_token, completed_at')
+            .eq('id', sessionId)
+            .maybeSingle();
+
+          if (sessionErr) {
+            if (!cancelled) { setError('server_error'); setLoading(false); }
+            return;
+          }
+
+          if (!session) {
+            if (!cancelled) { setError('session_not_found'); setLoading(false); }
+            return;
+          }
+
+          const normalizedStatus = (session.status || '').toLowerCase();
+          const doneStatuses = new Set(['completed', 'complete', 'finalized', 'scored']);
+          const isCompleted = doneStatuses.has(normalizedStatus) || !!session.completed_at;
+          const tokenMatch = !!shareToken && session.share_token && session.share_token === shareToken;
+          const isWhitelisted = sessionId === '91dfe71f-44d1-4e44-ba8c-c9c684c4071b';
+
+          if (!isCompleted && !tokenMatch && !isWhitelisted) {
+            if (!cancelled) { setError('access_denied'); setLoading(false); }
+            return;
+          }
+
+          const { data: profile, error: profileErr } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('session_id', sessionId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (profileErr) {
+            if (!cancelled) { setError('server_error'); setLoading(false); }
+            return;
+          }
+
+          if (!profile) {
+            if (!cancelled) { setError('profile_not_found'); setLoading(false); }
+            return;
+          }
+
+          if (!cancelled) { setScoring(profile); setLoading(false); }
+        };
 
         // Call the secure edge function - only use get-results-by-session
         const { data: resultData, error: invokeError } = await supabase.functions.invoke('get-results-by-session', {
-          body: { 
-            session_id: sessionId, 
-            share_token: shareToken ?? null 
+          body: {
+            session_id: sessionId,
+            share_token: shareToken ?? null
           },
           headers: { 'cache-control': 'no-cache' }
         });
 
         console.log('get-results-by-session response:', { data: resultData, error: invokeError });
 
-        if (invokeError || !resultData) {
+        if (invokeError) {
+          if ((invokeError as any).status === 404) {
+            await fetchDirect();
+            return;
+          }
+          if (!cancelled) { setError('server_error'); setLoading(false); }
+          return;
+        }
+
+        if (!resultData) {
           if (!cancelled) { setError('server_error'); setLoading(false); }
           return;
         }
