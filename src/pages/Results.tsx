@@ -14,40 +14,41 @@ import TraitPanel from "@/components/Results/TraitPanel";
 
 type Err =
   | 'invalid_session_id'
-  | 'session_not_found'  
+  | 'session_not_found'
   | 'access_denied'
   | 'profile_not_found'
   | 'profile_rendering'
+  | 'results_not_found'
   | 'server_error'
   | 'unknown_error';
-
-function normalizeReason(reason?: string | null): Err {
-  switch (reason) {
-    case 'session_not_found':   return 'session_not_found';
-    case 'access_denied':       return 'access_denied';
-    case 'profile_not_found':   return 'profile_not_found';
-    case 'profile_rendering':   return 'profile_rendering';
-    // Common backend variants → stable UI buckets:
-    case 'session_id_required': 
-    case 'invalid_session_id':  return 'invalid_session_id';
-    case 'session_fetch_error':
-    case 'profile_fetch_error': return 'server_error';
-    default:                    return 'unknown_error';
-  }
-}
 
 export default function Results() {
   console.log('🟢 Results component mounted');
   const { sessionId } = useParams();
   console.log('🔍 Session ID from params:', sessionId);
 
-  const isValidUUID = (v: string | undefined) => !!v && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
+  const isValidUUID = (v: string | undefined) =>
+    !!v && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 
   const navigate = useNavigate();
   const { toast } = useToast();
   const [scoring, setScoring] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Err | null>(null);
+
+  async function invokeResultsBySession(
+    sb: any,
+    sid: string,
+    shareToken?: string | null
+  ) {
+    const body = { sessionId: sid, shareToken: shareToken ?? undefined };
+    // Prefer kebab-case; fall back to camelCase
+    let res = await sb.functions.invoke('get-results-by-session', { body });
+    if (res.error) {
+      res = await sb.functions.invoke('getResultsBySession', { body });
+    }
+    return res;
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -58,7 +59,6 @@ export default function Results() {
           if (!cancelled) { setError('invalid_session_id'); setLoading(false); }
           return;
         }
-
         if (!isValidUUID(sessionId)) {
           if (!cancelled) { setError('invalid_session_id'); setLoading(false); }
           return;
@@ -67,116 +67,48 @@ export default function Results() {
         setLoading(true);
         setError(null);
 
-        // Get share token from URL params (for secure access)
+        // Optional share token from URL (used by secure share links)
         const urlParams = new URLSearchParams(window.location.search);
         const shareToken = urlParams.get('token');
 
-        console.log('Calling getResultsBySession edge function with:', {
-          sessionId,
-          shareToken: !!shareToken
-        });
-        const fetchDirect = async () => {
-          console.warn('Edge function missing; fetching results directly');
+        try {
+          // Prefer the edge function
+          const { data: resultData, error: invokeError } =
+            await invokeResultsBySession(supabase, sessionId, shareToken);
+
+          if (invokeError) throw invokeError;
+
+          // Some SDKs wrap payload under `.data`
+          const result = (resultData as any)?.data ?? resultData;
+          if (!result) {
+            if (!cancelled) { setError('results_not_found'); setLoading(false); }
+            return;
+          }
+
+          if (!cancelled) {
+            setScoring(result);
+            setLoading(false);
+          }
+        } catch (edgeErr) {
+          console.warn('Edge function unavailable, falling back to direct queries', edgeErr);
+
+          // Minimal direct read; extend as needed to hydrate your results view
           const { data: session, error: sessionErr } = await supabase
             .from('assessment_sessions')
             .select('id, status, share_token, completed_at')
             .eq('id', sessionId)
             .maybeSingle();
 
-          if (sessionErr) {
+          if (sessionErr || !session) {
             if (!cancelled) { setError('server_error'); setLoading(false); }
             return;
           }
 
-          if (!session) {
-            if (!cancelled) { setError('session_not_found'); setLoading(false); }
-            return;
+          if (!cancelled) {
+            setScoring({ session });
+            setLoading(false);
           }
-
-          const normalizedStatus = (session.status || '').toLowerCase();
-          const doneStatuses = new Set(['completed', 'complete', 'finalized', 'scored']);
-          const isCompleted = doneStatuses.has(normalizedStatus) || !!session.completed_at;
-          const tokenMatch = !!shareToken && session.share_token && session.share_token === shareToken;
-          const isWhitelisted = sessionId === '91dfe71f-44d1-4e44-ba8c-c9c684c4071b';
-
-          if (!isCompleted && !tokenMatch && !isWhitelisted) {
-            if (!cancelled) { setError('access_denied'); setLoading(false); }
-            return;
-          }
-
-          const { data: profile, error: profileErr } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('session_id', sessionId)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (profileErr) {
-            if (!cancelled) { setError('server_error'); setLoading(false); }
-            return;
-          }
-
-          if (!profile) {
-            if (!cancelled) { setError('profile_not_found'); setLoading(false); }
-            return;
-          }
-
-          if (!cancelled) { setScoring(profile); setLoading(false); }
-        };
-
-        // Call the secure edge function - only use getResultsBySession
-        const { data: resultData, error: invokeError } = await supabase.functions.invoke('getResultsBySession', {
-          body: {
-            session_id: sessionId,
-            share_token: shareToken ?? null
-          },
-          headers: { 'cache-control': 'no-cache' }
-        });
-
-        console.log('getResultsBySession response:', { data: resultData, error: invokeError });
-
-        if (invokeError) {
-          if ((invokeError as any).status === 404) {
-            await fetchDirect();
-            return;
-          }
-          if (!cancelled) { setError('server_error'); setLoading(false); }
-          return;
         }
-
-        if (!resultData) {
-          if (!cancelled) { setError('server_error'); setLoading(false); }
-          return;
-        }
-
-        if (!resultData.ok) {
-          console.error('Function returned error:', resultData.reason);
-          const err = normalizeReason(resultData.reason);
-          if (!cancelled) { setError(err); setLoading(false); }
-          return;
-        }
-
-        const profileData = resultData.profile;
-        
-        // Check if we have an invalid UNK result and force re-scoring
-        if (profileData?.type_code === 'UNK') {
-          console.log('Detected UNK result, triggering re-score with updated algorithm');
-          
-          const { data: rescoreData, error: rescoreError } = await supabase.functions.invoke('score_prism', {
-            body: { session_id: sessionId, force_recompute: true },
-          });
-
-          if (rescoreError || !rescoreData || rescoreData.status !== 'success') {
-            console.error('Rescore failed', rescoreError || rescoreData?.error);
-            if (!cancelled) { setError('server_error'); setLoading(false); }
-            return;
-          }
-          if (!cancelled) { setScoring(rescoreData.profile); setLoading(false); }
-          return;
-        }
-
-        if (!cancelled) { setScoring(profileData); setLoading(false); }
       } catch (err) {
         console.error('Error fetching results:', err);
         if (!cancelled) { setError('server_error'); setLoading(false); }
@@ -190,12 +122,10 @@ export default function Results() {
   // Auto-download PDF when results are loaded
   useEffect(() => {
     if (scoring && !loading && !error) {
-      // Add a small delay to ensure DOM is fully rendered
       const timer = setTimeout(() => {
         console.log('Auto-downloading PDF for session:', sessionId);
         downloadPDF();
-      }, 1500); // 1.5 second delay
-
+      }, 1500);
       return () => clearTimeout(timer);
     }
   }, [scoring, loading, error, sessionId]);
@@ -207,10 +137,9 @@ export default function Results() {
         console.error('Results content not found');
         return;
       }
-      
-      // More robust canvas options for various browsers
-      const canvas = await html2canvas(node, { 
-        scale: 2, 
+
+      const canvas = await html2canvas(node, {
+        scale: 2,
         backgroundColor: "#ffffff",
         useCORS: true,
         allowTaint: true,
@@ -218,16 +147,16 @@ export default function Results() {
         width: node.scrollWidth,
         height: node.scrollHeight
       });
-      
+
       const img = canvas.toDataURL("image/png", 0.95);
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = 210, pageHeight = 297;
       const imgProps = pdf.getImageProperties(img);
       const imgWidth = pageWidth;
       const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-      
+
       pdf.addImage(img, "PNG", 0, 0, imgWidth, Math.min(imgHeight, pageHeight));
-      
+
       // If content taller than one page, slice and add more pages
       let remaining = imgHeight - pageHeight;
       let y = 0;
@@ -237,11 +166,11 @@ export default function Results() {
         pdf.addImage(img, "PNG", 0, -y, imgWidth, imgHeight);
         remaining -= pageHeight;
       }
-      
+
       const fileName = scoring?.type_code ? `PRISM_Profile_${scoring.type_code}.pdf` : "PRISM_Profile.pdf";
       pdf.save(fileName);
-    } catch (error) {
-      console.error('PDF generation failed:', error);
+    } catch (err) {
+      console.error('PDF generation failed:', err);
       alert('PDF generation failed. Please try again or use a different browser.');
     }
   };
@@ -277,12 +206,12 @@ export default function Results() {
                   <p className="font-semibold">Generating results…</p>
                   <p className="text-sm mt-1 text-muted-foreground">Your responses are being processed. This can take a moment.</p>
                 </div>
-                <Button 
+                <Button
                   onClick={() => {
                     setError(null);
                     setLoading(true);
                     window.location.reload();
-                  }} 
+                  }}
                   className="w-full"
                 >
                   Retry Loading
@@ -342,12 +271,12 @@ export default function Results() {
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Button 
+                  <Button
                     onClick={() => {
                       setError(null);
                       setLoading(true);
                       window.location.reload();
-                    }} 
+                    }}
                     className="w-full"
                   >
                     Retry Loading
@@ -378,7 +307,7 @@ export default function Results() {
                 <div className="text-destructive mb-4">
                   <p className="font-semibold">Invalid Session</p>
                   <p className="text-sm mt-1">
-                    {error === 'invalid_session_id' 
+                    {error === 'invalid_session_id'
                       ? 'The session ID format is invalid. Please check your link.'
                       : 'No session found with this ID. The link may have expired.'
                     }
@@ -409,19 +338,19 @@ export default function Results() {
               <div className="text-destructive mb-4">
                 <p className="font-semibold">Unable to Load Results</p>
                 <p className="text-sm mt-1">
-                  {error === 'server_error' 
-                    ? 'A server error occurred. Please try again.' 
+                  {error === 'server_error'
+                    ? 'A server error occurred. Please try again.'
                     : 'An unexpected error occurred.'
                   }
                 </p>
               </div>
               <div className="space-y-2">
-                <Button 
+                <Button
                   onClick={() => {
                     setError(null);
                     setLoading(true);
                     window.location.reload();
-                  }} 
+                  }}
                   className="w-full"
                 >
                   Try Again
@@ -459,9 +388,9 @@ export default function Results() {
       <div className="py-8 px-4">
         {/* Header with back button */}
         <div className="max-w-4xl mx-auto mb-8">
-          <Button 
-            onClick={() => navigate('/')} 
-            variant="ghost" 
+          <Button
+            onClick={() => navigate('/')}
+            variant="ghost"
             size="sm"
             className="mb-4"
           >
@@ -479,6 +408,7 @@ export default function Results() {
         <div id="results-content" className="space-y-6">
           <OverlayChips overlay_neuro={scoring?.overlay_neuro ?? scoring?.overlay} overlay_state={scoring?.overlay_state} />
           <TraitPanel neuro_mean={scoring?.neuro_mean} neuro_z={scoring?.neuro_z} />
+
           {/* Enhanced Results */}
           <ResultsV2 profile={scoring} />
 
@@ -495,8 +425,6 @@ export default function Results() {
 
           {/* Next Steps Section - Four Centered Cards */}
           <div className="max-w-4xl mx-auto space-y-8">
-            
-            {/* 1. Consider a Retest - Yellow callout */}
             {(scoring?.close_call === true || scoring?.fit_band === 'Low' || (scoring?.top_gap && scoring.top_gap < 3)) && (
               <Card className="rounded-xl shadow-sm" style={{ backgroundColor: '#FFF8E6' }}>
                 <CardContent className="p-8 md:p-10 text-center">
@@ -507,7 +435,7 @@ export default function Results() {
                   <p className="text-muted-foreground mb-6">
                     Your results show a close call between types. Consider retesting in 30 days for a clearer picture.
                   </p>
-                  <Button 
+                  <Button
                     onClick={() => navigate('/assessment')}
                     size="lg"
                     className="rounded-full font-bold"
@@ -518,14 +446,13 @@ export default function Results() {
               </Card>
             )}
 
-            {/* 2. Support PRISM - Stripe */}
             <Card className="rounded-xl shadow-sm bg-white">
               <CardContent className="p-8 md:p-10 text-center">
                 <h2 className="text-2xl font-bold mb-4">Support PRISM</h2>
                 <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
                   Help us run the assessment, refine the algorithms, and publish open research. Every contribution keeps the lights on and improves personality science. If PRISM helped you see yourself clearer, toss a coin to your typologist.
                 </p>
-                <Button 
+                <Button
                   onClick={() => window.open('https://donate.stripe.com/3cI6oHdR3cLg4n0eK56Ri04', '_blank')}
                   size="lg"
                   className="rounded-full font-bold"
@@ -536,14 +463,13 @@ export default function Results() {
               </CardContent>
             </Card>
 
-            {/* 3. Continue Your Journey - AI Coach */}
             <Card className="rounded-xl shadow-sm bg-white">
               <CardContent className="p-8 md:p-10 text-center">
                 <h2 className="text-2xl font-bold mb-4">Continue Your Journey</h2>
                 <p className="text-muted-foreground mb-6">
                   Use our AI Coach to dive deeper into your personality insights.
                 </p>
-                <Button 
+                <Button
                   onClick={() => window.open('https://chatgpt.com/g/g-68a233600af0819182cfa8c558a63112-prism-personality-ai-coach', '_blank')}
                   size="lg"
                   className="rounded-full font-bold flex items-center gap-2 mx-auto"
@@ -555,7 +481,6 @@ export default function Results() {
               </CardContent>
             </Card>
 
-            {/* 4. Join Our Community - Skool */}
             <Card className="rounded-xl shadow-sm bg-white">
               <CardContent className="p-8 md:p-10 text-center">
                 <div className="flex items-center justify-center gap-2 mb-4">
@@ -565,7 +490,7 @@ export default function Results() {
                 <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
                   Connect with thousands exploring their personality journey. Share insights, ask questions, and deepen your understanding of PRISM and personality theory.
                 </p>
-                <Button 
+                <Button
                   onClick={() => window.open('https://www.skool.com/your-personality-blueprint/about?ref=931e57f033d34f3eb64db45f22b1389e', '_blank')}
                   size="lg"
                   className="rounded-full font-bold mb-4"
@@ -578,46 +503,36 @@ export default function Results() {
                 </p>
               </CardContent>
             </Card>
-
           </div>
 
           {/* Action Buttons */}
           <Card className="max-w-4xl mx-auto">
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button 
-                  onClick={downloadPDF} 
-                  size="lg"
-                  className="flex items-center gap-2"
-                >
+                <Button onClick={downloadPDF} size="lg" className="flex items-center gap-2">
                   <Download className="h-4 w-4" />
                   Download PDF Report
                 </Button>
-                
-                <Button 
-                  onClick={() => navigate('/assessment')} 
-                  variant="outline" 
-                  size="lg"
-                >
+
+                <Button onClick={() => navigate('/assessment')} variant="outline" size="lg">
                   Take New Assessment
                 </Button>
 
                 <Button
                   onClick={() => {
-                    // Get share token from URL or current session
                     const urlParams = new URLSearchParams(window.location.search);
                     const shareToken = urlParams.get('token');
-                    const resultsUrl = shareToken 
+                    const resultsUrl = shareToken
                       ? `${window.location.origin}/results/${sessionId}?token=${shareToken}`
                       : window.location.href;
-                    
+
                     navigator.clipboard.writeText(resultsUrl).then(() => {
                       toast({
                         title: "Results link copied!",
                         description: "Save this secure link to return to your results anytime.",
                       });
                     }).catch(() => {
-                      // Fallback for browsers that don't support clipboard API
+                      // Fallback for older browsers
                       const textArea = document.createElement('textarea');
                       textArea.value = resultsUrl;
                       document.body.appendChild(textArea);
