@@ -163,7 +163,7 @@ export default function Results() {
         if (profileData?.type_code === 'UNK') {
           console.log('Detected UNK result, triggering re-score with updated algorithm');
           
-          const { data: rescoreData, error: rescoreError } = await supabase.functions.invoke('score_prism', {
+          const { data: rescoreData, error: rescoreError } = await supabase.functions.invoke('score_prism_v110', {
             body: { session_id: sessionId, force_recompute: true },
           });
 

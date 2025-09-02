@@ -74,7 +74,7 @@ serve(async (req) => {
       for (const profile of batch) {
         try {
           // Call score_prism edge function
-          const { data: scoreResult, error: scoreError } = await supabase.functions.invoke('score_prism', {
+          const { data: scoreResult, error: scoreError } = await supabase.functions.invoke('score_prism_v110', {
             body: { session_id: profile.session_id, debug: false }
           });
 

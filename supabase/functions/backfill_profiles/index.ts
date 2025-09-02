@@ -75,7 +75,7 @@ serve(async (req: Request) => {
     // 2) For each missing session, score via existing edge function
     for (const session_id of missing) {
       try {
-        const { data, error } = await supabase.functions.invoke('score_prism', {
+        const { data, error } = await supabase.functions.invoke('score_prism_v110', {
           body: { session_id },
         });
         if (error) {

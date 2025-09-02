@@ -23,7 +23,7 @@ export async function backfillMissingProfiles() {
   // Process each missing session
   for (const session of missingSessions || []) {
     try {
-      const { error: scoreError } = await supabase.functions.invoke('score_prism', {
+      const { error: scoreError } = await supabase.functions.invoke('score_prism_v110', {
         body: { session_id: session.id }
       });
 
