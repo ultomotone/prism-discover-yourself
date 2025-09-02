@@ -42,20 +42,20 @@ const Header = () => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
       <nav className="prism-container">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-16 px-4">
           {/* Logo */}
           <Link to="/" className="flex items-center hover:opacity-80 prism-transition">
-            <div className="w-8 h-8 prism-gradient-hero rounded-md flex items-center justify-center mr-3">
-              <span className="text-white font-bold text-lg">P</span>
+            <div className="w-9 h-9 prism-gradient-hero rounded-lg flex items-center justify-center mr-3">
+              <span className="text-white font-bold text-xl">P</span>
             </div>
-            <span className="text-xl font-bold text-primary">PRISM</span>
+            <span className="text-2xl font-bold text-primary tracking-tight">PRISM</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-6">
             <Link
               to="/assessment"
-              className="text-foreground hover:text-primary prism-transition font-medium"
+              className="text-sm font-medium text-foreground hover:text-primary prism-transition px-3 py-2 rounded-md hover:bg-accent/50"
             >
               Assessment
             </Link>
@@ -63,7 +63,7 @@ const Header = () => {
               <Link
                 key={item.name}
                 to={item.href}
-                className="text-foreground hover:text-primary prism-transition font-medium"
+                className="text-sm font-medium text-foreground hover:text-primary prism-transition px-3 py-2 rounded-md hover:bg-accent/50"
               >
                 {item.name}
               </Link>
@@ -72,9 +72,9 @@ const Header = () => {
             {/* Solutions Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="text-foreground hover:text-primary prism-transition font-medium">
+                <Button variant="ghost" className="text-sm font-medium text-foreground hover:text-primary prism-transition px-3 py-2 h-auto">
                   Solutions
-                  <ChevronDown className="ml-1 h-4 w-4" />
+                  <ChevronDown className="ml-1 h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-48 bg-background border border-border shadow-lg z-50">
@@ -89,9 +89,9 @@ const Header = () => {
             {/* PRISM Types Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="text-foreground hover:text-primary prism-transition font-medium">
+                <Button variant="ghost" className="text-sm font-medium text-foreground hover:text-primary prism-transition px-3 py-2 h-auto">
                   PRISM Types
-                  <ChevronDown className="ml-1 h-4 w-4" />
+                  <ChevronDown className="ml-1 h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56 bg-background border border-border shadow-lg z-50 max-h-96 overflow-y-auto">
@@ -111,9 +111,9 @@ const Header = () => {
             {/* PRISM Components Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="text-foreground hover:text-primary prism-transition font-medium">
+                <Button variant="ghost" className="text-sm font-medium text-foreground hover:text-primary prism-transition px-3 py-2 h-auto">
                   PRISM Components
-                  <ChevronDown className="ml-1 h-4 w-4" />
+                  <ChevronDown className="ml-1 h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56 bg-background border border-border shadow-lg z-50">
@@ -137,15 +137,15 @@ const Header = () => {
           </div>
 
           {/* CTA Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-3">
             {!loading && (
               user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center gap-2">
+                    <Button variant="ghost" className="flex items-center gap-2 text-sm font-medium px-3 py-2 h-auto">
                       <User className="h-4 w-4" />
-                      {user.email?.split('@')[0]}
-                      <ChevronDown className="h-4 w-4" />
+                      <span className="max-w-24 truncate">{user.email?.split('@')[0]}</span>
+                      <ChevronDown className="h-3 w-3" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
@@ -160,16 +160,17 @@ const Header = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3">
                   <Button
                     variant="ghost"
+                    className="text-sm font-medium px-4 py-2 h-auto"
                     onClick={() => navigate('/login')}
                   >
                     Sign In
                   </Button>
                   <Button
                     variant="hero" 
-                    size="lg"
+                    className="text-sm font-medium px-4 py-2 h-auto"
                     onClick={() => navigate('/signup')}
                   >
                     Get Started
@@ -198,10 +199,10 @@ const Header = () => {
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 bg-background border-t border-border">
+            <div className="px-4 pt-4 pb-6 space-y-2 bg-background border-t border-border">
               <Link
                 to="/assessment"
-                className="block px-3 py-2 text-foreground hover:text-primary prism-transition font-medium"
+                className="block px-3 py-3 text-sm font-medium text-foreground hover:text-primary prism-transition rounded-md hover:bg-accent/50"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Assessment
@@ -210,7 +211,7 @@ const Header = () => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className="block px-3 py-2 text-foreground hover:text-primary prism-transition font-medium"
+                  className="block px-3 py-3 text-sm font-medium text-foreground hover:text-primary prism-transition rounded-md hover:bg-accent/50"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.name}
@@ -218,13 +219,13 @@ const Header = () => {
               ))}
               
               {/* Solutions in Mobile */}
-              <div className="border-t border-border mt-2 pt-2">
-                <div className="px-3 py-1 text-sm font-semibold text-muted-foreground">Solutions</div>
+              <div className="border-t border-border mt-4 pt-4">
+                <div className="px-3 py-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Solutions</div>
                 {solutionsItems.map((item) => (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className="block px-3 py-2 text-sm text-foreground hover:text-primary prism-transition"
+                    className="block px-3 py-3 text-sm font-medium text-foreground hover:text-primary prism-transition rounded-md hover:bg-accent/50"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.name}
@@ -232,29 +233,32 @@ const Header = () => {
                 ))}
               </div>
               
-              {/* PRISM Types in Mobile */}
-              <div className="border-t border-border mt-2 pt-2">
-                <div className="px-3 py-1 text-sm font-semibold text-muted-foreground">PRISM Types</div>
+              {/* PRISM Types in Mobile */}  
+              <div className="border-t border-border mt-4 pt-4">
+                <div className="px-3 py-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide">PRISM Types</div>
                 {prismTypes.map((type) => (
                   <Link
                     key={type.code}
                     to={`/types/${type.slug}`}
-                    className="block px-3 py-2 text-sm text-foreground hover:text-primary prism-transition"
+                    className="block px-3 py-3 text-sm font-medium text-foreground hover:text-primary prism-transition rounded-md hover:bg-accent/50"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    {type.code} - {type.publicArchetype}
+                    <div className="flex flex-col">
+                      <span className="font-medium">{type.code} - {type.publicArchetype}</span>
+                      <span className="text-xs text-muted-foreground mt-1">{type.baseCreative}</span>
+                    </div>
                   </Link>
                 ))}
               </div>
               
               {/* PRISM Components in Mobile */}
-              <div className="border-t border-border mt-2 pt-2">
-                <div className="px-3 py-1 text-sm font-semibold text-muted-foreground">PRISM Components</div>
+              <div className="border-t border-border mt-4 pt-4">
+                <div className="px-3 py-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide">PRISM Components</div>
                 {prismComponents.map((item) => (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className="block px-3 py-2 text-sm text-foreground hover:text-primary prism-transition"
+                    className="block px-3 py-3 text-sm font-medium text-foreground hover:text-primary prism-transition rounded-md hover:bg-accent/50"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.name}
