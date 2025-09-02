@@ -12,9 +12,13 @@ declare global {
 }
 
 function readConfig(): { url?: string; anon?: string } {
-  // 1) Preferred: Vite envs (for hosts that support them)
-  const urlEnv = import.meta.env?.VITE_SUPABASE_URL as string | undefined;
-  const anonEnv = import.meta.env?.VITE_SUPABASE_ANON_KEY as string | undefined;
+  // 1) Preferred: standard env vars (works in Supabase and Node hosts)
+  const urlEnv =
+    (typeof process !== "undefined" && process.env.SUPABASE_URL) ||
+    (import.meta.env && (import.meta.env as any).SUPABASE_URL);
+  const anonEnv =
+    (typeof process !== "undefined" && process.env.SUPABASE_ANON_KEY) ||
+    (import.meta.env && (import.meta.env as any).SUPABASE_ANON_KEY);
 
   if (urlEnv && anonEnv) return { url: urlEnv, anon: anonEnv };
 
@@ -29,7 +33,7 @@ const { url, anon } = readConfig();
 
 if (!url || !anon) {
   throw new Error(
-    "Supabase config missing. Provide VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY, or set window.__APP_CONFIG__ in index.html."
+    "Supabase config missing. Set SUPABASE_URL & SUPABASE_ANON_KEY env vars or inject window.__APP_CONFIG__."
   );
 }
 

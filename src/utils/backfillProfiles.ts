@@ -23,9 +23,9 @@ export async function backfillMissingProfiles() {
   // Process each missing session
   for (const session of missingSessions || []) {
     try {
-      const { error: scoreError } = await supabase.functions.invoke('score_prism', {
-        body: { session_id: session.id }
-      });
+        const { error: scoreError } = await supabase.functions.invoke('score_prism', {
+          body: { session_id: session.id }
+        });
 
       if (scoreError) {
         console.error(`Failed to score session ${session.id}:`, scoreError);

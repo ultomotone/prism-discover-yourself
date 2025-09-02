@@ -15,9 +15,9 @@ export async function rescoreSession(sessionId: string) {
     }
 
     // Trigger re-scoring with the updated edge function
-    const { data, error } = await supabase.functions.invoke('score_prism', {
-      body: { session_id: sessionId },
-    });
+      const { data, error } = await supabase.functions.invoke('score_prism', {
+        body: { session_id: sessionId },
+      });
 
     if (error) {
       console.error('Re-scoring error:', error);
