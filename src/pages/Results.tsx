@@ -23,9 +23,7 @@ type Err =
   | 'unknown_error';
 
 export default function Results() {
-  console.log('🟢 Results component mounted');
   const { sessionId } = useParams();
-  console.log('🔍 Session ID from params:', sessionId);
 
   const isValidUUID = (v: string | undefined) =>
     !!v && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
@@ -41,11 +39,16 @@ export default function Results() {
     sid: string,
     shareToken?: string | null
   ) {
-    const body = { sessionId: sid, shareToken: shareToken ?? undefined };
-    // Prefer kebab-case; fall back to camelCase
-    let res = await sb.functions.invoke('get-results-by-session', { body });
-    if (res.error) {
-      res = await sb.functions.invoke('getResultsBySession', { body });
+    // send both key styles so either server contract works
+    const body = {
+      sessionId: sid,
+      shareToken: shareToken ?? undefined,
+      session_id: sid,
+      share_token: shareToken ?? undefined,
+    };
+    const res = await sb.functions.invoke('get-results-by-session', { body });
+    if (res.error || !res.data) {
+      return res;
     }
     return res;
   }
@@ -76,7 +79,7 @@ export default function Results() {
           const { data: resultData, error: invokeError } =
             await invokeResultsBySession(supabase, sessionId, shareToken);
 
-          if (invokeError) throw invokeError;
+          if (invokeError || !resultData) throw invokeError ?? new Error('no data');
 
           // Some SDKs wrap payload under `.data`
           const result = (resultData as any)?.data ?? resultData;
@@ -89,8 +92,8 @@ export default function Results() {
             setScoring(result);
             setLoading(false);
           }
-        } catch (edgeErr) {
-          console.warn('Edge function unavailable, falling back to direct queries', edgeErr);
+        } catch {
+          console.warn('Falling back to direct queries');
 
           // Minimal direct read; extend as needed to hydrate your results view
           const { data: session, error: sessionErr } = await supabase

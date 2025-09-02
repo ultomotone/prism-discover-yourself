@@ -14,7 +14,9 @@ serve(async (req) => {
   }
 
   try {
-    const { session_id, share_token } = await req.json();
+    const body = (await req.json()) as any;
+    const session_id: string | undefined = body.session_id ?? body.sessionId;
+    const share_token: string | undefined = body.share_token ?? body.shareToken;
     if (!session_id) {
       return new Response(JSON.stringify({ ok: false, reason: "session_id_required" }), {
         status: 400,
