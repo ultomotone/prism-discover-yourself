@@ -1,4 +1,4 @@
-import { admin as supabase } from "@/lib/supabase/admin";
+import { admin as supabase } from "../../supabase/admin";
 import { TOTAL_PRISM_QUESTIONS } from "@/services/prismConfig";
 
 /**
