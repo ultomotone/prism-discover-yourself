@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PRISM Profile v1.1",
+  "type": "object",
+  "required": ["session_id","type_code","results_version","score_fit_raw","score_fit_calibrated","fit_band","top_gap","type_scores","top_3_fits","validity"],
+  "properties": {
+    "session_id": {"type":"string"},
+    "type_code": {"type":"string","pattern":"^(?:LIE|ILI|ESE|SEI|LII|ILE|ESI|SEE|LSE|SLI|EIE|IEI|LSI|SLE|EII|IEE)$"},
+    "results_version": {"type":"string","enum":["v1.1","v1.2.0","v1.2"]},
+    "score_fit_raw": {"type":"number","minimum":0,"maximum":100},
+    "score_fit_calibrated": {"type":"number","minimum":0,"maximum":100},
+    "fit_band": {"type":"string","enum":["High","Moderate","Low"]},
+    "top_gap": {"type":"number","minimum":0},
+    "invalid_combo_flag": {"type":"boolean"},
+    "close_call": {"type":"boolean"},
+    "fc_answered_ct": {"type":"integer","minimum":0},
+    "top_3_fits": {
+      "type":"array","minItems":1,"maxItems":3,
+      "items":{"type":"object","required":["code","fit","share"],
+        "properties":{"code":{"type":"string"},"fit":{"type":"number"},"share":{"type":"number"}}}
+    },
+    "type_scores": {"type":"object"},
+    "validity": {"type":"object"}
+  },
+  "additionalProperties": true
+}

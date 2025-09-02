@@ -67,18 +67,21 @@ Deno.serve(async (req) => {
         .select('share_token')
         .single()
 
+      const version = existingProfile.results_version || existingProfile.version || 'legacy'
+      const existingUrl = `${req.headers.get('origin') || 'https://prismassessment.com'}/results/${session_id}?token=${sessionData?.share_token}&v=${version}`
+
       return new Response(
-        JSON.stringify({ 
-          ok: true, 
+        JSON.stringify({
+          ok: true,
           status: 'success',
-          session_id, 
+          session_id,
           share_token: sessionData?.share_token,
           profile: existingProfile,
-          results_url: `${req.headers.get('origin') || 'https://prismassessment.com'}/results/${session_id}?token=${sessionData?.share_token}`
+          results_url: existingUrl
         }),
-        { 
+        {
           status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
@@ -101,12 +104,16 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('Processing finalization for session:', session_id, 'using PRISM v1.2.0')
+    const requestedVersion = req.headers.get('X-PRISM-Scoring-Version') || 'v1.1.0'
+    const scorerFn = requestedVersion.startsWith('v1.0') ? 'score_prism_v100' : 'score_prism_v110'
 
-    // Invoke the score_prism function to compute results
-    console.log('Invoking score_prism function')
-    const { data: scoringResult, error: scoringError } = await supabase.functions.invoke('score_prism', {
-      body: { session_id }
+    console.log('Processing finalization for session:', session_id, 'using', scorerFn)
+
+    // Invoke the selected scoring function to compute results
+    console.log('Invoking', scorerFn)
+    const { data: scoringResult, error: scoringError } = await supabase.functions.invoke(scorerFn, {
+      body: { session_id },
+      headers: { 'X-PRISM-Scoring-Version': requestedVersion }
     })
 
     if (scoringError) {
@@ -185,7 +192,7 @@ Deno.serve(async (req) => {
 
     console.log('Assessment finalized successfully for session:', session_id)
 
-    const resultsUrl = `${req.headers.get('origin') || 'https://prismassessment.com'}/results/${session_id}?token=${shareToken}`
+    const resultsUrl = `${req.headers.get('origin') || 'https://prismassessment.com'}/results/${session_id}?token=${shareToken}&v=${scoringResult.profile?.results_version || scoringResult.profile?.version || requestedVersion}`
 
     return new Response(
       JSON.stringify({ 

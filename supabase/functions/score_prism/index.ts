@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { PrismCalibration } from "../_shared/calibration.ts";
+import Ajv from "https://esm.sh/ajv@8";
 // Phase 3: Import validation utilities
 import { validateJSON, validateFCMap, validateMeta, sanitizeResponseValue } from "./validateJSON.ts";
 
@@ -1085,6 +1086,26 @@ serve(async (req) => {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
+
+    // Runtime contract validation against v1.1 schema
+    try {
+      const ajv = new Ajv({ allErrors: true, strict: false });
+      const schemaReq = await (await fetch(new URL("../../contracts/scoring_contract.v1_1.json", import.meta.url))).json();
+      const validate = ajv.compile(schemaReq);
+      if (!validate(profileData)) {
+        console.error("evt:contract_violation", validate.errors);
+        return new Response(
+          JSON.stringify({ status: "error", error: "Contract violation", details: validate.errors }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    } catch (err) {
+      console.error("evt:contract_validation_error", err);
+      return new Response(
+        JSON.stringify({ status: "error", error: "Contract validation error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Check if profile exists to determine if this is a recompute
     const { data: existingProfile } = await supabase
