@@ -14,7 +14,7 @@
     "verify:sql": "node scripts/ci-guard.js && tsx scripts/preflight.ts --verify-only || true",
     "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.tsx --fix",
     "verify:functions": "node scripts/ci-guard.js && tsx scripts/functions-compile.ts || true",
-    "verify:smoke": "node scripts/ci-guard.js && tsx scripts/smoke.ts || true",
+    "verify:smoke": "node ./scripts/verify-smoke.js",
     "check:merge-markers": "git grep -nE '^(<<<<<<<|=======|>>>>>>>)' && (echo 'merge markers found'; exit 1) || exit 0"
   },
   "dependencies": {
