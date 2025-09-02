@@ -92,7 +92,7 @@ export default function Results() {
         } catch (edgeErr) {
           console.warn('Edge function unavailable, falling back to direct queries', edgeErr);
 
-          // Minimal direct read; extend as needed to hydrate your results view
+          // Direct queries to load session + latest profile
           const { data: session, error: sessionErr } = await supabase
             .from('assessment_sessions')
             .select('id, status, share_token, completed_at')
@@ -104,8 +104,24 @@ export default function Results() {
             return;
           }
 
+          const { data: profile, error: profileErr } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('session_id', sessionId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (profileErr) {
+            console.warn('Profile lookup failed', profileErr);
+          }
+
           if (!cancelled) {
-            setScoring({ session });
+            if (profile) {
+              setScoring({ session, profile });
+            } else {
+              setError('profile_not_found');
+            }
             setLoading(false);
           }
         }
