@@ -4,8 +4,21 @@ import { Mail, Phone, Linkedin, Twitter, Facebook } from "lucide-react";
 import { useEffect } from "react";
 
 const Footer = () => {
-  // Load Stripe script
+  const paymentAllowed = (() => {
+    if (typeof document === 'undefined') return true;
+    const featurePolicy = (document as any).featurePolicy || (document as any).policy;
+    return featurePolicy?.allowsFeature
+      ? featurePolicy.allowsFeature('payment')
+      : true;
+  })();
+
+  // Load Stripe script if payments are allowed
   useEffect(() => {
+    if (!paymentAllowed) {
+      console.warn('Payment API disabled; skipping Stripe script');
+      return;
+    }
+
     const script = document.createElement('script');
     script.src = 'https://js.stripe.com/v3/buy-button.js';
     script.async = true;
@@ -16,7 +29,7 @@ const Footer = () => {
         document.body.removeChild(script);
       }
     };
-  }, []);
+  }, [paymentAllowed]);
 
   const popularLinks = {
     components: [
@@ -139,14 +152,20 @@ const Footer = () => {
             {/* Support PRISM Column */}
             <div>
               <h3 className="font-semibold mb-4">Support PRISM</h3>
-              <div 
-                dangerouslySetInnerHTML={{
-                  __html: `<stripe-buy-button
-                    buy-button-id="buy_btn_1RxsnID9AJFeFtOvkMbrRpMA"
-                    publishable-key="pk_live_q3JAuI9omI8O6TFmtfpQyq0p">
-                  </stripe-buy-button>`
-                }}
-              />
+              {paymentAllowed ? (
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: `<stripe-buy-button
+                      buy-button-id="buy_btn_1RxsnID9AJFeFtOvkMbrRpMA"
+                      publishable-key="pk_live_q3JAuI9omI8O6TFmtfpQyq0p">
+                    </stripe-buy-button>`
+                  }}
+                />
+              ) : (
+                <Button onClick={() => window.open('https://donate.stripe.com/3cI6oHdR3cLg4n0eK56Ri04', '_blank')}>
+                  Donate via Stripe
+                </Button>
+              )}
             </div>
           </div>
         </div>
