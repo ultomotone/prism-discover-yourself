@@ -125,7 +125,7 @@ export default function Results() {
           if (!cancelled) { setScoring(profile); setLoading(false); }
         };
 
-        // Call the secure edge function - only use get-results-by-session
+        // Attempt to invoke the get-results-by-session edge function; fall back to direct Supabase queries on any failure
         const { data: resultData, error: invokeError } = await supabase.functions.invoke('get-results-by-session', {
           body: {
             session_id: sessionId,
@@ -136,24 +136,9 @@ export default function Results() {
 
         console.log('get-results-by-session response:', { data: resultData, error: invokeError });
 
-        if (invokeError) {
-          if ((invokeError as any).status === 404) {
-            await fetchDirect();
-            return;
-          }
-          if (!cancelled) { setError('server_error'); setLoading(false); }
-          return;
-        }
-
-        if (!resultData) {
-          if (!cancelled) { setError('server_error'); setLoading(false); }
-          return;
-        }
-
-        if (!resultData.ok) {
-          console.error('Function returned error:', resultData.reason);
-          const err = normalizeReason(resultData.reason);
-          if (!cancelled) { setError(err); setLoading(false); }
+        if (invokeError || !resultData || !resultData.ok) {
+          console.warn('get-results-by-session failed, falling back to direct query');
+          await fetchDirect();
           return;
         }
 
