@@ -67,6 +67,19 @@ Deno.serve(async (req) => {
         .select('share_token')
         .single()
 
+      // Fire-and-forget admin notify
+      try {
+        supabase.functions.invoke('notify_admin', {
+          body: {
+            type: 'assessment_completed',
+            session_id,
+            share_token: sessionData?.share_token || null
+          }
+        });
+      } catch (e) {
+        console.error('notify_admin failed (existingProfile):', e);
+      }
+
       return new Response(
         JSON.stringify({ 
           ok: true, 
@@ -186,6 +199,19 @@ Deno.serve(async (req) => {
     console.log('Assessment finalized successfully for session:', session_id)
 
     const resultsUrl = `${req.headers.get('origin') || 'https://prismassessment.com'}/results/${session_id}?token=${shareToken}`
+
+    // Fire-and-forget admin notify
+    try {
+      supabase.functions.invoke('notify_admin', {
+        body: {
+          type: 'assessment_completed',
+          session_id,
+          share_token: shareToken
+        }
+      });
+    } catch (e) {
+      console.error('notify_admin failed:', e);
+    }
 
     return new Response(
       JSON.stringify({ 

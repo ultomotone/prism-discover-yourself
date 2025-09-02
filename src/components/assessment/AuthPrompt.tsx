@@ -67,6 +67,14 @@ export function AuthPrompt({
           title: "Account Created Successfully",
           description: "Please check your email to verify your account.",
         });
+        // Fire-and-forget admin notification
+        try {
+          supabase.functions.invoke('notify_admin', {
+            body: { type: 'signup', email }
+          });
+        } catch (e) {
+          console.error({ area: 'auth', message: 'notify_admin signup failed', cause: e });
+        }
         onAuthSuccess?.();
       }
     } catch (error: any) {
