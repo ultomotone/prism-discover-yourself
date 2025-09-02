@@ -120,11 +120,17 @@ export default function Results() {
         );
 
         // Direct queries to load session + latest profile
-        const { data: session, error: sessionErr } = await supabase
+        let sessionQuery = supabase
           .from('assessment_sessions')
           .select('id, status, share_token, completed_at')
-          .eq('id', sessionId)
-          .maybeSingle();
+          .eq('id', sessionId);
+
+        // When using a secure share link, include the token to satisfy RLS
+        if (shareToken) {
+          sessionQuery = sessionQuery.eq('share_token', shareToken);
+        }
+
+        const { data: session, error: sessionErr } = await sessionQuery.maybeSingle();
 
         if (sessionErr || !session) {
           if (!cancelled) {
