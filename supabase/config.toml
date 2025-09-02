@@ -6,7 +6,10 @@ verify_jwt = false
 [functions.finalizeAssessment]
 verify_jwt = false
 
-[functions.score_prism]
+[functions.score_prism_v110]
+verify_jwt = false
+
+[functions.score_prism_v100]
 verify_jwt = false
 
 [functions.compare_runs]

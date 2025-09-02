@@ -71,12 +71,12 @@ serve(async (req) => {
       const batch = needsBackfill.slice(i, i + batchSize);
       console.log(`evt:batch_start,batch:${Math.floor(i/batchSize) + 1},size:${batch.length}`);
 
-      for (const profile of batch) {
-        try {
-          // Call score_prism edge function
-          const { data: scoreResult, error: scoreError } = await supabase.functions.invoke('score_prism', {
-            body: { session_id: profile.session_id, debug: false }
-          });
+        for (const profile of batch) {
+          try {
+            // Call score_prism edge function
+            const { data: scoreResult, error: scoreError } = await supabase.functions.invoke('score_prism', {
+              body: { session_id: profile.session_id, debug: false }
+            });
 
           processed++;
 

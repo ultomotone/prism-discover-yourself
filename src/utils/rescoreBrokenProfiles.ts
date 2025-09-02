@@ -25,9 +25,9 @@ export async function rescoreBrokenProfiles() {
     try {
       console.log(`Re-scoring session ${profile.session_id}...`);
       
-      const { error: scoreError } = await supabase.functions.invoke('score_prism', {
-        body: { session_id: profile.session_id }
-      });
+        const { error: scoreError } = await supabase.functions.invoke('score_prism', {
+          body: { session_id: profile.session_id }
+        });
 
       if (scoreError) {
         console.error(`Failed to re-score session ${profile.session_id}:`, scoreError);
