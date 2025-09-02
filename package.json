@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint .",
+    "test": "node --test",
     "preview": "vite preview",
     "preflight": "node scripts/ci-guard.js && tsx scripts/preflight.ts || true",
     "deploy:functions": "supabase functions deploy --project-ref $SUPABASE_URL",
