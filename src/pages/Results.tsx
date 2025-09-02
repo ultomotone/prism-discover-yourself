@@ -129,18 +129,6 @@ export default function Results() {
     return () => { cancelled = true; };
   }, [sessionId]);
 
-  // Load Stripe script
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://js.stripe.com/v3/buy-button.js';
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
   // Auto-download PDF when results are loaded
   useEffect(() => {
     if (scoring && !loading && !error) {
