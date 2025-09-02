@@ -129,7 +129,7 @@ async function main() {
   const report: string[] = [`## Run #${runNumber} - ${timestamp}`];
   const metrics: Record<string, unknown> = {};
 
-  const funcs = ['start_assessment', 'finalizeAssessment', 'score_prism'];
+  const funcs = ['start_assessment', 'finalizeAssessment', 'score_prism_v110'];
   const queries: Record<string, string> = {
     distribution: `select
   min(score_fit_calibrated) as min_fit,
