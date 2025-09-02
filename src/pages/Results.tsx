@@ -14,27 +14,13 @@ import TraitPanel from "@/components/Results/TraitPanel";
 
 type Err =
   | 'invalid_session_id'
-  | 'session_not_found'  
+  | 'session_not_found'
   | 'access_denied'
   | 'profile_not_found'
   | 'profile_rendering'
+  | 'results_not_found'
   | 'server_error'
   | 'unknown_error';
-
-function normalizeReason(reason?: string | null): Err {
-  switch (reason) {
-    case 'session_not_found':   return 'session_not_found';
-    case 'access_denied':       return 'access_denied';
-    case 'profile_not_found':   return 'profile_not_found';
-    case 'profile_rendering':   return 'profile_rendering';
-    // Common backend variants → stable UI buckets:
-    case 'session_id_required': 
-    case 'invalid_session_id':  return 'invalid_session_id';
-    case 'session_fetch_error':
-    case 'profile_fetch_error': return 'server_error';
-    default:                    return 'unknown_error';
-  }
-}
 
 export default function Results() {
   console.log('🟢 Results component mounted');
@@ -48,6 +34,21 @@ export default function Results() {
   const [scoring, setScoring] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Err | null>(null);
+
+  async function invokeResultsBySession(
+    supabase: any,
+    sessionId: string,
+    shareToken?: string | null
+  ) {
+    const body = { sessionId, shareToken: shareToken ?? undefined };
+
+    // Prefer kebab-case; fall back to camelCase
+    let res = await supabase.functions.invoke('get-results-by-session', { body });
+    if (res.error) {
+      res = await supabase.functions.invoke('getResultsBySession', { body });
+    }
+    return res;
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -67,116 +68,53 @@ export default function Results() {
         setLoading(true);
         setError(null);
 
-        // Get share token from URL params (for secure access)
-        const urlParams = new URLSearchParams(window.location.search);
-        const shareToken = urlParams.get('token');
+        try {
+          // Optional share token from URL (used by secure share links)
+          const urlParams = new URLSearchParams(window.location.search);
+          const shareToken = urlParams.get('token');
 
-        console.log('Calling get-results-by-session edge function with:', {
-          sessionId,
-          shareToken: !!shareToken
-        });
-        const fetchDirect = async () => {
-          console.warn('Edge function missing; fetching results directly');
+          // Prefer edge function
+          const { data: resultData, error: invokeError } =
+            await invokeResultsBySession(supabase, sessionId, shareToken);
+
+          if (invokeError) throw invokeError;
+
+          // Some SDKs wrap payload under `.data`
+          const result = (resultData as any)?.data ?? resultData;
+
+          if (!result) {
+            if (!cancelled) setError('results_not_found');
+            setLoading(false);
+            return;
+          }
+
+          if (!cancelled) {
+            setScoring(result);
+            setLoading(false);
+          }
+        } catch (e) {
+          console.warn('Edge function unavailable, falling back to direct queries', e);
+
+          // Minimal direct read; extend as needed to hydrate your results view
           const { data: session, error: sessionErr } = await supabase
             .from('assessment_sessions')
             .select('id, status, share_token, completed_at')
             .eq('id', sessionId)
             .maybeSingle();
 
-          if (sessionErr) {
-            if (!cancelled) { setError('server_error'); setLoading(false); }
+          if (sessionErr || !session) {
+            if (!cancelled) setError('server_error');
+            setLoading(false);
             return;
           }
 
-          if (!session) {
-            if (!cancelled) { setError('session_not_found'); setLoading(false); }
-            return;
+          // TODO: fetch any additional tables needed to fully render results
+
+          if (!cancelled) {
+            setScoring({ session });
+            setLoading(false);
           }
-
-          const normalizedStatus = (session.status || '').toLowerCase();
-          const doneStatuses = new Set(['completed', 'complete', 'finalized', 'scored']);
-          const isCompleted = doneStatuses.has(normalizedStatus) || !!session.completed_at;
-          const tokenMatch = !!shareToken && session.share_token && session.share_token === shareToken;
-          const isWhitelisted = sessionId === '91dfe71f-44d1-4e44-ba8c-c9c684c4071b';
-
-          if (!isCompleted && !tokenMatch && !isWhitelisted) {
-            if (!cancelled) { setError('access_denied'); setLoading(false); }
-            return;
-          }
-
-          const { data: profile, error: profileErr } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('session_id', sessionId)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (profileErr) {
-            if (!cancelled) { setError('server_error'); setLoading(false); }
-            return;
-          }
-
-          if (!profile) {
-            if (!cancelled) { setError('profile_not_found'); setLoading(false); }
-            return;
-          }
-
-          if (!cancelled) { setScoring(profile); setLoading(false); }
-        };
-
-        // Call the secure edge function - only use get-results-by-session
-        const { data: resultData, error: invokeError } = await supabase.functions.invoke('get-results-by-session', {
-          body: {
-            session_id: sessionId,
-            share_token: shareToken ?? null
-          },
-          headers: { 'cache-control': 'no-cache' }
-        });
-
-        console.log('get-results-by-session response:', { data: resultData, error: invokeError });
-
-        if (invokeError) {
-          if ((invokeError as any).status === 404) {
-            await fetchDirect();
-            return;
-          }
-          if (!cancelled) { setError('server_error'); setLoading(false); }
-          return;
         }
-
-        if (!resultData) {
-          if (!cancelled) { setError('server_error'); setLoading(false); }
-          return;
-        }
-
-        if (!resultData.ok) {
-          console.error('Function returned error:', resultData.reason);
-          const err = normalizeReason(resultData.reason);
-          if (!cancelled) { setError(err); setLoading(false); }
-          return;
-        }
-
-        const profileData = resultData.profile;
-        
-        // Check if we have an invalid UNK result and force re-scoring
-        if (profileData?.type_code === 'UNK') {
-          console.log('Detected UNK result, triggering re-score with updated algorithm');
-          
-          const { data: rescoreData, error: rescoreError } = await supabase.functions.invoke('score_prism', {
-            body: { session_id: sessionId, force_recompute: true },
-          });
-
-          if (rescoreError || !rescoreData || rescoreData.status !== 'success') {
-            console.error('Rescore failed', rescoreError || rescoreData?.error);
-            if (!cancelled) { setError('server_error'); setLoading(false); }
-            return;
-          }
-          if (!cancelled) { setScoring(rescoreData.profile); setLoading(false); }
-          return;
-        }
-
-        if (!cancelled) { setScoring(profileData); setLoading(false); }
       } catch (err) {
         console.error('Error fetching results:', err);
         if (!cancelled) { setError('server_error'); setLoading(false); }
