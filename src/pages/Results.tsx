@@ -71,7 +71,7 @@ export default function Results() {
         const urlParams = new URLSearchParams(window.location.search);
         const shareToken = urlParams.get('token');
 
-        console.log('Calling get-results-by-session edge function with:', {
+        console.log('Calling getResultsBySession edge function with:', {
           sessionId,
           shareToken: !!shareToken
         });
@@ -125,8 +125,8 @@ export default function Results() {
           if (!cancelled) { setScoring(profile); setLoading(false); }
         };
 
-        // Call the secure edge function - only use get-results-by-session
-        const { data: resultData, error: invokeError } = await supabase.functions.invoke('get-results-by-session', {
+        // Attempt to call the secure edge function; fall back to direct queries on any failure
+        const { data: resultData, error: invokeError } = await supabase.functions.invoke('getResultsBySession', {
           body: {
             session_id: sessionId,
             share_token: shareToken ?? null
@@ -134,26 +134,11 @@ export default function Results() {
           headers: { 'cache-control': 'no-cache' }
         });
 
-        console.log('get-results-by-session response:', { data: resultData, error: invokeError });
+        console.log('getResultsBySession response:', { data: resultData, error: invokeError });
 
-        if (invokeError) {
-          if ((invokeError as any).status === 404) {
-            await fetchDirect();
-            return;
-          }
-          if (!cancelled) { setError('server_error'); setLoading(false); }
-          return;
-        }
-
-        if (!resultData) {
-          if (!cancelled) { setError('server_error'); setLoading(false); }
-          return;
-        }
-
-        if (!resultData.ok) {
-          console.error('Function returned error:', resultData.reason);
-          const err = normalizeReason(resultData.reason);
-          if (!cancelled) { setError(err); setLoading(false); }
+        if (invokeError || !resultData || !resultData.ok) {
+          console.warn('getResultsBySession failed, falling back to direct query');
+          await fetchDirect();
           return;
         }
 
