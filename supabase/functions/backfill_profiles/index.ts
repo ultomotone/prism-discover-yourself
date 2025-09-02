@@ -73,11 +73,11 @@ serve(async (req: Request) => {
     let failed: Array<{ session_id: string; error: string }> = [];
 
     // 2) For each missing session, score via existing edge function
-    for (const session_id of missing) {
-      try {
-        const { data, error } = await supabase.functions.invoke('score_prism', {
-          body: { session_id },
-        });
+      for (const session_id of missing) {
+        try {
+          const { data, error } = await supabase.functions.invoke('score_prism', {
+            body: { session_id },
+          });
         if (error) {
           console.error('backfill score error', session_id, error);
           failed.push({ session_id, error: error.message || String(error) });

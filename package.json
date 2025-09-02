@@ -13,8 +13,10 @@
     "deploy:functions": "supabase functions deploy --project-ref $SUPABASE_URL",
     "verify:sql": "node scripts/ci-guard.js && tsx scripts/preflight.ts --verify-only || true",
     "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.tsx --fix",
-    "verify:functions": "node scripts/ci-guard.js && tsx scripts/functions-compile.ts || true",
-    "verify:smoke": "node scripts/ci-guard.js && tsx scripts/smoke.ts || true"
+    "verify:functions": "npx supabase functions build",
+    "verify:smoke": "node scripts/ci-guard.js && tsx scripts/smoke.ts || true",
+    "test": "node scripts/ci-no-tests.js",
+    "smoke:sql": "node scripts/smoke-sql.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -92,6 +94,7 @@
     "lovable-tagger": "^1.1.9",
     "postcss": "^8.5.6",
     "prettier": "^3.3.3",
+    "supabase": "^1.187.6",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.0",
     "typescript": "^5.8.3",
