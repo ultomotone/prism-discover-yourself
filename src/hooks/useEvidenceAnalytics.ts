@@ -120,7 +120,7 @@ export const useEvidenceAnalytics = (filters: EvidenceFilters) => {
         const sparklineData = Object.entries(sparklineGroups)
           .map(([days, stability]) => ({
             days: parseInt(days),
-            r: stability.reduce((sum, s) => sum + (s || 0), 0) / stability.length
+            r: Array.isArray(stability) ? stability.reduce((sum, s) => sum + (s || 0), 0) / stability.length : 0
           }))
           .sort((a, b) => a.days - b.days)
           .slice(0, 10); // Limit to 10 data points
