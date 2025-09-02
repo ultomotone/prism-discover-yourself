@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { X, Compass } from "lucide-react";
+import { X } from "lucide-react";
 import { Dialog, DialogContent, DialogOverlay } from "@/components/ui/dialog";
 
 interface YourPersonalityBlueprintModalProps {
@@ -59,15 +59,19 @@ const YourPersonalityBlueprintModal = ({ isOpen, onClose }: YourPersonalityBluep
       >
         <Card className="shadow-xl border-0">
           <CardContent className="p-6 space-y-4">
-            {/* Header with optional icon */}
+            {/* Header with logo */}
             <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <Compass className="h-6 w-6 text-primary flex-shrink-0" />
+              <div className="flex flex-col items-center gap-3 flex-1">
+                <img 
+                  src="/lovable-uploads/081186e2-0794-41ec-835c-adaef32901e3.png" 
+                  alt="Applied Personality Lab"
+                  className="h-16 w-16 object-contain"
+                />
                 <h3 
                   id="ypb-modal-title" 
-                  className="text-lg font-bold text-foreground leading-tight"
+                  className="text-lg font-bold text-foreground leading-tight text-center"
                 >
-                  Ship one win this week with PRISM
+                  Ship one win this week with Applied Personality Lab
                 </h3>
               </div>
               <button 
