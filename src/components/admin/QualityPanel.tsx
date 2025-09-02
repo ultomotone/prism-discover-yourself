@@ -8,7 +8,6 @@ interface QualityData {
   closeCallsPercent: number;
   inconsistencyMean: number;
   sdIndexMean: number;
-  funcBalanceMedian: number;
   confidenceMarginMedian: number;
   validityPassRate: number;
 }
@@ -33,10 +32,6 @@ export const QualityPanel: React.FC<QualityPanelProps> = ({ data, onExport }) =>
 
   const getValidityStatus = (value: number, threshold: number) => {
     return value < threshold ? 'good' : 'warning';
-  };
-
-  const getFuncBalanceStatus = (value: number) => {
-    return value > 2.5 ? 'warning' : 'good';
   };
 
   return (
@@ -89,14 +84,6 @@ export const QualityPanel: React.FC<QualityPanelProps> = ({ data, onExport }) =>
             value={data.sdIndexMean.toFixed(2)}
             status={getValidityStatus(data.sdIndexMean, 4.3)}
             tooltip="Average social desirability index. Target: < 4.3 to minimize bias"
-            onExport={() => onExport('v_quality')}
-          />
-          
-          <KPICard
-            title="Function Balance"
-            value={data.funcBalanceMedian.toFixed(1)}
-            status={getFuncBalanceStatus(data.funcBalanceMedian)}
-            tooltip="Median difference between max and min function strengths within profiles"
             onExport={() => onExport('v_quality')}
           />
           

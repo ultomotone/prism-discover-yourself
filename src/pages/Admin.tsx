@@ -25,9 +25,10 @@ const Admin: React.FC = () => {
     setFilters,
     kpiData,
     qualityData,
-    chartData, 
+    chartData,
     methodHealthData,
-    loading, 
+    latestAssessments,
+    loading,
     refreshData,
     exportToCSV
   } = useAdvancedAdminAnalytics();
@@ -372,13 +373,6 @@ const Admin: React.FC = () => {
                 />
                 
                 <KPICard
-                  title="Function Balance"
-                  value={`${qualityData.funcBalanceMedian.toFixed(1)}`}
-                  tooltip="Median function balance across assessments. Higher values indicate more balanced cognitive function usage."
-                  onExport={() => exportToCSV('v_quality')}
-                />
-                
-                <KPICard
                   title="Validity Pass Rate"
                   value={`${kpiData.validityPassRate.toFixed(1)}%`}
                   status={getValidityStatus(kpiData.validityPassRate)}
@@ -408,7 +402,7 @@ const Admin: React.FC = () => {
               <CardTitle>Latest Assessments</CardTitle>
             </CardHeader>
             <CardContent>
-          <LatestAssessmentsTable />
+          <LatestAssessmentsTable data={latestAssessments} />
             </CardContent>
           </Card>
 

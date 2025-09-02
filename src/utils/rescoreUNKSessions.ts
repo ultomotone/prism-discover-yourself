@@ -1,4 +1,4 @@
-import { admin as supabase } from '@/lib/supabase/admin';
+import { admin as supabase } from '../../supabase/admin';
 import { rescoreSession } from './rescoreSession';
 
 export async function rescoreSpecificSessions() {
