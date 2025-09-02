@@ -184,25 +184,29 @@ export const useAdvancedAdminAnalytics = () => {
   }, [filters]);
 
   // Transform SWR data to existing format with safe property access
+  const latestThroughput = Array.isArray(throughputData) && throughputData.length > 0
+    ? throughputData[throughputData.length - 1]
+    : null;
+
   const kpiData: KPIData = {
     completions: (kpiMetrics && Array.isArray(kpiMetrics) && kpiMetrics[0] && 'completed_count' in kpiMetrics[0]) ? kpiMetrics[0].completed_count : 0,
     completionRate: (kpiMetrics && Array.isArray(kpiMetrics) && kpiMetrics[0] && 'completion_rate_pct' in kpiMetrics[0]) ? kpiMetrics[0].completion_rate_pct : 0,
-    medianDuration: 0, // Would need additional endpoint
-    speedersPercent: 0,
-    stallersPercent: 0,
+    medianDuration: latestThroughput && 'median_minutes' in latestThroughput ? latestThroughput.median_minutes : 0,
+    speedersPercent: latestThroughput && 'speeders_pct' in latestThroughput ? latestThroughput.speeders_pct : 0,
+    stallersPercent: latestThroughput && 'stallers_pct' in latestThroughput ? latestThroughput.stallers_pct : 0,
     duplicatesPercent: 0,
-    validityPassRate: (qualityMetrics && Array.isArray(qualityMetrics) && qualityMetrics[0] && 'sd_ge_4_6' in qualityMetrics[0]) ? (100 - qualityMetrics[0].sd_ge_4_6) : 0
+    validityPassRate: (qualityMetrics && Array.isArray(qualityMetrics) && qualityMetrics[0] && 'sd_ge_4_6_pct' in qualityMetrics[0]) ? (100 - qualityMetrics[0].sd_ge_4_6_pct) : 0
   };
 
   const qualityData: QualityData = {
     top1FitMedian: (qualityMetrics && Array.isArray(qualityMetrics) && qualityMetrics[0] && 'fit_median' in qualityMetrics[0]) ? qualityMetrics[0].fit_median : 0,
     topGapMedian: (qualityMetrics && Array.isArray(qualityMetrics) && qualityMetrics[0] && 'gap_median' in qualityMetrics[0]) ? qualityMetrics[0].gap_median : 0,
-    closeCallsPercent: (qualityMetrics && Array.isArray(qualityMetrics) && qualityMetrics[0] && 'close_calls_share' in qualityMetrics[0]) ? qualityMetrics[0].close_calls_share : 0,
-    inconsistencyMean: (qualityMetrics && Array.isArray(qualityMetrics) && qualityMetrics[0] && 'inconsistency_mean' in qualityMetrics[0]) ? qualityMetrics[0].inconsistency_mean : 0,
-    sdIndexMean: (qualityMetrics && Array.isArray(qualityMetrics) && qualityMetrics[0] && 'sd_index_mean' in qualityMetrics[0]) ? qualityMetrics[0].sd_index_mean : 0,
+    closeCallsPercent: (qualityMetrics && Array.isArray(qualityMetrics) && qualityMetrics[0] && 'close_calls_pct' in qualityMetrics[0]) ? qualityMetrics[0].close_calls_pct : 0,
+    inconsistencyMean: (qualityMetrics && Array.isArray(qualityMetrics) && qualityMetrics[0] && 'incons_mean' in qualityMetrics[0]) ? qualityMetrics[0].incons_mean : 0,
+    sdIndexMean: (qualityMetrics && Array.isArray(qualityMetrics) && qualityMetrics[0] && 'sd_mean' in qualityMetrics[0]) ? qualityMetrics[0].sd_mean : 0,
     funcBalanceMedian: 0,
     confidenceMarginMedian: 0,
-    validityPassRate: (qualityMetrics && Array.isArray(qualityMetrics) && qualityMetrics[0] && 'sd_ge_4_6' in qualityMetrics[0]) ? (100 - qualityMetrics[0].sd_ge_4_6) : 0
+    validityPassRate: (qualityMetrics && Array.isArray(qualityMetrics) && qualityMetrics[0] && 'sd_ge_4_6_pct' in qualityMetrics[0]) ? (100 - qualityMetrics[0].sd_ge_4_6_pct) : 0
   };
 
   const chartData: ChartData = {

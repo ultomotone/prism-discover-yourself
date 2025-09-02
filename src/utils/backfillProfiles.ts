@@ -1,4 +1,4 @@
-import { admin as supabase } from "@/lib/supabase/admin";
+import { admin as supabase } from "../../supabase/admin";
 
 export async function backfillMissingProfiles() {
   console.log('Starting profile backfill...');

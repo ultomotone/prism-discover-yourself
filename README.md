@@ -92,8 +92,8 @@ npm run verify:smoke
 Local `.env` needs:
 
 ```
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
 ```
 
 If your host doesn't support env vars, set values in `index.html` via `window.__APP_CONFIG__`.
