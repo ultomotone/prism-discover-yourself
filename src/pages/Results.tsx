@@ -119,7 +119,25 @@ export default function Results() {
           (invokeError as Error | undefined)?.message,
         );
 
-        // Direct queries to load session + latest profile
+        // Try RPC fallback that bypasses RLS using SECURITY DEFINER
+        if (shareToken) {
+          const { data: rpcProfile, error: rpcErr } = await supabase.rpc(
+            'get_profile_by_session',
+            { p_session_id: sessionId, p_share_token: shareToken }
+          );
+          if (rpcProfile && !rpcErr) {
+            if (!cancelled) {
+              setScoring({ session: { id: sessionId, status: 'completed' }, profile: rpcProfile });
+              setLoading(false);
+            }
+            return;
+          }
+          if (rpcErr) {
+            console.warn('RPC get_profile_by_session failed', rpcErr.message);
+          }
+        }
+
+        // Direct queries to load session + latest profile (may be blocked by RLS)
         let sessionQuery = supabase
           .from('assessment_sessions')
           .select('id, status, share_token, completed_at')
