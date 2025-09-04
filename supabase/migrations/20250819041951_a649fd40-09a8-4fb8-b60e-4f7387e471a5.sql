@@ -1,5 +1,5 @@
--- 1) Extend profiles info for admin (top fits, gaps)
-CREATE OR REPLACE VIEW v_profiles_ext AS
+DROP VIEW IF EXISTS v_profiles_ext CASCADE;
+CREATE VIEW v_profiles_ext AS
 SELECT
   p.*,
   -- Extract top 1 fit score
