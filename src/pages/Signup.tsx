@@ -70,9 +70,11 @@ export default function Signup() {
           title: "Account Created!",
           description: "Please check your email to verify your account, then you can sign in.",
         });
-        if (typeof window !== 'undefined' && (window as any).rdtTrack) {
-          (window as any).rdtTrack('SignUp', { email });
-          window.dispatchEvent(new Event('app:user:signup'));
+        if (typeof window !== 'undefined') {
+          const w = window as any;
+          if (w.rdtSetUser) w.rdtSetUser({ email });
+          if (w.rdtTrack) w.rdtTrack('SignUp', { email });
+          w.dispatchEvent(new Event('app:user:signup'));
         }
         navigate('/login');
       }

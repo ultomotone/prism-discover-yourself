@@ -61,6 +61,15 @@
         return props.conversion_id;
       };
 
+      // Update advanced matching user signals after email capture
+      window.rdtSetUser = function(props){
+        props = props || {};
+        if (props.email && window.redditNormalizeEmail) {
+          props.email = window.redditNormalizeEmail(props.email);
+        }
+        if (window.rdt) rdt('init', 'a2_hisg7r10d2ta', props);
+      };
+
       // Fire initial page view
       window.rdtTrack('PageVisit');
 
