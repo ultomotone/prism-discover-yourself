@@ -1,4 +1,5 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
+// @ts-nocheck
+import { createServiceClient } from '../_shared/supabaseClient.ts';
 import { PrismCalibration } from '../_shared/calibration.ts';
 
 const corsHeaders = {
@@ -18,9 +19,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, serviceKey);
+    const supabase = createServiceClient();
     const calibration = new PrismCalibration(supabase);
 
     // Get scoring version from config

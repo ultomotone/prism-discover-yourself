@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Phase 3: JSON Schema validation utility for PRISM scoring
  * Provides safe validation and sanitization of JSON fields

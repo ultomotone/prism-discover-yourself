@@ -1,4 +1,5 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0'
+// @ts-nocheck
+import { createServiceClient, createUserClient } from '../_shared/supabaseClient.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,8 +8,6 @@ const corsHeaders = {
   'Cache-Control': 'no-store'
 }
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -43,12 +42,12 @@ Deno.serve(async (req) => {
     }
 
     // Create service role client to bypass RLS
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
-    
+    const supabase = createServiceClient()
+
     // Get current user from request
     const authHeader = req.headers.get('Authorization')
-    const { data: { user } } = authHeader 
-      ? await createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!).auth.getUser(authHeader.replace('Bearer ', ''))
+    const { data: { user } } = authHeader
+      ? await createUserClient(req).auth.getUser()
       : { data: { user: null } }
 
     console.log('getResultsBySession called:', { session_id, has_share_token: !!share_token, user_id: user?.id })

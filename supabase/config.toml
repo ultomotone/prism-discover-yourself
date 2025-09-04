@@ -48,5 +48,8 @@ verify_jwt = false
 [functions.notify_admin]
 verify_jwt = false
 
+[functions.add_to_resend]
+verify_jwt = false
+
 [auth]
 # (manage OTP expiry & password policies in the Supabase Dashboard)

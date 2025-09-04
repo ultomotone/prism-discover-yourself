@@ -44,7 +44,18 @@ export function EmailSaveRetrieve({ onResumeFound, onStartNew }: EmailSaveRetrie
 
     try {
       console.log('Searching for saved assessments with email:', email);
-      
+
+      try {
+        supabase.functions.invoke('add_to_resend', {
+          headers: import.meta.env.VITE_RESEND_INGEST_TOKEN
+            ? { authorization: `Bearer ${import.meta.env.VITE_RESEND_INGEST_TOKEN}` }
+            : undefined,
+          body: { email, source: 'assessment' }
+        });
+      } catch (err) {
+        console.error('add_to_resend failed:', err);
+      }
+
       const { data: sessions, error } = await supabase
         .from('assessment_sessions')
         .select('id, completed_questions, total_questions, created_at, email')
