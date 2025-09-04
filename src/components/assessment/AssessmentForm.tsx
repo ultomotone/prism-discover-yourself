@@ -940,7 +940,19 @@ try {
       }
 
       console.log('Save completed successfully');
-      
+
+      // Fire-and-forget Resend ingestion
+      try {
+        supabase.functions.invoke('add_to_resend', {
+          headers: import.meta.env.VITE_RESEND_INGEST_TOKEN
+            ? { authorization: `Bearer ${import.meta.env.VITE_RESEND_INGEST_TOKEN}` }
+            : undefined,
+          body: { email, source: 'assessment' }
+        });
+      } catch (err) {
+        console.error('add_to_resend failed:', err);
+      }
+
       // Update localStorage cache
       try {
         const finalCompletedQuestions = currentQuestionIndex + (hasAnswer ? 1 : 0);

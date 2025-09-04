@@ -1,6 +1,6 @@
+// @ts-nocheck
 // supabase/functions/compare_runs/index.ts
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createUserClient } from "../_shared/supabaseClient.ts";
 
 const FUNCS = ["Ti","Te","Fi","Fe","Ni","Ne","Si","Se"] as const;
 const corsHeaders = {
@@ -8,26 +8,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
   try {
     const { session_a, session_b, person_key, latest = false } = await req.json();
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseAnon = Deno.env.get("SUPABASE_ANON_KEY");
-    if (!supabaseUrl || !supabaseAnon) {
-      return new Response(JSON.stringify({ error: "Missing Supabase env" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // RLS-aware client using the caller's JWT
-    const supabase = createClient(supabaseUrl, supabaseAnon, {
-      global: { headers: { Authorization: req.headers.get("Authorization") || "" } },
-    });
+    const supabase = createUserClient(req);
 
     let a = session_a as string | undefined;
     let b = session_b as string | undefined;

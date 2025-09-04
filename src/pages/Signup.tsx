@@ -78,6 +78,19 @@ export default function Signup() {
           if (w.fbTrack) w.fbTrack('CompleteRegistration', { email });
           w.dispatchEvent(new Event('app:user:signup'));
         }
+
+        // Fire-and-forget Resend ingestion
+        try {
+          supabase.functions.invoke('add_to_resend', {
+            headers: import.meta.env.VITE_RESEND_INGEST_TOKEN
+              ? { authorization: `Bearer ${import.meta.env.VITE_RESEND_INGEST_TOKEN}` }
+              : undefined,
+            body: { email, source: 'signup' }
+          });
+        } catch (e) {
+          console.error({ area: 'signup', message: 'add_to_resend signup failed', cause: e });
+        }
+
         navigate('/login');
       }
     } catch (error: any) {

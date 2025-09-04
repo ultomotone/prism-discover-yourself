@@ -1,26 +1,19 @@
+// @ts-nocheck
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.55.0";
+import { createServiceClient } from "../_shared/supabaseClient.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req: Request) => {
+Deno.serve(async (req: Request) => {
   // CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-  const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-    return new Response(JSON.stringify({ error: 'Missing Supabase env vars' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-  }
-
-  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  const supabase = createServiceClient();
 
   try {
     const body = await req.json().catch(() => ({}));

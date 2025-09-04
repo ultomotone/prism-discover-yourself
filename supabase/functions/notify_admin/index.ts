@@ -1,7 +1,5 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { Resend } from "npm:resend@4.0.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
+// @ts-nocheck
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -50,16 +48,24 @@ Deno.serve(async (req) => {
       </div>
     `;
 
-    const { error } = await resend.emails.send({
-      from: "PRISM Notifications <onboarding@resend.dev>",
-      to: [adminEmail],
-      subject,
-      html,
+    const res = await fetch("https://api.resend.com/v1/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "PRISM Notifications <onboarding@resend.dev>",
+        to: [adminEmail],
+        subject,
+        html,
+      }),
     });
 
-    if (error) {
-      console.error("notify_admin send error:", error);
-      return new Response(JSON.stringify({ ok: false, error: error.message }), {
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      console.error("notify_admin send error:", body);
+      return new Response(JSON.stringify({ ok: false, error: body?.error?.message || "Failed to send" }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });

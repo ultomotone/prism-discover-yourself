@@ -1,11 +1,9 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// @ts-nocheck
+import { createServiceClient } from "../_shared/supabaseClient.ts";
 
 type ScoreInput = { session_id: string; responses: any[] };
 
-const url = Deno.env.get("SUPABASE_URL")!;
-const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const supabase = createClient(url, key);
+const supabase = createServiceClient();
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

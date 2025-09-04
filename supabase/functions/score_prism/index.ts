@@ -1,6 +1,6 @@
+// @ts-nocheck
 // supabase/functions/score_prism/index.ts - PRISM v1.2.0 Enhanced Scoring Engine - Phase 3
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createServiceClient } from "../_shared/supabaseClient.ts";
 import { PrismCalibration } from "../_shared/calibration.ts";
 // Phase 3: Import validation utilities
 import { validateJSON, validateFCMap, validateMeta, sanitizeResponseValue } from "./validateJSON.ts";
@@ -128,7 +128,7 @@ function toCommon5(v: number, scale: string): number {
 const isJ = (x:string)=>["Ti","Te","Fi","Fe"].includes(x);
 const isP = (x:string)=>["Ni","Ne","Si","Se"].includes(x);
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     // Phase 3: Enhanced partial-session handling with robust JSON validation
@@ -139,12 +139,7 @@ serve(async (req) => {
     if (!session_id || typeof session_id !== 'string') {
       return new Response(JSON.stringify({ status:"error", error:"Valid session_id required" }), { status:400, headers:{...corsHeaders,"Content-Type":"application/json"}});
     }
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!supabaseUrl || !supabaseKey) {
-      return new Response(JSON.stringify({ status:"error", error:"Server not configured" }), { status:500, headers:{...corsHeaders,"Content-Type":"application/json"}});
-    }
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createServiceClient();
     const calibration = new PrismCalibration(supabase);
 
     console.log(`evt:scoring_start,session_id:${session_id},version:v1.2.0`);
