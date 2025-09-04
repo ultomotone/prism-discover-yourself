@@ -80,10 +80,10 @@ const YourPersonalityBlueprintModal = ({ isOpen, onClose }: YourPersonalityBluep
             {/* Header with logo */}
             <div className="flex items-start justify-between">
               <div className="flex flex-col items-center gap-3 flex-1">
-                <img 
-                  src="/lovable-uploads/081186e2-0794-41ec-835c-adaef32901e3.png" 
+                <img
+                  src="/lovable-uploads/081186e2-0794-41ec-835c-adaef32901e3.png"
                   alt="Applied Personality Lab"
-                  className="h-16 w-16 object-contain"
+                  className="h-24 w-24 object-contain"
                 />
                 <h3 
                   id="ypb-modal-title" 
