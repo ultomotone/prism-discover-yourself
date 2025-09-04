@@ -212,6 +212,27 @@ export function createClient(opts: CreateClientOptions = {}) {
       const data = await res.json();
       return { data, error: null };
     },
+
+    functions: {
+      async invoke(
+        fn: string,
+        { body, headers: extraHeaders, method }: { body?: any; headers?: Record<string, string>; method?: string } = {}
+      ): Promise<Result<any>> {
+        const res = await fetch(`${supabaseUrl}/functions/v1/${fn}`, {
+          method: method ?? "POST",
+          headers: { ...headers(body !== undefined), ...(extraHeaders ?? {}) },
+          body: body !== undefined ? JSON.stringify(body) : undefined,
+        });
+        if (!res.ok) return { data: null, error: { message: await res.text(), status: res.status } };
+        let data: any = null;
+        try {
+          data = await res.json();
+        } catch {
+          data = null;
+        }
+        return { data, error: null };
+      },
+    },
   };
 }
 

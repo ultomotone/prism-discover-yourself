@@ -1,4 +1,5 @@
--- Update the secure function to include actual country and fit score data
+DROP FUNCTION IF EXISTS public.get_recent_assessments_safe();
+
 CREATE OR REPLACE FUNCTION public.get_recent_assessments_safe()
 RETURNS TABLE (
   created_at timestamp with time zone,

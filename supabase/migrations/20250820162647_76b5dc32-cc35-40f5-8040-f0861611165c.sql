@@ -1,4 +1,5 @@
--- Update get_recent_assessments_safe to return v1.1 calibrated fields
+DROP FUNCTION IF EXISTS public.get_recent_assessments_safe();
+
 CREATE OR REPLACE FUNCTION public.get_recent_assessments_safe()
 RETURNS TABLE(
   created_at timestamp with time zone, 
