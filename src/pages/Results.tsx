@@ -577,15 +577,18 @@ export default function Results() {
                   clearer, toss a coin to your typologist.
                 </p>
                 <Button
-                  onClick={() => {
-                    if (typeof window !== 'undefined' && (window as any).rdtTrack) {
-                      (window as any).rdtTrack('Custom', { custom_event_name: 'DonateClick' });
-                    }
-                    window.open(
-                      'https://donate.stripe.com/3cI6oHdR3cLg4n0eK56Ri04',
-                      '_blank',
-                    );
-                  }}
+                    onClick={() => {
+                      if (typeof window !== 'undefined' && (window as any).rdtTrack) {
+                        (window as any).rdtTrack('Custom', { custom_event_name: 'DonateClick' });
+                      }
+                      if (typeof window !== 'undefined' && (window as any).fbTrack) {
+                        (window as any).fbTrack('Custom', { custom_event_name: 'DonateClick' });
+                      }
+                      window.open(
+                        'https://donate.stripe.com/3cI6oHdR3cLg4n0eK56Ri04',
+                        '_blank',
+                      );
+                    }}
                   size="lg"
                   className="rounded-full font-bold"
                   rel="noopener noreferrer"
