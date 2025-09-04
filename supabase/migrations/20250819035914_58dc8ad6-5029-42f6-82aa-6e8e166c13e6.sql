@@ -1,5 +1,5 @@
--- Create a privacy-safe view for recent assessments that shows only non-sensitive data
-CREATE OR REPLACE VIEW public.v_recent_assessments_safe AS
+DROP VIEW IF EXISTS public.v_recent_assessments_safe;
+CREATE VIEW public.v_recent_assessments_safe AS
 SELECT 
   p.created_at,
   LEFT(p.type_code, 3) as type_prefix,  -- Only first 3 characters (less identifying)
