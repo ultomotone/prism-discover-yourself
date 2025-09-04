@@ -19,7 +19,7 @@
     </script>
     <!-- End Reddit Pixel (init) -->
 
-    <!-- Reddit Pixel helpers: unique conversion_id + SPA route tracking -->
+    <!-- Reddit Pixel helpers: unique conversion_id + click_id + SPA route tracking -->
     <script>
       // RFC4122-ish UUID for conversion_id
       function convUUID(){
@@ -28,10 +28,34 @@
           const v=c==='x'?r:(r&0x3)|0x8; return v.toString(16);
         });
       }
-      // Wrapper to always attach a conversion_id; returns the id we used
+
+      // Capture and persist Reddit click IDs from query params
+      (function(){
+        try {
+          const params = new URLSearchParams(location.search);
+          const cid = params.get('rdt_cid');
+          if (cid) {
+            localStorage.setItem('rdt_click_id', cid);
+          }
+        } catch (e) {
+          // no-op
+        }
+      })();
+
+      function getClickId(){
+        try { return localStorage.getItem('rdt_click_id') || undefined; }
+        catch { return undefined; }
+      }
+
+      // Wrapper to always attach a conversion_id and click_id; returns the id we used
       window.rdtTrack = function(eventName, props){
         props = props || {};
         if (!props.conversion_id) props.conversion_id = convUUID();
+        const clickId = props.click_id || getClickId();
+        if (clickId) props.click_id = clickId;
+        if (props.email && window.redditNormalizeEmail) {
+          props.email = window.redditNormalizeEmail(props.email);
+        }
         if (window.rdt) rdt('track', eventName, props);
         window.__lastConversionId = props.conversion_id; // for CAPI dedup
         return props.conversion_id;
@@ -53,7 +77,7 @@
           }
           // Completion (tune to your actual results/complete paths)
           if (path.includes('result') || path.includes('complete') || path.includes('done')) {
-            window.rdtTrack('Custom', { event_name: 'AssessmentComplete' });
+            window.rdtTrack('Custom', { custom_event_name: 'AssessmentComplete' });
           }
           // Post-signup destinations
           if (
@@ -81,7 +105,7 @@
 
         // Optional explicit app hooks
         addEventListener('app:assessment:complete', ()=> {
-          window.rdtTrack('Custom', { event_name: 'AssessmentComplete' });
+          window.rdtTrack('Custom', { custom_event_name: 'AssessmentComplete' });
         });
         addEventListener('app:user:signup', ()=> {
           window.rdtTrack('SignUp');

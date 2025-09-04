@@ -37,12 +37,25 @@ const YourPersonalityBlueprintModal = ({ isOpen, onClose }: YourPersonalityBluep
 
   if (!isOpen) return null;
 
+  const trackAPLClick = () => {
+    if (typeof window !== 'undefined' && (window as any).rdtTrack) {
+      (window as any).rdtTrack('Custom', {
+        custom_event_name: 'AppliedPersonalityLabClick'
+      });
+    }
+  };
+
   const handleCTAClick = () => {
+    trackAPLClick();
     onClose();
-    window.open('https://www.skool.com/your-personality-blueprint/about?ref=931e57f033d34f3eb64db45f22b1389e', '_blank');
+    window.open(
+      'https://www.skool.com/your-personality-blueprint/about?ref=931e57f033d34f3eb64db45f22b1389e',
+      '_blank'
+    );
   };
 
   const handleSecondaryClick = () => {
+    trackAPLClick();
     onClose();
     // Navigate to tour section or video - using placeholder for now
     window.open('/your-personality-blueprint#tour', '_blank');

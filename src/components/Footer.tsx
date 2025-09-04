@@ -126,7 +126,12 @@ const Footer = () => {
             <div>
               <h3 className="font-semibold mb-4">Support PRISM</h3>
               <Button
-                onClick={() => window.open('https://donate.stripe.com/3cI6oHdR3cLg4n0eK56Ri04', '_blank')}
+                onClick={() => {
+                  if (typeof window !== 'undefined' && (window as any).rdtTrack) {
+                    (window as any).rdtTrack('Custom', { custom_event_name: 'DonateClick' });
+                  }
+                  window.open('https://donate.stripe.com/3cI6oHdR3cLg4n0eK56Ri04', '_blank');
+                }}
                 rel="noopener noreferrer"
               >
                 Donate via Stripe
