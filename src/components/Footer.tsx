@@ -1,8 +1,18 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Mail, Phone, Linkedin, Twitter, Facebook } from "lucide-react";
 
 const Footer = () => {
+
+  const [email, setEmail] = useState("");
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Subscribed:", email);
+    setEmail("");
+  };
 
   const popularLinks = {
     components: [
@@ -140,6 +150,29 @@ const Footer = () => {
                 Donate via Stripe
               </Button>
             </div>
+          </div>
+        </div>
+
+        {/* Newsletter Signup */}
+        <div className="pb-16">
+          <div className="max-w-md mx-auto text-center">
+            <h3 className="font-semibold mb-4">Subscribe for updates</h3>
+            <form
+              onSubmit={handleSubscribe}
+              className="flex flex-col sm:flex-row gap-2"
+            >
+              <Input
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-primary-foreground text-primary placeholder:text-primary/70"
+                required
+              />
+              <Button type="submit" variant="secondary">
+                Subscribe
+              </Button>
+            </form>
           </div>
         </div>
 
