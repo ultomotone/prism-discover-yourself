@@ -199,7 +199,7 @@ const Header = () => {
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden">
-            <div className="px-4 pt-4 pb-6 space-y-2 bg-background border-t border-border">
+            <div className="px-4 pt-4 pb-6 space-y-2 bg-background border-t border-border max-h-[calc(100vh-4rem)] overflow-y-auto">
               <Link
                 to="/assessment"
                 className="block px-3 py-3 text-sm font-medium text-foreground hover:text-primary prism-transition rounded-md hover:bg-accent/50"
