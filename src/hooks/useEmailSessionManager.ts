@@ -79,7 +79,9 @@ export function useEmailSessionManager() {
         if (typeof window !== 'undefined') {
           const w = window as any;
           if (w.rdtSetUser) w.rdtSetUser({ email });
+          if (w.fbSetUser) w.fbSetUser({ email });
           if (w.rdtTrack) w.rdtTrack('Lead', { email });
+          if (w.fbTrack) w.fbTrack('Lead', { email });
         }
       }
 

@@ -43,6 +43,11 @@ const YourPersonalityBlueprintModal = ({ isOpen, onClose }: YourPersonalityBluep
         custom_event_name: 'AppliedPersonalityLabClick'
       });
     }
+    if (typeof window !== 'undefined' && (window as any).fbTrack) {
+      (window as any).fbTrack('Custom', {
+        custom_event_name: 'AppliedPersonalityLabClick'
+      });
+    }
   };
 
   const handleCTAClick = () => {

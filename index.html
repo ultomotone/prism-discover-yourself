@@ -10,6 +10,122 @@
       gtag('config', 'G-J2XXMC9VWV');
     </script>
 
+    <!-- Meta Pixel (init) -->
+    <script>
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', '1775596122750375');
+    </script>
+    <!-- End Meta Pixel (init) -->
+
+    <!-- Meta Pixel helpers: unique event_id + fbclid + SPA route tracking -->
+    <script>
+      // RFC4122-ish UUID for event_id
+      function convUUID(){
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
+          const r=(crypto.getRandomValues(new Uint8Array(1))[0]&15);
+          const v=c==='x'?r:(r&0x3)|0x8; return v.toString(16);
+        });
+      }
+
+      // Capture and persist fbclid from query params
+      (function(){
+        try {
+          const params = new URLSearchParams(location.search);
+          const cid = params.get('fbclid');
+          if (cid) {
+            localStorage.setItem('fb_click_id', cid);
+          }
+        } catch (e) {
+          // no-op
+        }
+      })();
+
+      function getFBClickId(){
+        try { return localStorage.getItem('fb_click_id') || undefined; }
+        catch { return undefined; }
+      }
+
+      // Wrapper to attach an eventID and fbc; returns the id we used
+      window.fbTrack = function(eventName, props){
+        props = props || {};
+        if (!props.eventID) props.eventID = convUUID();
+        const clickId = props.fbc || getFBClickId();
+        if (clickId) props.fbc = `fb.1.${Date.now()}.${clickId}`;
+        if (window.fbq) {
+          if (eventName === 'Custom' && props.custom_event_name) {
+            fbq('trackCustom', props.custom_event_name, props);
+          } else {
+            fbq('track', eventName, props);
+          }
+        }
+        return props.eventID;
+      };
+
+      // Update advanced matching user signals after email capture
+      window.fbSetUser = function(props){
+        props = props || {};
+        if (props.email && window.fbq) {
+          fbq('init', '1775596122750375', { em: props.email });
+        }
+      };
+
+      // Fire initial page view
+      window.fbTrack('PageView');
+
+      // SPA route tracking + business events
+      (function(){
+        function onRoute(){
+          const path = (location.pathname || '').toLowerCase();
+
+          // Assessment start
+          if (path.startsWith('/assessment')) {
+            window.fbTrack('ViewContent', { content_name: 'Assessment' });
+          }
+          // Completion (tune to your actual results/complete paths)
+          if (path.includes('result') || path.includes('complete') || path.includes('done')) {
+            window.fbTrack('Custom', { custom_event_name: 'AssessmentComplete' });
+          }
+          // Post-signup destinations
+          if (
+            path.startsWith('/signup/complete') ||
+            path.startsWith('/welcome') ||
+            path.includes('/account/create/complete')
+          ) {
+            window.fbTrack('CompleteRegistration');
+          }
+        }
+
+        // initial load
+        onRoute();
+
+        // watch SPA nav
+        ['pushState','replaceState'].forEach(method=>{
+          const orig = history[method];
+          history[method] = function(){
+            const ret = orig.apply(this, arguments);
+            setTimeout(()=>{ window.fbTrack('PageView'); onRoute(); }, 0);
+            return ret;
+          };
+        });
+        addEventListener('popstate', ()=>{ window.fbTrack('PageView'); onRoute(); });
+
+        // Optional explicit app hooks
+        addEventListener('app:assessment:complete', ()=> {
+          window.fbTrack('Custom', { custom_event_name: 'AssessmentComplete' });
+        });
+        addEventListener('app:user:signup', ()=> {
+          window.fbTrack('CompleteRegistration');
+        });
+      })();
+    </script>
+    <!-- End Meta Pixel helpers -->
     <!-- Reddit Pixel (init) -->
     <script>
       !function(w,d){if(!w.rdt){var p=w.rdt=function(){p.sendEvent?p.sendEvent.apply(p,arguments):p.callQueue.push(arguments)};p.callQueue=[];
