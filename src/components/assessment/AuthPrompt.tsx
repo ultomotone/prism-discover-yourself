@@ -75,6 +75,18 @@ export function AuthPrompt({
         } catch (e) {
           console.error({ area: 'auth', message: 'notify_admin signup failed', cause: e });
         }
+
+        // Fire-and-forget Resend ingestion
+        try {
+          supabase.functions.invoke('add_to_resend', {
+            headers: import.meta.env.VITE_RESEND_INGEST_TOKEN
+              ? { authorization: `Bearer ${import.meta.env.VITE_RESEND_INGEST_TOKEN}` }
+              : undefined,
+            body: { email, source: 'signup' }
+          });
+        } catch (e) {
+          console.error({ area: 'auth', message: 'add_to_resend signup failed', cause: e });
+        }
         onAuthSuccess?.();
       }
     } catch (error: any) {

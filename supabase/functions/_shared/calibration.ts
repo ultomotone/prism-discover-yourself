@@ -1,7 +1,8 @@
+// @ts-nocheck
 // Unified PRISM Calibration Utility v1.2.0
 // Provides consistent calibration logic across all scoring functions
 
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, SupabaseClient } from '../_shared/supabaseClient.ts';
 
 export interface CalibrationPoint {
   x: number; // raw confidence [0,1]

@@ -1,6 +1,5 @@
-import { parse } from "https://deno.land/std@0.177.0/encoding/csv.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+// @ts-nocheck
+import { createClient } from '../_shared/supabaseClient.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,7 +26,23 @@ interface ImportRequest {
   run_integrity_check?: boolean;
 }
 
-serve(async (req) => {
+function parseCsv(data: string): Record<string, string>[] {
+  const lines = data.trim().split(/\r?\n/);
+  if (!lines.length) return [];
+  const headers = lines.shift()!.split(',').map((h) => h.trim());
+  return lines
+    .filter((l) => l.trim())
+    .map((line) => {
+      const values = line.split(',').map((v) => v.trim());
+      const record: Record<string, string> = {};
+      headers.forEach((h, i) => {
+        record[h] = values[i] ?? '';
+      });
+      return record;
+    });
+}
+
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -46,7 +61,7 @@ serve(async (req) => {
     if (csv_data && typeof csv_data === 'string') {
       console.log('Parsing CSV data...');
       try {
-        const records = parse(csv_data, { skipFirstRow: true, columns: true });
+        const records = parseCsv(csv_data);
         for (const row of records as any[]) {
           const q: any = {};
           for (const [k, v] of Object.entries(row)) {

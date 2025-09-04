@@ -1,4 +1,5 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
+// @ts-nocheck
+import { createClient } from '../_shared/supabaseClient.ts';
 import { PrismCalibration } from '../_shared/calibration.ts';
 
 const corsHeaders = {

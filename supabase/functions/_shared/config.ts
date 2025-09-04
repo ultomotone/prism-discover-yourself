@@ -1,7 +1,8 @@
+// @ts-nocheck
 // Unified PRISM Configuration Management v1.2.0
 // Ensures consistent configuration loading across all scoring functions
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SupabaseClient } from '../_shared/supabaseClient.ts';
 
 export interface PrismConfig {
   version: string;

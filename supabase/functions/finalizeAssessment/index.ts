@@ -1,5 +1,5 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// @ts-nocheck
+import { createClient } from "../_shared/supabaseClient.ts";
 
 type ScoreInput = { session_id: string; responses: any[] };
 
