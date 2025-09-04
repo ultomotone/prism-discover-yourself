@@ -76,6 +76,9 @@ export function useEmailSessionManager() {
           title: "Assessment Started",
           description: "Your progress will be automatically saved.",
         });
+        if (typeof window !== 'undefined' && (window as any).rdtTrack) {
+          (window as any).rdtTrack('Lead', { email });
+        }
       }
 
       return data as SessionData;

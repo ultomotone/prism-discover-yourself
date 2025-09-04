@@ -53,7 +53,7 @@
           }
           // Completion (tune to your actual results/complete paths)
           if (path.includes('result') || path.includes('complete') || path.includes('done')) {
-            window.rdtTrack('Custom', { event_name: 'AssessmentComplete' });
+            window.rdtTrack('Custom', { custom_event_name: 'AssessmentComplete' });
           }
           // Post-signup destinations
           if (
@@ -81,7 +81,7 @@
 
         // Optional explicit app hooks
         addEventListener('app:assessment:complete', ()=> {
-          window.rdtTrack('Custom', { event_name: 'AssessmentComplete' });
+          window.rdtTrack('Custom', { custom_event_name: 'AssessmentComplete' });
         });
         addEventListener('app:user:signup', ()=> {
           window.rdtTrack('SignUp');
