@@ -12,8 +12,8 @@ declare global {
 }
 
 function readConfig(): { url?: string; anon?: string } {
-  const urlEnv = import.meta.env?.SUPABASE_URL as string | undefined;
-  const anonEnv = import.meta.env?.SUPABASE_ANON_KEY as string | undefined;
+  const urlEnv = import.meta.env?.VITE_SUPABASE_URL as string | undefined;
+  const anonEnv = import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
 
   if (urlEnv && anonEnv) return { url: urlEnv, anon: anonEnv };
 
