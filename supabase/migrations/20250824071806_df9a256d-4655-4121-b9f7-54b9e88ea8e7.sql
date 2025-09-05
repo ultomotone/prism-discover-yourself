@@ -1,5 +1,5 @@
 -- Resolve view column mismatch by dropping and recreating dependent views
-DROP VIEW IF EXISTS public.v_kpi_metrics_v11 CASCADE;
+DROP VIEW IF EXISTS public.v_kpi_metrics_v11;
 
 CREATE VIEW public.v_kpi_metrics_v11 AS
 SELECT 

@@ -1,8 +1,8 @@
 -- PRISM scoring & dashboard unification - drop and recreate views with correct structure
 
 -- Drop views that need restructuring
-DROP VIEW IF EXISTS public.v_fc_coverage CASCADE;
-DROP VIEW IF EXISTS public.v_fc_analytics CASCADE;
+DROP VIEW IF EXISTS public.v_fc_coverage;
+DROP VIEW IF EXISTS public.v_fc_analytics;
 
 -- 1) Recreate FC coverage for completed sessions only
 CREATE VIEW public.v_fc_coverage AS

@@ -1,11 +1,11 @@
 -- Drop dependent views to allow shape changes
-DROP VIEW IF EXISTS v_retest_stability CASCADE;
-DROP VIEW IF EXISTS v_retest_deltas CASCADE;
-DROP VIEW IF EXISTS v_section_time CASCADE;
-DROP VIEW IF EXISTS v_kpi_overlay CASCADE;
-DROP VIEW IF EXISTS v_kpi_quality CASCADE;
-DROP VIEW IF EXISTS v_kpi_throughput CASCADE;
-DROP VIEW IF EXISTS v_profiles_ext CASCADE;
+DROP VIEW IF EXISTS v_retest_stability;
+DROP VIEW IF EXISTS v_retest_deltas;
+DROP VIEW IF EXISTS v_section_time;
+DROP VIEW IF EXISTS v_kpi_overlay;
+DROP VIEW IF EXISTS v_kpi_quality;
+DROP VIEW IF EXISTS v_kpi_throughput;
+DROP VIEW IF EXISTS v_profiles_ext;
 
 -- 1) Extend profiles info for admin (top fits, gaps)
 CREATE OR REPLACE VIEW v_profiles_ext AS
