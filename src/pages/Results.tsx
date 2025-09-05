@@ -12,12 +12,12 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { ResultsV2 } from '@/components/assessment/ResultsV2';
-import { useToast } from '@/hooks/use-toast';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import Header from '@/components/Header';
 import OverlayChips from '@/components/Results/OverlayChips';
 import TraitPanel from '@/components/Results/TraitPanel';
+import { useToast } from '@/hooks/use-toast';
 
 type Err =
   | 'invalid_session_id'
@@ -26,13 +26,12 @@ type Err =
   | 'profile_not_found'
   | 'profile_rendering'
   | 'results_not_found'
+  | 'rate_limited'
   | 'server_error'
   | 'unknown_error';
 
 export default function Results() {
-  console.log('🟢 Results component mounted');
   const { sessionId } = useParams();
-  console.log('🔍 Session ID from params:', sessionId);
 
   const isValidUUID = (v: string | undefined) =>
     !!v &&
@@ -61,15 +60,25 @@ export default function Results() {
       body: bodySnake,
     });
 
-    if (res.error) {
-      // Some deployments keep the old camelCase name but expect snake_case payload
-      res = await sb.functions.invoke('getResultsBySession', { body: bodySnake });
+    // If the first call rate limits or succeeds/fails with a session-level error, return immediately
+    if (!res.error || res.error.status === 429) {
+      return res;
     }
 
-    if (res.error) {
+    const msg = res.error.message?.toLowerCase() ?? '';
+
+    // Only fall back to camelCase function name if the kebab-case function truly doesn't exist
+    if (res.error.status === 404 && msg.includes('not found')) {
+      res = await sb.functions.invoke('getResultsBySession', { body: bodySnake });
+
+      // If this attempt also returns a non-payload error (or rate limit), stop here
+      if (!res.error || res.error.status !== 400) {
+        return res;
+      }
+
       // Final fallback for legacy environments expecting camelCase payload
       const bodyCamel = { sessionId: sid, shareToken: shareToken ?? undefined };
-      res = await sb.functions.invoke('getResultsBySession', { body: bodyCamel });
+      return sb.functions.invoke('getResultsBySession', { body: bodyCamel });
     }
 
     return res;
@@ -121,7 +130,11 @@ export default function Results() {
             return;
           }
           if (rpcErr) {
-            console.warn('RPC get_profile_by_session failed', rpcErr.message);
+            if (!cancelled && rpcErr?.status === 429) {
+              setError('rate_limited');
+              setLoading(false);
+              return;
+            }
           }
         }
 
@@ -140,7 +153,11 @@ export default function Results() {
 
         if (sessionErr) {
           if (!cancelled) {
-            setError('server_error');
+            if (sessionErr?.status === 429) {
+              setError('rate_limited');
+            } else {
+              setError('server_error');
+            }
             setLoading(false);
           }
           return;
@@ -152,7 +169,60 @@ export default function Results() {
           return;
         }
 
-        if (session.status !== 'completed') {
+        const normalizedStatus = (session.status || '').toLowerCase();
+        const doneStatuses = new Set([
+          'completed',
+          'complete',
+          'finalized',
+          'scored',
+        ]);
+        const isCompleted =
+          doneStatuses.has(normalizedStatus) || !!session.completed_at;
+
+        if (!isCompleted) {
+          try {
+            const res = await invokeResultsBySession(
+              supabase,
+              sessionId,
+              shareToken,
+            );
+
+            if (res && !res.error) {
+              const payload: any = (res as any).data;
+              if (payload) {
+                const maybeProfile = (payload as any).profile ?? payload;
+                const maybeSession =
+                  (payload as any).session ?? session ?? {
+                    id: sessionId,
+                    status: 'completed',
+                  };
+                setScoring({ ...maybeProfile, session: maybeSession });
+                setLoading(false);
+                return;
+              }
+            } else if (res?.error?.status === 429) {
+              if (!cancelled) {
+                setError('rate_limited');
+                setLoading(false);
+              }
+              return;
+            } else if (res?.error?.status === 404) {
+              if (!cancelled) {
+                setError('results_not_found');
+                setLoading(false);
+              }
+              return;
+            } else if (res?.error) {
+              if (!cancelled) {
+                setError('server_error');
+                setLoading(false);
+              }
+              return;
+            }
+          } catch {
+            /* edge function invocation failed */
+          }
+
           if (!cancelled) {
             setError('access_denied');
             setLoading(false);
@@ -169,7 +239,11 @@ export default function Results() {
           .maybeSingle();
 
         if (profileErr) {
-          console.warn('Profile lookup failed', profileErr.message);
+          if (!cancelled && profileErr?.status === 429) {
+            setError('rate_limited');
+            setLoading(false);
+            return;
+          }
         }
 
         if (!cancelled) {
@@ -180,19 +254,45 @@ export default function Results() {
           } else {
             // Fallback to Edge Function if available
             try {
-              const res = await invokeResultsBySession(supabase, sessionId, shareToken);
+              const res = await invokeResultsBySession(
+                supabase,
+                sessionId,
+                shareToken,
+              );
               if (res && !res.error) {
                 const payload: any = (res as any).data;
                 if (payload) {
                   const maybeProfile = (payload as any).profile ?? payload;
-                  const maybeSession = (payload as any).session ?? session ?? { id: sessionId, status: 'completed' };
+                  const maybeSession =
+                    (payload as any).session ?? session ?? {
+                      id: sessionId,
+                      status: 'completed',
+                    };
                   setScoring({ ...maybeProfile, session: maybeSession });
                   setLoading(false);
                   return;
                 }
+              } else if (res?.error?.status === 429) {
+                if (!cancelled) {
+                  setError('rate_limited');
+                  setLoading(false);
+                }
+                return;
+              } else if (res?.error?.status === 404) {
+                if (!cancelled) {
+                  setError('profile_not_found');
+                  setLoading(false);
+                }
+                return;
+              } else if (res?.error) {
+                if (!cancelled) {
+                  setError('server_error');
+                  setLoading(false);
+                }
+                return;
               }
-            } catch (e) {
-              console.warn('Edge function fallback failed', e);
+            } catch {
+              /* edge function invocation failed */
             }
 
             if (retryCount < 5) {
@@ -208,8 +308,7 @@ export default function Results() {
             }
           }
         }
-      } catch (err) {
-        console.error('Error fetching results:', err);
+      } catch {
         if (!cancelled) {
           setError('server_error');
           setLoading(false);
@@ -228,7 +327,6 @@ export default function Results() {
   useEffect(() => {
     if (scoring && !loading && !error) {
       const timer = setTimeout(() => {
-        console.log('Auto-downloading PDF for session:', sessionId);
         downloadPDF();
       }, 1500);
       return () => clearTimeout(timer);
@@ -239,7 +337,6 @@ export default function Results() {
     try {
       const node = document.getElementById('results-content');
       if (!node) {
-        console.error('Results content not found');
         return;
       }
 
@@ -277,8 +374,7 @@ export default function Results() {
         ? `PRISM_Profile_${scoring.type_code}.pdf`
         : 'PRISM_Profile.pdf';
       pdf.save(fileName);
-    } catch (err) {
-      console.error('PDF generation failed:', err);
+    } catch {
       alert(
         'PDF generation failed. Please try again or use a different browser.',
       );
@@ -378,6 +474,44 @@ export default function Results() {
       );
     }
 
+    // Handle results_not_found state
+    if (error === 'results_not_found') {
+      return (
+        <div className="min-h-screen bg-background">
+          <Header />
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <Card className="max-w-md">
+              <CardContent className="text-center py-8">
+                <div className="mb-4">
+                  <p className="font-semibold">Results not found</p>
+                  <p className="text-sm mt-1 text-muted-foreground">
+                    We couldn't find results for this session. They may have
+                    expired or never completed.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Button onClick={() => navigate('/assessment')} className="w-full">
+                    Take New Assessment
+                  </Button>
+                  <Button
+                    onClick={() => navigate('/')}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Go Home
+                  </Button>
+                </div>
+                <div className="mt-4 p-3 bg-muted rounded text-xs">
+                  <p className="font-medium mb-1">Session ID:</p>
+                  <code className="text-muted-foreground">{sessionId}</code>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
     // Handle profile_not_found state
     if (error === 'profile_not_found') {
       return (
@@ -411,6 +545,41 @@ export default function Results() {
                     Take New Assessment
                   </Button>
                 </div>
+                <div className="mt-4 p-3 bg-muted rounded text-xs">
+                  <p className="font-medium mb-1">Session ID:</p>
+                  <code className="text-muted-foreground">{sessionId}</code>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
+    // Handle rate_limited state
+    if (error === 'rate_limited') {
+      return (
+        <div className="min-h-screen bg-background">
+          <Header />
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <Card className="max-w-md">
+              <CardContent className="text-center py-8">
+                <div className="mb-4">
+                  <p className="font-semibold">Too many requests</p>
+                  <p className="text-sm mt-1 text-muted-foreground">
+                    Please wait a moment and try again.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => {
+                    setError(null);
+                    setLoading(true);
+                    window.location.reload();
+                  }}
+                  className="w-full"
+                >
+                  Retry
+                </Button>
                 <div className="mt-4 p-3 bg-muted rounded text-xs">
                   <p className="font-medium mb-1">Session ID:</p>
                   <code className="text-muted-foreground">{sessionId}</code>
