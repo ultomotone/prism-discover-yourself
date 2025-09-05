@@ -45,36 +45,12 @@ export default function Results() {
   const [scoring, setScoring] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Err | null>(null);
-
-  async function invokeResultsBySession(
-    sb: any,
-    sid: string,
-    shareToken?: string | null,
-  ) {
-    // Edge function expects snake_case parameters
-    const bodySnake = { session_id: sid, share_token: shareToken ?? undefined };
-
-    // Prefer kebab-case function name with snake_case body
-    let res = await sb.functions.invoke('get-results-by-session', {
-      body: bodySnake,
-    });
-
-    if (res.error) {
-      // Some deployments keep the old camelCase name but expect snake_case payload
-      res = await sb.functions.invoke('getResultsBySession', { body: bodySnake });
-    }
-
-    if (res.error) {
-      // Final fallback for legacy environments expecting camelCase payload
-      const bodyCamel = { sessionId: sid, shareToken: shareToken ?? undefined };
-      res = await sb.functions.invoke('getResultsBySession', { body: bodyCamel });
-    }
-
-    return res;
-  }
+  // Number of times we've retried fetching a profile that's still generating
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout>;
 
     const run = async () => {
       try {
@@ -100,34 +76,7 @@ export default function Results() {
         const urlParams = new URLSearchParams(window.location.search);
         const shareToken = urlParams.get('token');
 
-        // Prefer the edge function first
-        const { data: resultData, error: invokeError } =
-          await invokeResultsBySession(supabase, sessionId, shareToken);
-
-        if (!invokeError && resultData) {
-          // Some SDKs wrap payload under `.data`
-          const result = (resultData as any)?.data ?? resultData;
-          if (!result) {
-            if (!cancelled) {
-              setError('results_not_found');
-              setLoading(false);
-            }
-            return;
-          }
-
-          if (!cancelled) {
-            setScoring(result);
-            setLoading(false);
-          }
-          return;
-        }
-
-        console.warn(
-          'Edge function unavailable, falling back to direct queries',
-          (invokeError as Error | undefined)?.message,
-        );
-
-        // Try RPC fallback that bypasses RLS using SECURITY DEFINER
+        // Try RPC that bypasses RLS using SECURITY DEFINER first
         if (shareToken) {
           const { data: rpcProfile, error: rpcErr } = await supabase.rpc(
             'get_profile_by_session',
@@ -135,7 +84,10 @@ export default function Results() {
           );
           if (rpcProfile && !rpcErr) {
             if (!cancelled) {
-              setScoring({ session: { id: sessionId, status: 'completed' }, profile: rpcProfile });
+              setScoring({
+                ...rpcProfile,
+                session: { id: sessionId, status: 'completed' },
+              });
               setLoading(false);
             }
             return;
@@ -180,11 +132,21 @@ export default function Results() {
 
         if (!cancelled) {
           if (profile) {
-            setScoring({ session, profile });
+            setScoring({ ...profile, session });
+            setLoading(false);
           } else {
-            setError('profile_not_found');
+            if (retryCount < 5) {
+              setError('profile_rendering');
+              setLoading(false);
+              retryTimer = setTimeout(
+                () => setRetryCount((c) => c + 1),
+                2000,
+              );
+            } else {
+              setError('profile_not_found');
+              setLoading(false);
+            }
           }
-          setLoading(false);
         }
       } catch (err) {
         console.error('Error fetching results:', err);
@@ -198,8 +160,9 @@ export default function Results() {
     run();
     return () => {
       cancelled = true;
+      clearTimeout(retryTimer);
     };
-  }, [sessionId]);
+  }, [sessionId, retryCount]);
 
   // Auto-download PDF when results are loaded
   useEffect(() => {
