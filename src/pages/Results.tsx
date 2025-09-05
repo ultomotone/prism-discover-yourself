@@ -26,6 +26,7 @@ type Err =
   | 'profile_not_found'
   | 'profile_rendering'
   | 'results_not_found'
+  | 'rate_limited'
   | 'server_error'
   | 'unknown_error';
 
@@ -61,12 +62,12 @@ export default function Results() {
       body: bodySnake,
     });
 
-    if (res.error) {
+    if (res.error?.status !== 429 && res.error) {
       // Some deployments keep the old camelCase name but expect snake_case payload
       res = await sb.functions.invoke('getResultsBySession', { body: bodySnake });
     }
 
-    if (res.error) {
+    if (res.error?.status !== 429 && res.error) {
       // Final fallback for legacy environments expecting camelCase payload
       const bodyCamel = { sessionId: sid, shareToken: shareToken ?? undefined };
       res = await sb.functions.invoke('getResultsBySession', { body: bodyCamel });
@@ -152,7 +153,47 @@ export default function Results() {
           return;
         }
 
-        if (session.status !== 'completed') {
+        const normalizedStatus = (session.status || '').toLowerCase();
+        const doneStatuses = new Set([
+          'completed',
+          'complete',
+          'finalized',
+          'scored',
+        ]);
+        const isCompleted =
+          doneStatuses.has(normalizedStatus) || !!session.completed_at;
+
+        if (!isCompleted) {
+          try {
+            const res = await invokeResultsBySession(
+              supabase,
+              sessionId,
+              shareToken,
+            );
+            if (res && !res.error) {
+              const payload: any = (res as any).data;
+              if (payload) {
+                const maybeProfile = (payload as any).profile ?? payload;
+                const maybeSession =
+                  (payload as any).session ?? session ?? {
+                    id: sessionId,
+                    status: 'completed',
+                  };
+                setScoring({ ...maybeProfile, session: maybeSession });
+                setLoading(false);
+                return;
+              }
+            } else if (res?.error?.status === 429) {
+              if (!cancelled) {
+                setError('rate_limited');
+                setLoading(false);
+              }
+              return;
+            }
+          } catch (e) {
+            console.warn('Edge function fallback failed', e);
+          }
+
           if (!cancelled) {
             setError('access_denied');
             setLoading(false);
@@ -180,16 +221,30 @@ export default function Results() {
           } else {
             // Fallback to Edge Function if available
             try {
-              const res = await invokeResultsBySession(supabase, sessionId, shareToken);
+              const res = await invokeResultsBySession(
+                supabase,
+                sessionId,
+                shareToken,
+              );
               if (res && !res.error) {
                 const payload: any = (res as any).data;
                 if (payload) {
                   const maybeProfile = (payload as any).profile ?? payload;
-                  const maybeSession = (payload as any).session ?? session ?? { id: sessionId, status: 'completed' };
+                  const maybeSession =
+                    (payload as any).session ?? session ?? {
+                      id: sessionId,
+                      status: 'completed',
+                    };
                   setScoring({ ...maybeProfile, session: maybeSession });
                   setLoading(false);
                   return;
                 }
+              } else if (res?.error?.status === 429) {
+                if (!cancelled) {
+                  setError('rate_limited');
+                  setLoading(false);
+                }
+                return;
               }
             } catch (e) {
               console.warn('Edge function fallback failed', e);
@@ -411,6 +466,41 @@ export default function Results() {
                     Take New Assessment
                   </Button>
                 </div>
+                <div className="mt-4 p-3 bg-muted rounded text-xs">
+                  <p className="font-medium mb-1">Session ID:</p>
+                  <code className="text-muted-foreground">{sessionId}</code>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
+    // Handle rate_limited state
+    if (error === 'rate_limited') {
+      return (
+        <div className="min-h-screen bg-background">
+          <Header />
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <Card className="max-w-md">
+              <CardContent className="text-center py-8">
+                <div className="mb-4">
+                  <p className="font-semibold">Too many requests</p>
+                  <p className="text-sm mt-1 text-muted-foreground">
+                    Please wait a moment and try again.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => {
+                    setError(null);
+                    setLoading(true);
+                    window.location.reload();
+                  }}
+                  className="w-full"
+                >
+                  Retry
+                </Button>
                 <div className="mt-4 p-3 bg-muted rounded text-xs">
                   <p className="font-medium mb-1">Session ID:</p>
                   <code className="text-muted-foreground">{sessionId}</code>
