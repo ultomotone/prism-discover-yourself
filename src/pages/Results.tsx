@@ -2,14 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Download,
-  ArrowLeft,
-  ExternalLink,
-  Copy,
-  Users,
-  Clock,
-} from 'lucide-react';
+import { Download, ArrowLeft, ExternalLink, Copy, Users, Clock } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { ResultsV2 } from '@/components/assessment/ResultsV2';
 import html2canvas from 'html2canvas';
@@ -32,27 +25,18 @@ type Err =
 
 export default function Results() {
   const { sessionId } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const isValidUUID = (v: string | undefined) =>
     !!v &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      v,
-    );
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v || '');
 
-  const navigate = useNavigate();
-  const { toast } = useToast();
   const [scoring, setScoring] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Err | null>(null);
-  // Number of times we've retried fetching a profile that's still generating
   const [retryCount, setRetryCount] = useState(0);
 
-  /**
-   * Call the results Edge Function with sensible fallbacks:
-   * 1) 'get-results-by-session' (snake payload)
-   * 2) 'getResultsBySession' (snake payload) only if the first truly doesn't exist
-   * 3) 'getResultsBySession' (camel payload) for legacy deployments
-   */
   async function invokeResultsBySession(
     sb: any,
     sid: string,
@@ -60,29 +44,19 @@ export default function Results() {
   ) {
     const bodySnake = { session_id: sid, share_token: shareToken ?? undefined };
 
-    // Try kebab-case function name first
-    let res = await sb.functions.invoke('get-results-by-session', {
-      body: bodySnake,
-    });
-
-    // If success or rate-limited, return immediately
-    if (!res.error || res.error.status === 429) {
-      return res;
-    }
+    // 1) Prefer kebab-case function with snake_case payload
+    let res = await sb.functions.invoke('get-results-by-session', { body: bodySnake });
+    if (!res.error || res.error.status === 429) return res;
 
     const msg = (res.error?.message ?? '').toLowerCase();
-
-    // If kebab-case truly doesn't exist, try camelCase name with snake payload
+    // 2) Try camelCase name with snake_case payload if kebab-case truly doesn't exist
     if (res.error.status === 404 && msg.includes('not found')) {
       res = await sb.functions.invoke('getResultsBySession', { body: bodySnake });
-
-      // If success, or any non-400 error (including 429), stop here
-      if (!res.error || res.error.status !== 400 || res.error.status === 429) {
-        return res;
-      }
+      // If success or any non-400 error (incl 429), stop here
+      if (!res.error || res.error.status !== 400 || res.error.status === 429) return res;
     }
 
-    // Final fallback for legacy environments expecting camelCase payload
+    // 3) Final: camelCase name with camelCase payload
     const bodyCamel = { sessionId: sid, shareToken: shareToken ?? undefined };
     return sb.functions.invoke('getResultsBySession', { body: bodyCamel });
   }
@@ -94,21 +68,16 @@ export default function Results() {
     const run = async () => {
       try {
         if (!sessionId || !isValidUUID(sessionId)) {
-          if (!cancelled) {
-            setError('invalid_session_id');
-            setLoading(false);
-          }
+          if (!cancelled) { setError('invalid_session_id'); setLoading(false); }
           return;
         }
 
         setLoading(true);
         setError(null);
 
-        // Optional share token from URL (used by secure share links)
         const urlParams = new URLSearchParams(window.location.search);
-        const shareToken = urlParams.get('token');
-
-        // 1) RPC that bypasses RLS using SECURITY DEFINER (fast path for share links)
+                    const shareToken = urlParams.get('token');
+        // Fast path: SECURITY DEFINER RPC if token present
         if (shareToken) {
           const { data: rpcProfile, error: rpcErr } = await supabase.rpc(
             'get_profile_by_session',
@@ -116,78 +85,47 @@ export default function Results() {
           );
           if (rpcProfile && !rpcErr) {
             if (!cancelled) {
-              setScoring({
-                ...rpcProfile,
-                session: { id: sessionId, status: 'completed' },
-              });
+              setScoring({ ...rpcProfile, session: { id: sessionId, status: 'completed' } });
               setLoading(false);
             }
             return;
           }
-          if (rpcErr && !cancelled) {
-            if ((rpcErr as any)?.status === 429) {
-              setError('rate_limited');
-              setLoading(false);
-              return;
-            }
-            // Otherwise continue to other fallbacks
+          if (rpcErr && !cancelled && (rpcErr as any)?.status === 429) {
+            setError('rate_limited'); setLoading(false); return;
           }
         }
 
-        // 2) Try to read session directly (may be blocked by RLS if no token/auth)
+        // Try direct session read (may be blocked by RLS)
         let sessionQuery = supabase
           .from('assessment_sessions')
           .select('id, status, share_token, completed_at')
           .eq('id', sessionId);
 
-        if (shareToken) {
-          sessionQuery = sessionQuery.eq('share_token', shareToken);
-        }
+        if (shareToken) sessionQuery = sessionQuery.eq('share_token', shareToken);
 
         const { data: session, error: sessionErr } = await sessionQuery.maybeSingle();
 
-        // If the direct session read fails or is missing, try the Edge Function anyway
+        // If blocked/missing, still try Edge Function
         if (sessionErr || !session) {
           try {
             const res = await invokeResultsBySession(supabase, sessionId, shareToken);
-
             if (res && !res.error) {
               const payload: any = (res as any).data;
               if (payload) {
                 const maybeProfile = (payload as any).profile ?? payload;
-                const maybeSession =
-                  (payload as any).session ?? { id: sessionId, status: 'completed' };
-                if (!cancelled) {
-                  setScoring({ ...maybeProfile, session: maybeSession });
-                  setLoading(false);
-                }
+                const maybeSession = (payload as any).session ?? { id: sessionId, status: 'completed' };
+                if (!cancelled) { setScoring({ ...maybeProfile, session: maybeSession }); setLoading(false); }
                 return;
               }
-            } else if (res?.error?.status === 429) {
-              if (!cancelled) {
-                setError('rate_limited');
-                setLoading(false);
-              }
-              return;
-            } else if (res?.error?.status === 404) {
-              if (!cancelled) {
-                setError('results_not_found');
-                setLoading(false);
-              }
-              return;
-            }
+            } else if (res?.error?.status === 429) { setError('rate_limited'); setLoading(false); return; }
+              else if (res?.error?.status === 404) { setError('results_not_found'); setLoading(false); return; }
           } catch (e) {
             console.warn('Edge function fallback failed (no session)', e);
           }
-
-          if (!cancelled) {
-            setError(sessionErr ? 'server_error' : 'session_not_found');
-            setLoading(false);
-          }
+          if (!cancelled) { setError(sessionErr ? 'server_error' : 'session_not_found'); setLoading(false); }
           return;
         }
 
-        // 3) We have a session row. If not completed, try the Edge Function
         const normalizedStatus = (session.status || '').toLowerCase();
         const doneStatuses = new Set(['completed', 'complete', 'finalized', 'scored']);
         const isCompleted = doneStatuses.has(normalizedStatus) || !!session.completed_at;
@@ -195,53 +133,25 @@ export default function Results() {
         if (!isCompleted) {
           try {
             const res = await invokeResultsBySession(supabase, sessionId, shareToken);
-
             if (res && !res.error) {
               const payload: any = (res as any).data;
               if (payload) {
                 const maybeProfile = (payload as any).profile ?? payload;
-                const maybeSession =
-                  (payload as any).session ?? session ?? {
-                    id: sessionId,
-                    status: 'completed',
-                  };
-                if (!cancelled) {
-                  setScoring({ ...maybeProfile, session: maybeSession });
-                  setLoading(false);
-                }
+                const maybeSession = (payload as any).session ?? session ?? { id: sessionId, status: 'completed' };
+                if (!cancelled) { setScoring({ ...maybeProfile, session: maybeSession }); setLoading(false); }
                 return;
               }
-            } else if (res?.error?.status === 429) {
-              if (!cancelled) {
-                setError('rate_limited');
-                setLoading(false);
-              }
-              return;
-            } else if (res?.error?.status === 404) {
-              if (!cancelled) {
-                setError('results_not_found');
-                setLoading(false);
-              }
-              return;
-            } else if (res?.error) {
-              if (!cancelled) {
-                setError('server_error');
-                setLoading(false);
-              }
-              return;
-            }
+            } else if (res?.error?.status === 429) { setError('rate_limited'); setLoading(false); return; }
+              else if (res?.error?.status === 404) { setError('results_not_found'); setLoading(false); return; }
+              else if (res?.error) { setError('server_error'); setLoading(false); return; }
           } catch (e) {
             console.warn('Edge function fallback failed', e);
           }
-
-          if (!cancelled) {
-            setError('access_denied');
-            setLoading(false);
-          }
+          if (!cancelled) { setError('access_denied'); setLoading(false); }
           return;
         }
 
-        // 4) Completed session: try to read the latest profile row
+        // Completed session — try profile row
         const { data: profile, error: profileErr } = await supabase
           .from('profiles')
           .select('*')
@@ -250,54 +160,32 @@ export default function Results() {
           .limit(1)
           .maybeSingle();
 
-        if (profileErr) {
-          if (!cancelled && (profileErr as any)?.status === 429) {
-            setError('rate_limited');
-            setLoading(false);
-            return;
-          }
+        if (profileErr && !cancelled && (profileErr as any)?.status === 429) {
+          setError('rate_limited'); setLoading(false); return;
         }
 
         if (!cancelled) {
           if (profile) {
-            // Flatten profile so renderers receive top-level fields
             setScoring({ ...profile, session });
             setLoading(false);
           } else {
-            // Fallback to Edge Function if available
+            // Fallback to Edge Function
             try {
               const res = await invokeResultsBySession(supabase, sessionId, shareToken);
               if (res && !res.error) {
                 const payload: any = (res as any).data;
                 if (payload) {
                   const maybeProfile = (payload as any).profile ?? payload;
-                  const maybeSession =
-                    (payload as any).session ?? session ?? {
-                      id: sessionId,
-                      status: 'completed',
-                    };
+                  const maybeSession = (payload as any).session ?? session ?? { id: sessionId, status: 'completed' };
                   setScoring({ ...maybeProfile, session: maybeSession });
                   setLoading(false);
                   return;
                 }
-              } else if (res?.error?.status === 429) {
-                setError('rate_limited');
-                setLoading(false);
-                return;
-              } else if (res?.error?.status === 404) {
-                setError('profile_not_found');
-                setLoading(false);
-                return;
-              } else if (res?.error) {
-                setError('server_error');
-                setLoading(false);
-                return;
-              }
-            } catch (e) {
-              console.warn('Edge function fallback failed', e);
-            }
+              } else if (res?.error?.status === 429) { setError('rate_limited'); setLoading(false); return; }
+                else if (res?.error?.status === 404) { setError('profile_not_found'); setLoading(false); return; }
+                else if (res?.error) { setError('server_error'); setLoading(false); return; }
+            } catch (e) { console.warn('Edge function fallback failed', e); }
 
-            // If profile is still being generated, retry a few times
             if (retryCount < 5) {
               setError('profile_rendering');
               setLoading(false);
@@ -310,78 +198,41 @@ export default function Results() {
         }
       } catch (e) {
         console.error('Error fetching results:', e);
-        if (!cancelled) {
-          setError('server_error');
-          setLoading(false);
-        }
+        if (!cancelled) { setError('server_error'); setLoading(false); }
       }
     };
 
     run();
-    return () => {
-      cancelled = true;
-      clearTimeout(retryTimer);
-    };
+    return () => { cancelled = true; clearTimeout(retryTimer); };
   }, [sessionId, retryCount]);
 
-  // Auto-download PDF when results are loaded
   useEffect(() => {
     if (scoring && !loading && !error) {
-      const timer = setTimeout(() => {
-        downloadPDF();
-      }, 1500);
-      return () => clearTimeout(timer);
+      const t = setTimeout(() => { downloadPDF(); }, 1500);
+      return () => clearTimeout(t);
     }
   }, [scoring, loading, error, sessionId]);
 
   const downloadPDF = async () => {
     try {
       const node = document.getElementById('results-content');
-      if (!node) {
-        console.error('Results content not found');
-        return;
-      }
-
+      if (!node) return;
       const canvas = await html2canvas(node, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        width: (node as HTMLElement).scrollWidth,
-        height: (node as HTMLElement).scrollHeight,
+        scale: 2, backgroundColor: '#ffffff', useCORS: true, allowTaint: true, logging: false,
+        width: (node as HTMLElement).scrollWidth, height: (node as HTMLElement).scrollHeight,
       });
-
       const img = canvas.toDataURL('image/png', 0.95);
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pageWidth = 210;
-      const pageHeight = 297;
+      const pageWidth = 210, pageHeight = 297;
       const imgProps = pdf.getImageProperties(img);
       const imgWidth = pageWidth;
       const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-
       pdf.addImage(img, 'PNG', 0, 0, imgWidth, Math.min(imgHeight, pageHeight));
-
-      // If content taller than one page, slice and add more pages
-      let remaining = imgHeight - pageHeight;
-      let y = 0;
-      while (remaining > 0) {
-        pdf.addPage();
-        y += pageHeight;
-        pdf.addImage(img, 'PNG', 0, -y, imgWidth, imgHeight);
-        remaining -= pageHeight;
-      }
-
-      const fileName = scoring?.type_code
-        ? `PRISM_Profile_${scoring.type_code}.pdf`
-        : 'PRISM_Profile.pdf';
+      let remaining = imgHeight - pageHeight, y = 0;
+      while (remaining > 0) { pdf.addPage(); y += pageHeight; pdf.addImage(img, 'PNG', 0, -y, imgWidth, imgHeight); remaining -= pageHeight; }
+      const fileName = scoring?.type_code ? `PRISM_Profile_${scoring.type_code}.pdf` : 'PRISM_Profile.pdf';
       pdf.save(fileName);
-    } catch (err) {
-      console.error('PDF generation failed:', err);
-      alert(
-        'PDF generation failed. Please try again or use a different browser.',
-      );
-    }
+    } catch { alert('PDF generation failed. Please try again or use a different browser.'); }
   };
 
   if (loading) {
@@ -885,9 +736,7 @@ export default function Results() {
                       window.location.search,
                     );
                     const shareToken = urlParams.get('token');
-                    const resultsUrl = shareToken
-                      ? `${window.location.origin}/results/${sessionId}?token=${shareToken}`
-                      : window.location.href;
+                    const resultsUrl = window.location.origin + '/results/' + sessionId + (shareToken ? '?token=' + shareToken : '');
 
                     navigator.clipboard
                       .writeText(resultsUrl)
