@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LogOut, User, Target, ExternalLink, ChevronRight } from "lucide-react";
@@ -27,6 +28,7 @@ interface UserSession {
 
 const UserDashboard = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [userSessions, setUserSessions] = useState<UserSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -154,76 +156,80 @@ const UserDashboard = () => {
                     <p className="text-muted-foreground mb-6">
                       Take your first PRISM assessment to discover your personality profile
                     </p>
-                    <Button onClick={() => window.location.href = '/assessment'}>
+                    <Button onClick={() => navigate('/assessment')}>
                       Take Assessment
                     </Button>
                   </CardContent>
                 </Card>
               ) : (
                 <div className="space-y-4">
-                  {userSessions.map((session) => (
-                    <Card key={session.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-6">
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Badge variant={session.status === 'completed' ? 'default' : 'secondary'}>
-                                {session.status === 'completed' ? 'Completed' : 'In Progress'}
-                              </Badge>
-                              <span className="text-sm text-muted-foreground">
-                                {format(new Date(session.started_at), 'MMM dd, yyyy HH:mm')}
-                              </span>
+                  {userSessions.map((session) => {
+                    const normalized = (session.status || '').toLowerCase();
+                    const doneStatuses = new Set(['completed', 'complete', 'finalized', 'scored']);
+                    const isDone = doneStatuses.has(normalized);
+                    return (
+                      <Card key={session.id} className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-6">
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Badge variant={isDone ? 'default' : 'secondary'}>
+                                  {isDone ? 'Completed' : 'In Progress'}
+                                </Badge>
+                                <span className="text-sm text-muted-foreground">
+                                  {format(new Date(session.started_at), 'MMM dd, yyyy HH:mm')}
+                                </span>
+                              </div>
+
+                              {session.profile ? (
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-lg">
+                                      {session.profile.type_code}
+                                    </span>
+                                    {session.profile.overlay && (
+                                      <Badge variant="outline" className="text-xs">
+                                        State: {session.profile.overlay}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                    <span>Confidence: {session.profile.confidence}</span>
+                                    <span>Fit: {session.profile.fit_band}</span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-muted-foreground">
+                                  Progress: {session.completed_questions}/{session.total_questions} questions
+                                </div>
+                              )}
                             </div>
-                            
-                            {session.profile ? (
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-semibold text-lg">
-                                    {session.profile.type_code}
-                                  </span>
-                                  {session.profile.overlay && (
-                                    <Badge variant="outline" className="text-xs">
-                                      State: {session.profile.overlay}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                  <span>Confidence: {session.profile.confidence}</span>
-                                  <span>Fit: {session.profile.fit_band}</span>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="text-muted-foreground">
-                                Progress: {session.completed_questions}/{session.total_questions} questions
-                              </div>
-                            )}
+
+                            <div className="flex gap-2">
+                              {isDone ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => navigate(`/results/${session.id}`)}
+                                >
+                                  View Results
+                                  <ExternalLink className="h-4 w-4 ml-2" />
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  onClick={() => navigate('/assessment')}
+                                >
+                                  Continue
+                                  <ChevronRight className="h-4 w-4 ml-2" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
-                          
-                          <div className="flex gap-2">
-                            {session.status === 'completed' && (
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => window.location.href = `/results/${session.id}`}
-                              >
-                                View Results
-                                <ExternalLink className="h-4 w-4 ml-2" />
-                              </Button>
-                            )}
-                            {session.status !== 'completed' && (
-                              <Button 
-                                size="sm"
-                                onClick={() => window.location.href = '/assessment'}
-                              >
-                                Continue
-                                <ChevronRight className="h-4 w-4 ml-2" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </div>
