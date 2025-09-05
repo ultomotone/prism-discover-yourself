@@ -1,4 +1,4 @@
--- Preview-safe v_sessions_core + legacy wrapper, resilient to missing aux tables.
+-- Preview-safe v_sessions_core, resilient to missing aux tables.
 DO $$
 DECLARE
   has_sessions   boolean := to_regclass('public.assessment_sessions')   IS NOT NULL;
@@ -89,24 +89,10 @@ BEGIN
   EXECUTE $$COMMENT ON VIEW public.v_sessions_core IS
     'Core sessions view: resilient definition (sessions±profiles±responses), non-negative durations.'$$;
 
-  -- Legacy wrapper mirrors _core (keeps downstream stable)
-  EXECUTE $sql$
-    CREATE OR REPLACE VIEW public.v_sessions AS
-    SELECT
-      session_id,
-      user_id,
-      status,
-      started_at,
-      completed_at,
-      duration_sec,
-      response_count,
-      first_answer_at,
-      last_answer_at
-    FROM public.v_sessions_core
-  $sql$;
-  EXECUTE 'ALTER VIEW public.v_sessions SET (security_invoker = true)';
-  EXECUTE 'GRANT SELECT ON public.v_sessions TO anon, authenticated';
-  EXECUTE $$COMMENT ON VIEW public.v_sessions IS
-    'Legacy wrapper over v_sessions_core to preserve existing dependencies.'$$;
+  -- Apply security/grants to legacy view if present
+  IF to_regclass('public.v_sessions') IS NOT NULL THEN
+    EXECUTE 'ALTER VIEW public.v_sessions SET (security_invoker = true)';
+    EXECUTE 'GRANT SELECT ON public.v_sessions TO anon, authenticated';
+  END IF;
 END
 $$;

@@ -1,6 +1,4 @@
 -- Drop existing conflicting views first
-DROP VIEW IF EXISTS v_sessions;
-DROP VIEW IF EXISTS v_sessions_plus;
 DROP VIEW IF EXISTS v_fit_ranks;
 DROP VIEW IF EXISTS v_quality;
 DROP VIEW IF EXISTS v_overlay_conf;
