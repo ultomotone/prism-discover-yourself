@@ -12,12 +12,12 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { ResultsV2 } from '@/components/assessment/ResultsV2';
-import { useToast } from '@/hooks/use-toast';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import Header from '@/components/Header';
 import OverlayChips from '@/components/Results/OverlayChips';
 import TraitPanel from '@/components/Results/TraitPanel';
+import { useToast } from '@/hooks/use-toast';
 
 type Err =
   | 'invalid_session_id'
@@ -47,31 +47,44 @@ export default function Results() {
   // Number of times we've retried fetching a profile that's still generating
   const [retryCount, setRetryCount] = useState(0);
 
+  /**
+   * Call the results Edge Function with sensible fallbacks:
+   * 1) 'get-results-by-session' (snake payload)
+   * 2) 'getResultsBySession' (snake payload) only if the first truly doesn't exist
+   * 3) 'getResultsBySession' (camel payload) for legacy deployments
+   */
   async function invokeResultsBySession(
     sb: any,
     sid: string,
     shareToken?: string | null,
   ) {
-    // Edge function expects snake_case parameters
     const bodySnake = { session_id: sid, share_token: shareToken ?? undefined };
 
-    // Prefer kebab-case function name with snake_case body
+    // Try kebab-case function name first
     let res = await sb.functions.invoke('get-results-by-session', {
       body: bodySnake,
     });
 
-    if (res.error?.status !== 429 && res.error) {
-      // Some deployments keep the old camelCase name but expect snake_case payload
+    // If success or rate-limited, return immediately
+    if (!res.error || res.error.status === 429) {
+      return res;
+    }
+
+    const msg = (res.error?.message ?? '').toLowerCase();
+
+    // If kebab-case truly doesn't exist, try camelCase name with snake payload
+    if (res.error.status === 404 && msg.includes('not found')) {
       res = await sb.functions.invoke('getResultsBySession', { body: bodySnake });
+
+      // If success, or any non-400 error (including 429), stop here
+      if (!res.error || res.error.status !== 400 || res.error.status === 429) {
+        return res;
+      }
     }
 
-    if (res.error?.status !== 429 && res.error) {
-      // Final fallback for legacy environments expecting camelCase payload
-      const bodyCamel = { sessionId: sid, shareToken: shareToken ?? undefined };
-      res = await sb.functions.invoke('getResultsBySession', { body: bodyCamel });
-    }
-
-    return res;
+    // Final fallback for legacy environments expecting camelCase payload
+    const bodyCamel = { sessionId: sid, shareToken: shareToken ?? undefined };
+    return sb.functions.invoke('getResultsBySession', { body: bodyCamel });
   }
 
   useEffect(() => {
@@ -80,14 +93,7 @@ export default function Results() {
 
     const run = async () => {
       try {
-        if (!sessionId) {
-          if (!cancelled) {
-            setError('invalid_session_id');
-            setLoading(false);
-          }
-          return;
-        }
-        if (!isValidUUID(sessionId)) {
+        if (!sessionId || !isValidUUID(sessionId)) {
           if (!cancelled) {
             setError('invalid_session_id');
             setLoading(false);
@@ -102,7 +108,7 @@ export default function Results() {
         const urlParams = new URLSearchParams(window.location.search);
         const shareToken = urlParams.get('token');
 
-        // Try RPC that bypasses RLS using SECURITY DEFINER first
+        // 1) RPC that bypasses RLS using SECURITY DEFINER (fast path for share links)
         if (shareToken) {
           const { data: rpcProfile, error: rpcErr } = await supabase.rpc(
             'get_profile_by_session',
@@ -110,7 +116,6 @@ export default function Results() {
           );
           if (rpcProfile && !rpcErr) {
             if (!cancelled) {
-              // Flatten profile so renderers receive top-level fields
               setScoring({
                 ...rpcProfile,
                 session: { id: sessionId, status: 'completed' },
@@ -119,55 +124,77 @@ export default function Results() {
             }
             return;
           }
-          if (rpcErr) {
-            console.warn('RPC get_profile_by_session failed', rpcErr.message);
+          if (rpcErr && !cancelled) {
+            if ((rpcErr as any)?.status === 429) {
+              setError('rate_limited');
+              setLoading(false);
+              return;
+            }
+            // Otherwise continue to other fallbacks
           }
         }
 
-        // Direct queries to load session + latest profile (may be blocked by RLS)
+        // 2) Try to read session directly (may be blocked by RLS if no token/auth)
         let sessionQuery = supabase
           .from('assessment_sessions')
           .select('id, status, share_token, completed_at')
           .eq('id', sessionId);
 
-        // When using a secure share link, include the token to satisfy RLS
         if (shareToken) {
           sessionQuery = sessionQuery.eq('share_token', shareToken);
         }
 
         const { data: session, error: sessionErr } = await sessionQuery.maybeSingle();
 
-        if (sessionErr) {
-          if (!cancelled) {
-            setError('server_error');
-            setLoading(false);
+        // If the direct session read fails or is missing, try the Edge Function anyway
+        if (sessionErr || !session) {
+          try {
+            const res = await invokeResultsBySession(supabase, sessionId, shareToken);
+
+            if (res && !res.error) {
+              const payload: any = (res as any).data;
+              if (payload) {
+                const maybeProfile = (payload as any).profile ?? payload;
+                const maybeSession =
+                  (payload as any).session ?? { id: sessionId, status: 'completed' };
+                if (!cancelled) {
+                  setScoring({ ...maybeProfile, session: maybeSession });
+                  setLoading(false);
+                }
+                return;
+              }
+            } else if (res?.error?.status === 429) {
+              if (!cancelled) {
+                setError('rate_limited');
+                setLoading(false);
+              }
+              return;
+            } else if (res?.error?.status === 404) {
+              if (!cancelled) {
+                setError('results_not_found');
+                setLoading(false);
+              }
+              return;
+            }
+          } catch (e) {
+            console.warn('Edge function fallback failed (no session)', e);
           }
-          return;
-        } else if (!session) {
+
           if (!cancelled) {
-            setError('session_not_found');
+            setError(sessionErr ? 'server_error' : 'session_not_found');
             setLoading(false);
           }
           return;
         }
 
+        // 3) We have a session row. If not completed, try the Edge Function
         const normalizedStatus = (session.status || '').toLowerCase();
-        const doneStatuses = new Set([
-          'completed',
-          'complete',
-          'finalized',
-          'scored',
-        ]);
-        const isCompleted =
-          doneStatuses.has(normalizedStatus) || !!session.completed_at;
+        const doneStatuses = new Set(['completed', 'complete', 'finalized', 'scored']);
+        const isCompleted = doneStatuses.has(normalizedStatus) || !!session.completed_at;
 
         if (!isCompleted) {
           try {
-            const res = await invokeResultsBySession(
-              supabase,
-              sessionId,
-              shareToken,
-            );
+            const res = await invokeResultsBySession(supabase, sessionId, shareToken);
 
             if (res && !res.error) {
               const payload: any = (res as any).data;
@@ -178,8 +205,10 @@ export default function Results() {
                     id: sessionId,
                     status: 'completed',
                   };
-                setScoring({ ...maybeProfile, session: maybeSession });
-                setLoading(false);
+                if (!cancelled) {
+                  setScoring({ ...maybeProfile, session: maybeSession });
+                  setLoading(false);
+                }
                 return;
               }
             } else if (res?.error?.status === 429) {
@@ -212,6 +241,7 @@ export default function Results() {
           return;
         }
 
+        // 4) Completed session: try to read the latest profile row
         const { data: profile, error: profileErr } = await supabase
           .from('profiles')
           .select('*')
@@ -221,7 +251,11 @@ export default function Results() {
           .maybeSingle();
 
         if (profileErr) {
-          console.warn('Profile lookup failed', profileErr.message);
+          if (!cancelled && (profileErr as any)?.status === 429) {
+            setError('rate_limited');
+            setLoading(false);
+            return;
+          }
         }
 
         if (!cancelled) {
@@ -232,11 +266,7 @@ export default function Results() {
           } else {
             // Fallback to Edge Function if available
             try {
-              const res = await invokeResultsBySession(
-                supabase,
-                sessionId,
-                shareToken,
-              );
+              const res = await invokeResultsBySession(supabase, sessionId, shareToken);
               if (res && !res.error) {
                 const payload: any = (res as any).data;
                 if (payload) {
@@ -251,43 +281,35 @@ export default function Results() {
                   return;
                 }
               } else if (res?.error?.status === 429) {
-                if (!cancelled) {
-                  setError('rate_limited');
-                  setLoading(false);
-                }
+                setError('rate_limited');
+                setLoading(false);
                 return;
               } else if (res?.error?.status === 404) {
-                if (!cancelled) {
-                  setError('profile_not_found');
-                  setLoading(false);
-                }
+                setError('profile_not_found');
+                setLoading(false);
                 return;
               } else if (res?.error) {
-                if (!cancelled) {
-                  setError('server_error');
-                  setLoading(false);
-                }
+                setError('server_error');
+                setLoading(false);
                 return;
               }
             } catch (e) {
               console.warn('Edge function fallback failed', e);
             }
 
+            // If profile is still being generated, retry a few times
             if (retryCount < 5) {
               setError('profile_rendering');
               setLoading(false);
-              retryTimer = setTimeout(
-                () => setRetryCount((c) => c + 1),
-                2000,
-              );
+              retryTimer = setTimeout(() => setRetryCount((c) => c + 1), 2000);
             } else {
               setError('profile_not_found');
               setLoading(false);
             }
           }
         }
-      } catch (err) {
-        console.error('Error fetching results:', err);
+      } catch (e) {
+        console.error('Error fetching results:', e);
         if (!cancelled) {
           setError('server_error');
           setLoading(false);
@@ -332,8 +354,8 @@ export default function Results() {
 
       const img = canvas.toDataURL('image/png', 0.95);
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pageWidth = 210,
-        pageHeight = 297;
+      const pageWidth = 210;
+      const pageHeight = 297;
       const imgProps = pdf.getImageProperties(img);
       const imgWidth = pageWidth;
       const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
