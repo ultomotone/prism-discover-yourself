@@ -20,7 +20,7 @@ const ALLOWED_VIEWS = {
   'kpi_metrics': 'v_kpi_metrics_v11',
   'latest_assessments': 'v_latest_assessments_v11',
   'quality': 'v_quality',
-  'recent_assessments': 'v_recent_assessments_safe',
+  'recent_assessments': 'v_recent_assessments_safe_v2',
   'item_stats': 'v_item_stats',
   'v_kpi_overview_30d_v11': 'v_kpi_overview_30d_v11',
   'v_kpi_quality': 'v_kpi_quality',
