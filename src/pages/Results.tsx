@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Download, ArrowLeft, ExternalLink, Copy, Users, Clock } from 'lucide-react';
-import { supabase } from '@/lib/supabase/client';
 import { ResultsV2 } from '@/components/assessment/ResultsV2';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -11,6 +10,7 @@ import Header from '@/components/Header';
 import OverlayChips from '@/components/Results/OverlayChips';
 import TraitPanel from '@/components/Results/TraitPanel';
 import { useToast } from '@/hooks/use-toast';
+import { getResultsBySession } from '@/lib/api/results';
 
 type Err =
   | 'invalid_session_id'
@@ -24,42 +24,69 @@ type Err =
   | 'unknown_error';
 
 export default function Results() {
-  const { sessionId } = useParams();
+  const { sessionId: routeSessionId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   const isValidUUID = (v: string | undefined) =>
     !!v &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v || '');
 
+  const [rawSessionId, setRawSessionId] = useState<string | null>(null);
+  const [normalizedSessionId, setNormalizedSessionId] = useState<string | null>(null);
+  const [idSource, setIdSource] = useState<'route' | 'query' | 'state' | 'none'>('none');
   const [scoring, setScoring] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Err | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
-  async function invokeResultsBySession(
-    sb: any,
-    sid: string,
-    shareToken?: string | null,
-  ) {
-    const bodySnake = { session_id: sid, share_token: shareToken ?? undefined };
+  // Resolve session ID deterministically: route -> query -> state
+  useEffect(() => {
+    const search = new URLSearchParams(location.search);
+    const queryId = search.get('sessionId') || search.get('session_id');
+    const stateId = (location.state as any)?.sessionId || (location.state as any)?.session_id;
 
-    // 1) Prefer kebab-case function with snake_case payload
-    let res = await sb.functions.invoke('get-results-by-session', { body: bodySnake });
-    if (!res.error || res.error.status === 429) return res;
+    let source: 'route' | 'query' | 'state' | 'none' = 'none';
+    let raw = '';
 
-    const msg = (res.error?.message ?? '').toLowerCase();
-    // 2) Try camelCase name with snake_case payload if kebab-case truly doesn't exist
-    if (res.error.status === 404 && msg.includes('not found')) {
-      res = await sb.functions.invoke('getResultsBySession', { body: bodySnake });
-      // If success or any non-400 error (incl 429), stop here
-      if (!res.error || res.error.status !== 400 || res.error.status === 429) return res;
+    if (routeSessionId) { raw = routeSessionId; source = 'route'; }
+    else if (queryId) { raw = queryId; source = 'query'; }
+    else if (stateId) { raw = stateId; source = 'state'; }
+
+    if (raw) {
+      const norm = decodeURIComponent(raw).trim().toLowerCase();
+      setRawSessionId(raw);
+      setNormalizedSessionId(norm);
+      setIdSource(source);
+
+      if (!isValidUUID(norm)) {
+        console.warn(`Invalid sessionId from ${source}: ${raw}`);
+      }
+
+      if (!routeSessionId && queryId) {
+        // Replace URL with canonical path
+        search.delete('sessionId');
+        search.delete('session_id');
+        const qs = search.toString();
+        console.warn('Deprecated: sessionId query parameter');
+        navigate(`/results/${norm}${qs ? `?${qs}` : ''}`, { replace: true });
+      }
+    } else {
+      setRawSessionId(null);
+      setNormalizedSessionId(null);
+      setIdSource('none');
     }
+  }, [routeSessionId, location.search, location.state, navigate]);
 
-    // 3) Final: camelCase name with camelCase payload
-    const bodyCamel = { sessionId: sid, shareToken: shareToken ?? undefined };
-    return sb.functions.invoke('getResultsBySession', { body: bodyCamel });
-  }
+  // Telemetry
+  useEffect(() => {
+    console.log(
+      `results_mount env=${import.meta.env.MODE} routeParamName=sessionId raw=${rawSessionId ?? ''} normalized=${normalizedSessionId ?? ''} source=${idSource} hasState=${location.state ? 'true' : 'false'} fetchEnabled=${isValidUUID(normalizedSessionId ?? '')}`
+    );
+  }, [rawSessionId, normalizedSessionId, idSource, location.state]);
+
+  const sessionId = normalizedSessionId || undefined;
 
   useEffect(() => {
     let cancelled = false;
@@ -75,125 +102,28 @@ export default function Results() {
         setLoading(true);
         setError(null);
 
-        const urlParams = new URLSearchParams(window.location.search);
-                    const shareToken = urlParams.get('token');
-        // Fast path: SECURITY DEFINER RPC if token present
-        if (shareToken) {
-          const { data: rpcProfile, error: rpcErr } = await supabase.rpc(
-            'get_profile_by_session',
-            { p_session_id: sessionId, p_share_token: shareToken }
-          );
-          if (rpcProfile && !rpcErr) {
-            if (!cancelled) {
-              setScoring({ ...rpcProfile, session: { id: sessionId, status: 'completed' } });
-              setLoading(false);
-            }
+        const shareToken = new URLSearchParams(window.location.search).get('token') ?? undefined;
+        const { data, error: err } = await getResultsBySession(sessionId, shareToken || undefined);
+
+        if (err) {
+          if (err.code === 'profile_rendering' && retryCount < 5) {
+            setError('profile_rendering');
+            setLoading(false);
+            retryTimer = setTimeout(() => setRetryCount((c) => c + 1), 2000);
             return;
           }
-          if (rpcErr && !cancelled && (rpcErr as any)?.status === 429) {
-            setError('rate_limited'); setLoading(false); return;
-          }
-        }
-
-        // Try direct session read (may be blocked by RLS)
-        let sessionQuery = supabase
-          .from('assessment_sessions')
-          .select('id, status, share_token, completed_at')
-          .eq('id', sessionId);
-
-        if (shareToken) sessionQuery = sessionQuery.eq('share_token', shareToken);
-
-        const { data: session, error: sessionErr } = await sessionQuery.maybeSingle();
-
-        // If blocked/missing, still try Edge Function
-        if (sessionErr || !session) {
-          try {
-            const res = await invokeResultsBySession(supabase, sessionId, shareToken);
-            if (res && !res.error) {
-              const payload: any = (res as any).data;
-              if (payload) {
-                const maybeProfile = (payload as any).profile ?? payload;
-                const maybeSession = (payload as any).session ?? { id: sessionId, status: 'completed' };
-                if (!cancelled) { setScoring({ ...maybeProfile, session: maybeSession }); setLoading(false); }
-                return;
-              }
-            } else if (res?.error?.status === 429) { setError('rate_limited'); setLoading(false); return; }
-              else if (res?.error?.status === 404) { setError('results_not_found'); setLoading(false); return; }
-          } catch (e) {
-            console.warn('Edge function fallback failed (no session)', e);
-          }
-          if (!cancelled) { setError(sessionErr ? 'server_error' : 'session_not_found'); setLoading(false); }
+          setError((err.code as Err) || 'server_error');
+          setLoading(false);
           return;
-        }
-
-        const normalizedStatus = (session.status || '').toLowerCase();
-        const doneStatuses = new Set(['completed', 'complete', 'finalized', 'scored']);
-        const isCompleted = doneStatuses.has(normalizedStatus) || !!session.completed_at;
-
-        if (!isCompleted) {
-          try {
-            const res = await invokeResultsBySession(supabase, sessionId, shareToken);
-            if (res && !res.error) {
-              const payload: any = (res as any).data;
-              if (payload) {
-                const maybeProfile = (payload as any).profile ?? payload;
-                const maybeSession = (payload as any).session ?? session ?? { id: sessionId, status: 'completed' };
-                if (!cancelled) { setScoring({ ...maybeProfile, session: maybeSession }); setLoading(false); }
-                return;
-              }
-            } else if (res?.error?.status === 429) { setError('rate_limited'); setLoading(false); return; }
-              else if (res?.error?.status === 404) { setError('results_not_found'); setLoading(false); return; }
-              else if (res?.error) { setError('server_error'); setLoading(false); return; }
-          } catch (e) {
-            console.warn('Edge function fallback failed', e);
-          }
-          if (!cancelled) { setError('access_denied'); setLoading(false); }
-          return;
-        }
-
-        // Completed session — try profile row
-        const { data: profile, error: profileErr } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('session_id', sessionId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (profileErr && !cancelled && (profileErr as any)?.status === 429) {
-          setError('rate_limited'); setLoading(false); return;
         }
 
         if (!cancelled) {
-          if (profile) {
-            setScoring({ ...profile, session });
+          if (data?.profile) {
+            setScoring({ ...data.profile, session: data.session ?? { id: sessionId, status: 'completed' } });
             setLoading(false);
           } else {
-            // Fallback to Edge Function
-            try {
-              const res = await invokeResultsBySession(supabase, sessionId, shareToken);
-              if (res && !res.error) {
-                const payload: any = (res as any).data;
-                if (payload) {
-                  const maybeProfile = (payload as any).profile ?? payload;
-                  const maybeSession = (payload as any).session ?? session ?? { id: sessionId, status: 'completed' };
-                  setScoring({ ...maybeProfile, session: maybeSession });
-                  setLoading(false);
-                  return;
-                }
-              } else if (res?.error?.status === 429) { setError('rate_limited'); setLoading(false); return; }
-                else if (res?.error?.status === 404) { setError('profile_not_found'); setLoading(false); return; }
-                else if (res?.error) { setError('server_error'); setLoading(false); return; }
-            } catch (e) { console.warn('Edge function fallback failed', e); }
-
-            if (retryCount < 5) {
-              setError('profile_rendering');
-              setLoading(false);
-              retryTimer = setTimeout(() => setRetryCount((c) => c + 1), 2000);
-            } else {
-              setError('profile_not_found');
-              setLoading(false);
-            }
+            setError('results_not_found');
+            setLoading(false);
           }
         }
       } catch (e) {

@@ -1,8 +1,5 @@
 project_id = "gnkuikentdtnatazeriu"
 
-[functions.getResultsBySession]
-verify_jwt = false
-
 [functions.finalizeAssessment]
 verify_jwt = false
 
