@@ -15,6 +15,23 @@ export const trackEvent = (action: string, category: string, label?: string, val
   }
 };
 
+// Lead tracking for marketing funnels
+export const trackLead = (email?: string, metadata: Record<string, any> = {}) => {
+  trackEvent('lead', 'marketing');
+
+  if (typeof window !== 'undefined') {
+    const w = window as any;
+
+    if (email) {
+      if (w.rdtSetUser) w.rdtSetUser({ email });
+      if (w.fbSetUser) w.fbSetUser({ email });
+    }
+
+    if (w.rdtTrack) w.rdtTrack('Lead', { email, ...metadata });
+    if (w.fbTrack) w.fbTrack('Lead', { email, ...metadata });
+  }
+};
+
 // Assessment-specific tracking functions
 export const trackAssessmentStart = (sessionId: string) => {
   trackEvent('assessment_started', 'assessment', sessionId);
@@ -38,6 +55,7 @@ export const trackAccountCreation = (email: string) => {
   trackEvent('account_created', 'user', 'from_assessment');
   // Don't track the actual email for privacy
   trackEvent('signup_completed', 'user');
+  trackLead(email);
 };
 
 export const trackResultsViewed = (sessionId: string, typeCode?: string) => {

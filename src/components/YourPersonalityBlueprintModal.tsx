@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { X } from "lucide-react";
 import { Dialog, DialogContent, DialogOverlay } from "@/components/ui/dialog";
+import { trackLead } from "@/lib/analytics";
 
 interface YourPersonalityBlueprintModalProps {
   isOpen: boolean;
@@ -48,6 +49,7 @@ const YourPersonalityBlueprintModal = ({ isOpen, onClose }: YourPersonalityBluep
         custom_event_name: 'AppliedPersonalityLabClick'
       });
     }
+    trackLead(undefined, { source: 'applied_personality_lab' });
   };
 
   const handleCTAClick = () => {

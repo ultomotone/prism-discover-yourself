@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabase/client";
 import { ResultsV2 } from "./ResultsV2";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { trackAssessmentComplete, trackResultsViewed } from "@/lib/analytics";
+import { trackAssessmentComplete, trackResultsViewed, trackLead } from "@/lib/analytics";
 
 interface AssessmentCompleteProps {
   responses: AssessmentResponse[];
@@ -118,6 +118,9 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
           
           // Track results viewed
           trackResultsViewed(sessionId, data.profile?.type_code);
+
+          // Track lead on completion
+          trackLead(undefined, { source: 'assessment_complete' });
           
           // Store share token for URL generation
           if (data.share_token) {
