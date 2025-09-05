@@ -93,23 +93,13 @@ export default function Results() {
     sid: string,
     shareToken?: string | null,
   ) {
-    const bodySnake = { session_id: sid, share_token: shareToken ?? undefined };
-
-    // 1) Prefer kebab-case function with snake_case payload
-    let res = await sb.functions.invoke('get-results-by-session', { body: bodySnake });
-    if (!res.error || res.error.status === 429) return res;
-
-    const msg = (res.error?.message ?? '').toLowerCase();
-    // 2) Try camelCase name with snake_case payload if kebab-case truly doesn't exist
-    if (res.error.status === 404 && msg.includes('not found')) {
-      res = await sb.functions.invoke('getResultsBySession', { body: bodySnake });
-      // If success or any non-400 error (incl 429), stop here
-      if (!res.error || res.error.status !== 400 || res.error.status === 429) return res;
-    }
-
-    // 3) Final: camelCase name with camelCase payload
-    const bodyCamel = { sessionId: sid, shareToken: shareToken ?? undefined };
-    return sb.functions.invoke('getResultsBySession', { body: bodyCamel });
+    console.log(
+      `results_fetch endpoint=get-results-by-session hasAuthHeader=true contentType=application/json session_id=${sid.slice(0, 8)}`
+    );
+    return sb.functions.invoke('get-results-by-session', {
+      headers: { 'Content-Type': 'application/json' },
+      body: { session_id: sid, share_token: shareToken ?? undefined },
+    });
   }
 
   useEffect(() => {
@@ -127,7 +117,7 @@ export default function Results() {
         setError(null);
 
         const urlParams = new URLSearchParams(window.location.search);
-                    const shareToken = urlParams.get('token');
+        const shareToken = urlParams.get('token');
         // Fast path: SECURITY DEFINER RPC if token present
         if (shareToken) {
           const { data: rpcProfile, error: rpcErr } = await supabase.rpc(
@@ -168,8 +158,15 @@ export default function Results() {
                 if (!cancelled) { setScoring({ ...maybeProfile, session: maybeSession }); setLoading(false); }
                 return;
               }
-            } else if (res?.error?.status === 429) { setError('rate_limited'); setLoading(false); return; }
-              else if (res?.error?.status === 404) { setError('results_not_found'); setLoading(false); return; }
+            } else if (res?.error?.status === 429) {
+              setError('rate_limited');
+              setLoading(false);
+              return;
+            } else if (res?.error?.status === 404) {
+              setError('results_not_found');
+              setLoading(false);
+              return;
+            }
           } catch (e) {
             console.warn('Edge function fallback failed (no session)', e);
           }
@@ -192,9 +189,19 @@ export default function Results() {
                 if (!cancelled) { setScoring({ ...maybeProfile, session: maybeSession }); setLoading(false); }
                 return;
               }
-            } else if (res?.error?.status === 429) { setError('rate_limited'); setLoading(false); return; }
-              else if (res?.error?.status === 404) { setError('results_not_found'); setLoading(false); return; }
-              else if (res?.error) { setError('server_error'); setLoading(false); return; }
+            } else if (res?.error?.status === 429) {
+              setError('rate_limited');
+              setLoading(false);
+              return;
+            } else if (res?.error?.status === 404) {
+              setError('results_not_found');
+              setLoading(false);
+              return;
+            } else if (res?.error) {
+              setError('server_error');
+              setLoading(false);
+              return;
+            }
           } catch (e) {
             console.warn('Edge function fallback failed', e);
           }
@@ -232,9 +239,19 @@ export default function Results() {
                   setLoading(false);
                   return;
                 }
-              } else if (res?.error?.status === 429) { setError('rate_limited'); setLoading(false); return; }
-                else if (res?.error?.status === 404) { setError('profile_not_found'); setLoading(false); return; }
-                else if (res?.error) { setError('server_error'); setLoading(false); return; }
+              } else if (res?.error?.status === 429) {
+                setError('rate_limited');
+                setLoading(false);
+                return;
+              } else if (res?.error?.status === 404) {
+                setError('profile_not_found');
+                setLoading(false);
+                return;
+              } else if (res?.error) {
+                setError('server_error');
+                setLoading(false);
+                return;
+              }
             } catch (e) { console.warn('Edge function fallback failed', e); }
 
             if (retryCount < 5) {
