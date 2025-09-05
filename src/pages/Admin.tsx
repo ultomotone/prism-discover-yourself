@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, AlertTriangle, Users, Clock, RefreshCw, Percent, CheckCircle, Database } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
@@ -30,7 +31,8 @@ const Admin: React.FC = () => {
     latestAssessments,
     loading,
     refreshData,
-    exportToCSV
+    exportToCSV,
+    error
   } = useAdvancedAdminAnalytics();
 
   const { toast } = useToast();
@@ -158,6 +160,13 @@ const Admin: React.FC = () => {
           <p className="text-muted-foreground">Assessment analytics, health monitoring, and evidence metrics</p>
         </div>
       </div>
+      {error && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Failed to load analytics</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       {/* Tabs */}
       <Tabs defaultValue="health" className="w-full">
