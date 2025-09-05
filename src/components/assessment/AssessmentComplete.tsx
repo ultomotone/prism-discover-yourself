@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, Download, RotateCcw, Link, Copy } from "lucide-react";
@@ -22,6 +23,7 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
   console.log('🔵 AssessmentComplete component rendered with:');
   console.log('🔵 Responses count:', responses?.length || 0);
   console.log('🔵 Session ID:', sessionId);
+  const navigate = useNavigate();
   
   // Early return if missing required props
   if (!sessionId) {
@@ -65,7 +67,7 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
     };
     
     fetchShareToken();
-  }, [sessionId]);
+  }, [sessionId, navigate]);
 
   useEffect(() => {
     const submitAndScore = async () => {
@@ -121,6 +123,9 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
           if (data.share_token) {
             setShareToken(data.share_token);
           }
+          const tokenParam = data.share_token ? "?token=" + data.share_token : "";
+          navigate("/results/" + sessionId + tokenParam);
+          return;
         } else {
           throw new Error(data?.error || 'Invalid response from scoring service');
         }
@@ -134,7 +139,7 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
     };
     
     submitAndScore();
-  }, [sessionId]);
+  }, [sessionId, navigate]);
 
   const resultsUrl = shareToken 
     ? `${window.location.origin}/results/${sessionId}?token=${shareToken}`
