@@ -50,9 +50,16 @@ export default function Results() {
     let source: 'route' | 'query' | 'state' | 'none' = 'none';
     let raw = '';
 
-    if (routeSessionId) { raw = routeSessionId; source = 'route'; }
-    else if (queryId) { raw = queryId; source = 'query'; }
-    else if (stateId) { raw = stateId; source = 'state'; }
+    if (routeSessionId) {
+      raw = routeSessionId;
+      source = 'route';
+    } else if (queryId) {
+      raw = queryId;
+      source = 'query';
+    } else if (stateId) {
+      raw = stateId;
+      source = 'state';
+    }
 
     if (raw) {
       const norm = decodeURIComponent(raw).trim().toLowerCase();
@@ -95,7 +102,10 @@ export default function Results() {
     const run = async () => {
       try {
         if (!sessionId || !isValidUUID(sessionId)) {
-          if (!cancelled) { setError('invalid_session_id'); setLoading(false); }
+          if (!cancelled) {
+            setError('invalid_session_id');
+            setLoading(false);
+          }
           return;
         }
 
@@ -103,16 +113,22 @@ export default function Results() {
         setError(null);
 
         const shareToken = new URLSearchParams(window.location.search).get('token') ?? undefined;
+
+        // Telemetry for the fetch
+        console.log(
+          `results_fetch endpoint=get-results-by-session hasAuthHeader=true contentType=application/json session_id=${sessionId.slice(0, 8)}`
+        );
+
         const { data, error: err } = await getResultsBySession(sessionId, shareToken || undefined);
 
         if (err) {
-          if (err.code === 'profile_rendering' && retryCount < 5) {
+          if ((err as any).code === 'profile_rendering' && retryCount < 5) {
             setError('profile_rendering');
             setLoading(false);
             retryTimer = setTimeout(() => setRetryCount((c) => c + 1), 2000);
             return;
           }
-          setError((err.code as Err) || 'server_error');
+          setError(((err as any).code as Err) || 'server_error');
           setLoading(false);
           return;
         }
@@ -128,17 +144,25 @@ export default function Results() {
         }
       } catch (e) {
         console.error('Error fetching results:', e);
-        if (!cancelled) { setError('server_error'); setLoading(false); }
+        if (!cancelled) {
+          setError('server_error');
+          setLoading(false);
+        }
       }
     };
 
     run();
-    return () => { cancelled = true; clearTimeout(retryTimer); };
+    return () => {
+      cancelled = true;
+      clearTimeout(retryTimer);
+    };
   }, [sessionId, retryCount]);
 
   useEffect(() => {
     if (scoring && !loading && !error) {
-      const t = setTimeout(() => { downloadPDF(); }, 1500);
+      const t = setTimeout(() => {
+        downloadPDF();
+      }, 1500);
       return () => clearTimeout(t);
     }
   }, [scoring, loading, error, sessionId]);
@@ -148,21 +172,35 @@ export default function Results() {
       const node = document.getElementById('results-content');
       if (!node) return;
       const canvas = await html2canvas(node, {
-        scale: 2, backgroundColor: '#ffffff', useCORS: true, allowTaint: true, logging: false,
-        width: (node as HTMLElement).scrollWidth, height: (node as HTMLElement).scrollHeight,
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width: (node as HTMLElement).scrollWidth,
+        height: (node as HTMLElement).scrollHeight,
       });
       const img = canvas.toDataURL('image/png', 0.95);
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pageWidth = 210, pageHeight = 297;
+      const pageWidth = 210,
+        pageHeight = 297;
       const imgProps = pdf.getImageProperties(img);
       const imgWidth = pageWidth;
       const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
       pdf.addImage(img, 'PNG', 0, 0, imgWidth, Math.min(imgHeight, pageHeight));
-      let remaining = imgHeight - pageHeight, y = 0;
-      while (remaining > 0) { pdf.addPage(); y += pageHeight; pdf.addImage(img, 'PNG', 0, -y, imgWidth, imgHeight); remaining -= pageHeight; }
+      let remaining = imgHeight - pageHeight,
+        y = 0;
+      while (remaining > 0) {
+        pdf.addPage();
+        y += pageHeight;
+        pdf.addImage(img, 'PNG', 0, -y, imgWidth, imgHeight);
+        remaining -= pageHeight;
+      }
       const fileName = scoring?.type_code ? `PRISM_Profile_${scoring.type_code}.pdf` : 'PRISM_Profile.pdf';
       pdf.save(fileName);
-    } catch { alert('PDF generation failed. Please try again or use a different browser.'); }
+    } catch {
+      alert('PDF generation failed. Please try again or use a different browser.');
+    }
   };
 
   if (loading) {
@@ -174,9 +212,7 @@ export default function Results() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
             <div className="space-y-2">
               <p className="font-medium">Loading your results...</p>
-              <p className="text-sm text-muted-foreground">
-                This may take a moment
-              </p>
+              <p className="text-sm text-muted-foreground">This may take a moment</p>
             </div>
           </div>
         </div>
@@ -196,9 +232,7 @@ export default function Results() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
                 <div className="mb-4">
                   <p className="font-semibold">Generating results…</p>
-                  <p className="text-sm mt-1 text-muted-foreground">
-                    Your responses are being processed. This can take a moment.
-                  </p>
+                  <p className="text-sm mt-1 text-muted-foreground">Your responses are being processed. This can take a moment.</p>
                 </div>
                 <Button
                   onClick={() => {
@@ -231,23 +265,13 @@ export default function Results() {
               <CardContent className="text-center py-8">
                 <div className="mb-4">
                   <p className="font-semibold">Results aren't ready</p>
-                  <p className="text-sm mt-1 text-muted-foreground">
-                    Please finish the assessment or use your share link to
-                    access results.
-                  </p>
+                  <p className="text-sm mt-1 text-muted-foreground">Please finish the assessment or use your share link to access results.</p>
                 </div>
                 <div className="space-y-2">
-                  <Button
-                    onClick={() => navigate('/assessment')}
-                    className="w-full"
-                  >
+                  <Button onClick={() => navigate('/assessment')} className="w-full">
                     Continue Assessment
                   </Button>
-                  <Button
-                    onClick={() => navigate('/')}
-                    variant="outline"
-                    className="w-full"
-                  >
+                  <Button onClick={() => navigate('/')} variant="outline" className="w-full">
                     Go Home
                   </Button>
                 </div>
@@ -269,19 +293,14 @@ export default function Results() {
                 <div className="mb-4">
                   <p className="font-semibold">Results not found</p>
                   <p className="text-sm mt-1 text-muted-foreground">
-                    We couldn't find results for this session. They may have
-                    expired or never completed.
+                    We couldn't find results for this session. They may have expired or never completed.
                   </p>
                 </div>
                 <div className="space-y-2">
                   <Button onClick={() => navigate('/assessment')} className="w-full">
                     Take New Assessment
                   </Button>
-                  <Button
-                    onClick={() => navigate('/')}
-                    variant="outline"
-                    className="w-full"
-                  >
+                  <Button onClick={() => navigate('/')} variant="outline" className="w-full">
                     Go Home
                   </Button>
                 </div>
@@ -306,9 +325,7 @@ export default function Results() {
               <CardContent className="text-center py-8">
                 <div className="mb-4">
                   <p className="font-semibold">No profile yet</p>
-                  <p className="text-sm mt-1 text-muted-foreground">
-                    Your assessment results haven't been generated yet.
-                  </p>
+                  <p className="text-sm mt-1 text-muted-foreground">Your assessment results haven't been generated yet.</p>
                 </div>
                 <div className="space-y-2">
                   <Button
@@ -321,11 +338,7 @@ export default function Results() {
                   >
                     Retry Loading
                   </Button>
-                  <Button
-                    onClick={() => navigate('/assessment')}
-                    variant="outline"
-                    className="w-full"
-                  >
+                  <Button onClick={() => navigate('/assessment')} variant="outline" className="w-full">
                     Take New Assessment
                   </Button>
                 </div>
@@ -350,9 +363,7 @@ export default function Results() {
               <CardContent className="text-center py-8">
                 <div className="mb-4">
                   <p className="font-semibold">Too many requests</p>
-                  <p className="text-sm mt-1 text-muted-foreground">
-                    Please wait a moment and try again.
-                  </p>
+                  <p className="text-sm mt-1 text-muted-foreground">Please wait a moment and try again.</p>
                 </div>
                 <Button
                   onClick={() => {
@@ -392,17 +403,10 @@ export default function Results() {
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Button
-                    onClick={() => navigate('/assessment')}
-                    className="w-full"
-                  >
+                  <Button onClick={() => navigate('/assessment')} className="w-full">
                     Take New Assessment
                   </Button>
-                  <Button
-                    onClick={() => navigate('/')}
-                    variant="outline"
-                    className="w-full"
-                  >
+                  <Button onClick={() => navigate('/')} variant="outline" className="w-full">
                     Go Home
                   </Button>
                 </div>
@@ -423,9 +427,7 @@ export default function Results() {
               <div className="text-destructive mb-4">
                 <p className="font-semibold">Unable to Load Results</p>
                 <p className="text-sm mt-1">
-                  {error === 'server_error'
-                    ? 'A server error occurred. Please try again.'
-                    : 'An unexpected error occurred.'}
+                  {error === 'server_error' ? 'A server error occurred. Please try again.' : 'An unexpected error occurred.'}
                 </p>
               </div>
               <div className="space-y-2">
@@ -439,11 +441,7 @@ export default function Results() {
                 >
                   Try Again
                 </Button>
-                <Button
-                  onClick={() => navigate('/')}
-                  variant="outline"
-                  className="w-full"
-                >
+                <Button onClick={() => navigate('/')} variant="outline" className="w-full">
                   Go Home
                 </Button>
               </div>
@@ -478,34 +476,19 @@ export default function Results() {
       <div className="py-8 px-4">
         {/* Header with back button */}
         <div className="max-w-4xl mx-auto mb-8">
-          <Button
-            onClick={() => navigate('/')}
-            variant="ghost"
-            size="sm"
-            className="mb-4"
-          >
+          <Button onClick={() => navigate('/')} variant="ghost" size="sm" className="mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Home
           </Button>
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-primary mb-4">
-              Your PRISM Results
-            </h1>
-            <p className="text-xl text-muted-foreground">
-              Your comprehensive personality profile
-            </p>
+            <h1 className="text-4xl font-bold text-primary mb-4">Your PRISM Results</h1>
+            <p className="text-xl text-muted-foreground">Your comprehensive personality profile</p>
           </div>
         </div>
 
         <div id="results-content" className="space-y-6">
-          <OverlayChips
-            overlay_neuro={scoring?.overlay_neuro ?? scoring?.overlay}
-            overlay_state={scoring?.overlay_state}
-          />
-          <TraitPanel
-            neuro_mean={scoring?.neuro_mean}
-            neuro_z={scoring?.neuro_z}
-          />
+          <OverlayChips overlay_neuro={scoring?.overlay_neuro ?? scoring?.overlay} overlay_state={scoring?.overlay_state} />
+          <TraitPanel neuro_mean={scoring?.neuro_mean} neuro_z={scoring?.neuro_z} />
 
           {/* Enhanced Results */}
           <ResultsV2 profile={scoring} />
@@ -515,8 +498,7 @@ export default function Results() {
             <Card className="max-w-4xl mx-auto border-blue-200 bg-blue-50">
               <CardContent className="p-4 text-center">
                 <p className="text-blue-700 text-sm">
-                  ⚡ We filtered an implausible combo to avoid a mistype. See
-                  scoring notes for details.
+                  ⚡ We filtered an implausible combo to avoid a mistype. See scoring notes for details.
                 </p>
               </CardContent>
             </Card>
@@ -527,24 +509,16 @@ export default function Results() {
             {(scoring?.close_call === true ||
               scoring?.fit_band === 'Low' ||
               (scoring?.top_gap && scoring.top_gap < 3)) && (
-              <Card
-                className="rounded-xl shadow-sm"
-                style={{ backgroundColor: '#FFF8E6' }}
-              >
+              <Card className="rounded-xl shadow-sm" style={{ backgroundColor: '#FFF8E6' }}>
                 <CardContent className="p-8 md:p-10 text-center">
                   <div className="flex items-center justify-center gap-2 mb-4">
                     <Clock className="h-5 w-5" />
                     <h2 className="text-2xl font-bold">Consider a Retest</h2>
                   </div>
                   <p className="text-muted-foreground mb-6">
-                    Your results show a close call between types. Consider
-                    retesting in 30 days for a clearer picture.
+                    Your results show a close call between types. Consider retesting in 30 days for a clearer picture.
                   </p>
-                  <Button
-                    onClick={() => navigate('/assessment')}
-                    size="lg"
-                    className="rounded-full font-bold"
-                  >
+                  <Button onClick={() => navigate('/assessment')} size="lg" className="rounded-full font-bold">
                     Take New Assessment
                   </Button>
                 </CardContent>
@@ -555,10 +529,8 @@ export default function Results() {
               <CardContent className="p-8 md:p-10 text-center">
                 <h2 className="text-2xl font-bold mb-4">Support PRISM</h2>
                 <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                  Help us run the assessment, refine the algorithms, and publish
-                  open research. Every contribution keeps the lights on and
-                  improves personality science. If PRISM helped you see yourself
-                  clearer, toss a coin to your typologist.
+                  Help us run the assessment, refine the algorithms, and publish open research. Every contribution keeps the lights on and
+                  improves personality science. If PRISM helped you see yourself clearer, toss a coin to your typologist.
                 </p>
                 <Button
                   onClick={() => {
@@ -568,10 +540,7 @@ export default function Results() {
                     if (typeof window !== 'undefined' && (window as any).fbTrack) {
                       (window as any).fbTrack('Custom', { custom_event_name: 'DonateClick' });
                     }
-                    window.open(
-                      'https://donate.stripe.com/3cI6oHdR3cLg4n0eK56Ri04',
-                      '_blank',
-                    );
+                    window.open('https://donate.stripe.com/3cI6oHdR3cLg4n0eK56Ri04', '_blank');
                   }}
                   size="lg"
                   className="rounded-full font-bold"
@@ -584,18 +553,13 @@ export default function Results() {
 
             <Card className="rounded-xl shadow-sm bg-white">
               <CardContent className="p-8 md:p-10 text-center">
-                <h2 className="text-2xl font-bold mb-4">
-                  Continue Your Journey
-                </h2>
-                <p className="text-muted-foreground mb-6">
-                  Use our AI Coach to dive deeper into your personality
-                  insights.
-                </p>
+                <h2 className="text-2xl font-bold mb-4">Continue Your Journey</h2>
+                <p className="text-muted-foreground mb-6">Use our AI Coach to dive deeper into your personality insights.</p>
                 <Button
                   onClick={() =>
                     window.open(
                       'https://chatgpt.com/g/g-68a233600af0819182cfa8c558a63112-prism-personality-ai-coach',
-                      '_blank',
+                      '_blank'
                     )
                   }
                   size="lg"
@@ -615,15 +579,14 @@ export default function Results() {
                   <h2 className="text-2xl font-bold">Join Our Community</h2>
                 </div>
                 <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                  Connect with thousands exploring their personality journey.
-                  Share insights, ask questions, and deepen your understanding
-                  of PRISM and personality theory.
+                  Connect with thousands exploring their personality journey. Share insights, ask questions, and deepen your understanding of
+                  PRISM and personality theory.
                 </p>
                 <Button
                   onClick={() =>
                     window.open(
                       'https://www.skool.com/your-personality-blueprint/about?ref=931e57f033d34f3eb64db45f22b1389e',
-                      '_blank',
+                      '_blank'
                     )
                   }
                   size="lg"
@@ -632,9 +595,7 @@ export default function Results() {
                 >
                   Join Personality Blueprint Community
                 </Button>
-                <p className="text-sm text-muted-foreground">
-                  Free to join • Expert discussions • Type-focused groups
-                </p>
+                <p className="text-sm text-muted-foreground">Free to join • Expert discussions • Type-focused groups</p>
               </CardContent>
             </Card>
           </div>
@@ -643,38 +604,28 @@ export default function Results() {
           <Card className="max-w-4xl mx-auto">
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button
-                  onClick={downloadPDF}
-                  size="lg"
-                  className="flex items-center gap-2"
-                >
+                <Button onClick={downloadPDF} size="lg" className="flex items-center gap-2">
                   <Download className="h-4 w-4" />
                   Download PDF Report
                 </Button>
 
-                <Button
-                  onClick={() => navigate('/assessment')}
-                  variant="outline"
-                  size="lg"
-                >
+                <Button onClick={() => navigate('/assessment')} variant="outline" size="lg">
                   Take New Assessment
                 </Button>
 
                 <Button
                   onClick={() => {
-                    const urlParams = new URLSearchParams(
-                      window.location.search,
-                    );
+                    const urlParams = new URLSearchParams(window.location.search);
                     const shareToken = urlParams.get('token');
-                    const resultsUrl = window.location.origin + '/results/' + sessionId + (shareToken ? '?token=' + shareToken : '');
+                    const resultsUrl =
+                      window.location.origin + '/results/' + sessionId + (shareToken ? '?token=' + shareToken : '');
 
                     navigator.clipboard
                       .writeText(resultsUrl)
                       .then(() => {
                         toast({
                           title: 'Results link copied!',
-                          description:
-                            'Save this secure link to return to your results anytime.',
+                          description: 'Save this secure link to return to your results anytime.',
                         });
                       })
                       .catch(() => {
@@ -687,8 +638,7 @@ export default function Results() {
                         document.body.removeChild(textArea);
                         toast({
                           title: 'Results link copied!',
-                          description:
-                            'Save this secure link to return to your results anytime.',
+                          description: 'Save this secure link to return to your results anytime.',
                         });
                       });
                   }}
