@@ -45,6 +45,7 @@ export default function Results() {
   const [scoring, setScoring] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Err | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   async function invokeResultsBySession(
     sb: any,
@@ -75,6 +76,7 @@ export default function Results() {
 
   useEffect(() => {
     let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout>;
 
     const run = async () => {
       try {
@@ -181,10 +183,20 @@ export default function Results() {
         if (!cancelled) {
           if (profile) {
             setScoring({ session, profile });
+            setLoading(false);
           } else {
-            setError('profile_not_found');
+            if (retryCount < 5) {
+              setError('profile_rendering');
+              setLoading(false);
+              retryTimer = setTimeout(
+                () => setRetryCount((c) => c + 1),
+                2000,
+              );
+            } else {
+              setError('profile_not_found');
+              setLoading(false);
+            }
           }
-          setLoading(false);
         }
       } catch (err) {
         console.error('Error fetching results:', err);
@@ -198,8 +210,9 @@ export default function Results() {
     run();
     return () => {
       cancelled = true;
+      clearTimeout(retryTimer);
     };
-  }, [sessionId]);
+  }, [sessionId, retryCount]);
 
   // Auto-download PDF when results are loaded
   useEffect(() => {
