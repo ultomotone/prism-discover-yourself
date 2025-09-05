@@ -21,6 +21,7 @@ type Err =
   | 'results_not_found'
   | 'rate_limited'
   | 'server_error'
+  | 'server_misconfigured'
   | 'unknown_error';
 
 export default function Results() {
@@ -166,6 +167,13 @@ export default function Results() {
               setError('results_not_found');
               setLoading(false);
               return;
+            } else if (
+              res?.error?.status === 500 &&
+              (res.data as any)?.reason === 'server_misconfigured'
+            ) {
+              setError('server_misconfigured');
+              setLoading(false);
+              return;
             }
           } catch (e) {
             console.warn('Edge function fallback failed (no session)', e);
@@ -195,6 +203,13 @@ export default function Results() {
               return;
             } else if (res?.error?.status === 404) {
               setError('results_not_found');
+              setLoading(false);
+              return;
+            } else if (
+              res?.error?.status === 500 &&
+              (res.data as any)?.reason === 'server_misconfigured'
+            ) {
+              setError('server_misconfigured');
               setLoading(false);
               return;
             } else if (res?.error) {
@@ -245,6 +260,13 @@ export default function Results() {
                 return;
               } else if (res?.error?.status === 404) {
                 setError('profile_not_found');
+                setLoading(false);
+                return;
+              } else if (
+                res?.error?.status === 500 &&
+                (res.data as any)?.reason === 'server_misconfigured'
+              ) {
+                setError('server_misconfigured');
                 setLoading(false);
                 return;
               } else if (res?.error) {
@@ -563,7 +585,9 @@ export default function Results() {
                 <p className="text-sm mt-1">
                   {error === 'server_error'
                     ? 'A server error occurred. Please try again.'
-                    : 'An unexpected error occurred.'}
+                    : error === 'server_misconfigured'
+                      ? 'Results service is currently misconfigured. Please try again later.'
+                      : 'An unexpected error occurred.'}
                 </p>
               </div>
               <div className="space-y-2">
