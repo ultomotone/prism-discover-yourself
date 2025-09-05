@@ -51,17 +51,25 @@ export default function Results() {
     sid: string,
     shareToken?: string | null,
   ) {
-    // Edge function now expects snake_case parameters; keep camelCase fallback
+    // Edge function expects snake_case parameters
     const bodySnake = { session_id: sid, share_token: shareToken ?? undefined };
+
     // Prefer kebab-case function name with snake_case body
     let res = await sb.functions.invoke('get-results-by-session', {
       body: bodySnake,
     });
+
     if (res.error) {
-      // Older deployments may use camelCase payload and function name
+      // Some deployments keep the old camelCase name but expect snake_case payload
+      res = await sb.functions.invoke('getResultsBySession', { body: bodySnake });
+    }
+
+    if (res.error) {
+      // Final fallback for legacy environments expecting camelCase payload
       const bodyCamel = { sessionId: sid, shareToken: shareToken ?? undefined };
       res = await sb.functions.invoke('getResultsBySession', { body: bodyCamel });
     }
+
     return res;
   }
 
