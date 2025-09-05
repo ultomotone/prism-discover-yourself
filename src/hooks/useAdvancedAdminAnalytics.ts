@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import type { PostgrestError } from "@supabase/supabase-js";
 
 interface DateRange {
   from: Date;
@@ -76,7 +77,7 @@ export const useAdvancedAdminAnalytics = () => {
 
   const supabase = useMemo(() => createClient(), []);
 
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -96,24 +97,43 @@ export const useAdvancedAdminAnalytics = () => {
         supabase.from("admin_type_dist_last_30d").select("*"),
       ]);
 
-      if (kpisRes.error) throw kpisRes.error;
+      const errors = [
+        kpisRes.error,
+        confRes.error,
+        overlayRes.error,
+        trendRes.error,
+        latestRes.error,
+        typeRes.error,
+      ].filter((e): e is PostgrestError => Boolean(e));
+
+      if (errors.length) {
+        console.error("Admin analytics query errors", errors);
+        throw new Error("Analytics queries failed");
+      }
 
       setKpiRow(kpisRes.data ?? null);
-      setConfDist(confRes.error ? [] : confRes.data ?? []);
-      setOverlayDist(overlayRes.error ? [] : overlayRes.data ?? []);
-      setThroughputData(trendRes.error ? [] : trendRes.data ?? []);
-      setLatestAssessments(latestRes.error ? [] : latestRes.data ?? []);
-      setTypeDist(typeRes.error ? [] : typeRes.data ?? []);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to load analytics");
+      setConfDist(confRes.data ?? []);
+      setOverlayDist(overlayRes.data ?? []);
+      setThroughputData(trendRes.data ?? []);
+      setLatestAssessments(latestRes.data ?? []);
+      setTypeDist(typeRes.data ?? []);
+    } catch (e: unknown) {
+      console.error("Failed to load admin analytics", e);
+      setKpiRow(null);
+      setConfDist([]);
+      setOverlayDist([]);
+      setThroughputData([]);
+      setLatestAssessments([]);
+      setTypeDist([]);
+      setError("Analytics data is unavailable. Ensure database migrations are applied.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
 
   useEffect(() => {
     fetchAll();
-  }, []);
+  }, [fetchAll]);
 
   const kpiData: KPIData = {
     completions: kpiRow?.completions ?? 0,
@@ -161,9 +181,9 @@ export const useAdvancedAdminAnalytics = () => {
     sectionTimes: [],
   };
 
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
     await fetchAll();
-  };
+  }, [fetchAll]);
 
   const exportToCSV = async (viewName: string) => {
     const { data, error } = await supabase.from(viewName).select("*");
