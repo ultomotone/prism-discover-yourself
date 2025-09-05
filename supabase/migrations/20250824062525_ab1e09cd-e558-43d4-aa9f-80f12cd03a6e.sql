@@ -1,5 +1,5 @@
 -- Fix fit score consistency by dropping and recreating the problematic view
-DROP VIEW IF EXISTS v_latest_assessments_v11 CASCADE;
+DROP VIEW IF EXISTS v_latest_assessments_v11;
 
 -- Recreate the view with consistent fit values (no normalization to 100%)
 CREATE VIEW v_latest_assessments_v11 AS

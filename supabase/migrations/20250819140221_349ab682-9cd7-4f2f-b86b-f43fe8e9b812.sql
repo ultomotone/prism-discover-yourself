@@ -1,17 +1,17 @@
 -- Drop existing conflicting views first
-DROP VIEW IF EXISTS v_sessions CASCADE;
-DROP VIEW IF EXISTS v_sessions_plus CASCADE;
-DROP VIEW IF EXISTS v_fit_ranks CASCADE;
-DROP VIEW IF EXISTS v_quality CASCADE;
-DROP VIEW IF EXISTS v_overlay_conf CASCADE;
-DROP VIEW IF EXISTS v_duplicates CASCADE;
-DROP VIEW IF EXISTS v_validity CASCADE;
-DROP VIEW IF EXISTS v_fc_coverage CASCADE;
-DROP VIEW IF EXISTS v_dim_coverage CASCADE;
-DROP VIEW IF EXISTS v_share_entropy CASCADE;
-DROP VIEW IF EXISTS v_section_times CASCADE;
-DROP VIEW IF EXISTS v_throughput CASCADE;
-DROP VIEW IF EXISTS v_conf_dist CASCADE;
+DROP VIEW IF EXISTS v_sessions;
+DROP VIEW IF EXISTS v_sessions_plus;
+DROP VIEW IF EXISTS v_fit_ranks;
+DROP VIEW IF EXISTS v_quality;
+DROP VIEW IF EXISTS v_overlay_conf;
+DROP VIEW IF EXISTS v_duplicates;
+DROP VIEW IF EXISTS v_validity;
+DROP VIEW IF EXISTS v_fc_coverage;
+DROP VIEW IF EXISTS v_dim_coverage;
+DROP VIEW IF EXISTS v_share_entropy;
+DROP VIEW IF EXISTS v_section_times;
+DROP VIEW IF EXISTS v_throughput;
+DROP VIEW IF EXISTS v_conf_dist;
 
 -- 1) Helper: filtered sessions (latest profile per session within date range)
 CREATE VIEW v_sessions AS

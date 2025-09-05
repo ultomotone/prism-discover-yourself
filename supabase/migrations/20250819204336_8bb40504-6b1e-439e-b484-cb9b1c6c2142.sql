@@ -8,7 +8,7 @@ ALTER TABLE public.assessment_responses ADD COLUMN IF NOT EXISTS valid_bool BOOL
 ALTER TABLE public.assessment_responses ADD COLUMN IF NOT EXISTS pair_group TEXT;
 
 -- Drop and recreate enhanced FC coverage view with better categorization
-DROP VIEW IF EXISTS v_fc_coverage CASCADE;
+DROP VIEW IF EXISTS v_fc_coverage;
 CREATE VIEW v_fc_coverage AS
 SELECT
   r.session_id,

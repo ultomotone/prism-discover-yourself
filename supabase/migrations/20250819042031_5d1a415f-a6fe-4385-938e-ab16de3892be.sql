@@ -1,5 +1,5 @@
 -- Drop existing views that might conflict
-DROP VIEW IF EXISTS v_profiles_ext CASCADE;
+DROP VIEW IF EXISTS v_profiles_ext;
 
 -- 1) Extend profiles info for admin (top fits, gaps)
 CREATE VIEW v_profiles_ext AS
