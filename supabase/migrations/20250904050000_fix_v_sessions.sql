@@ -92,7 +92,17 @@ BEGIN
   -- Legacy wrapper mirrors _core (keeps downstream stable)
   EXECUTE $sql$
     CREATE OR REPLACE VIEW public.v_sessions AS
-    SELECT * FROM public.v_sessions_core
+    SELECT
+      session_id,
+      user_id,
+      status,
+      started_at,
+      completed_at,
+      duration_sec,
+      response_count,
+      first_answer_at,
+      last_answer_at
+    FROM public.v_sessions_core
   $sql$;
   EXECUTE 'ALTER VIEW public.v_sessions SET (security_invoker = true)';
   EXECUTE 'GRANT SELECT ON public.v_sessions TO anon, authenticated';
