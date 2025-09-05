@@ -48,6 +48,33 @@ export default function Results() {
   // Number of times we've retried fetching a profile that's still generating
   const [retryCount, setRetryCount] = useState(0);
 
+  async function invokeResultsBySession(
+    sb: any,
+    sid: string,
+    shareToken?: string | null,
+  ) {
+    // Edge function expects snake_case parameters
+    const bodySnake = { session_id: sid, share_token: shareToken ?? undefined };
+
+    // Prefer kebab-case function name with snake_case body
+    let res = await sb.functions.invoke('get-results-by-session', {
+      body: bodySnake,
+    });
+
+    if (res.error) {
+      // Some deployments keep the old camelCase name but expect snake_case payload
+      res = await sb.functions.invoke('getResultsBySession', { body: bodySnake });
+    }
+
+    if (res.error) {
+      // Final fallback for legacy environments expecting camelCase payload
+      const bodyCamel = { sessionId: sid, shareToken: shareToken ?? undefined };
+      res = await sb.functions.invoke('getResultsBySession', { body: bodyCamel });
+    }
+
+    return res;
+  }
+
   useEffect(() => {
     let cancelled = false;
     let retryTimer: ReturnType<typeof setTimeout>;
@@ -151,6 +178,23 @@ export default function Results() {
             setScoring({ ...profile, session });
             setLoading(false);
           } else {
+            // Fallback to Edge Function if available
+            try {
+              const res = await invokeResultsBySession(supabase, sessionId, shareToken);
+              if (res && !res.error) {
+                const payload: any = (res as any).data;
+                if (payload) {
+                  const maybeProfile = (payload as any).profile ?? payload;
+                  const maybeSession = (payload as any).session ?? session ?? { id: sessionId, status: 'completed' };
+                  setScoring({ ...maybeProfile, session: maybeSession });
+                  setLoading(false);
+                  return;
+                }
+              }
+            } catch (e) {
+              console.warn('Edge function fallback failed', e);
+            }
+
             if (retryCount < 5) {
               setError('profile_rendering');
               setLoading(false);
@@ -205,8 +249,8 @@ export default function Results() {
         useCORS: true,
         allowTaint: true,
         logging: false,
-        width: node.scrollWidth,
-        height: node.scrollHeight,
+        width: (node as HTMLElement).scrollWidth,
+        height: (node as HTMLElement).scrollHeight,
       });
 
       const img = canvas.toDataURL('image/png', 0.95);
@@ -564,18 +608,18 @@ export default function Results() {
                   clearer, toss a coin to your typologist.
                 </p>
                 <Button
-                    onClick={() => {
-                      if (typeof window !== 'undefined' && (window as any).rdtTrack) {
-                        (window as any).rdtTrack('Custom', { custom_event_name: 'DonateClick' });
-                      }
-                      if (typeof window !== 'undefined' && (window as any).fbTrack) {
-                        (window as any).fbTrack('Custom', { custom_event_name: 'DonateClick' });
-                      }
-                      window.open(
-                        'https://donate.stripe.com/3cI6oHdR3cLg4n0eK56Ri04',
-                        '_blank',
-                      );
-                    }}
+                  onClick={() => {
+                    if (typeof window !== 'undefined' && (window as any).rdtTrack) {
+                      (window as any).rdtTrack('Custom', { custom_event_name: 'DonateClick' });
+                    }
+                    if (typeof window !== 'undefined' && (window as any).fbTrack) {
+                      (window as any).fbTrack('Custom', { custom_event_name: 'DonateClick' });
+                    }
+                    window.open(
+                      'https://donate.stripe.com/3cI6oHdR3cLg4n0eK56Ri04',
+                      '_blank',
+                    );
+                  }}
                   size="lg"
                   className="rounded-full font-bold"
                   rel="noopener noreferrer"
