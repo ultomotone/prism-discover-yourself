@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Download, ArrowLeft, ExternalLink, Copy, Users, Clock } from 'lucide-react';
@@ -24,41 +24,82 @@ type Err =
   | 'unknown_error';
 
 export default function Results() {
-  const { sessionId } = useParams();
+  const { sessionId: routeSessionId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   const isValidUUID = (v: string | undefined) =>
     !!v &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v || '');
 
+  const [rawSessionId, setRawSessionId] = useState<string | null>(null);
+  const [normalizedSessionId, setNormalizedSessionId] = useState<string | null>(null);
+  const [idSource, setIdSource] = useState<'route' | 'query' | 'state' | 'none'>('none');
   const [scoring, setScoring] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Err | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+
+  // Resolve session ID deterministically: route -> query -> state
+  useEffect(() => {
+    const search = new URLSearchParams(location.search);
+    const queryId = search.get('sessionId') || search.get('session_id');
+    const stateId = (location.state as any)?.sessionId || (location.state as any)?.session_id;
+
+    let source: 'route' | 'query' | 'state' | 'none' = 'none';
+    let raw = '';
+
+    if (routeSessionId) { raw = routeSessionId; source = 'route'; }
+    else if (queryId) { raw = queryId; source = 'query'; }
+    else if (stateId) { raw = stateId; source = 'state'; }
+
+    if (raw) {
+      const norm = decodeURIComponent(raw).trim().toLowerCase();
+      setRawSessionId(raw);
+      setNormalizedSessionId(norm);
+      setIdSource(source);
+
+      if (!isValidUUID(norm)) {
+        console.warn(`Invalid sessionId from ${source}: ${raw}`);
+      }
+
+      if (!routeSessionId && queryId) {
+        // Replace URL with canonical path
+        search.delete('sessionId');
+        search.delete('session_id');
+        const qs = search.toString();
+        console.warn('Deprecated: sessionId query parameter');
+        navigate(`/results/${norm}${qs ? `?${qs}` : ''}`, { replace: true });
+      }
+    } else {
+      setRawSessionId(null);
+      setNormalizedSessionId(null);
+      setIdSource('none');
+    }
+  }, [routeSessionId, location.search, location.state, navigate]);
+
+  // Telemetry
+  useEffect(() => {
+    console.log(
+      `results_mount env=${import.meta.env.MODE} routeParamName=sessionId raw=${rawSessionId ?? ''} normalized=${normalizedSessionId ?? ''} source=${idSource} hasState=${location.state ? 'true' : 'false'} fetchEnabled=${isValidUUID(normalizedSessionId ?? '')}`
+    );
+  }, [rawSessionId, normalizedSessionId, idSource, location.state]);
+
+  const sessionId = normalizedSessionId || undefined;
 
   async function invokeResultsBySession(
     sb: any,
     sid: string,
     shareToken?: string | null,
   ) {
-    const bodySnake = { session_id: sid, share_token: shareToken ?? undefined };
-
-    // 1) Prefer kebab-case function with snake_case payload
-    let res = await sb.functions.invoke('get-results-by-session', { body: bodySnake });
-    if (!res.error || res.error.status === 429) return res;
-
-    const msg = (res.error?.message ?? '').toLowerCase();
-    // 2) Try camelCase name with snake_case payload if kebab-case truly doesn't exist
-    if (res.error.status === 404 && msg.includes('not found')) {
-      res = await sb.functions.invoke('getResultsBySession', { body: bodySnake });
-      // If success or any non-400 error (incl 429), stop here
-      if (!res.error || res.error.status !== 400 || res.error.status === 429) return res;
-    }
-
-    // 3) Final: camelCase name with camelCase payload
-    const bodyCamel = { sessionId: sid, shareToken: shareToken ?? undefined };
-    return sb.functions.invoke('getResultsBySession', { body: bodyCamel });
+    console.log(
+      `results_fetch endpoint=get-results-by-session hasAuthHeader=true contentType=application/json session_id=${sid.slice(0, 8)}`
+    );
+    return sb.functions.invoke('get-results-by-session', {
+      headers: { 'Content-Type': 'application/json' },
+      body: { session_id: sid, share_token: shareToken ?? undefined },
+    });
   }
 
   useEffect(() => {
@@ -76,7 +117,7 @@ export default function Results() {
         setError(null);
 
         const urlParams = new URLSearchParams(window.location.search);
-                    const shareToken = urlParams.get('token');
+        const shareToken = urlParams.get('token');
         // Fast path: SECURITY DEFINER RPC if token present
         if (shareToken) {
           const { data: rpcProfile, error: rpcErr } = await supabase.rpc(
@@ -117,8 +158,15 @@ export default function Results() {
                 if (!cancelled) { setScoring({ ...maybeProfile, session: maybeSession }); setLoading(false); }
                 return;
               }
-            } else if (res?.error?.status === 429) { setError('rate_limited'); setLoading(false); return; }
-              else if (res?.error?.status === 404) { setError('results_not_found'); setLoading(false); return; }
+            } else if (res?.error?.status === 429) {
+              setError('rate_limited');
+              setLoading(false);
+              return;
+            } else if (res?.error?.status === 404) {
+              setError('results_not_found');
+              setLoading(false);
+              return;
+            }
           } catch (e) {
             console.warn('Edge function fallback failed (no session)', e);
           }
@@ -141,9 +189,19 @@ export default function Results() {
                 if (!cancelled) { setScoring({ ...maybeProfile, session: maybeSession }); setLoading(false); }
                 return;
               }
-            } else if (res?.error?.status === 429) { setError('rate_limited'); setLoading(false); return; }
-              else if (res?.error?.status === 404) { setError('results_not_found'); setLoading(false); return; }
-              else if (res?.error) { setError('server_error'); setLoading(false); return; }
+            } else if (res?.error?.status === 429) {
+              setError('rate_limited');
+              setLoading(false);
+              return;
+            } else if (res?.error?.status === 404) {
+              setError('results_not_found');
+              setLoading(false);
+              return;
+            } else if (res?.error) {
+              setError('server_error');
+              setLoading(false);
+              return;
+            }
           } catch (e) {
             console.warn('Edge function fallback failed', e);
           }
@@ -181,9 +239,19 @@ export default function Results() {
                   setLoading(false);
                   return;
                 }
-              } else if (res?.error?.status === 429) { setError('rate_limited'); setLoading(false); return; }
-                else if (res?.error?.status === 404) { setError('profile_not_found'); setLoading(false); return; }
-                else if (res?.error) { setError('server_error'); setLoading(false); return; }
+              } else if (res?.error?.status === 429) {
+                setError('rate_limited');
+                setLoading(false);
+                return;
+              } else if (res?.error?.status === 404) {
+                setError('profile_not_found');
+                setLoading(false);
+                return;
+              } else if (res?.error) {
+                setError('server_error');
+                setLoading(false);
+                return;
+              }
             } catch (e) { console.warn('Edge function fallback failed', e); }
 
             if (retryCount < 5) {
