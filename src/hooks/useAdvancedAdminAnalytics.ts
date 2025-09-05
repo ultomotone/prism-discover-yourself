@@ -96,15 +96,32 @@ export const useAdvancedAdminAnalytics = () => {
         supabase.from("admin_type_dist_last_30d").select("*"),
       ]);
 
-      if (kpisRes.error) throw kpisRes.error;
+      const errors = [
+        kpisRes.error,
+        confRes.error,
+        overlayRes.error,
+        trendRes.error,
+        latestRes.error,
+        typeRes.error,
+      ].filter(Boolean);
+
+      if (errors.length) {
+        throw new Error(errors.map((e: any) => e.message).join("; "));
+      }
 
       setKpiRow(kpisRes.data ?? null);
-      setConfDist(confRes.error ? [] : confRes.data ?? []);
-      setOverlayDist(overlayRes.error ? [] : overlayRes.data ?? []);
-      setThroughputData(trendRes.error ? [] : trendRes.data ?? []);
-      setLatestAssessments(latestRes.error ? [] : latestRes.data ?? []);
-      setTypeDist(typeRes.error ? [] : typeRes.data ?? []);
+      setConfDist(confRes.data ?? []);
+      setOverlayDist(overlayRes.data ?? []);
+      setThroughputData(trendRes.data ?? []);
+      setLatestAssessments(latestRes.data ?? []);
+      setTypeDist(typeRes.data ?? []);
     } catch (e: any) {
+      setKpiRow(null);
+      setConfDist([]);
+      setOverlayDist([]);
+      setThroughputData([]);
+      setLatestAssessments([]);
+      setTypeDist([]);
       setError(e?.message ?? "Failed to load analytics");
     } finally {
       setLoading(false);
