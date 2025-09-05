@@ -31,9 +31,7 @@ type Err =
   | 'unknown_error';
 
 export default function Results() {
-  console.log('🟢 Results component mounted');
   const { sessionId } = useParams();
-  console.log('🔍 Session ID from params:', sessionId);
 
   const isValidUUID = (v: string | undefined) =>
     !!v &&
@@ -170,6 +168,7 @@ export default function Results() {
               sessionId,
               shareToken,
             );
+
             if (res && !res.error) {
               const payload: any = (res as any).data;
               if (payload) {
@@ -186,6 +185,18 @@ export default function Results() {
             } else if (res?.error?.status === 429) {
               if (!cancelled) {
                 setError('rate_limited');
+                setLoading(false);
+              }
+              return;
+            } else if (res?.error?.status === 404) {
+              if (!cancelled) {
+                setError('results_not_found');
+                setLoading(false);
+              }
+              return;
+            } else if (res?.error) {
+              if (!cancelled) {
+                setError('server_error');
                 setLoading(false);
               }
               return;
@@ -245,6 +256,18 @@ export default function Results() {
                   setLoading(false);
                 }
                 return;
+              } else if (res?.error?.status === 404) {
+                if (!cancelled) {
+                  setError('profile_not_found');
+                  setLoading(false);
+                }
+                return;
+              } else if (res?.error) {
+                if (!cancelled) {
+                  setError('server_error');
+                  setLoading(false);
+                }
+                return;
               }
             } catch (e) {
               console.warn('Edge function fallback failed', e);
@@ -283,7 +306,6 @@ export default function Results() {
   useEffect(() => {
     if (scoring && !loading && !error) {
       const timer = setTimeout(() => {
-        console.log('Auto-downloading PDF for session:', sessionId);
         downloadPDF();
       }, 1500);
       return () => clearTimeout(timer);
@@ -425,6 +447,44 @@ export default function Results() {
                   >
                     Go Home
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
+    // Handle results_not_found state
+    if (error === 'results_not_found') {
+      return (
+        <div className="min-h-screen bg-background">
+          <Header />
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <Card className="max-w-md">
+              <CardContent className="text-center py-8">
+                <div className="mb-4">
+                  <p className="font-semibold">Results not found</p>
+                  <p className="text-sm mt-1 text-muted-foreground">
+                    We couldn't find results for this session. They may have
+                    expired or never completed.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Button onClick={() => navigate('/assessment')} className="w-full">
+                    Take New Assessment
+                  </Button>
+                  <Button
+                    onClick={() => navigate('/')}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Go Home
+                  </Button>
+                </div>
+                <div className="mt-4 p-3 bg-muted rounded text-xs">
+                  <p className="font-medium mb-1">Session ID:</p>
+                  <code className="text-muted-foreground">{sessionId}</code>
                 </div>
               </CardContent>
             </Card>
