@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { trackLead } from '@/lib/analytics';
 
 export interface SessionData {
   session_id: string;
@@ -76,13 +77,7 @@ export function useEmailSessionManager() {
           title: "Assessment Started",
           description: "Your progress will be automatically saved.",
         });
-        if (typeof window !== 'undefined') {
-          const w = window as any;
-          if (w.rdtSetUser) w.rdtSetUser({ email });
-          if (w.fbSetUser) w.fbSetUser({ email });
-          if (w.rdtTrack) w.rdtTrack('Lead', { email });
-          if (w.fbTrack) w.fbTrack('Lead', { email });
-        }
+        trackLead(email);
       }
 
       return data as SessionData;
