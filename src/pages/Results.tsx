@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Download, ArrowLeft, ExternalLink, Copy, Users, Clock } from 'lucide-react';
@@ -24,18 +24,69 @@ type Err =
   | 'unknown_error';
 
 export default function Results() {
-  const { sessionId } = useParams();
+  const { sessionId: routeSessionId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   const isValidUUID = (v: string | undefined) =>
     !!v &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v || '');
 
+  const [rawSessionId, setRawSessionId] = useState<string | null>(null);
+  const [normalizedSessionId, setNormalizedSessionId] = useState<string | null>(null);
+  const [idSource, setIdSource] = useState<'route' | 'query' | 'state' | 'none'>('none');
   const [scoring, setScoring] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Err | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+
+  // Resolve session ID deterministically: route -> query -> state
+  useEffect(() => {
+    const search = new URLSearchParams(location.search);
+    const queryId = search.get('sessionId') || search.get('session_id');
+    const stateId = (location.state as any)?.sessionId || (location.state as any)?.session_id;
+
+    let source: 'route' | 'query' | 'state' | 'none' = 'none';
+    let raw = '';
+
+    if (routeSessionId) { raw = routeSessionId; source = 'route'; }
+    else if (queryId) { raw = queryId; source = 'query'; }
+    else if (stateId) { raw = stateId; source = 'state'; }
+
+    if (raw) {
+      const norm = decodeURIComponent(raw).trim().toLowerCase();
+      setRawSessionId(raw);
+      setNormalizedSessionId(norm);
+      setIdSource(source);
+
+      if (!isValidUUID(norm)) {
+        console.warn(`Invalid sessionId from ${source}: ${raw}`);
+      }
+
+      if (!routeSessionId && queryId) {
+        // Replace URL with canonical path
+        search.delete('sessionId');
+        search.delete('session_id');
+        const qs = search.toString();
+        console.warn('Deprecated: sessionId query parameter');
+        navigate(`/results/${norm}${qs ? `?${qs}` : ''}`, { replace: true });
+      }
+    } else {
+      setRawSessionId(null);
+      setNormalizedSessionId(null);
+      setIdSource('none');
+    }
+  }, [routeSessionId, location.search, location.state, navigate]);
+
+  // Telemetry
+  useEffect(() => {
+    console.log(
+      `results_mount env=${import.meta.env.MODE} routeParamName=sessionId raw=${rawSessionId ?? ''} normalized=${normalizedSessionId ?? ''} source=${idSource} hasState=${location.state ? 'true' : 'false'} fetchEnabled=${isValidUUID(normalizedSessionId ?? '')}`
+    );
+  }, [rawSessionId, normalizedSessionId, idSource, location.state]);
+
+  const sessionId = normalizedSessionId || undefined;
 
   async function invokeResultsBySession(
     sb: any,
