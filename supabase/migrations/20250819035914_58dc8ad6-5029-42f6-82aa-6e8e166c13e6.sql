@@ -26,11 +26,9 @@ LIMIT 50;  -- Limit to prevent large data exposure
 -- Set security invoker to respect RLS
 ALTER VIEW public.v_recent_assessments_safe SET (security_invoker = true);
 
--- Enable public read access to this anonymized view
-CREATE POLICY "Recent assessments safe view is publicly readable" 
-ON public.v_recent_assessments_safe 
-FOR SELECT 
-USING (true);
+-- Grant read access on this anonymized view
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT SELECT ON public.v_recent_assessments_safe TO anon, authenticated;
 
 -- Note: Since this is a view, RLS policies apply to the underlying table (profiles)
 -- The view will only show data that the user has permission to see from the profiles table
