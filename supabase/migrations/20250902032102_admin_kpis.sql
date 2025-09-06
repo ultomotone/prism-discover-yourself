@@ -10,12 +10,11 @@ select
   (s.completed_at at time zone 'UTC') at time zone 'America/New_York' as completed_at_et,
   extract(epoch from (s.completed_at - s.started_at)) as duration_sec,
   p.validity_pass,
-  /* TODO: if these live in JSON, select ->> / (jsonb_extract_path_text) here */
-  p.top1_fit::numeric,
-  p.top_gap::numeric,
-  p.confidence_margin::numeric,
-  p.inconsistency_mean::numeric,
-  p.sd_index::numeric,
+  jsonb_extract_path_text(p.fit_explainer, 'metrics', 'p1')::numeric        as top1_fit,
+  jsonb_extract_path_text(p.fit_explainer, 'metrics', 'gap_to_second')::numeric as top_gap,
+  jsonb_extract_path_text(p.fit_explainer, 'metrics', 'confidence_margin')::numeric as confidence_margin,
+  jsonb_extract_path_text(p.validity, 'inconsistency')::numeric             as inconsistency_mean,
+  jsonb_extract_path_text(p.validity, 'sd_index')::numeric                  as sd_index,
   nullif(trim(p.overlay_label), '') as overlay_label,
   p.primary_type
 from assessment_sessions s
