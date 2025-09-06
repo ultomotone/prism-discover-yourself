@@ -8,7 +8,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint .",
-    "test": "tsx --test tests/fetchResults.test.ts tests/results.integration.test.ts",
+    "test": "c8 tsx --test tests/fetchResults.test.ts tests/results.integration.test.ts",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "preflight": "node scripts/ci-guard.js && tsx scripts/preflight.ts || true",
@@ -101,6 +101,7 @@
     "typescript-eslint": "^8.38.0",
     "vite": "^5.4.19",
     "msw": "^2.0.0",
-    "undici": "^6.13.0"
+    "undici": "^6.13.0",
+    "c8": "^9.1.0"
   }
 }
