@@ -30,7 +30,9 @@ jobs:
       - name: Test
         run: npm test
 
+      # Generate a JUnit report even if tests failed
       - name: JUnit reporter
+        if: always()
         run: npx tsx --test --test-reporter=junit "tests/**/*.test.ts" > junit.xml || true
 
       - name: Smoke
