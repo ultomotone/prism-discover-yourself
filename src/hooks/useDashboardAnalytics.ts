@@ -62,7 +62,7 @@ export const useDashboardAnalytics = () => {
           // Final fallback to recent safe function
           try {
             const { data: recentData, error: recentError } = await supabase
-              .rpc('get_recent_assessments_safe');
+              .rpc('get_recent_assessments_safe_v2');
 
             console.log('🔍 Dashboard: Recent assessments safe fallback:', { data: recentData?.length, error: recentError });
 
@@ -71,10 +71,10 @@ export const useDashboardAnalytics = () => {
                 type_code: item.type_display?.substring(0, 3) || 'Unknown',
                 overlay: item.type_display?.includes('+') ? '+' : item.type_display?.includes('–') ? '–' : null,
                 created_at: item.created_at,
-                confidence: item.confidence,
-                fit_band: item.fit_band,
-                results_version: item.version,
-                session_id: null,
+                confidence: null,
+                fit_band: null,
+                results_version: null,
+                session_id: item.session_id,
                 country: item.country_display
               }));
             }
