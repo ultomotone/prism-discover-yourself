@@ -96,6 +96,8 @@ SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SMOKE_SESSION_ID=
 SMOKE_SHARE_TOKEN=
+REDDIT_PIXEL_ID=
+REDDIT_CAPI_TOKEN=
 ```
 
 If your host doesn't support env vars, set values in `index.html` via `window.__APP_CONFIG__`.
