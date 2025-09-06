@@ -7,19 +7,22 @@ UPDATE assessment_scoring_key SET section = 'scenarios' WHERE section IS NULL AN
 UPDATE assessment_scoring_key SET section = 'preferences' WHERE section IS NULL AND question_id BETWEEN 101 AND 150;
 UPDATE assessment_scoring_key SET section = 'states' WHERE section IS NULL AND question_id > 150;
 
--- SESSION START/END + DURATION + COMPLETION FLAG
-CREATE OR REPLACE VIEW v_sessions AS
+CREATE OR REPLACE VIEW v_sessions
+  (session_id, user_id, started_at, last_event_at, duration_sec, completed)
+AS
 SELECT
-  COALESCE(p.user_id, s.user_id) as user_id,
-  r.session_id,
-  MIN(r.created_at) as started_at,
-  MAX(r.created_at) as last_event_at,
-  EXTRACT(epoch FROM (MAX(r.created_at) - MIN(r.created_at)))::int as duration_sec,
-  EXISTS (SELECT 1 FROM profiles p2 WHERE p2.session_id = r.session_id) as completed
+  r.session_id AS session_id,
+  COALESCE(p.user_id, s.user_id) AS user_id,
+  MIN(r.created_at) AS started_at,
+  MAX(r.created_at) AS last_event_at,
+  EXTRACT(epoch FROM (MAX(r.created_at) - MIN(r.created_at)))::int AS duration_sec,
+  EXISTS (SELECT 1 FROM profiles p2 WHERE p2.session_id = r.session_id) AS completed
 FROM assessment_responses r
 LEFT JOIN profiles p ON p.session_id = r.session_id
 LEFT JOIN assessment_sessions s ON s.id = r.session_id
-GROUP BY COALESCE(p.user_id, s.user_id), r.session_id;
+GROUP BY
+  r.session_id,
+  COALESCE(p.user_id, s.user_id);
 
 -- PROFILES EXTENDED (TOP GAP, OVERLAY +/-)
 CREATE OR REPLACE VIEW v_profiles_ext AS
