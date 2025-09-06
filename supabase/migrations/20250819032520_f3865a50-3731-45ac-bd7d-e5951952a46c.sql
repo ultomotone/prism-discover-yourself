@@ -12,12 +12,14 @@ UPDATE assessment_scoring_key SET section = 'states' WHERE section IS NULL AND q
 -- simple completion flag for each session.
 CREATE OR REPLACE VIEW public.v_sessions AS
 SELECT
-  s.id          AS session_id,
-  s.user_id,
+  s.id                                  AS session_id,
+  COALESCE(p.user_id, s.user_id)        AS user_id,
   s.started_at,
   s.completed_at,
-  (s.completed_at IS NOT NULL) AS completed
-FROM public.assessment_sessions s;
+  (s.completed_at IS NOT NULL)          AS completed
+FROM public.assessment_sessions s
+LEFT JOIN public.profiles p ON p.session_id = s.id
+GROUP BY s.id, COALESCE(p.user_id, s.user_id), s.started_at, s.completed_at;
 
 -- PROFILES EXTENDED (TOP GAP, OVERLAY +/-)
 CREATE OR REPLACE VIEW v_profiles_ext AS
