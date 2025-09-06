@@ -1,11 +1,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { validateUuid } from "../_shared/validation.ts";
 
 type ScoreInput = { session_id: string; responses: any[] };
 
 const url = Deno.env.get("SUPABASE_URL")!;
 const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(url, key);
+
+const SCORING_VERSION = "v1.2.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,13 +34,13 @@ Deno.serve(async (req) => {
 
   try {
     const { session_id, responses } = await req.json()
-    
-    if (!session_id) {
+
+    if (!session_id || !validateUuid(session_id)) {
       return new Response(
-        JSON.stringify({ ok: false, error: 'session_id is required' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        JSON.stringify({ ok: false, error: 'valid session_id is required' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
@@ -114,7 +117,27 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('Processing finalization for session:', session_id, 'using PRISM v1.2.0')
+    console.log('Processing finalization for session:', session_id, 'using PRISM', SCORING_VERSION)
+
+    // Ensure forced-choice scores are computed before main scoring
+    console.log('Invoking score_fc_session function')
+    const { error: fcError } = await supabase.functions.invoke('score_fc_session', {
+      body: { session_id }
+    })
+
+    if (fcError) {
+      console.error('FC scoring error:', fcError)
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: `FC scoring failed: ${fcError.message}`
+        }),
+        {
+          status: 422,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
 
     // Invoke the score_prism function to compute results
     console.log('Invoking score_prism function')
@@ -125,13 +148,13 @@ Deno.serve(async (req) => {
     if (scoringError) {
       console.error('Scoring function error:', scoringError)
       return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          error: `Scoring failed: ${scoringError.message}` 
+        JSON.stringify({
+          ok: false,
+          error: `Scoring failed: ${scoringError.message}`
         }),
-        { 
-          status: 422, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 422,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }

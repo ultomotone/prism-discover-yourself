@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { PrismCalibration } from "../_shared/calibration.ts";
+import { validateUuid } from "../_shared/validation.ts";
 // Phase 3: Import validation utilities
 import { validateJSON, validateFCMap, validateMeta, sanitizeResponseValue } from "./validateJSON.ts";
 
@@ -12,6 +13,8 @@ const OPP: Record<string,string> = { Ti:"Fe", Fe:"Ti", Te:"Fi", Fi:"Te", Ni:"Se"
 type TypeCode = "LIE"|"ILI"|"ESE"|"SEI"|"LII"|"ILE"|"ESI"|"SEE"|"LSE"|"SLI"|"EIE"|"IEI"|"LSI"|"SLE"|"EII"|"IEE";
 type Func = "Ti"|"Te"|"Fi"|"Fe"|"Ni"|"Ne"|"Si"|"Se";
 type Block = "base"|"creative"|"role"|"vulnerable"|"mobilizing"|"suggestive"|"ignoring"|"demonstrative";
+
+const VERSION = "v1.2.0";
 
 // Fallback prototypes (matches database seeded data)
 const FALLBACK_PROTOTYPES: Record<TypeCode, Record<Func, Block>> = {
@@ -135,8 +138,8 @@ serve(async (req) => {
     const requestBody = await req.json().catch(() => ({}));
     const { user_id, session_id, debug, partial_session = false, force_recompute = false } = requestBody;
     const debugMode = !!debug;
-    
-    if (!session_id || typeof session_id !== 'string') {
+
+    if (!session_id || typeof session_id !== 'string' || !validateUuid(session_id)) {
       return new Response(JSON.stringify({ status:"error", error:"Valid session_id required" }), { status:400, headers:{...corsHeaders,"Content-Type":"application/json"}});
     }
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -147,7 +150,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
     const calibration = new PrismCalibration(supabase);
 
-    console.log(`evt:scoring_start,session_id:${session_id},version:v1.2.0`);
+    console.log(`evt:scoring_start,session_id:${session_id},version:${resultsVersion}`);
 
     // ---- Load type prototypes from database ----
     try {
@@ -246,7 +249,7 @@ serve(async (req) => {
       const { data } = await supabase.from("scoring_config").select("value").eq("key", k).maybeSingle();
       return data?.value ?? null;
     };
-    const resultsVersion = (await cfg("results_version")) || "v1.1.2";
+    const resultsVersion = (await cfg("results_version")) || VERSION;
     let dimThresh: any = (await cfg("dim_thresholds")) || { one: 2.1, two: 3.0, three: 3.8 };
     const neuroNorms: any = (await cfg("neuro_norms")) || { mean: 3, sd: 1 };
     const fcBlockDefault: any = await cfg("fc_block_map_default");
@@ -1030,8 +1033,7 @@ serve(async (req) => {
       confidence: confidence,
       validity_status: validityStatus,
 
-      // NEW v1.2.0 fields with unified calibration
-      results_version: "v1.2.0",
+      results_version: resultsVersion,
       score_fit_raw: fitRaw[typeCode] || 0,
       score_fit_calibrated: fitAbs[typeCode] || 0,
       fit_band: fitBand,
@@ -1078,7 +1080,7 @@ serve(async (req) => {
       dims_highlights: dims_highlights,
       blocks_norm: blocks_norm_final,
       blocks: { likert: blocks_norm_likert, fc: blocks_norm_fc },
-      version: "v1.2.0",
+      version: resultsVersion,
       
       // FIXED: Use actual submission time with microsecond precision to avoid clustering
       submitted_at: new Date().toISOString(),
@@ -1097,7 +1099,7 @@ serve(async (req) => {
     const upsertData = {
       ...profileData,
       session_id: session_id,
-      version: "v1.2.0"
+      version: resultsVersion
     };
 
     // If existing profile, preserve original submitted_at and add recomputed_at
@@ -1133,11 +1135,12 @@ serve(async (req) => {
 
     console.log(`evt:scoring_complete,session_id:${session_id},type:${typeCode}${overlay},confidence:${confidence},validity:${validityStatus},top_gap:${topGap}`);
 
-    return new Response(JSON.stringify({ 
-      status: "success", 
+    return new Response(JSON.stringify({
+      status: "success",
+      results_version: resultsVersion,
       gap_to_second: topGap,
       confidence_numeric: confidenceMargin,
-      profile: profileData 
+      profile: profileData
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
