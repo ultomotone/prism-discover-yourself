@@ -11,6 +11,7 @@ import Header from '@/components/Header';
 import OverlayChips from '@/components/Results/OverlayChips';
 import TraitPanel from '@/components/Results/TraitPanel';
 import { useToast } from '@/hooks/use-toast';
+import { fetchResults, FetchResultsError } from '@/features/results/api';
 
 type Err =
   | 'invalid_session_id'
@@ -39,8 +40,6 @@ export default function Results() {
   const [scoring, setScoring] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Err | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-
   // Resolve session ID deterministically: route -> query -> state
   useEffect(() => {
     const search = new URLSearchParams(location.search);
@@ -88,191 +87,33 @@ export default function Results() {
 
   const sessionId = normalizedSessionId || undefined;
 
-  async function invokeResultsBySession(
-    sb: any,
-    sid: string,
-    shareToken?: string | null,
-  ) {
-    console.log(
-      `results_fetch endpoint=get-results-by-session hasAuthHeader=true contentType=application/json session_id=${sid.slice(0, 8)}`
-    );
-    return sb.functions.invoke('get-results-by-session', {
-      headers: { 'Content-Type': 'application/json' },
-      body: { session_id: sid, share_token: shareToken ?? undefined },
-    });
-  }
-
   useEffect(() => {
     let cancelled = false;
-    let retryTimer: ReturnType<typeof setTimeout>;
-
     const run = async () => {
+      if (!sessionId || !isValidUUID(sessionId)) {
+        if (!cancelled) { setError('invalid_session_id'); setLoading(false); }
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      const shareToken = new URLSearchParams(window.location.search).get('token');
       try {
-        if (!sessionId || !isValidUUID(sessionId)) {
-          if (!cancelled) { setError('invalid_session_id'); setLoading(false); }
-          return;
-        }
-
-        setLoading(true);
-        setError(null);
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const shareToken = urlParams.get('token');
-        // Fast path: SECURITY DEFINER RPC if token present
-        if (shareToken) {
-          const { data: rpcProfile, error: rpcErr } = await supabase.rpc(
-            'get_profile_by_session',
-            { p_session_id: sessionId, p_share_token: shareToken }
-          );
-          if (rpcProfile && !rpcErr) {
-            if (!cancelled) {
-              setScoring({ ...rpcProfile, session: { id: sessionId, status: 'completed' } });
-              setLoading(false);
-            }
-            return;
-          }
-          if (rpcErr && !cancelled && (rpcErr as any)?.status === 429) {
-            setError('rate_limited'); setLoading(false); return;
-          }
-        }
-
-        // Try direct session read (may be blocked by RLS)
-        let sessionQuery = supabase
-          .from('assessment_sessions')
-          .select('id, status, share_token, completed_at')
-          .eq('id', sessionId);
-
-        if (shareToken) sessionQuery = sessionQuery.eq('share_token', shareToken);
-
-        const { data: session, error: sessionErr } = await sessionQuery.maybeSingle();
-
-        // If blocked/missing, still try Edge Function
-        if (sessionErr || !session) {
-          try {
-            const res = await invokeResultsBySession(supabase, sessionId, shareToken);
-            if (res && !res.error) {
-              const payload: any = (res as any).data;
-              if (payload) {
-                const maybeProfile = (payload as any).profile ?? payload;
-                const maybeSession = (payload as any).session ?? { id: sessionId, status: 'completed' };
-                if (!cancelled) { setScoring({ ...maybeProfile, session: maybeSession }); setLoading(false); }
-                return;
-              }
-            } else if (res?.error?.status === 429) {
-              setError('rate_limited');
-              setLoading(false);
-              return;
-            } else if (res?.error?.status === 404) {
-              setError('results_not_found');
-              setLoading(false);
-              return;
-            }
-          } catch (e) {
-            console.warn('Edge function fallback failed (no session)', e);
-          }
-          if (!cancelled) { setError(sessionErr ? 'server_error' : 'session_not_found'); setLoading(false); }
-          return;
-        }
-
-        const normalizedStatus = (session.status || '').toLowerCase();
-        const doneStatuses = new Set(['completed', 'complete', 'finalized', 'scored']);
-        const isCompleted = doneStatuses.has(normalizedStatus) || !!session.completed_at;
-
-        if (!isCompleted) {
-          try {
-            const res = await invokeResultsBySession(supabase, sessionId, shareToken);
-            if (res && !res.error) {
-              const payload: any = (res as any).data;
-              if (payload) {
-                const maybeProfile = (payload as any).profile ?? payload;
-                const maybeSession = (payload as any).session ?? session ?? { id: sessionId, status: 'completed' };
-                if (!cancelled) { setScoring({ ...maybeProfile, session: maybeSession }); setLoading(false); }
-                return;
-              }
-            } else if (res?.error?.status === 429) {
-              setError('rate_limited');
-              setLoading(false);
-              return;
-            } else if (res?.error?.status === 404) {
-              setError('results_not_found');
-              setLoading(false);
-              return;
-            } else if (res?.error) {
-              setError('server_error');
-              setLoading(false);
-              return;
-            }
-          } catch (e) {
-            console.warn('Edge function fallback failed', e);
-          }
-          if (!cancelled) { setError('access_denied'); setLoading(false); }
-          return;
-        }
-
-        // Completed session — try profile row
-        const { data: profile, error: profileErr } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('session_id', sessionId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (profileErr && !cancelled && (profileErr as any)?.status === 429) {
-          setError('rate_limited'); setLoading(false); return;
-        }
-
+        const { profile, session } = await fetchResults({ supabase, sessionId, shareToken });
         if (!cancelled) {
-          if (profile) {
-            setScoring({ ...profile, session });
-            setLoading(false);
-          } else {
-            // Fallback to Edge Function
-            try {
-              const res = await invokeResultsBySession(supabase, sessionId, shareToken);
-              if (res && !res.error) {
-                const payload: any = (res as any).data;
-                if (payload) {
-                  const maybeProfile = (payload as any).profile ?? payload;
-                  const maybeSession = (payload as any).session ?? session ?? { id: sessionId, status: 'completed' };
-                  setScoring({ ...maybeProfile, session: maybeSession });
-                  setLoading(false);
-                  return;
-                }
-              } else if (res?.error?.status === 429) {
-                setError('rate_limited');
-                setLoading(false);
-                return;
-              } else if (res?.error?.status === 404) {
-                setError('profile_not_found');
-                setLoading(false);
-                return;
-              } else if (res?.error) {
-                setError('server_error');
-                setLoading(false);
-                return;
-              }
-            } catch (e) { console.warn('Edge function fallback failed', e); }
-
-            if (retryCount < 5) {
-              setError('profile_rendering');
-              setLoading(false);
-              retryTimer = setTimeout(() => setRetryCount((c) => c + 1), 2000);
-            } else {
-              setError('profile_not_found');
-              setLoading(false);
-            }
-          }
+          setScoring({ ...profile, session });
+          setLoading(false);
         }
       } catch (e) {
-        console.error('Error fetching results:', e);
-        if (!cancelled) { setError('server_error'); setLoading(false); }
+        const code = e instanceof FetchResultsError ? (e.code as Err) : 'server_error';
+        if (!cancelled) {
+          setError(code as Err);
+          setLoading(false);
+        }
       }
     };
-
     run();
-    return () => { cancelled = true; clearTimeout(retryTimer); };
-  }, [sessionId, retryCount]);
+    return () => { cancelled = true; };
+  }, [sessionId]);
 
   useEffect(() => {
     if (scoring && !loading && !error) {
