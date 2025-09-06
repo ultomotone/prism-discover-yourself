@@ -1,4 +1,3 @@
--- Preserve column order; session_id must remain the first column
 CREATE OR REPLACE VIEW v_sessions
   (session_id, user_id, started_at, last_event_at, duration_sec, completed)
 AS
