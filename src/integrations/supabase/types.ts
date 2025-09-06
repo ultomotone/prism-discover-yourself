@@ -1032,20 +1032,10 @@ export type Database = {
         }
         Relationships: []
       }
-      v_fc_analytics: {
-        Row: {
-          fc_coverage_bucket: string | null
-          percentage: number | null
-          session_count: number | null
-        }
-        Relationships: []
-      }
       v_fc_coverage: {
         Row: {
           answered_count: number | null
           fc_count: number | null
-          fc_coverage_bucket: string | null
-          fc_total_questions: number | null
           session_id: string | null
         }
         Relationships: [
@@ -1476,17 +1466,6 @@ export type Database = {
           top_gap: number | null
           top1_fit: number | null
           top2_fit: number | null
-        }
-        Relationships: []
-      }
-      v_quality_summary: {
-        Row: {
-          fit_mean: number | null
-          function_balance_mean: number | null
-          gap_mean: number | null
-          inconsistency_mean: number | null
-          n_sessions: number | null
-          sd_index_mean: number | null
         }
         Relationships: []
       }
