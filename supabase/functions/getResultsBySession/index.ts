@@ -42,14 +42,35 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Create service role client to bypass RLS
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
-    
-    // Get current user from request
-    const authHeader = req.headers.get('Authorization')
-    const { data: { user } } = authHeader 
-      ? await createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!).auth.getUser(authHeader.replace('Bearer ', ''))
-      : { data: { user: null } }
+      // Create service role client to bypass RLS
+      const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+      // Validate JWT from Authorization header
+      const authHeader = req.headers.get('Authorization') || ''
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ ok: false, reason: 'unauthorized' }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+
+      const authClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!)
+      const {
+        data: { user },
+        error: authError
+      } = await authClient.auth.getUser(authHeader.replace('Bearer ', ''))
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ ok: false, reason: 'unauthorized' }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
 
     console.log('getResultsBySession called:', { session_id, has_share_token: !!share_token, user_id: user?.id })
 

@@ -24,9 +24,29 @@ serve(async (req) => {
       });
     }
 
+    const authHeader = req.headers.get("Authorization") || "";
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const authClient = createClient(supabaseUrl, supabaseAnon);
+    const {
+      data: { user },
+      error: authError,
+    } = await authClient.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // RLS-aware client using the caller's JWT
     const supabase = createClient(supabaseUrl, supabaseAnon, {
-      global: { headers: { Authorization: req.headers.get("Authorization") || "" } },
+      global: { headers: { Authorization: authHeader } },
     });
 
     let a = session_a as string | undefined;

@@ -1,7 +1,7 @@
 project_id = "gnkuikentdtnatazeriu"
 
 [functions.getResultsBySession]
-verify_jwt = false
+verify_jwt = true
 
 [functions.finalizeAssessment]
 verify_jwt = false
@@ -34,10 +34,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.save_response]
-verify_jwt = false
+verify_jwt = true
 
 [functions.get_progress]
-verify_jwt = false
+verify_jwt = true
 
 [functions.score_fc_session]
 verify_jwt = false
