@@ -223,10 +223,28 @@
         if (props.email && window.redditNormalizeEmail) {
           props.email = window.redditNormalizeEmail(props.email);
         }
-        if (window.rdt) rdt('track', eventName, props);
-        window.__lastConversionId = props.conversion_id; // for CAPI dedup
-        return props.conversion_id;
-      };
+          if (window.rdt) rdt('track', eventName, props);
+          window.__lastConversionId = props.conversion_id; // for CAPI dedup
+          try {
+            const url = (window.__APP_CONFIG__?.SUPABASE_URL || '') + '/functions/v1/reddit_capi';
+            const apikey = window.__APP_CONFIG__?.SUPABASE_ANON_KEY;
+            if (url && apikey) {
+              fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', apikey },
+                body: JSON.stringify({
+                  event: eventName,
+                  conversion_id: props.conversion_id,
+                  click_id: props.click_id,
+                  email: props.email,
+                }),
+              });
+            }
+          } catch (e) {
+            // no-op
+          }
+          return props.conversion_id;
+        };
 
       // Update advanced matching user signals after email capture
       window.rdtSetUser = function(props){

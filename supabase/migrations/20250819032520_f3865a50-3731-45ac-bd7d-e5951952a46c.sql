@@ -7,17 +7,7 @@ UPDATE assessment_scoring_key SET section = 'scenarios' WHERE section IS NULL AN
 UPDATE assessment_scoring_key SET section = 'preferences' WHERE section IS NULL AND question_id BETWEEN 101 AND 150;
 UPDATE assessment_scoring_key SET section = 'states' WHERE section IS NULL AND question_id > 150;
 
--- SESSION START/END + DURATION + COMPLETION FLAG
-CREATE OR REPLACE VIEW v_sessions AS
-SELECT
-  r.user_id,
-  r.session_id,
-  MIN(r.created_at) as started_at,
-  MAX(r.created_at) as last_event_at,
-  EXTRACT(epoch FROM (MAX(r.created_at) - MIN(r.created_at)))::int as duration_sec,
-  EXISTS (SELECT 1 FROM profiles p WHERE p.session_id = r.session_id) as completed
-FROM assessment_responses r
-GROUP BY r.user_id, r.session_id;
+-- (deprecated; view recreated in 20250906_fix_v_sessions.sql)
 
 -- PROFILES EXTENDED (TOP GAP, OVERLAY +/-)
 CREATE OR REPLACE VIEW v_profiles_ext AS

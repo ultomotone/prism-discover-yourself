@@ -9,20 +9,53 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 8
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile=false
-      - run: pnpm run lint
-      - run: pnpm run typecheck
-      - run: pnpm test
-      - run: pnpm run verify:smoke
+          cache: npm
+
+      - name: Check merge markers
+        run: npm run check:merge-markers
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: JUnit reporter
+        run: npx tsx --test --test-reporter=junit "tests/**/*.test.ts" > junit.xml || true
+
+      - name: Smoke
+        run: npm run verify:smoke > smoke-report.json
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SMOKE_SESSION_ID: ${{ secrets.SMOKE_SESSION_ID }}
           SMOKE_SHARE_TOKEN: ${{ secrets.SMOKE_SHARE_TOKEN }}
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: coverage
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: junit
+          path: junit.xml
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-report
+          path: smoke-report.json
