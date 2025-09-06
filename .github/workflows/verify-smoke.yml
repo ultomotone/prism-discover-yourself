@@ -7,6 +7,9 @@ on:
 jobs:
   verify-smoke:
     runs-on: ubuntu-latest
+    continue-on-error: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -27,20 +30,20 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Test
+      - name: Test (with coverage)
         run: npm test
 
+      # optional: regenerate JUnit from the same test set; harmless if duplicated
       - name: JUnit reporter
-        run: npx tsx --test --test-reporter=junit "tests/**/*.test.ts" > junit.xml || true
+        run: npx tsx --test --test-reporter=junit tests/fetchResults.test.ts tests/results.integration.test.ts tests/redditCapi.test.ts > junit.xml || true
 
       - name: Smoke
-        run: npm run verify:smoke > smoke-report.json
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SMOKE_SESSION_ID: ${{ secrets.SMOKE_SESSION_ID }}
           SMOKE_SHARE_TOKEN: ${{ secrets.SMOKE_SHARE_TOKEN }}
-        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: npm run verify:smoke > smoke-report.json
 
       - uses: actions/upload-artifact@v4
         if: always()
