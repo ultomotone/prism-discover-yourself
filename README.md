@@ -94,6 +94,7 @@ Local `.env` needs:
 ```
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY= # server-side scripts only
 ```
 
 If your host doesn't support env vars, set values in `index.html` via `window.__APP_CONFIG__`.
@@ -107,6 +108,6 @@ SUPABASE_URL: https://YOUR-PROJECT.supabase.co
 SUPABASE_ANON_KEY: (Supabase "anon" key)
 ```
 
-Only use the publishable (anon) key; never embed the service role key.
+Only use the publishable (anon) key in client code; never embed the service role key.
 
 Redeploy.
