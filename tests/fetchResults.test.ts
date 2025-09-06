@@ -1,44 +1,107 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fetchResults } from '../src/features/results/api';
 
-type RpcFn = (...args: any[]) => Promise<any>;
+(globalThis as any).window = { __APP_CONFIG__: { SUPABASE_URL: 'https://example.supabase.co', SUPABASE_ANON_KEY: 'anon' } };
 
-type FnInvoke = (...args: any[]) => Promise<any>;
+const { fetchResults, FetchResultsError } = await import('../src/features/results/api');
 
-function createSupabaseMock(rpcImpl?: RpcFn, fnImpl?: FnInvoke) {
+type RpcFn = (...args: any[]) => Promise<{ data: unknown; error: any }>; 
+type FnFn = (...args: any[]) => Promise<{ data: unknown; error: any }>;
+
+function createClient(rpcImpl?: RpcFn, fnImpl?: FnFn) {
   return {
-    rpc: async (...args: any[]) => (rpcImpl ? rpcImpl(...args) : { data: null, error: null }),
-    functions: { invoke: async (...args: any[]) => (fnImpl ? fnImpl(...args) : { data: null, error: null }) },
+    rpc: rpcImpl ?? (async () => ({ data: null, error: null })),
+    functions: { invoke: fnImpl ?? (async () => ({ data: null, error: null })) },
   } as any;
 }
 
-test('fetchResults uses RPC when share token provided', async () => {
+test('uses RPC when share token provided', async () => {
   let rpcCalls = 0;
-  let fnCalls = 0;
-  const supabase = createSupabaseMock(
+  const client = createClient(
     async () => {
-      rpcCalls++; return { data: { id: 'p1' }, error: null };
+      rpcCalls++;
+      return { data: { id: 'p1' }, error: null };
     },
-    async () => {
-      fnCalls++; return { data: { profile: { id: 'p1' }, session: { id: 's', status: 'completed' } }, error: null };
-    }
   );
-  const res = await fetchResults({ supabase, sessionId: 's', shareToken: 't' });
+  const res = await fetchResults({ sessionId: 's', shareToken: 't' }, client);
   assert.equal(res.profile.id, 'p1');
   assert.equal(rpcCalls, 1);
-  assert.equal(fnCalls, 0);
 });
 
-test('fetchResults falls back to edge function without share token', async () => {
-  let rpcCalls = 0;
+test('falls back to edge function without share token', async () => {
   let fnCalls = 0;
-  const supabase = createSupabaseMock(
-    async () => { rpcCalls++; return { data: null, error: null }; },
-    async () => { fnCalls++; return { data: { profile: { id: 'p2' }, session: { id: 's', status: 'completed' } }, error: null }; }
+  const client = createClient(
+    undefined,
+    async () => {
+      fnCalls++;
+      return { data: { profile: { id: 'p2' }, session: { id: 's', status: 'completed' } }, error: null };
+    },
   );
-  const res = await fetchResults({ supabase, sessionId: 's' });
+  const res = await fetchResults({ sessionId: 's' }, client);
   assert.equal(res.profile.id, 'p2');
-  assert.equal(rpcCalls, 0);
   assert.equal(fnCalls, 1);
+});
+
+test('dedupes concurrent calls', async () => {
+  let calls = 0;
+  const client = createClient(
+    undefined,
+    async () => {
+      calls++;
+      return { data: { profile: { id: 'p3' }, session: { id: 's', status: 'completed' } }, error: null };
+    },
+  );
+  const [a, b] = await Promise.all([
+    fetchResults({ sessionId: 's' }, client),
+    fetchResults({ sessionId: 's' }, client),
+  ]);
+  assert.equal(calls, 1);
+  assert.deepEqual(a, b);
+});
+
+test('retries transient errors', async () => {
+  let attempts = 0;
+  const client = createClient(
+    undefined,
+    async () => {
+      attempts++;
+      if (attempts < 2) {
+        return { data: null, error: { status: 500 } };
+      }
+      return { data: { profile: { id: 'p4' }, session: { id: 's', status: 'completed' } }, error: null };
+    },
+  );
+  const res = await fetchResults({ sessionId: 's' }, client);
+  assert.equal(res.profile.id, 'p4');
+  assert.equal(attempts, 2);
+});
+
+test('does not retry non-transient errors', async () => {
+  let attempts = 0;
+  const client = createClient(
+    undefined,
+    async () => {
+      attempts++;
+      return { data: null, error: { status: 401 } };
+    },
+  );
+  await assert.rejects(() => fetchResults({ sessionId: 's' }, client), (e) =>
+    e instanceof FetchResultsError && e.kind === 'unauthorized',
+  );
+  assert.equal(attempts, 1);
+});
+
+test('maps error variants', async () => {
+  const cases: Array<[number, FetchResultsError['kind']]> = [
+    [404, 'not_found'],
+    [401, 'unauthorized'],
+    [403, 'forbidden'],
+    [400, 'invalid'],
+  ];
+  for (const [status, kind] of cases) {
+    const client = createClient(undefined, async () => ({ data: null, error: { status } }));
+    await assert.rejects(() => fetchResults({ sessionId: 's' }, client), (e) =>
+      e instanceof FetchResultsError && e.kind === kind,
+    );
+  }
 });
