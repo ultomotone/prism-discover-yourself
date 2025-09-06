@@ -1,12 +1,22 @@
-create or replace view public.v_sessions as
-select
+CREATE OR REPLACE VIEW v_sessions
+  (session_id, user_id, started_at, last_event_at, duration_sec, completed)
+AS
+SELECT
+  r.session_id AS session_id,
+  COALESCE(p.user_id, s.user_id) AS user_id,
+  MIN(r.created_at) AS started_at,
+  MAX(r.created_at) AS last_event_at,
+  EXTRACT(EPOCH FROM (MAX(r.created_at) - MIN(r.created_at)))::INT AS duration_sec,
+  EXISTS (
+    SELECT 1
+    FROM profiles p2
+    WHERE p2.session_id = r.session_id
+  ) AS completed
+FROM assessment_responses r
+LEFT JOIN profiles p
+  ON p.session_id = r.session_id
+LEFT JOIN assessment_sessions s
+  ON s.id = r.session_id
+GROUP BY
   r.session_id,
-  coalesce(p.user_id, s.user_id) as user_id,
-  min(r.created_at) as started_at,
-  max(r.created_at) as last_event_at,
-  extract(epoch from (max(r.created_at) - min(r.created_at)))::int as duration_sec,
-  exists (select 1 from public.profiles p2 where p2.session_id = r.session_id) as completed
-from public.assessment_responses r
-left join public.profiles p on p.session_id = r.session_id
-left join public.assessment_sessions s on s.id = r.session_id
-group by r.session_id, coalesce(p.user_id, s.user_id);
+  COALESCE(p.user_id, s.user_id);
