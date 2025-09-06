@@ -94,6 +94,8 @@ Local `.env` needs:
 ```
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
+SMOKE_SESSION_ID=
+SMOKE_SHARE_TOKEN=
 ```
 
 If your host doesn't support env vars, set values in `index.html` via `window.__APP_CONFIG__`.
@@ -110,3 +112,14 @@ SUPABASE_ANON_KEY: (Supabase "anon" key)
 Only use the publishable (anon) key; never embed the service role key.
 
 Redeploy.
+
+## Smoke test
+
+To call the deployed edge function locally:
+
+```sh
+cp .env.example .env.local
+# fill in SUPABASE_URL, SUPABASE_ANON_KEY, SMOKE_SESSION_ID, SMOKE_SHARE_TOKEN
+npm run verify:smoke
+```
+

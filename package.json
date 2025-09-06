@@ -8,7 +8,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint .",
-    "test": "tsx --test tests/smoke.test.js tests/fetchResults.test.ts",
+    "test": "tsx --test tests/fetchResults.test.ts tests/results.integration.test.ts",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "preflight": "node scripts/ci-guard.js && tsx scripts/preflight.ts || true",
@@ -16,7 +16,7 @@
     "verify:sql": "node scripts/ci-guard.js && tsx scripts/preflight.ts --verify-only || true",
     "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.tsx --fix",
     "verify:functions": "node scripts/ci-guard.js && tsx scripts/functions-compile.ts || true",
-    "verify:smoke": "node ./scripts/verify-smoke.js",
+    "verify:smoke": "tsx scripts/smoke.ts",
     "check:merge-markers": "git grep -nE '^(<<<<<<<|=======|>>>>>>>)' && (echo 'merge markers found'; exit 1) || exit 0"
   },
   "dependencies": {
@@ -99,6 +99,8 @@
     "tsx": "^4.19.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
-    "vite": "^5.4.19"
+    "vite": "^5.4.19",
+    "msw": "^2.0.0",
+    "undici": "^6.13.0"
   }
 }

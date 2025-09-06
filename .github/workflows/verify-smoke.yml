@@ -1,0 +1,28 @@
+name: verify-smoke
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile=false
+      - run: pnpm run lint
+      - run: pnpm run typecheck
+      - run: pnpm test
+      - run: pnpm run verify:smoke
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SMOKE_SESSION_ID: ${{ secrets.SMOKE_SESSION_ID }}
+          SMOKE_SHARE_TOKEN: ${{ secrets.SMOKE_SHARE_TOKEN }}

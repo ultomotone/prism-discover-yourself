@@ -3,7 +3,6 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Download, ArrowLeft, ExternalLink, Copy, Users, Clock } from 'lucide-react';
-import { supabase } from '@/lib/supabase/client';
 import { ResultsV2 } from '@/components/assessment/ResultsV2';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -29,6 +28,8 @@ export default function Results() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+
+  const logger = console;
 
   const isValidUUID = (v: string | undefined) =>
     !!v &&
@@ -88,31 +89,44 @@ export default function Results() {
   const sessionId = normalizedSessionId || undefined;
 
   useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      if (!sessionId || !isValidUUID(sessionId)) {
-        if (!cancelled) { setError('invalid_session_id'); setLoading(false); }
-        return;
-      }
-      setLoading(true);
-      setError(null);
-      const shareToken = new URLSearchParams(window.location.search).get('token');
-      try {
-        const { profile, session } = await fetchResults({ supabase, sessionId, shareToken });
-        if (!cancelled) {
-          setScoring({ ...profile, session });
-          setLoading(false);
-        }
-      } catch (e) {
-        const code = e instanceof FetchResultsError ? (e.code as Err) : 'server_error';
-        if (!cancelled) {
-          setError(code as Err);
-          setLoading(false);
-        }
-      }
+    let active = true;
+    if (!sessionId || !isValidUUID(sessionId)) {
+      setError('invalid_session_id');
+      setLoading(false);
+      return () => {};
+    }
+
+    setLoading(true);
+    setError(null);
+    const shareToken = new URLSearchParams(window.location.search).get('token') || undefined;
+    logger.info?.('results_fetch_start', { sessionId });
+
+    fetchResults({ sessionId, shareToken })
+      .then(({ profile, session }) => {
+        if (!active) return;
+        setScoring({ ...profile, session });
+        setLoading(false);
+        logger.info?.('results_fetch_end', { sessionId });
+      })
+      .catch((e) => {
+        if (!active) return;
+        const kind = e instanceof FetchResultsError ? e.kind : 'unknown';
+        const map: Record<FetchResultsError['kind'], Err> = {
+          not_found: 'results_not_found',
+          unauthorized: 'access_denied',
+          forbidden: 'access_denied',
+          invalid: 'invalid_session_id',
+          transient: 'server_error',
+          unknown: 'unknown_error',
+        };
+        setError(map[kind]);
+        setLoading(false);
+        logger.error?.('results_fetch_error', { sessionId, kind });
+      });
+
+    return () => {
+      active = false;
     };
-    run();
-    return () => { cancelled = true; };
   }, [sessionId]);
 
   useEffect(() => {

@@ -1,57 +1,166 @@
+import { supabase } from '@/lib/supabase/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-export type FetchResultsArgs = {
-  supabase: SupabaseClient;
-  sessionId: string;
-  shareToken?: string | null;
-};
+export interface ResultsProfile extends Record<string, unknown> {
+  id: string;
+}
 
-export type FetchResultsResponse = {
-  profile: any;
-  session: { id: string; status: string };
-};
+export interface ResultsSession {
+  id: string;
+  status: string;
+}
+
+export interface FetchResultsResponse {
+  profile: ResultsProfile;
+  session: ResultsSession;
+}
+
+export type FetchResultsErrorKind =
+  | 'not_found'
+  | 'unauthorized'
+  | 'forbidden'
+  | 'invalid'
+  | 'transient'
+  | 'unknown';
 
 export class FetchResultsError extends Error {
-  code: string;
-  constructor(code: string) {
-    super(code);
-    this.code = code;
+  kind: FetchResultsErrorKind;
+  detail?: string;
+  constructor(kind: FetchResultsErrorKind, detail?: string) {
+    super(detail ?? kind);
+    this.kind = kind;
+    this.detail = detail;
   }
 }
 
-export async function fetchResults({ supabase, sessionId, shareToken }: FetchResultsArgs): Promise<FetchResultsResponse> {
-  if (shareToken) {
-    const { data, error } = await supabase.rpc('get_profile_by_session', {
-      p_session_id: sessionId,
-      p_share_token: shareToken,
-    });
-    if (data && !error) {
-      return { profile: data, session: { id: sessionId, status: 'completed' } };
-    }
-    if (error && (error as any)?.status === 429) {
-      throw new FetchResultsError('rate_limited');
-    }
-    // fallthrough to edge function for other errors or missing profile
-  }
+const inFlight = new Map<
+  string,
+  { promise: Promise<FetchResultsResponse>; controller: AbortController }
+>();
 
-  const { data: fnData, error: fnError } = await supabase.functions.invoke('get-results-by-session', {
-    headers: { 'Content-Type': 'application/json' },
-    body: { session_id: sessionId, share_token: shareToken || undefined },
-  });
-  if (fnError) {
-    const status = (fnError as any).status;
-    if (status === 404) throw new FetchResultsError('results_not_found');
-    if (status === 403) throw new FetchResultsError('access_denied');
-    if (status === 429) throw new FetchResultsError('rate_limited');
-    throw new FetchResultsError('server_error');
-  }
-
-  const payload: any = fnData as any;
-  if (payload && payload.ok === false) {
-    throw new FetchResultsError(payload.reason || 'server_error');
-  }
-
-  const profile = payload.profile ?? payload;
-  const session = payload.session ?? { id: sessionId, status: 'completed' };
-  return { profile, session };
+function backoff(attempt: number): number {
+  const base = 100 * 2 ** attempt;
+  const jitter = Math.random() * 100;
+  return base + jitter;
 }
+
+function mapStatus(status: number, detail?: string): FetchResultsError {
+  if (status === 400) return new FetchResultsError('invalid', detail);
+  if (status === 401) return new FetchResultsError('unauthorized', detail);
+  if (status === 403) return new FetchResultsError('forbidden', detail);
+  if (status === 404) return new FetchResultsError('not_found', detail);
+  if (status === 429 || (status >= 500 && status < 600))
+    return new FetchResultsError('transient', detail);
+  return new FetchResultsError('unknown', detail);
+}
+
+function mapUnknown(e: unknown): FetchResultsError {
+  if (e instanceof FetchResultsError) return e;
+  return new FetchResultsError(
+    'unknown',
+    e instanceof Error ? e.message : undefined,
+  );
+}
+
+function parseEdgePayload(
+  payload: unknown,
+  sessionId: string,
+): FetchResultsResponse {
+  const data = payload as {
+    profile?: ResultsProfile;
+    session?: ResultsSession;
+  } | null;
+  if (data?.profile && data.session && typeof data.session.id === 'string') {
+    return { profile: data.profile, session: data.session };
+  }
+  throw new FetchResultsError('unknown', 'invalid response');
+}
+
+async function rpcCall(
+  client: SupabaseClient,
+  sessionId: string,
+  shareToken: string,
+  signal: AbortSignal,
+): Promise<FetchResultsResponse> {
+  const { data, error } = await client.rpc(
+    'get_profile_by_session',
+    { p_session_id: sessionId, p_share_token: shareToken },
+    { signal },
+  );
+  if (error) {
+    throw mapStatus((error as any).status ?? 500, (error as any).message);
+  }
+  if (!data) throw new FetchResultsError('not_found');
+  return {
+    profile: data as ResultsProfile,
+    session: { id: sessionId, status: 'completed' },
+  };
+}
+
+async function edgeCall(
+  client: SupabaseClient,
+  sessionId: string,
+  shareToken: string | undefined,
+  signal: AbortSignal,
+): Promise<FetchResultsResponse> {
+  const { data, error } = await client.functions.invoke(
+    'get-results-by-session',
+    { body: { sessionId, shareToken }, signal },
+  );
+  if (error) {
+    throw mapStatus((error as any).status ?? 500, (error as any).message);
+  }
+  return parseEdgePayload(data, sessionId);
+}
+
+async function executeWithRetry<T>(
+  fn: (signal: AbortSignal) => Promise<T>,
+  controller: AbortController,
+): Promise<T> {
+  let attempt = 0;
+  while (true) {
+    try {
+      return await fn(controller.signal);
+    } catch (e) {
+      const mapped = mapUnknown(e);
+      if (mapped.kind === 'transient' && attempt < 2) {
+        await new Promise((r) => setTimeout(r, backoff(attempt)));
+        attempt++;
+        continue;
+      }
+      throw mapped;
+    }
+  }
+}
+
+export async function fetchResults(
+  { sessionId, shareToken }: { sessionId: string; shareToken?: string },
+  client: SupabaseClient = supabase,
+): Promise<FetchResultsResponse> {
+  const key = `${sessionId}|${shareToken ?? ''}`;
+  const existing = inFlight.get(key);
+  if (existing) return existing.promise;
+
+  const controller = new AbortController();
+
+  const promise = (async () => {
+    try {
+      if (shareToken) {
+        return await executeWithRetry(
+          (signal) => rpcCall(client, sessionId, shareToken, signal),
+          controller,
+        );
+      }
+      return await executeWithRetry(
+        (signal) => edgeCall(client, sessionId, undefined, signal),
+        controller,
+      );
+    } finally {
+      inFlight.delete(key);
+    }
+  })();
+
+  inFlight.set(key, { promise, controller });
+  return promise;
+}
+
