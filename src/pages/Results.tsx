@@ -10,7 +10,8 @@ import Header from '@/components/Header';
 import OverlayChips from '@/components/Results/OverlayChips';
 import TraitPanel from '@/components/Results/TraitPanel';
 import { useToast } from '@/hooks/use-toast';
-import { fetchResults, FetchResultsError } from '@/features/results/api';
+import { fetchResults, FetchResultsError, ResultsSession } from '@/features/results/api';
+import type { ProfileResult } from '@/types/profile';
 
 type Err =
   | 'invalid_session_id'
@@ -38,7 +39,8 @@ export default function Results() {
   const [rawSessionId, setRawSessionId] = useState<string | null>(null);
   const [normalizedSessionId, setNormalizedSessionId] = useState<string | null>(null);
   const [idSource, setIdSource] = useState<'route' | 'query' | 'state' | 'none'>('none');
-  const [scoring, setScoring] = useState<any | null>(null);
+  const [scoring, setScoring] =
+    useState<(ProfileResult & { session: ResultsSession }) | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Err | null>(null);
   // Resolve session ID deterministically: route -> query -> state

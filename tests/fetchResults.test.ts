@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 (globalThis as any).window = { __APP_CONFIG__: { SUPABASE_URL: 'https://example.supabase.co', SUPABASE_ANON_KEY: 'anon' } };
 
 const { fetchResults, FetchResultsError } = await import('../src/features/results/api');
+import type { ProfileResult } from '../src/types/profile';
 
 type RpcFn = (...args: any[]) => Promise<{ data: unknown; error: any }>; 
 type FnFn = (...args: any[]) => Promise<{ data: unknown; error: any }>;
@@ -15,16 +16,41 @@ function createClient(rpcImpl?: RpcFn, fnImpl?: FnFn) {
   } as any;
 }
 
+function makeProfile(overrides: Partial<ProfileResult> = {}): ProfileResult {
+  return {
+    session_id: 's',
+    type_code: 'IEE',
+    base_func: 'Ne',
+    creative_func: 'Fi',
+    overlay: '+',
+    strengths: {},
+    dimensions: {},
+    trait_scores: {},
+    score_fit_raw: 0,
+    score_fit_calibrated: 0,
+    fit_band: 'High',
+    confidence: 'High',
+    conf_raw: 0,
+    conf_calibrated: 0,
+    close_call: false,
+    top_gap: 0,
+    top_types: [],
+    type_scores: {},
+    results_version: 'v1.0.0',
+    ...overrides,
+  };
+}
+
 test('uses RPC when share token provided', async () => {
   let rpcCalls = 0;
   const client = createClient(
     async () => {
       rpcCalls++;
-      return { data: { id: 'p1' }, error: null };
+      return { data: makeProfile({ session_id: 's' }), error: null };
     },
   );
   const res = await fetchResults({ sessionId: 's', shareToken: 't' }, client);
-  assert.equal(res.profile.id, 'p1');
+  assert.equal(res.profile.session_id, 's');
   assert.equal(rpcCalls, 1);
 });
 
@@ -34,11 +60,11 @@ test('falls back to edge function without share token', async () => {
     undefined,
     async () => {
       fnCalls++;
-      return { data: { profile: { id: 'p2' }, session: { id: 's', status: 'completed' } }, error: null };
+      return { data: { profile: makeProfile(), session: { id: 's', status: 'completed' } }, error: null };
     },
   );
   const res = await fetchResults({ sessionId: 's' }, client);
-  assert.equal(res.profile.id, 'p2');
+  assert.equal(res.profile.session_id, 's');
   assert.equal(fnCalls, 1);
 });
 
@@ -48,7 +74,7 @@ test('dedupes concurrent calls', async () => {
     undefined,
     async () => {
       calls++;
-      return { data: { profile: { id: 'p3' }, session: { id: 's', status: 'completed' } }, error: null };
+      return { data: { profile: makeProfile(), session: { id: 's', status: 'completed' } }, error: null };
     },
   );
   const [a, b] = await Promise.all([
@@ -68,11 +94,11 @@ test('retries transient errors', async () => {
       if (attempts < 2) {
         return { data: null, error: { status: 500 } };
       }
-      return { data: { profile: { id: 'p4' }, session: { id: 's', status: 'completed' } }, error: null };
+      return { data: { profile: makeProfile(), session: { id: 's', status: 'completed' } }, error: null };
     },
   );
   const res = await fetchResults({ sessionId: 's' }, client);
-  assert.equal(res.profile.id, 'p4');
+  assert.equal(res.profile.session_id, 's');
   assert.equal(attempts, 2);
 });
 

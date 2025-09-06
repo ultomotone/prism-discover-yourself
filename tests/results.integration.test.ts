@@ -5,6 +5,7 @@ import { http, HttpResponse } from 'msw';
  (globalThis as any).window = { __APP_CONFIG__: { SUPABASE_URL: 'https://example.supabase.co', SUPABASE_ANON_KEY: 'anon' } };
 
 const { fetchResults, FetchResultsError } = await import('../src/features/results/api');
+import type { ProfileResult } from '../src/types/profile';
 
 type Client = {
   functions: { invoke: (name: string, opts: any) => Promise<{ data: unknown; error: any }> };
@@ -43,7 +44,28 @@ test('unauthorized does not retry', async () => {
       if (calls === 1) {
         return HttpResponse.json({ message: 'nope' }, { status: 401 });
       }
-      return HttpResponse.json({ profile: { id: 'p' }, session: { id: 's', status: 'completed' } });
+      const profile: ProfileResult = {
+        session_id: 's',
+        type_code: 'IEE',
+        base_func: 'Ne',
+        creative_func: 'Fi',
+        overlay: '+',
+        strengths: {},
+        dimensions: {},
+        trait_scores: {},
+        score_fit_raw: 0,
+        score_fit_calibrated: 0,
+        fit_band: 'High',
+        confidence: 'High',
+        conf_raw: 0,
+        conf_calibrated: 0,
+        close_call: false,
+        top_gap: 0,
+        top_types: [],
+        type_scores: {},
+        results_version: 'v1.0.0',
+      };
+      return HttpResponse.json({ profile, session: { id: 's', status: 'completed' } });
     }),
   );
 

@@ -1,9 +1,6 @@
 import { supabase } from '@/lib/supabase/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
-
-export interface ResultsProfile extends Record<string, unknown> {
-  id: string;
-}
+import type { ProfileResult } from '@/types/profile';
 
 export interface ResultsSession {
   id: string;
@@ -11,7 +8,7 @@ export interface ResultsSession {
 }
 
 export interface FetchResultsResponse {
-  profile: ResultsProfile;
+  profile: ProfileResult;
   session: ResultsSession;
 }
 
@@ -67,7 +64,7 @@ function parseEdgePayload(
   sessionId: string,
 ): FetchResultsResponse {
   const data = payload as {
-    profile?: ResultsProfile;
+    profile?: ProfileResult;
     session?: ResultsSession;
   } | null;
   if (data?.profile && data.session && typeof data.session.id === 'string') {
@@ -92,7 +89,7 @@ async function rpcCall(
   }
   if (!data) throw new FetchResultsError('not_found');
   return {
-    profile: data as ResultsProfile,
+    profile: data as ProfileResult,
     session: { id: sessionId, status: 'completed' },
   };
 }
