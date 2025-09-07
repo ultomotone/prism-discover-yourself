@@ -138,15 +138,15 @@ WHERE b.created_at > a.created_at
 DROP VIEW IF EXISTS public.v_type_distribution;
 CREATE VIEW public.v_type_distribution AS
 SELECT
-  LEFT(type_code, 3) AS type_prefix,
-  overlay,
+  LEFT(p.type_code, 3) AS type_prefix,
+  p.overlay,
   COUNT(*) AS count,
   AVG(pe.top1_fit) AS avg_fit,
   PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY pe.top1_fit) AS median_fit
 FROM public.profiles p
 JOIN public.v_profiles_ext pe ON p.id = pe.id
-WHERE type_code IS NOT NULL
-GROUP BY LEFT(type_code, 3), overlay;
+WHERE p.type_code IS NOT NULL
+GROUP BY LEFT(p.type_code, 3), p.overlay;
 
 -- 8) Item health analysis
 DROP VIEW IF EXISTS public.v_item_health;
