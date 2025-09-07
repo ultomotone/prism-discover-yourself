@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import type { Profile } from '../src/features/results/types';
 
 (globalThis as any).window = { __APP_CONFIG__: { SUPABASE_URL: 'https://example.supabase.co', SUPABASE_ANON_KEY: 'anon' } };
 
@@ -73,6 +74,23 @@ test('retries transient errors', async () => {
   );
   const res = await fetchResults({ sessionId: 's' }, client);
   assert.equal(res.profile.id, 'p4');
+  assert.equal(attempts, 2);
+});
+
+test('treats 429 as transient', async () => {
+  let attempts = 0;
+  const client = createClient(
+    undefined,
+    async () => {
+      attempts++;
+      return attempts < 2
+        ? { data: null, error: { status: 429 } }
+        : { data: { profile: { id: 'p5' }, session: { id: 's', status: 'completed' } }, error: null };
+    },
+  );
+  const res = await fetchResults({ sessionId: 's' }, client);
+  const profile: Profile = res.profile;
+  assert.equal(profile.id, 'p5');
   assert.equal(attempts, 2);
 });
 
