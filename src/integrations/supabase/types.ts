@@ -1473,9 +1473,11 @@ export type Database = {
         Row: {
           country_display: string | null
           created_at: string | null
-          fit_score: number | null
+          confidence: string | null
+          fit_band: string | null
           session_id: string | null
           type_display: string | null
+          version: string | null
         }
         Relationships: []
       }
@@ -1900,9 +1902,11 @@ export type Database = {
         Returns: {
           country_display: string
           created_at: string
-          fit_score: number
+          confidence: string | null
+          fit_band: string | null
           session_id: string
           type_display: string
+          version: string | null
         }[]
       }
       get_user_assessment_scores: {
