@@ -187,11 +187,11 @@ const UserDashboard = () => {
                                     <span className="font-semibold text-lg">
                                       {session.profile.type_code}
                                     </span>
-                                    {session.profile.overlay && (
-                                      <Badge variant="outline" className="text-xs">
-                                        State: {session.profile.overlay}
-                                      </Badge>
-                                    )}
+                                      {(session.profile.overlay ?? '') && (
+                                        <Badge variant="outline" className="text-xs">
+                                          State: {session.profile.overlay ?? ''}
+                                        </Badge>
+                                      )}
                                   </div>
                                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                     <span>Confidence: {session.profile.confidence}</span>
