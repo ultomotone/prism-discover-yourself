@@ -1,5 +1,6 @@
--- Create a simpler privacy-safe view for recent assessments without RLS policies
-CREATE OR REPLACE VIEW public.v_recent_assessments_safe AS
+-- up
+DROP VIEW IF EXISTS public.v_recent_assessments_safe;
+CREATE VIEW public.v_recent_assessments_safe AS
 SELECT 
   p.created_at,
   LEFT(p.type_code, 3) as type_prefix,  -- Only first 3 characters (less identifying)
@@ -24,3 +25,9 @@ LIMIT 50;  -- Limit to prevent large data exposure
 
 -- Set security invoker to respect RLS of underlying tables
 ALTER VIEW public.v_recent_assessments_safe SET (security_invoker = true);
+
+-- Retain public read access
+GRANT SELECT ON public.v_recent_assessments_safe TO anon, authenticated;
+
+-- down
+DROP VIEW IF EXISTS public.v_recent_assessments_safe;
