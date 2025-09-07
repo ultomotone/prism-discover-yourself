@@ -80,7 +80,12 @@ async function rpcCall(
     { p_session_id: sessionId, p_share_token: shareToken }
   );
 
-  if (error) throw mapStatus((error as any).status, (error as any).message);
+  if (error) {
+    const status =
+      (error as any)?.status ??
+      ((/not\s*found/i).test((error as any)?.message ?? '') ? 404 : 500);
+    throw mapStatus(status, (error as any).message);
+  }
 
   // Handle both single-object and array-of-rows returns
   const profile: RpcRow | undefined = Array.isArray(data) ? data[0] : (data ?? undefined);
@@ -102,7 +107,12 @@ async function edgeCall(
       signal,
     },
   );
-  if (error) throw mapStatus((error as any).status, (error as any).message);
+  if (error) {
+    const status =
+      (error as any)?.status ??
+      ((/not\s*found/i).test((error as any)?.message ?? '') ? 404 : 500);
+    throw mapStatus(status, (error as any).message);
+  }
   return parseEdgePayload(data, sessionId);
 }
 
