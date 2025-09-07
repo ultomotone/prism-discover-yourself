@@ -1,5 +1,3 @@
--- supabase/migrations/20250819032520_f3865a50-3731-45ac-bd7d-e5951952a46c.sql
-
 -- Add missing section column to assessment_scoring_key if it doesn't exist
 ALTER TABLE assessment_scoring_key ADD COLUMN IF NOT EXISTS section TEXT DEFAULT 'core';
 
@@ -10,30 +8,30 @@ UPDATE assessment_scoring_key SET section = 'preferences'         WHERE section 
 UPDATE assessment_scoring_key SET section = 'states'              WHERE section IS NULL AND question_id > 150;
 
 -- SESSION START/END + DURATION + COMPLETION FLAG (fixed)
-DROP VIEW IF EXISTS v_sessions;
+DROP VIEW IF EXISTS public.v_sessions;
 
-CREATE VIEW v_sessions AS
+CREATE VIEW public.v_sessions AS
 WITH base AS (
   SELECT
     r.session_id,
     MIN(r.created_at) AS started_at,
     MAX(r.created_at) AS last_event_at
-  FROM assessment_responses r
+  FROM public.assessment_responses r
   GROUP BY r.session_id
 )
 SELECT
-  COALESCE(s.user_id, p.user_id) AS user_id,  -- user_id from assessment_sessions (preferred) or profiles
+  COALESCE(s.user_id, p.user_id) AS user_id,
   b.session_id,
   b.started_at,
   b.last_event_at,
   EXTRACT(epoch FROM (b.last_event_at - b.started_at))::int AS duration_sec,
-  EXISTS (SELECT 1 FROM profiles p2 WHERE p2.session_id = b.session_id) AS completed
+  EXISTS (SELECT 1 FROM public.profiles p2 WHERE p2.session_id = b.session_id) AS completed
 FROM base b
-LEFT JOIN assessment_sessions s ON s.id = b.session_id
-LEFT JOIN profiles p           ON p.session_id = b.session_id;
+LEFT JOIN public.assessment_sessions s ON s.id = b.session_id
+LEFT JOIN public.profiles p           ON p.session_id = b.session_id;
 
 -- PROFILES EXTENDED (TOP GAP, OVERLAY +/-)
-CREATE OR REPLACE VIEW v_profiles_ext AS
+CREATE OR REPLACE VIEW public.v_profiles_ext AS
 SELECT
   p.*,
   SUBSTRING(p.type_code FROM 1 FOR 3) as type_top,
@@ -43,20 +41,20 @@ SELECT
    - (p.type_scores->(p.top_types->>1)->>'fit_abs')::float) as fit_gap,
   (p.validity->>'inconsistency')::float as inconsistency,
   (p.validity->>'sd_index')::float as sd_index
-FROM profiles p;
+FROM public.profiles p;
 
 -- FUNNEL by SECTION
-CREATE OR REPLACE VIEW v_section_progress AS
+CREATE OR REPLACE VIEW public.v_section_progress AS
 SELECT
   r.session_id,
   sk.section,
   COUNT(*) as answered
-FROM assessment_responses r
-JOIN assessment_scoring_key sk USING (question_id)
+FROM public.assessment_responses r
+JOIN public.assessment_scoring_key sk USING (question_id)
 GROUP BY r.session_id, sk.section;
 
 -- ITEM DIAGNOSTICS (basic stats)
-CREATE OR REPLACE VIEW v_item_stats AS
+CREATE OR REPLACE VIEW public.v_item_stats AS
 SELECT
   sk.question_id,
   sk.scale_type,
@@ -67,23 +65,23 @@ SELECT
   COUNT(r.answer_value) as n,
   AVG(NULLIF(r.answer_value::float, 'NaN')) as mean_val,
   STDDEV(NULLIF(r.answer_value::float, 'NaN')) as sd_val
-FROM assessment_scoring_key sk
-LEFT JOIN assessment_responses r USING (question_id)
+FROM public.assessment_scoring_key sk
+LEFT JOIN public.assessment_responses r USING (question_id)
 GROUP BY 1,2,3,4,5,6;
 
 -- ITEM-TOTAL CORRELATION for Te strength
-CREATE OR REPLACE VIEW v_item_total_te AS
+CREATE OR REPLACE VIEW public.v_item_total_te AS
 SELECT
   r.question_id,
   CORR(r.answer_value::float, (p.strengths->>'Te')::float) as r_item_total_te
-FROM assessment_responses r
-JOIN assessment_scoring_key sk USING (question_id)
-JOIN profiles p USING (session_id)
+FROM public.assessment_responses r
+JOIN public.assessment_scoring_key sk USING (question_id)
+JOIN public.profiles p USING (session_id)
 WHERE sk.tag LIKE 'Te_%'
 GROUP BY r.question_id;
 
 -- RETEST PAIRS & DELTAS
-CREATE OR REPLACE VIEW v_retest_pairs AS
+CREATE OR REPLACE VIEW public.v_retest_pairs AS
 SELECT
   a.user_id,
   a.session_id as session_id_1, 
@@ -100,10 +98,10 @@ SELECT
   b.blocks_norm as blocks_2,
   a.overlay as overlay_1, 
   b.overlay as overlay_2
-FROM profiles a
-JOIN profiles b ON a.user_id = b.user_id AND b.created_at > a.created_at;
+FROM public.profiles a
+JOIN public.profiles b ON a.user_id = b.user_id AND b.created_at > a.created_at;
 
-CREATE OR REPLACE VIEW v_retest_deltas AS
+CREATE OR REPLACE VIEW public.v_retest_deltas AS
 SELECT
   user_id, 
   session_id_1, 
@@ -118,4 +116,4 @@ SELECT
      JOIN jsonb_each_text(dimensions_2) d2 USING (key)
      WHERE d1.value <> d2.value) as dim_change_ct,
   (type_1 <> type_2) as type_changed
-FROM v_retest_pairs;
+FROM public.v_retest_pairs;
