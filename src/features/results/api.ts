@@ -1,19 +1,10 @@
 import { supabase } from '@/lib/supabase/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
-
-export interface ResultsProfile extends Record<string, unknown> {
-  id: string;
-}
-
-export interface ResultsSession {
-  id: string;
-  status: string;
-}
-
-export interface FetchResultsResponse {
-  profile: ResultsProfile;
-  session: ResultsSession;
-}
+import type {
+  Profile,
+  ResultsSession,
+  FetchResultsResponse,
+} from './types';
 
 export type FetchResultsErrorKind =
   | 'not_found'
@@ -67,7 +58,7 @@ function parseEdgePayload(
   sessionId: string,
 ): FetchResultsResponse {
   const data = payload as {
-    profile?: ResultsProfile;
+    profile?: Profile;
     session?: ResultsSession;
   } | null;
   if (data?.profile && data.session && typeof data.session.id === 'string') {
@@ -92,7 +83,7 @@ async function rpcCall(
   }
   if (!data) throw new FetchResultsError('not_found');
   return {
-    profile: data as ResultsProfile,
+    profile: data as Profile,
     session: { id: sessionId, status: 'completed' },
   };
 }

@@ -1899,22 +1899,14 @@ export type Database = {
       get_recent_assessments_safe: {
         Args: Record<PropertyKey, never>
         Returns: {
-          confidence: string
-          country_display: string
           created_at: string
-          fit_band: string
-          fit_score: number
-          invalid_combo_flag: boolean
-          results_version: string
-          score_fit_calibrated: number
-          score_fit_raw: number
-          session_id: string
-          share_pct: number
-          top_gap: number
           type_display: string
-          version: string
+          country_display: string
+          fit_score: number
+          session_id: string
         }[]
       }
+      
       get_user_assessment_scores: {
         Args: { p_session_id: string }
         Returns: Json
