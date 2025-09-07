@@ -24,3 +24,6 @@ LIMIT 50;  -- Limit to prevent large data exposure
 
 -- Set security invoker to respect RLS of underlying tables
 ALTER VIEW public.v_recent_assessments_safe SET (security_invoker = true);
+
+-- Retain public read access
+GRANT SELECT ON public.v_recent_assessments_safe TO anon, authenticated;
