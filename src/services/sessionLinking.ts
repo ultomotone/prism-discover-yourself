@@ -39,3 +39,36 @@ export async function linkSessionsToUser(
     return { ok: false, error };
   }
 }
+
+export type LinkSessionResult =
+  | { ok: true }
+  | { ok: false; error: unknown };
+
+export async function linkSessionToAccount(
+  client: SupabaseClient,
+  sessionId: string,
+  userId: string,
+  email?: string,
+): Promise<LinkSessionResult> {
+  try {
+    const { data, error } = await client.functions.invoke(
+      'link_session_to_account',
+      {
+        body: { session_id: sessionId, user_id: userId, email },
+      },
+    );
+
+    if (error || !data?.success) {
+      return { ok: false, error: error ?? data?.error };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error };
+  }
+}
+
+
+export function getSessionResumePath(sessionId: string): string {
+  return `/continue/${sessionId}`;
+}

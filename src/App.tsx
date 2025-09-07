@@ -70,6 +70,7 @@ import RelationalFitHome from "./pages/relational-fit/RelationalFitHome";
 import RelationalFitHeatmap from "./pages/relational-fit/RelationalFitHeatmap";
 import RelationalFitTypes from "./pages/relational-fit/RelationalFitTypes";
 import RelationalFitPair from "./pages/relational-fit/RelationalFitPair";
+import ContinueSession from "./pages/ContinueSession";
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -166,6 +167,7 @@ const App = () => (
 <Route path="/signup" element={<Signup />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/assessment" element={<Assessment />} />
+                  <Route path="/continue/:sessionId" element={<ContinueSession />} />
                   <Route path="/results/:sessionId" element={<Results />} />
                   {/* Debug route for Results testing */}
                   <Route path="/results" element={
