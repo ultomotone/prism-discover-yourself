@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
-import { linkSessionsToUser } from '@/services/sessionLinking';
+import { linkSessionsToUser, linkSessionToAccount } from '@/services/sessionLinking';
 
 interface AuthContextType {
   user: User | null;
@@ -38,10 +38,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!user?.email) return;
-    linkSessionsToUser(supabase, user.email, user.id).catch((err) => {
-      console.error('Failed to link sessions to account', err);
-    });
+    if (!user) return;
+
+    if (user.email) {
+      linkSessionsToUser(supabase, user.email, user.id).catch((err) => {
+        console.error('Failed to link sessions to account', err);
+      });
+    }
+
+    try {
+      const cached = localStorage.getItem('prism_last_session');
+      if (cached) {
+        const { id, email } = JSON.parse(cached) as {
+          id?: string;
+          email?: string;
+        };
+        if (id) {
+          linkSessionToAccount(
+            supabase,
+            id,
+            user.id,
+            user.email ?? email ?? ''
+          ).catch((err) => {
+            console.error('Failed to link cached session', err);
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to parse cached session', err);
+    }
   }, [user]);
 
   const signOut = async () => {
