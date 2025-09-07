@@ -7,7 +7,7 @@ export interface ResultsProfile extends Record<string, unknown> {
 
 export interface ResultsSession {
   id: string;
-  status: string; // 'completed' | 'processing' | etc.
+  status: string;
 }
 
 export interface FetchResultsResponse {
@@ -40,7 +40,7 @@ const inFlight = new Map<
 >();
 
 function backoff(attempt: number): number {
-  const base = 100 * 2 ** attempt; // 100ms, 200ms, 400ms
+  const base = 100 * 2 ** attempt;
   const jitter = Math.random() * 100;
   return base + jitter;
 }
@@ -58,14 +58,16 @@ function mapStatus(status?: number, detail?: string): FetchResultsError {
 
 function mapUnknown(e: unknown): FetchResultsError {
   if (e instanceof FetchResultsError) return e;
-  // Aborts from fetch usually surface as DOMException('AbortError') or similar
   if (e && typeof e === 'object' && 'name' in e && (e as any).name === 'AbortError') {
     return new FetchResultsError('transient', 'aborted');
   }
   return new FetchResultsError('unknown', e instanceof Error ? e.message : undefined);
 }
 
-function parseEdgePayload(payload: unknown, sessionId: string): FetchResultsResponse {
+function parseEdgePayload(
+  payload: unknown,
+  _sessionId: string,
+): FetchResultsResponse {
   const data = payload as { profile?: ResultsProfile; session?: Partial<ResultsSession> } | null;
   if (data?.profile && data.session && typeof data.session.id === 'string') {
     return {
@@ -80,21 +82,16 @@ async function rpcCall(
   client: SupabaseClient,
   sessionId: string,
   shareToken: string,
-  _signal: AbortSignal, // note: Supabase rpc() doesn't accept signal currently
+  _signal: AbortSignal,
 ): Promise<FetchResultsResponse> {
-  // Tip: annotate the expected return for stronger typing
   type RpcRow = ResultsProfile;
   const { data, error } = await client.rpc<RpcRow | RpcRow[]>(
     'get_profile_by_session',
     { p_session_id: sessionId, p_share_token: shareToken }
   );
-
   if (error) throw mapStatus((error as any).status, (error as any).message);
-
-  // Handle both single-object and array-of-rows returns
   const profile: RpcRow | undefined = Array.isArray(data) ? data[0] : (data ?? undefined);
   if (!profile) throw new FetchResultsError('not_found');
-
   return { profile, session: { id: sessionId, status: 'completed' } };
 }
 
@@ -106,7 +103,7 @@ async function edgeCall(
 ): Promise<FetchResultsResponse> {
   const { data, error } = await client.functions.invoke(
     'get-results-by-session',
-    { body: { sessionId, shareToken }, signal } // <-- plumb AbortSignal here
+    { body: { sessionId, shareToken }, signal }
   );
   if (error) throw mapStatus((error as any).status, (error as any).message);
   return parseEdgePayload(data, sessionId);
@@ -117,7 +114,8 @@ async function executeWithRetry<T>(
   controller: AbortController,
 ): Promise<T> {
   let attempt = 0;
-  while (true) { // eslint-disable-line no-constant-condition
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
     try {
       if (controller.signal.aborted) throw new FetchResultsError('transient', 'aborted');
       return await fn(controller.signal);
@@ -142,6 +140,7 @@ export async function fetchResults(
   if (existing) return existing.promise;
 
   const controller = new AbortController();
+
   const promise = (async () => {
     try {
       if (shareToken) {
@@ -163,7 +162,6 @@ export async function fetchResults(
   return promise;
 }
 
-// Optional: let callers proactively cancel a specific in-flight call
 export function cancelFetchResults(sessionId: string, shareToken?: string) {
   const key = `${sessionId}|${shareToken ?? ''}`;
   const entry = inFlight.get(key);
