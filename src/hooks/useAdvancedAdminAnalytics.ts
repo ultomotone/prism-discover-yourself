@@ -1,77 +1,156 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { z } from "zod";
 
-interface DateRange {
-  from: Date;
-  to: Date;
-  preset: string;
-}
+const DateRangeSchema = z.object({
+  from: z.date(),
+  to: z.date(),
+  preset: z.string(),
+});
+type DateRange = z.infer<typeof DateRangeSchema>;
 
-interface Filters {
-  dateRange: DateRange;
-  overlay: string;
-  confidence: string;
-  primaryType: string;
-  device: string;
-}
+const FiltersSchema = z.object({
+  dateRange: DateRangeSchema,
+  overlay: z.string(),
+  confidence: z.string(),
+  primaryType: z.string(),
+  device: z.string(),
+});
+type Filters = z.infer<typeof FiltersSchema>;
 
-interface KPIData {
-  completions: number;
-  completionRate: number;
-  medianDuration: number;
-  speedersPercent: number;
-  stallersPercent: number;
-  duplicatesPercent: number;
-  validityPassRate: number;
-}
+const KpiRowSchema = z.object({
+  completions: z.number(),
+  completion_rate_pct: z.number(),
+  median_duration_min: z.number(),
+  speeders_pct: z.number(),
+  stallers_pct: z.number(),
+  duplicates_pct: z.number(),
+  validity_pass_rate_pct: z.number(),
+  top1_fit_median: z.number(),
+  top_gap_median: z.number(),
+  close_calls_pct: z.number(),
+  inconsistency_mean: z.number(),
+  sd_index_mean: z.number(),
+  confidence_margin_median: z.number(),
+});
+type KpiRow = z.infer<typeof KpiRowSchema>;
 
-interface QualityData {
-  top1FitMedian: number;
-  topGapMedian: number;
-  closeCallsPercent: number;
-  inconsistencyMean: number;
-  sdIndexMean: number;
-  confidenceMarginMedian: number;
-  validityPassRate: number;
-}
+const ConfidenceDistSchema = z.array(
+  z.object({ bucket: z.string(), n: z.number() })
+);
+type ConfidenceDist = z.infer<typeof ConfidenceDistSchema>;
 
-interface ChartData {
-  confidenceDistribution: Array<{ confidence: string; count: number }>;
-  overlayDistribution: Array<{ overlay: string; count: number }>;
-  typeDistribution: Array<{ type: string; count: number }>;
-  throughputTrend: Array<{ date: string; sessions: number }>;
-}
+const OverlayDistSchema = z.array(
+  z.object({ overlay: z.string(), n: z.number() })
+);
+type OverlayDist = z.infer<typeof OverlayDistSchema>;
 
-interface MethodHealthData {
-  fcCoverage: Array<{ fc_count: number; sessions: number }>;
-  shareEntropy: Array<{ entropy_range: string; sessions: number }>;
-  dimensionalCoverage: Array<{ func: string; min_d_items: number; median_d_items: number; low_coverage_sessions: number }>;
-  sectionTimes: Array<{ section: string; median_sec: number; drop_rate: number }>;
-}
+const TypeDistSchema = z.array(
+  z.object({ primary_type: z.string(), n: z.number() })
+);
+type TypeDist = z.infer<typeof TypeDistSchema>;
 
-const defaultDateRange: DateRange = {
+const ThroughputSchema = z.array(
+  z.object({ day_label: z.string(), completions: z.number() })
+);
+type Throughput = z.infer<typeof ThroughputSchema>;
+
+const LatestAssessmentsSchema = z.array(
+  z.object({
+    session_id: z.string(),
+    user_id: z.string(),
+    top1_fit: z.number(),
+    top_gap: z.number(),
+    confidence_margin: z.number(),
+    overlay_label: z.string(),
+    completed_at_et: z.string(),
+  })
+);
+type LatestAssessments = z.infer<typeof LatestAssessmentsSchema>;
+
+const KPIDataSchema = z.object({
+  completions: z.number(),
+  completionRate: z.number(),
+  medianDuration: z.number(),
+  speedersPercent: z.number(),
+  stallersPercent: z.number(),
+  duplicatesPercent: z.number(),
+  validityPassRate: z.number(),
+});
+type KPIData = z.infer<typeof KPIDataSchema>;
+
+const QualityDataSchema = z.object({
+  top1FitMedian: z.number(),
+  topGapMedian: z.number(),
+  closeCallsPercent: z.number(),
+  inconsistencyMean: z.number(),
+  sdIndexMean: z.number(),
+  confidenceMarginMedian: z.number(),
+  validityPassRate: z.number(),
+});
+type QualityData = z.infer<typeof QualityDataSchema>;
+
+const ChartDataSchema = z.object({
+  confidenceDistribution: z.array(
+    z.object({ confidence: z.string(), count: z.number() })
+  ),
+  overlayDistribution: z.array(
+    z.object({ overlay: z.string(), count: z.number() })
+  ),
+  typeDistribution: z.array(
+    z.object({ type: z.string(), count: z.number() })
+  ),
+  throughputTrend: z.array(
+    z.object({ date: z.string(), sessions: z.number() })
+  ),
+});
+type ChartData = z.infer<typeof ChartDataSchema>;
+
+const MethodHealthDataSchema = z.object({
+  fcCoverage: z.array(
+    z.object({ fc_count: z.number(), sessions: z.number() })
+  ),
+  shareEntropy: z.array(
+    z.object({ entropy_range: z.string(), sessions: z.number() })
+  ),
+  dimensionalCoverage: z.array(
+    z.object({
+      func: z.string(),
+      min_d_items: z.number(),
+      median_d_items: z.number(),
+      low_coverage_sessions: z.number(),
+    })
+  ),
+  sectionTimes: z.array(
+    z.object({ section: z.string(), median_sec: z.number(), drop_rate: z.number() })
+  ),
+});
+type MethodHealthData = z.infer<typeof MethodHealthDataSchema>;
+
+const defaultDateRange: DateRange = DateRangeSchema.parse({
   from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
   to: new Date(),
   preset: "30d",
-};
+});
 
-const defaultFilters: Filters = {
+const defaultFilters: Filters = FiltersSchema.parse({
   dateRange: defaultDateRange,
   overlay: "all",
   confidence: "all",
   primaryType: "all",
   device: "all",
-};
+});
 
 export const useAdvancedAdminAnalytics = () => {
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [loading, setLoading] = useState(true);
-  const [kpiRow, setKpiRow] = useState<any | null>(null);
-  const [confDist, setConfDist] = useState<any[]>([]);
-  const [overlayDist, setOverlayDist] = useState<any[]>([]);
-  const [typeDist, setTypeDist] = useState<any[]>([]);
-  const [throughputData, setThroughputData] = useState<any[]>([]);
-  const [latestAssessments, setLatestAssessments] = useState<any[]>([]);
+  const [kpiRow, setKpiRow] = useState<KpiRow | null>(null);
+  const [confDist, setConfDist] = useState<ConfidenceDist>([]);
+  const [overlayDist, setOverlayDist] = useState<OverlayDist>([]);
+  const [typeDist, setTypeDist] = useState<TypeDist>([]);
+  const [throughputData, setThroughputData] = useState<Throughput>([]);
+  const [latestAssessments, setLatestAssessments] =
+    useState<LatestAssessments>([]);
   const [error, setError] = useState<string | null>(null);
 
   const supabase = useMemo(() => createClient(), []);
@@ -88,12 +167,12 @@ export const useAdvancedAdminAnalytics = () => {
         latestRes,
         typeRes,
       ] = await Promise.all([
-        supabase.from("admin_kpis_last_30d").select("*").maybeSingle(),
-        supabase.from("admin_confidence_dist_last_30d").select("*"),
-        supabase.from("admin_overlay_dist_last_30d").select("*"),
-        supabase.from("admin_throughput_last_14d").select("*"),
-        supabase.from("admin_latest_assessments").select("*"),
-        supabase.from("admin_type_dist_last_30d").select("*"),
+        supabase.rpc("admin_get_kpis_last_30d"),
+        supabase.rpc("admin_get_confidence_dist_last_30d"),
+        supabase.rpc("admin_get_overlay_dist_last_30d"),
+        supabase.rpc("admin_get_throughput_last_14d"),
+        supabase.rpc("admin_get_latest_assessments"),
+        supabase.rpc("admin_get_type_dist_last_30d"),
       ]);
 
       const errors = [
@@ -109,12 +188,23 @@ export const useAdvancedAdminAnalytics = () => {
         throw new Error(errors.map((e: any) => e.message).join("; "));
       }
 
-      setKpiRow(kpisRes.data ?? null);
-      setConfDist(confRes.data ?? []);
-      setOverlayDist(overlayRes.data ?? []);
-      setThroughputData(trendRes.data ?? []);
-      setLatestAssessments(latestRes.data ?? []);
-      setTypeDist(typeRes.data ?? []);
+      const kpiParsed = KpiRowSchema.safeParse(kpisRes.data?.[0]);
+      setKpiRow(kpiParsed.success ? kpiParsed.data : null);
+
+      const confParsed = ConfidenceDistSchema.safeParse(confRes.data ?? []);
+      setConfDist(confParsed.success ? confParsed.data : []);
+
+      const overlayParsed = OverlayDistSchema.safeParse(overlayRes.data ?? []);
+      setOverlayDist(overlayParsed.success ? overlayParsed.data : []);
+
+      const trendParsed = ThroughputSchema.safeParse(trendRes.data ?? []);
+      setThroughputData(trendParsed.success ? trendParsed.data : []);
+
+      const latestParsed = LatestAssessmentsSchema.safeParse(latestRes.data ?? []);
+      setLatestAssessments(latestParsed.success ? latestParsed.data : []);
+
+      const typeParsed = TypeDistSchema.safeParse(typeRes.data ?? []);
+      setTypeDist(typeParsed.success ? typeParsed.data : []);
     } catch (e: any) {
       setKpiRow(null);
       setConfDist([]);
@@ -132,7 +222,7 @@ export const useAdvancedAdminAnalytics = () => {
     fetchAll();
   }, []);
 
-  const kpiData: KPIData = {
+  const kpiData: KPIData = KPIDataSchema.parse({
     completions: kpiRow?.completions ?? 0,
     completionRate: kpiRow?.completion_rate_pct ?? 0,
     medianDuration: kpiRow?.median_duration_min ?? 0,
@@ -140,9 +230,9 @@ export const useAdvancedAdminAnalytics = () => {
     stallersPercent: kpiRow?.stallers_pct ?? 0,
     duplicatesPercent: kpiRow?.duplicates_pct ?? 0,
     validityPassRate: kpiRow?.validity_pass_rate_pct ?? 0,
-  };
+  });
 
-  const qualityData: QualityData = {
+  const qualityData: QualityData = QualityDataSchema.parse({
     top1FitMedian: kpiRow?.top1_fit_median ?? 0,
     topGapMedian: kpiRow?.top_gap_median ?? 0,
     closeCallsPercent: kpiRow?.close_calls_pct ?? 0,
@@ -150,33 +240,33 @@ export const useAdvancedAdminAnalytics = () => {
     sdIndexMean: kpiRow?.sd_index_mean ?? 0,
     confidenceMarginMedian: kpiRow?.confidence_margin_median ?? 0,
     validityPassRate: kpiRow?.validity_pass_rate_pct ?? 0,
-  };
+  });
 
-  const chartData: ChartData = {
-    confidenceDistribution: confDist.map((item: any) => ({
+  const chartData: ChartData = ChartDataSchema.parse({
+    confidenceDistribution: confDist.map((item) => ({
       confidence: item.bucket,
       count: item.n,
     })),
-    overlayDistribution: overlayDist.map((item: any) => ({
+    overlayDistribution: overlayDist.map((item) => ({
       overlay: item.overlay,
       count: item.n,
     })),
-    typeDistribution: typeDist.map((item: any) => ({
+    typeDistribution: typeDist.map((item) => ({
       type: item.primary_type,
       count: item.n,
     })),
-    throughputTrend: throughputData.map((item: any) => ({
+    throughputTrend: throughputData.map((item) => ({
       date: item.day_label,
       sessions: item.completions,
     })),
-  };
+  });
 
-  const methodHealthData: MethodHealthData = {
+  const methodHealthData: MethodHealthData = MethodHealthDataSchema.parse({
     fcCoverage: [],
     shareEntropy: [],
     dimensionalCoverage: [],
     sectionTimes: [],
-  };
+  });
 
   const refreshData = async () => {
     await fetchAll();
