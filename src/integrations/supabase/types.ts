@@ -677,6 +677,24 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          key: string
+          window_ends_at: string
+          count: number
+        }
+        Insert: {
+          key: string
+          window_ends_at: string
+          count?: number
+        }
+        Update: {
+          key?: string
+          window_ends_at?: string
+          count?: number
+        }
+        Relationships: []
+      }
       scoring_config: {
         Row: {
           key: string
@@ -1895,6 +1913,61 @@ export type Database = {
           version: string | null
         }
       }
+      get_profile_by_session_token: {
+        Args: { p_share_token: string; p_client_ip: string }
+        Returns: {
+          base_func: string | null
+          baseline_session_id: string | null
+          blocks: Json | null
+          blocks_norm: Json | null
+          close_call: boolean | null
+          conf_band: string | null
+          conf_calibrated: number | null
+          conf_raw: number | null
+          confidence: string | null
+          created_at: string | null
+          creative_func: string | null
+          deltas: Json | null
+          dimensions: Json | null
+          dims_highlights: Json | null
+          email_mask: string | null
+          fc_answered_ct: number | null
+          fc_count: number | null
+          fc_coverage_bucket: string | null
+          fit_band: string | null
+          fit_explainer: Json | null
+          gap_minutes: number | null
+          glossary_version: number | null
+          id: string
+          invalid_combo_flag: boolean | null
+          ip_hash: string | null
+          neuroticism: Json | null
+          overlay: string | null
+          parent_session_id: string | null
+          person_key: string | null
+          prev_session_id: string | null
+          recomputed_at: string | null
+          results_version: string | null
+          run_index: number | null
+          score_fit_calibrated: number | null
+          score_fit_raw: number | null
+          session_id: string
+          session_kind: string | null
+          strengths: Json | null
+          submitted_at: string | null
+          top_3_fits: Json | null
+          top_gap: number | null
+          top_types: Json | null
+          type_code: string | null
+          type_scores: Json | null
+          ua_hash: string | null
+          updated_at: string | null
+          user_id: string | null
+          validity: Json | null
+          validity_status: string | null
+          version: string | null
+        }
+      }
       get_recent_assessments_safe: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1915,6 +1988,10 @@ export type Database = {
           country: string
           sessions: number
         }[]
+      }
+      rate_limit: {
+        Args: { p_key: string; p_max: number; p_window: string }
+        Returns: boolean
       }
       save_assessment_response: {
         Args: {
