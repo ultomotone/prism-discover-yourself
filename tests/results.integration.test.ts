@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
- (globalThis as any).window = { __APP_CONFIG__: { SUPABASE_URL: 'https://example.supabase.co', SUPABASE_ANON_KEY: 'anon' } };
+(globalThis as any).window = { __APP_CONFIG__: { SUPABASE_URL: 'https://example.supabase.co', SUPABASE_ANON_KEY: 'anon' } };
 
 const { fetchResults, FetchResultsError } = await import('../src/features/results/api');
 
@@ -35,13 +35,14 @@ const server = setupServer();
 server.listen({ onUnhandledRequest: 'error' });
 test.after(() => server.close());
 
-test('unauthorized does not retry', async () => {
+test('missing share token yields unauthorized', async () => {
   let calls = 0;
   server.use(
-    http.post('https://api.test/functions/v1/get-results-by-session', async () => {
+    http.post('https://api.test/functions/v1/get-results-by-session', async ({ request }) => {
       calls++;
-      if (calls === 1) {
-        return HttpResponse.json({ message: 'nope' }, { status: 401 });
+      const body = await request.json();
+      if (!body.shareToken) {
+        return HttpResponse.json({ message: 'token required' }, { status: 401 });
       }
       return HttpResponse.json({ profile: { id: 'p' }, session: { id: 's', status: 'completed' } });
     }),

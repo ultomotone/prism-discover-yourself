@@ -10,14 +10,15 @@ UPDATE assessment_scoring_key SET section = 'states' WHERE section IS NULL AND q
 -- SESSION START/END + DURATION + COMPLETION FLAG
 CREATE OR REPLACE VIEW v_sessions AS
 SELECT
-  r.user_id,
+  s.user_id,
   r.session_id,
   MIN(r.created_at) as started_at,
   MAX(r.created_at) as last_event_at,
   EXTRACT(epoch FROM (MAX(r.created_at) - MIN(r.created_at)))::int as duration_sec,
   EXISTS (SELECT 1 FROM profiles p WHERE p.session_id = r.session_id) as completed
 FROM assessment_responses r
-GROUP BY r.user_id, r.session_id;
+LEFT JOIN assessment_sessions s ON s.id = r.session_id
+GROUP BY s.user_id, r.session_id;
 
 -- PROFILES EXTENDED (TOP GAP, OVERLAY +/-)
 CREATE OR REPLACE VIEW v_profiles_ext AS
