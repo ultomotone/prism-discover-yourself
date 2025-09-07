@@ -45,7 +45,7 @@ SELECT
   END as duration_sec,
   COALESCE(s.metadata->>'device','unknown') as device
 FROM v_sessions v
-LEFT JOIN assessment_sessions s USING (session_id);
+LEFT JOIN public.assessment_sessions s ON s.id = v.session_id;
 
 -- 2) Top-1 / Top-2 fit + gap
 CREATE VIEW v_fit_ranks AS
@@ -67,7 +67,7 @@ SELECT
   max(CASE WHEN rk=1 THEN code END) as top1_code,
   max(CASE WHEN rk=1 THEN fit END) as top1_fit,
   max(CASE WHEN rk=2 THEN fit END) as top2_fit,
-  max(CASE WHEN rk=1 THEN fit END) - max(CASE WHEN rk=2 THEN fit END) as top_gap
+  COALESCE(max(CASE WHEN rk=1 THEN fit END) - max(CASE WHEN rk=2 THEN fit END), 0) as top_gap
 FROM ranked s
 GROUP BY s.session_id;
 
