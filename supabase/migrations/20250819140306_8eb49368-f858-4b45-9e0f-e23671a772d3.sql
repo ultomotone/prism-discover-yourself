@@ -1,177 +1,144 @@
--- Drop existing conflicting views first
-DROP VIEW IF EXISTS v_sessions CASCADE;
-DROP VIEW IF EXISTS v_sessions_plus CASCADE;
-DROP VIEW IF EXISTS v_fit_ranks CASCADE;
-DROP VIEW IF EXISTS v_quality CASCADE;
-DROP VIEW IF EXISTS v_overlay_conf CASCADE;
-DROP VIEW IF EXISTS v_duplicates CASCADE;
-DROP VIEW IF EXISTS v_validity CASCADE;
-DROP VIEW IF EXISTS v_fc_coverage CASCADE;
-DROP VIEW IF EXISTS v_dim_coverage CASCADE;
-DROP VIEW IF EXISTS v_share_entropy CASCADE;
-DROP VIEW IF EXISTS v_section_times CASCADE;
-DROP VIEW IF EXISTS v_throughput CASCADE;
-DROP VIEW IF EXISTS v_conf_dist CASCADE;
+-- Evidence KPIs (resilient)
 
--- 1) Helper: filtered sessions (latest profile per session within date range)
-CREATE VIEW v_sessions AS
-SELECT
-  p.user_id,
-  p.session_id,
-  p.created_at::date as d,
-  p.type_code,
-  left(p.type_code,3) as type3,
-  p.overlay,
-  p.confidence,
-  (p.validity->>'inconsistency')::float as inconsistency,
-  (p.validity->>'sd_index')::float as sd_index,
-  p.strengths,
-  p.dimensions,
-  p.type_scores,
-  p.top_types,
-  p.created_at
-FROM profiles p;
+-- 1) Ensure v_retest_pairs exists (build from profiles if available; else stub)
+DROP VIEW IF EXISTS public.v_retest_pairs;
 
--- Optional durations (fallback to 0 if table absent)
-CREATE VIEW v_sessions_plus AS
-SELECT
-  v.*,
-  s.started_at,
-  s.completed_at,
-  CASE 
-    WHEN s.completed_at IS NOT NULL AND s.started_at IS NOT NULL 
-    THEN EXTRACT(epoch FROM (s.completed_at - s.started_at))::integer
-    ELSE NULL 
-  END as duration_sec,
-  COALESCE(s.metadata->>'device','unknown') as device
-FROM v_sessions v
-LEFT JOIN assessment_sessions s ON s.id = v.session_id;
+DO $$
+DECLARE
+  has_profiles   boolean;
+  has_session_id boolean;
+  has_user_id    boolean;
+  has_created_at boolean;
+  has_top_types  boolean;
+  has_fn_strengths boolean;
+  has_strengths  boolean;
+  has_type_scores boolean;
+  ddl text;
+BEGIN
+  SELECT EXISTS (SELECT 1 FROM information_schema.tables
+                 WHERE table_schema='public' AND table_name='profiles') INTO has_profiles;
 
--- 2) Top-1 / Top-2 fit + gap
-CREATE VIEW v_fit_ranks AS
-WITH pairs AS (
-  SELECT
-    session_id,
-    (jsonb_each(type_scores)).key as code,
-    ((jsonb_each(type_scores)).value->>'fit_abs')::float as fit
-  FROM v_sessions
-  WHERE type_scores IS NOT NULL
-), ranked AS (
-  SELECT session_id, code, fit,
-         row_number() OVER (PARTITION BY session_id ORDER BY fit DESC) as rk
-  FROM pairs
-  WHERE fit IS NOT NULL
-)
-SELECT
-  s.session_id,
-  max(CASE WHEN rk=1 THEN code END) as top1_code,
-  max(CASE WHEN rk=1 THEN fit END) as top1_fit,
-  max(CASE WHEN rk=2 THEN fit END) as top2_fit,
-  COALESCE(max(CASE WHEN rk=1 THEN fit END) - max(CASE WHEN rk=2 THEN fit END), 0) as top_gap
-FROM ranked s
-GROUP BY s.session_id;
+  IF has_profiles THEN
+    SELECT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_schema='public' AND table_name='profiles' AND column_name='session_id')
+      INTO has_session_id;
+    SELECT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_schema='public' AND table_name='profiles' AND column_name='user_id')
+      INTO has_user_id;
+    SELECT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_schema='public' AND table_name='profiles' AND column_name='created_at')
+      INTO has_created_at;
+    SELECT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_schema='public' AND table_name='profiles' AND column_name='top_types')
+      INTO has_top_types;
+    SELECT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_schema='public' AND table_name='profiles' AND column_name='function_strengths')
+      INTO has_fn_strengths;
+    SELECT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_schema='public' AND table_name='profiles' AND column_name='strengths')
+      INTO has_strengths;
+    SELECT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_schema='public' AND table_name='profiles' AND column_name='type_scores')
+      INTO has_type_scores;
+  END IF;
 
--- 3) Close-call flag and function-balance index
-CREATE VIEW v_quality AS
-SELECT
-  v.session_id,
-  v.inconsistency,
-  v.sd_index,
-  f.top1_fit,
-  f.top2_fit,
-  f.top_gap,
-  CASE 
-    WHEN v.strengths IS NOT NULL THEN
-      (SELECT max((value)::float) FROM jsonb_each_text(v.strengths)) -
-      (SELECT min((value)::float) FROM jsonb_each_text(v.strengths))
-    ELSE NULL
-  END as func_balance
-FROM v_sessions v
-LEFT JOIN v_fit_ranks f USING (session_id);
-
--- 4) Overlay & confidence counts
-CREATE VIEW v_overlay_conf AS
-SELECT overlay, confidence, count(*) as n
-FROM v_sessions
-GROUP BY 1,2;
-
--- 5) Duplicates (users with >1 sessions in window)
-CREATE VIEW v_duplicates AS
-SELECT user_id, count(*) as sessions_ct
-FROM v_sessions
-WHERE user_id IS NOT NULL
-GROUP BY 1
-HAVING count(*) > 1;
-
--- 6) Validity pass flag
-CREATE VIEW v_validity AS
-SELECT
-  session_id,
-  (COALESCE(inconsistency, 0) < 1.0 AND COALESCE(sd_index, 0) < 4.3) as pass_validity
-FROM v_quality;
-
--- 7) Forced-choice coverage
-CREATE VIEW v_fc_coverage AS
-SELECT
-  r.session_id,
-  count(*) FILTER (WHERE sk.scale_type::text LIKE 'FORCED_CHOICE%') as fc_count,
-  count(*) as answered_count
-FROM assessment_responses r
-JOIN assessment_scoring_key sk ON sk.question_id = r.question_id
-GROUP BY 1;
-
--- 8) Dimensional coverage per function
-CREATE VIEW v_dim_coverage AS
-SELECT
-  r.session_id,
-  split_part(sk.tag,'_',1) as func,
-  count(*) FILTER (WHERE sk.tag LIKE '%_D') as d_items
-FROM assessment_responses r
-JOIN assessment_scoring_key sk ON sk.question_id = r.question_id
-WHERE sk.tag LIKE '%\_D' ESCAPE '\'
-GROUP BY 1,2;
-
--- 9) Share entropy
-CREATE VIEW v_share_entropy AS
-SELECT
-  p.session_id,
-  CASE 
-    WHEN p.type_scores IS NOT NULL THEN
-      -1 * sum( 
-        CASE 
-          WHEN ((x.val->>'share_pct')::float / 100.0) > 0 THEN
-            ((x.val->>'share_pct')::float / 100.0) * ln((x.val->>'share_pct')::float / 100.0)
-          ELSE 0
-        END
+  IF has_profiles AND has_session_id AND has_user_id AND has_created_at THEN
+    -- Prefer function_strengths → strengths → type_scores as the "strengths" source
+    ddl := $SQL$
+      CREATE VIEW public.v_retest_pairs AS
+      WITH prof AS (
+        SELECT
+          p.user_id,
+          p.session_id,
+          p.created_at,
+          COALESCE(
+            (CASE WHEN $fn$TRUE$fn$ THEN p.function_strengths END),
+            (CASE WHEN $st$TRUE$st$ THEN p.strengths END),
+            (CASE WHEN $ts$TRUE$ts$ THEN p.type_scores END),
+            '{}'::jsonb
+          ) AS strengths,
+          COALESCE(p.top_types, '[]'::jsonb) AS top_types
+        FROM public.profiles p
+        WHERE p.session_id IS NOT NULL
+      ),
+      seq AS (
+        SELECT
+          user_id,
+          LAG(session_id)   OVER (PARTITION BY user_id ORDER BY created_at) AS session_id_1,
+          session_id                                                     AS session_id_2,
+          LAG(created_at)  OVER (PARTITION BY user_id ORDER BY created_at) AS t1,
+          created_at                                                     AS t2,
+          LAG(strengths)   OVER (PARTITION BY user_id ORDER BY created_at) AS strengths_1,
+          strengths                                                      AS strengths_2,
+          LAG(top_types)   OVER (PARTITION BY user_id ORDER BY created_at) AS top_types_1,
+          top_types                                                      AS top_types_2
+        FROM prof
       )
-    ELSE NULL
-  END as share_entropy
-FROM v_sessions p,
-LATERAL jsonb_each(p.type_scores) as x(code, val)
-WHERE p.type_scores IS NOT NULL
-GROUP BY 1, p.type_scores;
+      SELECT *
+      FROM seq
+      WHERE session_id_1 IS NOT NULL;
+    $SQL$;
 
--- 10) Section timing/drop-off
-CREATE VIEW v_section_times AS
-SELECT
-  r.session_id, 
-  COALESCE(sk.section,'Unknown') as section,
-  percentile_disc(0.5) WITHIN GROUP (ORDER BY COALESCE(r.response_time_ms, 0)) as median_sec,
-  1.0 * count(*) FILTER (WHERE r.answer_value IS NULL) / GREATEST(count(*),1) as drop_rate
-FROM assessment_responses r
-LEFT JOIN assessment_scoring_key sk ON sk.question_id = r.question_id
-GROUP BY 1,2;
+    -- substitute TRUE/FALSE based on column existence
+    ddl := replace(ddl, '$fn$TRUE$fn$', CASE WHEN has_fn_strengths THEN 'TRUE' ELSE 'FALSE' END);
+    ddl := replace(ddl, '$st$TRUE$st$', CASE WHEN has_strengths THEN 'TRUE' ELSE 'FALSE' END);
+    ddl := replace(ddl, '$ts$TRUE$ts$', CASE WHEN has_type_scores THEN 'TRUE' ELSE 'FALSE' END);
 
--- 11) Completion rate & throughput
-CREATE VIEW v_throughput AS
-SELECT
-  date_trunc('day', COALESCE(completed_at, started_at))::date as d,
-  count(*) as sessions
-FROM v_sessions_plus
-GROUP BY 1;
+  ELSE
+    -- Stub: correct shape, zero rows (keeps later views creatable)
+    ddl := $SQL$
+      CREATE VIEW public.v_retest_pairs AS
+      SELECT
+        NULL::uuid         AS user_id,
+        NULL::uuid         AS session_id_1,
+        NULL::uuid         AS session_id_2,
+        NULL::timestamptz  AS t1,
+        NULL::timestamptz  AS t2,
+        '{}'::jsonb        AS strengths_1,
+        '{}'::jsonb        AS strengths_2,
+        '[]'::jsonb        AS top_types_1,
+        '[]'::jsonb        AS top_types_2
+      WHERE FALSE;
+    $SQL$;
+  END IF;
 
--- 12) Confidence buckets
-CREATE VIEW v_conf_dist AS
-SELECT confidence, count(*) as n
-FROM v_sessions
-GROUP BY 1;
+  EXECUTE ddl;
+END$$;
+
+-- 2) Now (re)create the KPI view that depends on v_retest_pairs
+DROP VIEW IF EXISTS public.v_test_retest_strength_r;
+
+CREATE VIEW public.v_test_retest_strength_r AS
+SELECT 
+  user_id,
+  session_id_1, 
+  session_id_2,
+  t1, 
+  t2,
+  -- correlation across 8 functions
+  (SELECT corr(s1::float, s2::float)
+     FROM (SELECT (strengths_1->>'Ti')::float UNION ALL
+                  SELECT (strengths_1->>'Te')::float UNION ALL
+                  SELECT (strengths_1->>'Fi')::float UNION ALL
+                  SELECT (strengths_1->>'Fe')::float UNION ALL
+                  SELECT (strengths_1->>'Ni')::float UNION ALL
+                  SELECT (strengths_1->>'Ne')::float UNION ALL
+                  SELECT (strengths_1->>'Si')::float UNION ALL
+                  SELECT (strengths_1->>'Se')::float) a(s1),
+          (SELECT (strengths_2->>'Ti')::float UNION ALL
+                  SELECT (strengths_2->>'Te')::float UNION ALL
+                  SELECT (strengths_2->>'Fi')::float UNION ALL
+                  SELECT (strengths_2->>'Fe')::float UNION ALL
+                  SELECT (strengths_2->>'Ni')::float UNION ALL
+                  SELECT (strengths_2->>'Ne')::float UNION ALL
+                  SELECT (strengths_2->>'Si')::float UNION ALL
+                  SELECT (strengths_2->>'Se')::float) b(s2)
+  ) AS r_strengths,
+  EXTRACT(day FROM (t2 - t1))::int AS days_apart,
+  (top_types_1->>0) AS top1_a,
+  (top_types_2->>0) AS top1_b,
+  ((top_types_1->>0) = (top_types_2->>0)) AS stable,
+  ((top_types_1->>0) <> (top_types_2->>0)
+    AND (top_types_1->>1) = (top_types_2->>0)
+    AND (top_types_1->>0) = (top_types_2->>1)) AS adjacent_flip
+FROM public.v_retest_pairs;
