@@ -1,5 +1,6 @@
 -- Create extended profiles view with fit scores and gaps
-CREATE OR REPLACE VIEW v_profiles_ext AS
+DROP VIEW IF EXISTS public.v_profiles_ext;
+CREATE VIEW public.v_profiles_ext AS
 SELECT
   p.*,
   -- Extract top fit score
@@ -44,27 +45,25 @@ SELECT
     ORDER BY (value->>'fit_abs')::numeric DESC 
     LIMIT 1
   ) as type_top
-FROM profiles p;
-
+FROM public.profiles p;
 -- Grant access to authenticated users
-GRANT SELECT ON v_profiles_ext TO authenticated;
+GRANT SELECT ON public.v_profiles_ext TO authenticated;
 
--- Create throughput KPI view
-CREATE OR REPLACE VIEW v_kpi_throughput AS
+DROP VIEW IF EXISTS public.v_kpi_throughput;
+CREATE VIEW public.v_kpi_throughput AS
 SELECT
   DATE_TRUNC('day', p.created_at) as d,
   COUNT(*) as completions,
   PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY (p.validity->>'duration_min')::numeric) as median_minutes
-FROM v_profiles_ext p
+FROM public.v_profiles_ext p
 WHERE p.created_at >= CURRENT_DATE - INTERVAL '90 days'
 GROUP BY 1
 ORDER BY 1;
 
--- Grant access to authenticated users
-GRANT SELECT ON v_kpi_throughput TO authenticated;
+GRANT SELECT ON public.v_kpi_throughput TO authenticated;
 
--- Create quality KPI view
-CREATE OR REPLACE VIEW v_kpi_quality AS
+DROP VIEW IF EXISTS public.v_kpi_quality;
+CREATE VIEW public.v_kpi_quality AS
 SELECT
   COUNT(*) as n,
   AVG(p.inconsistency) as inconsistency_mean,
@@ -76,42 +75,39 @@ SELECT
   PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY p.fit_top) as fit_median,
   PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY p.fit_gap) as gap_median,
   AVG((p.fit_gap < 5)::int)::numeric as close_calls_pct
-FROM v_profiles_ext p
+FROM public.v_profiles_ext p
 WHERE p.created_at >= CURRENT_DATE - INTERVAL '90 days';
 
--- Grant access to authenticated users  
-GRANT SELECT ON v_kpi_quality TO authenticated;
+GRANT SELECT ON public.v_kpi_quality TO authenticated;
 
--- Create overlay KPI view
-CREATE OR REPLACE VIEW v_kpi_overlay AS
+DROP VIEW IF EXISTS public.v_kpi_overlay;
+CREATE VIEW public.v_kpi_overlay AS
 SELECT 
   overlay,
   COUNT(*) as n,
-  COUNT(*)::numeric / (SELECT COUNT(*) FROM profiles WHERE created_at >= CURRENT_DATE - INTERVAL '90 days')::numeric * 100 as percentage
-FROM profiles
+COUNT(*)::numeric / (SELECT COUNT(*) FROM public.profiles WHERE created_at >= CURRENT_DATE - INTERVAL '90 days')::numeric * 100 as percentage
+FROM public.profiles
 WHERE created_at >= CURRENT_DATE - INTERVAL '90 days'
 GROUP BY overlay;
 
--- Grant access to authenticated users
-GRANT SELECT ON v_kpi_overlay TO authenticated;
+GRANT SELECT ON public.v_kpi_overlay TO authenticated;
 
--- Create section timing view
-CREATE OR REPLACE VIEW v_section_time AS
+DROP VIEW IF EXISTS public.v_section_time;
+CREATE VIEW public.v_section_time AS
 SELECT
   r.question_section as section,
   PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY r.response_time_ms / 1000.0) as median_seconds
-FROM assessment_responses r
-JOIN assessment_sessions s ON s.id = r.session_id
+FROM public.assessment_responses r
+JOIN public.assessment_sessions s ON s.id = r.session_id
 WHERE s.created_at >= CURRENT_DATE - INTERVAL '90 days'
 AND r.response_time_ms IS NOT NULL
 GROUP BY r.question_section
 ORDER BY median_seconds DESC;
 
--- Grant access to authenticated users
-GRANT SELECT ON v_section_time TO authenticated;
+GRANT SELECT ON public.v_section_time TO authenticated;
 
--- Create retest deltas view
-CREATE OR REPLACE VIEW v_retest_deltas AS
+DROP VIEW IF EXISTS public.v_retest_deltas;
+CREATE VIEW public.v_retest_deltas AS
 SELECT
   a.user_id,
   a.session_id as session_id_1,
@@ -143,12 +139,11 @@ SELECT
     )
     ELSE NULL
   END as dim_change_ct
-FROM v_profiles_ext a
-JOIN v_profiles_ext b ON (
+FROM public.v_profiles_ext a
+JOIN public.v_profiles_ext b ON (
   a.user_id = b.user_id 
   AND b.created_at > a.created_at
   AND a.created_at >= CURRENT_DATE - INTERVAL '365 days'
 );
 
--- Grant access to authenticated users
-GRANT SELECT ON v_retest_deltas TO authenticated;
+GRANT SELECT ON public.v_retest_deltas TO authenticated;
