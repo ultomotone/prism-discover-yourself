@@ -84,8 +84,7 @@ async function rpcCall(
 ): Promise<FetchResultsResponse> {
   const { data, error } = await client.rpc(
     'get_profile_by_session',
-    { p_session_id: sessionId, p_share_token: shareToken },
-    { signal },
+    { p_session_id: sessionId, p_share_token: shareToken }
   );
   if (error) {
     throw mapStatus((error as any).status ?? 500, (error as any).message);
@@ -105,7 +104,7 @@ async function edgeCall(
 ): Promise<FetchResultsResponse> {
   const { data, error } = await client.functions.invoke(
     'get-results-by-session',
-    { body: { sessionId, shareToken }, signal },
+    { body: { sessionId, shareToken } }
   );
   if (error) {
     throw mapStatus((error as any).status ?? 500, (error as any).message);
