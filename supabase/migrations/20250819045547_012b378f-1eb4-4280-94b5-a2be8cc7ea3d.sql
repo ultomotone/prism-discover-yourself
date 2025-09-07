@@ -1,4 +1,10 @@
--- Create extended profiles view with fit scores and gaps
+-- Drop dependent KPI views before rebuilding v_profiles_ext
+DROP VIEW IF EXISTS public.v_kpi_throughput;
+DROP VIEW IF EXISTS public.v_kpi_quality;
+DROP VIEW IF EXISTS public.v_kpi_overlay;
+DROP VIEW IF EXISTS public.v_section_time;
+DROP VIEW IF EXISTS public.v_retest_deltas;
+
 DROP VIEW IF EXISTS public.v_profiles_ext;
 CREATE VIEW public.v_profiles_ext AS
 SELECT
@@ -49,7 +55,6 @@ FROM public.profiles p;
 -- Grant access to authenticated users
 GRANT SELECT ON public.v_profiles_ext TO authenticated;
 
-DROP VIEW IF EXISTS public.v_kpi_throughput;
 CREATE VIEW public.v_kpi_throughput AS
 SELECT
   DATE_TRUNC('day', p.created_at) as d,
@@ -62,7 +67,6 @@ ORDER BY 1;
 
 GRANT SELECT ON public.v_kpi_throughput TO authenticated;
 
-DROP VIEW IF EXISTS public.v_kpi_quality;
 CREATE VIEW public.v_kpi_quality AS
 SELECT
   COUNT(*) as n,
@@ -80,7 +84,6 @@ WHERE p.created_at >= CURRENT_DATE - INTERVAL '90 days';
 
 GRANT SELECT ON public.v_kpi_quality TO authenticated;
 
-DROP VIEW IF EXISTS public.v_kpi_overlay;
 CREATE VIEW public.v_kpi_overlay AS
 SELECT 
   overlay,
@@ -92,7 +95,6 @@ GROUP BY overlay;
 
 GRANT SELECT ON public.v_kpi_overlay TO authenticated;
 
-DROP VIEW IF EXISTS public.v_section_time;
 CREATE VIEW public.v_section_time AS
 SELECT
   r.question_section as section,
@@ -106,7 +108,6 @@ ORDER BY median_seconds DESC;
 
 GRANT SELECT ON public.v_section_time TO authenticated;
 
-DROP VIEW IF EXISTS public.v_retest_deltas;
 CREATE VIEW public.v_retest_deltas AS
 SELECT
   a.user_id,
