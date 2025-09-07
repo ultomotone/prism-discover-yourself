@@ -9,25 +9,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 8
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile=false
-      - run: pnpm run lint
-      - run: pnpm run typecheck
-      - run: pnpm test
-      - run: pnpm exec tsx --test --test-reporter=junit tests/fetchResults.test.ts tests/results.integration.test.ts > junit.xml
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npx tsx --test --test-reporter=junit tests/fetchResults.test.ts tests/results.integration.test.ts > junit.xml
       - name: smoke
-        run: pnpm run verify:smoke > smoke-report.json
+        run: npm run verify:smoke > smoke-report.json
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SMOKE_SESSION_ID: ${{ secrets.SMOKE_SESSION_ID }}
           SMOKE_SHARE_TOKEN: ${{ secrets.SMOKE_SHARE_TOKEN }}
+          DENO_TLS_CA_STORE: system
         continue-on-error: ${{ github.event_name == 'pull_request' }}
       - uses: actions/upload-artifact@v4
         if: always()
@@ -44,3 +43,18 @@ jobs:
         with:
           name: smoke-report
           path: smoke-report.json
+
+  supabase-migrations:
+    runs-on: ubuntu-latest
+    if: ${{ secrets.SUPABASE_ACCESS_TOKEN && github.event.pull_request.head.repo.fork != true }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Link & list migrations
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase link --project-ref gnkuikentdtnatazeriu
+          supabase migration list
