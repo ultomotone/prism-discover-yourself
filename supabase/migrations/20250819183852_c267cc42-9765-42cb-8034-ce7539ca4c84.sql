@@ -1,5 +1,28 @@
 -- Create final corrected views with proper enum handling
 
+-- Retest session pairing view (supports downstream evidence KPIs)
+DROP VIEW IF EXISTS public.v_retest_pairs;
+CREATE VIEW public.v_retest_pairs AS
+SELECT
+    a.user_id,
+    a.session_id AS session_id_1,
+    b.session_id AS session_id_2,
+    a.created_at AS t1,
+    b.created_at AS t2,
+    a.type_code AS type_1,
+    b.type_code AS type_2,
+    a.strengths AS strengths_1,
+    b.strengths AS strengths_2,
+    a.dimensions AS dimensions_1,
+    b.dimensions AS dimensions_2,
+    a.blocks_norm AS blocks_1,
+    b.blocks_norm AS blocks_2,
+    a.overlay AS overlay_1,
+    b.overlay AS overlay_2
+FROM public.profiles a
+JOIN public.profiles b
+  ON a.user_id = b.user_id AND b.created_at > a.created_at;
+
 -- Test-Retest Reliability view for strength correlations
 CREATE OR REPLACE VIEW v_test_retest_strength_r AS
 SELECT 
