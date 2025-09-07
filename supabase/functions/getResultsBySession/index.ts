@@ -71,47 +71,33 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Check access permissions (accept multiple finalized states or completed_at)
-    const normalizedStatus = (sessionData.status || '').toLowerCase()
-    const doneStatuses = new Set(['completed', 'complete', 'finalized', 'scored'])
-    const isCompleted = doneStatuses.has(normalizedStatus) || !!sessionData.completed_at
+    // Check access permissions
     const isOwner = !!sessionData.user_id && user?.id === sessionData.user_id
     const hasValidShareToken = !!share_token && sessionData.share_token === share_token
     const isWhitelisted = session_id === "91dfe71f-44d1-4e44-ba8c-c9c684c4071b"
-    
-    console.log('Access check:', { 
-      isCompleted, 
-      isOwner, 
+
+    console.log('Access check:', {
+      isOwner,
       hasValidShareToken,
       isWhitelisted,
       session_status: sessionData.status,
       session_user_id: sessionData.user_id,
       current_user_id: user?.id
     })
-    
-    if (!isCompleted && !isOwner && !hasValidShareToken && !isWhitelisted) {
-      // Back-compat: if a profile exists for this session, allow viewing
-      const { data: probe, error: probeErr } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('session_id', session_id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
 
-      if (probeErr || !probe) {
-        return new Response(
-          JSON.stringify({ ok: false, reason: 'access_denied' }),
-          { 
-            status: 403, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
-      } else {
-        console.log('Access granted via existing profile for session:', session_id)
-      }
+    if (!isOwner && !hasValidShareToken && !isWhitelisted) {
+      return new Response(
+        JSON.stringify({ ok: false, reason: 'access_denied' }),
+        {
+          status: user || share_token ? 403 : 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
     // For whitelisted session, ensure it's marked completed to allow public access
+    const normalizedStatus = (sessionData.status || '').toLowerCase()
+    const doneStatuses = new Set(['completed', 'complete', 'finalized', 'scored'])
+    const isCompleted = doneStatuses.has(normalizedStatus) || !!sessionData.completed_at
     if (isWhitelisted && !isCompleted) {
       await supabase
         .from('assessment_sessions')
