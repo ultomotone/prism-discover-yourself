@@ -210,17 +210,6 @@ SELECT
 FROM public.profiles p
 WHERE type_code IS NULL AND created_at >= CURRENT_DATE - INTERVAL '30 days';
 
--- Enable RLS on all views for authenticated users
-ALTER VIEW public.v_profiles_ext OWNER TO supabase_admin;
-ALTER VIEW public.v_kpi_throughput OWNER TO supabase_admin;
-ALTER VIEW public.v_kpi_quality OWNER TO supabase_admin;
-ALTER VIEW public.v_kpi_overlay OWNER TO supabase_admin;
-ALTER VIEW public.v_section_time OWNER TO supabase_admin;
-ALTER VIEW public.v_retest_deltas OWNER TO supabase_admin;
-ALTER VIEW public.v_type_distribution OWNER TO supabase_admin;
-ALTER VIEW public.v_item_health OWNER TO supabase_admin;
-ALTER VIEW public.v_anomalies OWNER TO supabase_admin;
-
 -- Grant SELECT permissions to authenticated role
 GRANT SELECT ON public.v_profiles_ext TO authenticated;
 GRANT SELECT ON public.v_kpi_throughput TO authenticated;
