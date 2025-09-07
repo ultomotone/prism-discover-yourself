@@ -51,7 +51,32 @@ export async function linkSessionToAccount(
   email?: string,
 ): Promise<LinkSessionResult> {
   try {
-    const { error } = await client
+    // 1) Prefer Edge Function (handles RLS/validation server-side)
+    try {
+      const { data, error } = await client.functions.invoke(
+        'link_session_to_account',
+        { body: { session_id: sessionId, user_id: userId, email } },
+      );
+
+      // Success
+      if (!error && (data as any)?.success) {
+        return { ok: true };
+      }
+      // Function ran but reported failure
+      if (!error && (data as any) && (data as any).success === false) {
+        return { ok: false, error: (data as any).error };
+      }
+      // If error is not "missing function" (404), surface it
+      if (error && (error as any).status && (error as any).status !== 404) {
+        return { ok: false, error };
+      }
+      // Otherwise fall through to DB update
+    } catch {
+      // SDK/network exception → try fallback
+    }
+
+    // 2) Fallback: direct update (works in dev or when RLS permits)
+    const { error: updateError } = await client
       .from('assessment_sessions')
       .update({
         user_id: userId,
@@ -61,13 +86,11 @@ export async function linkSessionToAccount(
       .eq('id', sessionId)
       .is('user_id', null);
 
-    if (error) {
-      return { ok: false, error };
+    if (updateError) {
+      return { ok: false, error: updateError };
     }
-
     return { ok: true };
   } catch (error) {
     return { ok: false, error };
   }
 }
-
