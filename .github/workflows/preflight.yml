@@ -12,6 +12,7 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,6 +32,10 @@ jobs:
       - run: npm run preflight
       - run: npm run verify:sql
       - run: npm run verify:smoke
+      - name: RPC smoke test
+        run: |
+          supabase functions list >/dev/null 2>&1 || true
+          psql "$DATABASE_URL" -c "SELECT count(*) FROM public.get_recent_assessments_safe();" >/dev/null
       - uses: actions/upload-artifact@v4
         if: always()
         with:

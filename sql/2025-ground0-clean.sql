@@ -61,3 +61,11 @@ alter view public.v_kpi_overview_30d_v11 set (security_invoker = true);
 
 -- Policies on views are invalid; use GRANTs above instead.
 -- Removed legacy CREATE POLICY statements for views.
+
+-- Ensure anon role cannot read profiles directly
+DO $$
+BEGIN
+  IF has_table_privilege('anon', 'public.profiles', 'SELECT') THEN
+    RAISE EXCEPTION 'anon should not have SELECT on public.profiles';
+  END IF;
+END$$;
