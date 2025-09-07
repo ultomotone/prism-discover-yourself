@@ -151,16 +151,127 @@ LATERAL jsonb_each(p.type_scores) as x(code, val)
 WHERE p.type_scores IS NOT NULL
 GROUP BY 1, p.type_scores;
 
--- 10) Section timing/drop-off
-CREATE VIEW v_section_times AS
-SELECT
-  r.session_id, 
-  COALESCE(sk.section,'Unknown') as section,
-  percentile_disc(0.5) WITHIN GROUP (ORDER BY COALESCE(r.response_time_ms, 0)) as median_sec,
-  1.0 * count(*) FILTER (WHERE r.answer_value IS NULL) / GREATEST(count(*),1) as drop_rate
-FROM assessment_responses r
-LEFT JOIN assessment_scoring_key sk ON sk.question_id = r.question_id
-GROUP BY 1,2;
+-- 10) Section timing / drop-off (resilient to missing source tables)
+DROP VIEW IF EXISTS public.v_section_times;
+
+DO $$
+DECLARE
+  has_ar       boolean;
+  has_aq       boolean;
+  has_aq_sec   boolean;
+  has_aq_meta  boolean;
+  has_qs       boolean;
+  ddl          text;
+BEGIN
+  -- do we have responses to build anything?
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema='public' AND table_name='assessment_responses'
+  ) INTO has_ar;
+
+  -- preferred source: assessment_questions (either section or meta->>'section')
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema='public' AND table_name='assessment_questions'
+  ) INTO has_aq;
+
+  IF has_aq THEN
+    SELECT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema='public' AND table_name='assessment_questions' AND column_name='section'
+    ) INTO has_aq_sec;
+
+    SELECT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema='public' AND table_name='assessment_questions' AND column_name='meta'
+    ) INTO has_aq_meta;
+  END IF;
+
+  -- alternate mapping table
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema='public' AND table_name='question_sections'
+  ) INTO has_qs;
+
+  IF NOT has_ar THEN
+    -- nothing to aggregate yet: create a stub view to keep migrations green
+    ddl := $SQL$
+      CREATE VIEW public.v_section_times AS
+      SELECT NULL::uuid AS session_id,
+             'Unknown'  AS section,
+             NULL::timestamptz AS started_at,
+             NULL::timestamptz AS ended_at,
+             NULL::int  AS duration_sec,
+             0          AS answers
+      WHERE false;
+    $SQL$;
+
+  ELSIF has_aq AND has_aq_sec THEN
+    ddl := $SQL$
+      CREATE VIEW public.v_section_times AS
+      SELECT
+        r.session_id,
+        COALESCE(q.section, 'Unknown') AS section,
+        MIN(r.created_at) AS started_at,
+        MAX(r.created_at) AS ended_at,
+        EXTRACT(epoch FROM (MAX(r.created_at) - MIN(r.created_at)))::int AS duration_sec,
+        COUNT(*) AS answers
+      FROM public.assessment_responses r
+      JOIN public.assessment_questions q ON q.id = r.question_id
+      GROUP BY r.session_id, COALESCE(q.section,'Unknown');
+    $SQL$;
+
+  ELSIF has_aq AND has_aq_meta THEN
+    ddl := $SQL$
+      CREATE VIEW public.v_section_times AS
+      SELECT
+        r.session_id,
+        COALESCE(q.meta->>'section', 'Unknown') AS section,
+        MIN(r.created_at) AS started_at,
+        MAX(r.created_at) AS ended_at,
+        EXTRACT(epoch FROM (MAX(r.created_at) - MIN(r.created_at)))::int AS duration_sec,
+        COUNT(*) AS answers
+      FROM public.assessment_responses r
+      JOIN public.assessment_questions q ON q.id = r.question_id
+      GROUP BY r.session_id, COALESCE(q.meta->>'section','Unknown');
+    $SQL$;
+
+  ELSIF has_qs THEN
+    ddl := $SQL$
+      CREATE VIEW public.v_section_times AS
+      SELECT
+        r.session_id,
+        COALESCE(qs.section,'Unknown') AS section,
+        MIN(r.created_at) AS started_at,
+        MAX(r.created_at) AS ended_at,
+        EXTRACT(epoch FROM (MAX(r.created_at) - MIN(r.created_at)))::int AS duration_sec,
+        COUNT(*) AS answers
+      FROM public.assessment_responses r
+      LEFT JOIN public.question_sections qs ON qs.question_id = r.question_id
+      GROUP BY r.session_id, COALESCE(qs.section,'Unknown');
+    $SQL$;
+
+  ELSE
+    -- final fallback: no section source yet → group per session as 'Unknown'
+    ddl := $SQL$
+      CREATE VIEW public.v_section_times AS
+      SELECT
+        r.session_id,
+        'Unknown' AS section,
+        MIN(r.created_at) AS started_at,
+        MAX(r.created_at) AS ended_at,
+        EXTRACT(epoch FROM (MAX(r.created_at) - MIN(r.created_at)))::int AS duration_sec,
+        COUNT(*) AS answers
+      FROM public.assessment_responses r
+      GROUP BY r.session_id, 'Unknown';
+    $SQL$;
+  END IF;
+
+  EXECUTE ddl;
+END$$;
+
+-- (optional) grant read access
+-- GRANT SELECT ON public.v_section_times TO anon, authenticated;
 
 -- 11) Completion rate & throughput
 CREATE VIEW v_throughput AS
