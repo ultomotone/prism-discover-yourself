@@ -1,23 +1,36 @@
+-- supabase/migrations/20250819032520_f3865a50-3731-45ac-bd7d-e5951952a46c.sql
+
 -- Add missing section column to assessment_scoring_key if it doesn't exist
 ALTER TABLE assessment_scoring_key ADD COLUMN IF NOT EXISTS section TEXT DEFAULT 'core';
 
 -- Update existing records with sample section values (you can adjust these based on your actual sections)
 UPDATE assessment_scoring_key SET section = 'cognitive_functions' WHERE section IS NULL AND question_id BETWEEN 1 AND 50;
-UPDATE assessment_scoring_key SET section = 'scenarios' WHERE section IS NULL AND question_id BETWEEN 51 AND 100;
-UPDATE assessment_scoring_key SET section = 'preferences' WHERE section IS NULL AND question_id BETWEEN 101 AND 150;
-UPDATE assessment_scoring_key SET section = 'states' WHERE section IS NULL AND question_id > 150;
+UPDATE assessment_scoring_key SET section = 'scenarios'           WHERE section IS NULL AND question_id BETWEEN 51 AND 100;
+UPDATE assessment_scoring_key SET section = 'preferences'         WHERE section IS NULL AND question_id BETWEEN 101 AND 150;
+UPDATE assessment_scoring_key SET section = 'states'              WHERE section IS NULL AND question_id > 150;
 
--- SESSION START/END + DURATION + COMPLETION FLAG
-CREATE OR REPLACE VIEW v_sessions AS
+-- SESSION START/END + DURATION + COMPLETION FLAG (fixed)
+DROP VIEW IF EXISTS v_sessions;
+
+CREATE VIEW v_sessions AS
+WITH base AS (
+  SELECT
+    r.session_id,
+    MIN(r.created_at) AS started_at,
+    MAX(r.created_at) AS last_event_at
+  FROM assessment_responses r
+  GROUP BY r.session_id
+)
 SELECT
-  r.user_id,
-  r.session_id,
-  MIN(r.created_at) as started_at,
-  MAX(r.created_at) as last_event_at,
-  EXTRACT(epoch FROM (MAX(r.created_at) - MIN(r.created_at)))::int as duration_sec,
-  EXISTS (SELECT 1 FROM profiles p WHERE p.session_id = r.session_id) as completed
-FROM assessment_responses r
-GROUP BY r.user_id, r.session_id;
+  COALESCE(s.user_id, p.user_id) AS user_id,  -- user_id from assessment_sessions (preferred) or profiles
+  b.session_id,
+  b.started_at,
+  b.last_event_at,
+  EXTRACT(epoch FROM (b.last_event_at - b.started_at))::int AS duration_sec,
+  EXISTS (SELECT 1 FROM profiles p2 WHERE p2.session_id = b.session_id) AS completed
+FROM base b
+LEFT JOIN assessment_sessions s ON s.id = b.session_id
+LEFT JOIN profiles p           ON p.session_id = b.session_id;
 
 -- PROFILES EXTENDED (TOP GAP, OVERLAY +/-)
 CREATE OR REPLACE VIEW v_profiles_ext AS
