@@ -359,8 +359,8 @@ function WhyNotSecond({ profile }: { profile: Profile }) {
   
   const top1 = profile.top_types[0];
   const top2 = profile.top_types[1];
-  const top1Score = profile.type_scores[top1];
-  const top2Score = profile.type_scores[top2];
+  const top1Score = profile.type_scores?.[top1];
+  const top2Score = profile.type_scores?.[top2];
   
   if (!top1Score || !top2Score) return null;
   
@@ -442,7 +442,9 @@ function Top3({ p }:{ p:Profile }){
   const strengthValues = Object.values(p.strengths);
   const medianStrength = strengthValues.sort((a, b) => a - b)[Math.floor(strengthValues.length / 2)];
   const suppressedThreshold = medianStrength - 1; // >1 SD below median (simplified)
-  
+
+  const overlay = p.overlay ?? '';
+
   return (
     <section className="p-5 border rounded-2xl bg-card">
       <div className="flex items-end gap-3 mb-3">
@@ -450,41 +452,42 @@ function Top3({ p }:{ p:Profile }){
         <span className="text-xs text-muted-foreground">Absolute fit = invariant (0–100). Share = relative among all types.</span>
       </div>
       <div className="grid md:grid-cols-3 gap-3">
-        {p.top_types.map(code=>{
-          const t = p.type_scores[code];
+        {p.top_types.map(code => {
+          const t = p.type_scores?.[code];
+          const share = t?.share_pct ?? 0;
           const title = TYPE_KB[code]?.title || code;
-          const isMain = code===primary;
+          const isMain = code === primary;
           return (
-            <div key={code} className={`p-4 border rounded-xl ${isMain?'bg-muted/50':''}`}>
+            <div key={code} className={`p-4 border rounded-xl ${isMain ? 'bg-muted/50' : ''}`}>
               <div className="flex justify-between items-baseline">
-                <div className="font-semibold">{code}{isMain ? p.overlay : ''}</div>
-                <div className="text-xs text-muted-foreground">Share {t.share_pct}%</div>
+                <div className="font-semibold">{code}{isMain ? overlay : ''}</div>
+                <div className="text-xs text-muted-foreground">Share {share}%</div>
               </div>
               <div className="text-sm text-muted-foreground">{title}</div>
               <div className="mt-2 text-sm">
                 <span className="font-semibold">
                   Fit {/* Use individual type fit from type_scores */}
-                  <span 
-                    className={`cursor-help ${p.type_scores?.[code]?.fit_abs ? 'text-foreground' : 'text-orange-600'}`} 
-                    title={p.type_scores?.[code]?.fit_abs ? 
-                      "Individual calibrated fit for this specific type" : 
-                      "Using fallback fit value - check type_scores data"
+                  <span
+                    className={`cursor-help ${p.type_scores?.[code]?.fit_abs ? 'text-foreground' : 'text-orange-600'}`}
+                    title={p.type_scores?.[code]?.fit_abs ?
+                      'Individual calibrated fit for this specific type' :
+                      'Using fallback fit value - check type_scores data'
                     }
                   >
-                    {p.type_scores?.[code]?.fit_abs || t.fit_abs || 0}
+                    {p.type_scores?.[code]?.fit_abs || t?.fit_abs || 0}
                   </span>
                 </span>
               </div>
               {isMain && (
                 <div className="mt-2 text-xs">
                   <div className="mb-1 flex items-center gap-1">
-                    <b>Coherent dims</b>: {p.dims_highlights.coherent.join(', ')||'—'}
+                    <b>Coherent dims</b>: {p.dims_highlights.coherent.join(', ') || '—'}
                     <InfoTip title="Coherent Functions">
                       <div>{GLOSSARY.coherent.text}</div>
                     </InfoTip>
                   </div>
                   <div className="flex items-center gap-1">
-                    <b>Unique dims</b>: <span className="text-primary">{p.dims_highlights.unique.join(', ')||'—'}</span>
+                    <b>Unique dims</b>: <span className="text-primary">{p.dims_highlights.unique.join(', ') || '—'}</span>
                     <InfoTip title="Unique Functions">
                       <div>{GLOSSARY.unique.text}</div>
                     </InfoTip>
@@ -495,11 +498,11 @@ function Top3({ p }:{ p:Profile }){
           );
         })}
       </div>
-      
+
       <FitInfo profile={p} />
       <WhyNotSecond profile={p} />
       <RetestBanner profile={p} />
-      
+
       <Top3FitChart
         primary={primary}
         profile={p}
@@ -507,7 +510,7 @@ function Top3({ p }:{ p:Profile }){
           code,
           // FIXED: Use per-type fit score from type_scores instead of global score_fit_calibrated
           fit: p.type_scores?.[code]?.fit_abs || 0, // Individual type fit
-          share: p.type_scores[code].share_pct
+          share: p.type_scores?.[code]?.share_pct ?? 0,
         }))}
       />
     </section>
@@ -970,8 +973,10 @@ function MetaInfo({ p }:{ p:Profile }){
     conf_band: p.conf_band
   });
 
-  const validityColor = p.validity_status === "pass" ? "text-green-600" : 
+  const validityColor = p.validity_status === "pass" ? "text-green-600" :
                        p.validity_status === "warning" ? "text-orange-600" : "text-red-600";
+
+  const overlay = p.overlay ?? '';
   
   return (
     <section className="p-5 border rounded-2xl bg-card">
@@ -1034,7 +1039,7 @@ function MetaInfo({ p }:{ p:Profile }){
           }</div>
           {p.fc_answered_ct && <div><b>FC Answered</b>: {p.fc_answered_ct}</div>}
           <div className="flex items-center gap-1">
-            <b>Overlay</b>: {p.overlay} 
+            <b>Overlay</b>: {overlay}
             <InfoTip title="Overlay ±">
               <div>{GLOSSARY.overlayDetailed.text}</div>
             </InfoTip>
@@ -1095,11 +1100,12 @@ export const ResultsV2: React.FC<{ profile: Profile }> = ({ profile: p }) => {
   }
   
   const primary = p.top_types?.[0] || p.type_code;
+  const overlay = p.overlay ?? '';
   console.log('🟡 Primary type determined as:', primary);
   console.log('🟡 Available data:', {
     top_types: p.top_types,
     type_code: p.type_code,
-    overlay: p.overlay,
+    overlay,
     strengths: p.strengths ? Object.keys(p.strengths) : 'Missing',
     blocks: p.blocks ? Object.keys(p.blocks) : 'Missing'
   });
@@ -1135,7 +1141,7 @@ export const ResultsV2: React.FC<{ profile: Profile }> = ({ profile: p }) => {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
         <SafeComponent component={Top3} props={{ p }} fallbackName="Top3" />
-        <SafeComponent component={StateOverlaySection} props={{ overlay: p.overlay }} fallbackName="StateOverlaySection" />
+        <SafeComponent component={StateOverlaySection} props={{ overlay }} fallbackName="StateOverlaySection" />
         <SafeComponent component={TypeCoreSection} props={{ typeCode: primary }} fallbackName="TypeCoreSection" />
         <SafeComponent component={TypeNarrative} props={{ typeCode: primary }} fallbackName="TypeNarrative" />
         <SafeComponent component={FunctionsAnalysis} props={{ p }} fallbackName="FunctionsAnalysis" />
