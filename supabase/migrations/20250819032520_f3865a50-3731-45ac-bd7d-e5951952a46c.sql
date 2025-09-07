@@ -8,7 +8,8 @@ UPDATE assessment_scoring_key SET section = 'preferences' WHERE section IS NULL 
 UPDATE assessment_scoring_key SET section = 'states' WHERE section IS NULL AND question_id > 150;
 
 -- SESSION START/END + DURATION + COMPLETION FLAG
-CREATE OR REPLACE VIEW v_sessions AS
+DROP VIEW IF EXISTS v_sessions CASCADE;
+CREATE VIEW v_sessions AS
 WITH resp AS (
   SELECT
     ar.session_id,
