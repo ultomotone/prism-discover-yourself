@@ -35,7 +35,26 @@ const server = setupServer();
 server.listen({ onUnhandledRequest: 'error' });
 test.after(() => server.close());
 
+test('sends snake_case body to edge function', async () => {
+  server.resetHandlers();
+  let body: any;
+  server.use(
+    http.post('https://api.test/functions/v1/get-results-by-session', async ({ request }) => {
+      body = await request.json();
+      return HttpResponse.json({
+        profile: { id: 'p' },
+        session: { id: 's', status: 'completed' },
+      });
+    }),
+  );
+  const client = createClient();
+  await fetchResults({ sessionId: 's' }, client);
+  assert.equal(body.session_id, 's');
+  assert.ok(!('sessionId' in body));
+});
+
 test('unauthorized does not retry', async () => {
+  server.resetHandlers();
   let calls = 0;
   server.use(
     http.post('https://api.test/functions/v1/get-results-by-session', async () => {
