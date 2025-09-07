@@ -31,7 +31,8 @@ LEFT JOIN public.assessment_sessions s ON s.id = b.session_id
 LEFT JOIN public.profiles p           ON p.session_id = b.session_id;
 
 -- PROFILES EXTENDED (TOP GAP, OVERLAY +/-)
-CREATE OR REPLACE VIEW public.v_profiles_ext AS
+DROP VIEW IF EXISTS public.v_profiles_ext;
+CREATE VIEW public.v_profiles_ext AS
 SELECT
   p.*,
   SUBSTRING(p.type_code FROM 1 FOR 3) as type_top,
