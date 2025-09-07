@@ -11,6 +11,7 @@ import OverlayChips from '@/components/Results/OverlayChips';
 import TraitPanel from '@/components/Results/TraitPanel';
 import { useToast } from '@/hooks/use-toast';
 import { fetchResults, FetchResultsError } from '@/features/results/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Err =
   | 'invalid_session_id'
@@ -28,6 +29,7 @@ export default function Results() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const logger = console;
 
@@ -99,6 +101,11 @@ export default function Results() {
     setLoading(true);
     setError(null);
     const shareToken = new URLSearchParams(window.location.search).get('token') || undefined;
+    if (!shareToken && !user) {
+      setError('access_denied');
+      setLoading(false);
+      return () => {};
+    }
     logger.info?.('results_fetch_start', { sessionId });
 
     fetchResults({ sessionId, shareToken })
@@ -127,7 +134,7 @@ export default function Results() {
     return () => {
       active = false;
     };
-  }, [sessionId]);
+  }, [sessionId, user]);
 
   useEffect(() => {
     if (scoring && !loading && !error) {

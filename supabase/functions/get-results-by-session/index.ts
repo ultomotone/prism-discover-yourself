@@ -14,6 +14,7 @@ serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get("Authorization");
     const { session_id, share_token } = await req.json();
     if (!session_id) {
       return new Response(JSON.stringify({ ok: false, reason: "session_id_required" }), {
@@ -59,36 +60,34 @@ serve(async (req) => {
       });
     }
 
-    // 2) Access check: allow if completed/finalized or share token matches
+    // 2) Access check: require share token match or authenticated owner
+    let authUserId: string | null = null;
+    if (authHeader?.startsWith("Bearer ")) {
+      const anonClient = createClient(
+        Deno.env.get("SUPABASE_URL") || "",
+        Deno.env.get("SUPABASE_ANON_KEY") || "",
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data: { user: authUser }, error: authErr } = await anonClient.auth.getUser();
+      if (authErr) console.error("get-results-by-session: auth error", authErr);
+      authUserId = authUser?.id ?? null;
+    }
+
+    const hasShare = typeof share_token === "string" && share_token.length > 0;
+    const tokenMatch = hasShare && session.share_token === share_token;
+    const isOwner = authUserId && session.user_id && authUserId === session.user_id;
+    const isWhitelisted = session_id === "91dfe71f-44d1-4e44-ba8c-c9c684c4071b";
+
+    if (!tokenMatch && !isOwner && !isWhitelisted) {
+      return new Response(JSON.stringify({ ok: false, reason: "access_denied" }), {
+        status: authHeader || hasShare ? 403 : 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // For whitelisted session, ensure it's marked completed to allow public access
     const normalizedStatus = (session.status || '').toLowerCase();
     const doneStatuses = new Set(['completed', 'complete', 'finalized', 'scored']);
     const isCompleted = doneStatuses.has(normalizedStatus) || !!session.completed_at;
-    const hasShare = !!share_token && typeof share_token === "string" && share_token.length > 0;
-    const tokenMatch = hasShare && session.share_token && session.share_token === share_token;
-
-    const isWhitelisted = session_id === "91dfe71f-44d1-4e44-ba8c-c9c684c4071b";
-    if (!isCompleted && !tokenMatch && !isWhitelisted) {
-      // Back-compat: if a profile exists for this session, allow viewing
-      const { data: probe, error: probeErr } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("session_id", session_id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (probeErr || !probe) {
-        return new Response(JSON.stringify({ ok: false, reason: "access_denied" }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      } else {
-        console.log("get-results-by-session: Access granted via existing profile", session_id);
-      }
-    } else if (isWhitelisted) {
-      console.log("get-results-by-session: Access granted via whitelist", session_id);
-    }
-    // For whitelisted session, ensure it's marked completed to allow public access
     if (isWhitelisted && !isCompleted) {
       await supabase
         .from("assessment_sessions")
