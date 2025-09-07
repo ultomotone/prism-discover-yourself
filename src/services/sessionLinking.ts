@@ -39,3 +39,35 @@ export async function linkSessionsToUser(
     return { ok: false, error };
   }
 }
+
+export type LinkSessionResult =
+  | { ok: true }
+  | { ok: false; error: unknown };
+
+export async function linkSessionToAccount(
+  client: SupabaseClient,
+  sessionId: string,
+  userId: string,
+  email?: string,
+): Promise<LinkSessionResult> {
+  try {
+    const { error } = await client
+      .from('assessment_sessions')
+      .update({
+        user_id: userId,
+        email: email ?? null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', sessionId)
+      .is('user_id', null);
+
+    if (error) {
+      return { ok: false, error };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error };
+  }
+}
+
