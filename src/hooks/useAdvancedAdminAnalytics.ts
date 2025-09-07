@@ -159,51 +159,52 @@ export const useAdvancedAdminAnalytics = () => {
     setLoading(true);
     setError(null);
     try {
-      const [
-        kpisRes,
-        confRes,
-        overlayRes,
-        trendRes,
-        latestRes,
-        typeRes,
-      ] = await Promise.all([
-        supabase.rpc("admin_get_kpis_last_30d"),
-        supabase.rpc("admin_get_confidence_dist_last_30d"),
-        supabase.rpc("admin_get_overlay_dist_last_30d"),
-        supabase.rpc("admin_get_throughput_last_14d"),
-        supabase.rpc("admin_get_latest_assessments"),
-        supabase.rpc("admin_get_type_dist_last_30d"),
-      ]);
+      const { data: kpisRes, error: kpiErr } = await supabase.rpc(
+        "admin_get_kpis_last_30d"
+      );
+      if (kpiErr) throw kpiErr;
 
-      const errors = [
-        kpisRes.error,
-        confRes.error,
-        overlayRes.error,
-        trendRes.error,
-        latestRes.error,
-        typeRes.error,
-      ].filter(Boolean);
+      const { data: confRes, error: confErr } = await supabase.rpc(
+        "admin_get_confidence_dist_last_30d"
+      );
+      if (confErr) throw confErr;
 
-      if (errors.length) {
-        throw new Error(errors.map((e: any) => e.message).join("; "));
-      }
+      const { data: overlayRes, error: overlayErr } = await supabase.rpc(
+        "admin_get_overlay_dist_last_30d"
+      );
+      if (overlayErr) throw overlayErr;
 
-      const kpiParsed = KpiRowSchema.safeParse(kpisRes.data?.[0]);
+      const { data: trendRes, error: trendErr } = await supabase.rpc(
+        "admin_get_throughput_last_14d"
+      );
+      if (trendErr) throw trendErr;
+
+      const { data: latestRes, error: latestErr } = await supabase.rpc(
+        "admin_get_latest_assessments"
+      );
+      if (latestErr) throw latestErr;
+
+      const { data: typeRes, error: typeErr } = await supabase.rpc(
+        "admin_get_type_dist_last_30d"
+      );
+      if (typeErr) throw typeErr;
+
+      const kpiParsed = KpiRowSchema.safeParse(kpisRes?.[0]);
       setKpiRow(kpiParsed.success ? kpiParsed.data : null);
 
-      const confParsed = ConfidenceDistSchema.safeParse(confRes.data ?? []);
+      const confParsed = ConfidenceDistSchema.safeParse(confRes ?? []);
       setConfDist(confParsed.success ? confParsed.data : []);
 
-      const overlayParsed = OverlayDistSchema.safeParse(overlayRes.data ?? []);
+      const overlayParsed = OverlayDistSchema.safeParse(overlayRes ?? []);
       setOverlayDist(overlayParsed.success ? overlayParsed.data : []);
 
-      const trendParsed = ThroughputSchema.safeParse(trendRes.data ?? []);
+      const trendParsed = ThroughputSchema.safeParse(trendRes ?? []);
       setThroughputData(trendParsed.success ? trendParsed.data : []);
 
-      const latestParsed = LatestAssessmentsSchema.safeParse(latestRes.data ?? []);
+      const latestParsed = LatestAssessmentsSchema.safeParse(latestRes ?? []);
       setLatestAssessments(latestParsed.success ? latestParsed.data : []);
 
-      const typeParsed = TypeDistSchema.safeParse(typeRes.data ?? []);
+      const typeParsed = TypeDistSchema.safeParse(typeRes ?? []);
       setTypeDist(typeParsed.success ? typeParsed.data : []);
     } catch (e: any) {
       setKpiRow(null);
