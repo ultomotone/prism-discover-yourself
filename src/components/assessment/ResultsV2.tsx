@@ -7,7 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { TYPE_CORE_DESCRIPTIONS } from "@/data/typeCoreDescriptions";
 import { prismTypes } from "@/data/prismTypes";
 import { StateLegend } from "@/components/common/StateLegend";
-import type { Profile, Func } from "@/features/results/types";
+import { FUNCS, type Profile, type Func } from "@/features/results/types";
 
 // thresholds for labels (tune later)
 const LABEL_THRESH = {
@@ -113,7 +113,6 @@ function Top3FitChart({ data, primary, profile }:{
   );
 }
 
-const FUNCS: readonly Func[] = ["Ti","Te","Fi","Fe","Ni","Ne","Si","Se"];
 
 // ---------- Enhanced Glossary (v1.1) with verbatim copy --------------------
 const GLOSSARY = {

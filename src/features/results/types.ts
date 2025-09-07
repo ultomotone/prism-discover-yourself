@@ -1,12 +1,5 @@
-export type Func =
-  | 'Ti'
-  | 'Te'
-  | 'Fi'
-  | 'Fe'
-  | 'Ni'
-  | 'Ne'
-  | 'Si'
-  | 'Se';
+export const FUNCS = ['Ti', 'Te', 'Fi', 'Fe', 'Ni', 'Ne', 'Si', 'Se'] as const;
+export type Func = typeof FUNCS[number];
 
 export interface Profile {
   id: string;
