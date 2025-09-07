@@ -1473,10 +1473,9 @@ export type Database = {
         Row: {
           country_display: string | null
           created_at: string | null
-          fit_indicator: string | null
-          overlay: string | null
-          time_period: string | null
-          type_prefix: string | null
+          fit_score: number | null
+          session_id: string | null
+          type_display: string | null
         }
         Relationships: []
       }
@@ -1899,20 +1898,11 @@ export type Database = {
       get_recent_assessments_safe: {
         Args: Record<PropertyKey, never>
         Returns: {
-          confidence: string
           country_display: string
           created_at: string
-          fit_band: string
           fit_score: number
-          invalid_combo_flag: boolean
-          results_version: string
-          score_fit_calibrated: number
-          score_fit_raw: number
           session_id: string
-          share_pct: number
-          top_gap: number
           type_display: string
-          version: string
         }[]
       }
       get_user_assessment_scores: {
