@@ -17,6 +17,7 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+      - run: npm run verify:functions
       - run: npx tsx --test --test-reporter=junit tests/fetchResults.test.ts tests/results.integration.test.ts > junit.xml
       - name: smoke
         run: npm run verify:smoke > smoke-report.json
