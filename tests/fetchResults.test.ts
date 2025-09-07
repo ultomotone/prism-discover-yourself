@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import type { Profile } from '../src/features/results/types';
 
 (globalThis as any).window = { __APP_CONFIG__: { SUPABASE_URL: 'https://example.supabase.co', SUPABASE_ANON_KEY: 'anon' } };
 
@@ -24,7 +25,8 @@ test('uses RPC when share token provided', async () => {
     },
   );
   const res = await fetchResults({ sessionId: 's', shareToken: 't' }, client);
-  assert.equal(res.profile.id, 'p1');
+  const profile: Profile = res.profile;
+  assert.equal(profile.id, 'p1');
   assert.equal(rpcCalls, 1);
 });
 
@@ -38,7 +40,8 @@ test('falls back to edge function without share token', async () => {
     },
   );
   const res = await fetchResults({ sessionId: 's' }, client);
-  assert.equal(res.profile.id, 'p2');
+  const profile: Profile = res.profile;
+  assert.equal(profile.id, 'p2');
   assert.equal(fnCalls, 1);
 });
 
@@ -56,7 +59,9 @@ test('dedupes concurrent calls', async () => {
     fetchResults({ sessionId: 's' }, client),
   ]);
   assert.equal(calls, 1);
-  assert.deepEqual(a, b);
+  const pa: Profile = a.profile;
+  const pb: Profile = b.profile;
+  assert.deepEqual(pa, pb);
 });
 
 test('retries transient errors', async () => {
@@ -72,7 +77,8 @@ test('retries transient errors', async () => {
     },
   );
   const res = await fetchResults({ sessionId: 's' }, client);
-  assert.equal(res.profile.id, 'p4');
+  const profile: Profile = res.profile;
+  assert.equal(profile.id, 'p4');
   assert.equal(attempts, 2);
 });
 
