@@ -123,3 +123,6 @@ cp .env.example .env.local
 npm run verify:smoke
 ```
 
+
+## RPCs
+- `get_recent_assessments_safe`: returns anonymized recent assessment summaries.
