@@ -97,7 +97,10 @@ async function edgeCall(
 ): Promise<FetchResultsResponse> {
   const { data, error } = await client.functions.invoke(
     'get-results-by-session',
-    { body: { sessionId, shareToken }, signal } // <-- plumb AbortSignal here
+    {
+      body: { session_id: sessionId, share_token: shareToken },
+      signal,
+    },
   );
   if (error) throw mapStatus((error as any).status, (error as any).message);
   return parseEdgePayload(data, sessionId);
