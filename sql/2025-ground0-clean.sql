@@ -59,10 +59,5 @@ grant select on public.v_latest_assessments_v11, public.v_kpi_overview_30d_v11 t
 alter view public.v_latest_assessments_v11 set (security_invoker = true);
 alter view public.v_kpi_overview_30d_v11 set (security_invoker = true);
 
-drop policy if exists anon_select_latest on public.v_latest_assessments_v11;
-create policy anon_select_latest on public.v_latest_assessments_v11
-  for select using (true);
-
-drop policy if exists anon_select_kpi on public.v_kpi_overview_30d_v11;
-create policy anon_select_kpi on public.v_kpi_overview_30d_v11
-  for select using (true);
+-- Policies on views are invalid; use GRANTs above instead.
+-- Removed legacy CREATE POLICY statements for views.
