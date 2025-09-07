@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
+import { linkSessionsToUser } from '@/services/sessionLinking';
 
 interface AuthContextType {
   user: User | null;
@@ -35,6 +36,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!user?.email) return;
+    linkSessionsToUser(supabase, user.email, user.id).catch((err) => {
+      console.error('Failed to link sessions to account', err);
+    });
+  }, [user]);
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
