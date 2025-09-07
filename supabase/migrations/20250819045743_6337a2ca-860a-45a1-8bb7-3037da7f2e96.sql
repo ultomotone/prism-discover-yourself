@@ -8,19 +8,39 @@ DROP VIEW IF EXISTS v_kpi_throughput CASCADE;
 DROP VIEW IF EXISTS v_profiles_ext CASCADE;
 
 -- 1) Extend profiles info for admin (top fits, gaps)
-CREATE OR REPLACE VIEW v_profiles_ext AS
+CREATE VIEW v_profiles_ext AS
 SELECT
-  p.*,
+  p.id,
+  p.user_id,
+  p.session_id,
+  p.type_code,
+  p.base_func,
+  p.creative_func,
+  p.overlay,
+  p.strengths,
+  p.dimensions,
+  p.blocks,
+  p.neuroticism,
+  p.validity,
+  p.confidence,
+  p.type_scores,
+  p.top_types,
+  p.dims_highlights,
+  p.glossary_version,
+  p.created_at,
+  p.updated_at,
+  p.blocks_norm,
+  p.version,
   (p.type_scores->(
     SELECT key FROM jsonb_each(p.type_scores)
     ORDER BY (value->>'fit_abs')::numeric DESC
     LIMIT 1
-  )->>'fit_abs')::numeric as fit_top,
+  )->>'fit_abs')::numeric AS fit_top,
   (p.type_scores->(
     SELECT key FROM jsonb_each(p.type_scores)
     ORDER BY (value->>'fit_abs')::numeric DESC
     OFFSET 1 LIMIT 1
-  )->>'fit_abs')::numeric as fit_2,
+  )->>'fit_abs')::numeric AS fit_2,
   COALESCE(
     (p.type_scores->(
       SELECT key FROM jsonb_each(p.type_scores)
@@ -33,15 +53,15 @@ SELECT
       OFFSET 1 LIMIT 1
     )->>'fit_abs')::numeric,
     0
-  ) as fit_gap,
-  COALESCE((p.validity->>'inconsistency')::numeric, 0) as inconsistency,
-  COALESCE((p.validity->>'sd_index')::numeric, 0) as sd_index,
+  ) AS fit_gap,
+  COALESCE((p.validity->>'inconsistency')::numeric, 0) AS inconsistency,
+  COALESCE((p.validity->>'sd_index')::numeric, 0) AS sd_index,
   (
-    SELECT key 
-    FROM jsonb_each(p.type_scores) 
-    ORDER BY (value->>'fit_abs')::numeric DESC 
+    SELECT key
+    FROM jsonb_each(p.type_scores)
+    ORDER BY (value->>'fit_abs')::numeric DESC
     LIMIT 1
-  ) as type_top
+  ) AS type_top
 FROM profiles p;
 
 GRANT SELECT ON v_profiles_ext TO authenticated;

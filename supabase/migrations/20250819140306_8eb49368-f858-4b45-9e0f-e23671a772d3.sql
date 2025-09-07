@@ -151,16 +151,26 @@ LATERAL jsonb_each(p.type_scores) as x(code, val)
 WHERE p.type_scores IS NOT NULL
 GROUP BY 1, p.type_scores;
 
--- 10) Section timing/drop-off
-CREATE VIEW v_section_times AS
+DROP VIEW IF EXISTS public.v_section_times;
+
+-- derive section from assessment_questions.section or meta->>'section'
+CREATE VIEW public.v_section_times AS
+WITH qsec AS (
+  SELECT
+    q.id AS question_id,
+    COALESCE(q.section, q.meta->>'section', 'Unknown') AS section
+  FROM public.assessment_questions q
+)
 SELECT
-  r.session_id, 
-  COALESCE(sk.section,'Unknown') as section,
-  percentile_disc(0.5) WITHIN GROUP (ORDER BY COALESCE(r.response_time_ms, 0)) as median_sec,
-  1.0 * count(*) FILTER (WHERE r.answer_value IS NULL) / GREATEST(count(*),1) as drop_rate
-FROM assessment_responses r
-LEFT JOIN assessment_scoring_key sk ON sk.question_id = r.question_id
-GROUP BY 1,2;
+  r.session_id,
+  qsec.section,
+  MIN(r.created_at) AS started_at,
+  MAX(r.created_at) AS ended_at,
+  EXTRACT(epoch FROM (MAX(r.created_at) - MIN(r.created_at)))::int AS duration_sec,
+  COUNT(*) AS answers
+FROM public.assessment_responses r
+LEFT JOIN qsec ON qsec.question_id = r.question_id
+GROUP BY r.session_id, qsec.section;
 
 -- 11) Completion rate & throughput
 CREATE VIEW v_throughput AS
