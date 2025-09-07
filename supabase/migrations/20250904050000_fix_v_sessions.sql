@@ -1,5 +1,6 @@
 -- SESSION START/END + DURATION + COMPLETION FLAG + DERIVED STATUS
-create or replace view public.v_sessions as
+drop view if exists public.v_sessions cascade;
+create view public.v_sessions as
 with resp as (
   select
     ar.session_id,
