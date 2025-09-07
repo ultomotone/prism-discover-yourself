@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.25.1/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,23 +15,21 @@ serve(async (req) => {
   }
 
   try {
-    const { session_id, share_token } = await req.json();
-    if (!session_id) {
-      return new Response(JSON.stringify({ ok: false, reason: "session_id_required" }), {
+    const schema = z.object({
+      sessionId: z.string().uuid(),
+      shareToken: z.string().min(1),
+    });
+    const parsed = schema.safeParse(await req.json());
+    if (!parsed.success) {
+      console.error("get-results-by-session: invalid payload", parsed.error.flatten());
+      return new Response(JSON.stringify({ ok: false, reason: "invalid_request" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    // Validate UUID format early to avoid 22P02 errors
-    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(session_id);
-    if (!isValidUUID) {
-      console.error("get-results-by-session: invalid session_id format", { session_id, length: session_id?.length });
-      return new Response(JSON.stringify({ ok: false, reason: "invalid_session_id" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const { sessionId, shareToken } = parsed.data;
+    const session_id = sessionId;
+    const share_token = shareToken;
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") || "",
@@ -63,8 +62,7 @@ serve(async (req) => {
     const normalizedStatus = (session.status || '').toLowerCase();
     const doneStatuses = new Set(['completed', 'complete', 'finalized', 'scored']);
     const isCompleted = doneStatuses.has(normalizedStatus) || !!session.completed_at;
-    const hasShare = !!share_token && typeof share_token === "string" && share_token.length > 0;
-    const tokenMatch = hasShare && session.share_token && session.share_token === share_token;
+    const tokenMatch = session.share_token === share_token;
 
     const isWhitelisted = session_id === "91dfe71f-44d1-4e44-ba8c-c9c684c4071b";
     if (!isCompleted && !tokenMatch && !isWhitelisted) {
