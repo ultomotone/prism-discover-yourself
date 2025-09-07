@@ -1,19 +1,10 @@
 import { supabase } from '@/lib/supabase/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
-
-export interface ResultsProfile extends Record<string, unknown> {
-  id: string;
-}
-
-export interface ResultsSession {
-  id: string;
-  status: string; // 'completed' | 'processing' | etc.
-}
-
-export interface FetchResultsResponse {
-  profile: ResultsProfile;
-  session: ResultsSession;
-}
+import type {
+  Profile,
+  ResultsSession,
+  FetchResultsResponse,
+} from './types';
 
 export type FetchResultsErrorKind =
   | 'not_found'
@@ -66,7 +57,7 @@ function mapUnknown(e: unknown): FetchResultsError {
 }
 
 function parseEdgePayload(payload: unknown, sessionId: string): FetchResultsResponse {
-  const data = payload as { profile?: ResultsProfile; session?: Partial<ResultsSession> } | null;
+  const data = payload as { profile?: Profile; session?: Partial<ResultsSession> } | null;
   if (data?.profile && data.session && typeof data.session.id === 'string') {
     return {
       profile: data.profile,
@@ -83,7 +74,7 @@ async function rpcCall(
   _signal: AbortSignal, // note: Supabase rpc() doesn't accept signal currently
 ): Promise<FetchResultsResponse> {
   // Tip: annotate the expected return for stronger typing
-  type RpcRow = ResultsProfile;
+  type RpcRow = Profile;
   const { data, error } = await client.rpc<RpcRow | RpcRow[]>(
     'get_profile_by_session',
     { p_session_id: sessionId, p_share_token: shareToken }

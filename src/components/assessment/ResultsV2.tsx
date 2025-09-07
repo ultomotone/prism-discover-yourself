@@ -7,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { TYPE_CORE_DESCRIPTIONS } from "@/data/typeCoreDescriptions";
 import { prismTypes } from "@/data/prismTypes";
 import { StateLegend } from "@/components/common/StateLegend";
+import type { Profile, Func } from "@/features/results/types";
 
 // thresholds for labels (tune later)
 const LABEL_THRESH = {
@@ -112,44 +113,7 @@ function Top3FitChart({ data, primary, profile }:{
   );
 }
 
-const FUNCS = ["Ti","Te","Fi","Fe","Ni","Ne","Si","Se"] as const;
-
-type Func = typeof FUNCS[number];
-
-type Profile = {
-  type_code: string; base_func: Func; creative_func: Func; overlay: "+"|"–";
-  strengths: Record<Func, number>;
-  dimensions: Record<Func, number>; // 1..4
-  blocks: { Core:number; Critic:number; Hidden:number; Instinct:number };
-  blocks_norm: { Core:number; Critic:number; Hidden:number; Instinct:number };
-  neuroticism: { raw_mean:number; z:number };
-  validity: { inconsistency:number; sd_index:number };
-  confidence: "High"|"Moderate"|"Low";
-  validity_status?: string; // NEW v1.1
-  
-  // NEW v1.1.2 calibrated confidence fields
-  conf_raw?: number;
-  conf_calibrated?: number;
-  conf_band?: "High"|"Moderate"|"Low";
-  // Add v1.1 calibrated fit fields
-  results_version?: string;
-  score_fit_calibrated?: number;
-  score_fit_raw?: number;
-  fit_band?: "High"|"Moderate"|"Low";
-  top_gap?: number;
-  invalid_combo_flag?: boolean;
-  close_call?: boolean; // NEW v1.1
-  fc_answered_ct?: number; // NEW v1.1
-  top_3_fits?: Array<{ code: string; fit: number; share: number }>; // NEW v1.1
-  diagnostics?: { // NEW v2
-    invalid_combo_attempts: number;
-    top_gap: number; 
-    considered: Array<{ type: string; fit: number }>;
-  };
-  type_scores: Record<string, { fit_abs:number; share_pct:number }>;
-  top_types: string[]; // e.g., ["LIE","ILE","LSE"]
-  dims_highlights: { coherent: Func[]; unique: Func[] };
-};
+const FUNCS: readonly Func[] = ["Ti","Te","Fi","Fe","Ni","Ne","Si","Se"];
 
 // ---------- Enhanced Glossary (v1.1) with verbatim copy --------------------
 const GLOSSARY = {
