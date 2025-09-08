@@ -15,17 +15,17 @@ const Assessment = () => {
   // show form whenever ?start is present (any truthy) or ?resume=:id exists
   const showForm = Boolean(resume || start !== null);
 
-  const handleComplete = (_responses: AssessmentResponse[], sessionId: string) => {
-    (async () => {
-      try {
-        await supabase.functions
-          .invoke('score_prism', { body: { sessionId } })
-          .catch(() => {});
-        navigate(`/results/${sessionId}`, { replace: true });
-      } catch (e) {
-        console.error('post-completion redirect failed', e);
-      }
-    })();
+  // Fire scoring and then hard-navigate to results
+  const handleComplete = async (_responses: AssessmentResponse[], sessionId: string) => {
+    try {
+      // NOTE: score_prism expects { session_id }, not { sessionId }
+      await supabase.functions
+        .invoke('score_prism', { body: { session_id: sessionId } })
+        .catch(() => {});
+      navigate(`/results/${sessionId}`, { replace: true });
+    } catch (e) {
+      console.error('post-completion redirect failed', e);
+    }
   };
 
   useEffect(() => {
@@ -38,7 +38,7 @@ const Assessment = () => {
         .eq('session_id', resume);
 
       if ((count ?? 0) >= TOTAL_PRISM_QUESTIONS) {
-        navigate(`/results/${resume}`);
+        navigate(`/results/${resume}`, { replace: true });
       }
     };
 
