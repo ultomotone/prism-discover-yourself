@@ -13,6 +13,7 @@ import Results from "./pages/Results";
 import History from "./pages/History";
 import UserDashboard from "./pages/UserDashboard";
 import LiveDashboard from "./pages/LiveDashboard";
+import Live from "./pages/Live";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ResetPassword from "./pages/ResetPassword";
@@ -180,6 +181,7 @@ const App = () => (
                   } />
                   <Route path="/history" element={<History />} />
                   <Route path="/dashboard" element={<UserDashboard />} />
+                  <Route path="/live" element={<Live />} />
                   <Route path="/live-dashboard" element={<LiveDashboard />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/about" element={<About />} />
