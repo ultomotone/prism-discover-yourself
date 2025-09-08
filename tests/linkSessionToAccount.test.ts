@@ -62,7 +62,7 @@ test('prefers Edge Function when available (success)', async () => {
   assert.equal(client._state.invoked, true);
   assert.equal(client._state.invokedName, 'link_session_to_account');
   assert.deepEqual(client._state.invokedBody, { session_id: 's1', user_id: 'u1', email: 'a@b.com' });
-  assert.equal(client._state.updated, false);
+  assert.equal(client._state.updated, false); // no fallback
 });
 
 test('propagates Edge Function error (non-404)', async () => {
