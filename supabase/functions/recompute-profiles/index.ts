@@ -49,6 +49,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }
     );
 
+    const rpcUrl = `${URL}/rest/v1/rpc/admin_recompute_profile`;
+
     const targetsQuery = admin
       .from('assessment_sessions')
       .select('id')
@@ -74,15 +76,30 @@ Deno.serve(async (req: Request): Promise<Response> => {
       if (!t?.id) return null;
 
       if (!dryRun) {
-        const { data, error } = await admin.rpc('admin_recompute_profile', {
-          p_session_id: t.id,
-          p_version: VERSION
+        const response = await fetch(rpcUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: SRK,
+            Authorization: `Bearer ${SRK}`,
+            Prefer: 'tx=commit'
+          },
+          body: JSON.stringify({
+            p_session_id: t.id,
+            p_version: VERSION
+          })
         });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ message: response.statusText }));
+          return { session: t.id, ok: false, error: err?.message ?? 'unknown' };
+        }
+
+        const data = await response.json().catch(() => undefined);
 
         return {
           session: t.id,
-          ok: !error,
-          error: error?.message,
+          ok: true,
           profileId: data?.[0]?.id
         };
       }
