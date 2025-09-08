@@ -111,7 +111,8 @@ export function useEmailSessionManager() {
       );
 
       if (!res.ok) {
-        console.error('Error linking session to account:', res.error);
+        const err = 'error' in res ? (res as any).error : undefined;
+        console.error('Error linking session to account:', err);
         toast({
           title: "Link Error",
           description: "Failed to link session to your account.",

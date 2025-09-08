@@ -43,7 +43,7 @@ const RealTimeType: React.FC = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [total, setTotal] = useState(0);
   const [mode, setMode] = useState<AggregateMode>("day");
-  const chartRef = useRef<Chart | null>(null);
+  const chartRef = useRef<any>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const fetchData = async () => {

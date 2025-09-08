@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 
 interface Filters {
-  dateRange: { preset: string };
+  dateRange: { preset: string; from?: Date; to?: Date };
   overlay: string;
   confidence: string;
   primaryType: string;
@@ -13,14 +13,8 @@ interface Filters {
 }
 
 interface AdminFiltersProps {
-  filters: {
-    dateRange: { preset: string };
-    overlay: string;
-    confidence: string;
-    primaryType: string;
-    device: string;
-  };
-  onFiltersChange: (filters: any) => void;
+  filters: Filters;
+  onFiltersChange: (filters: Filters) => void;
   onRefresh: () => void;
   loading: boolean;
 }

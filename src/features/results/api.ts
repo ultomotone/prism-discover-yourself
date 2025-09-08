@@ -73,13 +73,11 @@ async function edgeCall(
   client: SupabaseClient,
   sessionId: string,
   shareToken: string | undefined,
-  signal: AbortSignal,
 ): Promise<FetchResultsResponse> {
   const { data, error } = await client.functions.invoke(
     'get-results-by-session',
     {
       body: { sessionId, shareToken },
-      signal,
     },
   );
   if (error) {
@@ -92,14 +90,14 @@ async function edgeCall(
 }
 
 async function executeWithRetry<T>(
-  fn: (signal: AbortSignal) => Promise<T>,
+  fn: () => Promise<T>,
   controller: AbortController,
 ): Promise<T> {
   let attempt = 0;
   while (true) { // eslint-disable-line no-constant-condition
     try {
       if (controller.signal.aborted) throw new FetchResultsError('transient', 'aborted');
-      return await fn(controller.signal);
+      return await fn();
     } catch (e) {
       const mapped = mapUnknown(e);
       if (mapped.kind === 'transient' && attempt < 2) {
@@ -124,7 +122,7 @@ export async function fetchResultsBySession(
   const promise = (async () => {
     try {
       return await executeWithRetry(
-        (signal) => edgeCall(client, sessionId, shareToken, signal),
+        () => edgeCall(client, sessionId, shareToken),
         controller
       );
     } finally {

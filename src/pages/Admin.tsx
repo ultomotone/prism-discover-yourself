@@ -316,8 +316,8 @@ const Admin: React.FC = () => {
             </CardHeader>
             <CardContent>
               <QualityPanel
-                qualityData={qualityData ?? EMPTY_QUALITY}
-                exportToCSV={exportToCSV}
+                data={qualityData ?? EMPTY_QUALITY}
+                onExport={exportToCSV}
               />
             </CardContent>
           </Card>
@@ -328,7 +328,7 @@ const Admin: React.FC = () => {
               <CardTitle>Distribution & Trends</CardTitle>
             </CardHeader>
             <CardContent>
-              <ChartsSection data={chartData ?? {}} onExport={exportToCSV} />
+              <ChartsSection data={chartData} onExport={exportToCSV} />
             </CardContent>
           </Card>
 
@@ -349,7 +349,7 @@ const Admin: React.FC = () => {
             </CardHeader>
             <CardContent>
               <MethodHealthSection
-                data={methodHealthData ?? {}}
+                data={methodHealthData}
                 onExport={exportToCSV}
               />
             </CardContent>

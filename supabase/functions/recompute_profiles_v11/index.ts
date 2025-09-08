@@ -28,14 +28,16 @@ serve(async (req) => {
     const days_back_param = body.days_back ?? (url.searchParams.get('days_back') ? parseInt(url.searchParams.get('days_back')!) : undefined);
     const limit_param = body.limit ?? (url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : undefined);
     const session_id = body.session_id ?? url.searchParams.get('session_id');
+    const min_answers: number | undefined = body.min_answers ?? (url.searchParams.get('min_answers') ? parseInt(url.searchParams.get('min_answers')!) : undefined);
+    const allow_partial: boolean = body.allow_partial === true || url.searchParams.get('allow_partial') === 'true';
 
-    console.log(`evt:backfill_v11_start,force_all:${force_all},days_back:${days_back_param ?? 'NA'},limit:${limit_param ?? 'NA'},session:${session_id ?? 'NA'}`);
+    console.log(`evt:backfill_v11_start,force_all:${force_all},days_back:${days_back_param ?? 'NA'},limit:${limit_param ?? 'NA'},session:${session_id ?? 'NA'},min_answers:${min_answers ?? 'NA'},allow_partial:${allow_partial}`);
 
     // Single-session fast path
     if (session_id) {
       console.log(`evt:single_session,session:${session_id}`);
       const { data: scoreResult, error: scoreError } = await supabase.functions.invoke('score_prism', {
-        body: { session_id, debug: false },
+        body: { session_id, debug: false, partial_session: allow_partial },
       });
 
       const ok = !scoreError && scoreResult?.status === 'success';
@@ -95,8 +97,30 @@ serve(async (req) => {
       });
     }
 
+    // Optional filtering by minimum answers using RPC (completed sessions)
+    if (typeof min_answers === 'number' && Number.isFinite(min_answers)) {
+      try {
+        const { data: minRows, error: minErr } = await supabase.rpc('sessions_with_min_answers', {
+          min_answers,
+          days_back: days_back_param ?? null,
+        });
+        if (minErr) {
+          console.error('evt:min_answers_rpc_error', minErr);
+        } else if (Array.isArray(minRows) && minRows.length > 0) {
+          const allowed = new Set((minRows as any[]).map((r: any) => r.session_id));
+          profiles = (profiles || []).filter((p) => allowed.has(p.session_id));
+          console.log(`evt:min_answers_filter_applied,min_answers:${min_answers},remaining:${profiles.length}`);
+        } else {
+          console.log(`evt:min_answers_no_matches,min_answers:${min_answers}`);
+          profiles = [];
+        }
+      } catch (e) {
+        console.error('evt:min_answers_exception', (e as Error).message);
+      }
+    }
+
     if (!profiles || profiles.length === 0) {
-      console.log('evt:no_profiles_need_recompute');
+      console.log('evt:no_profiles_need_recompute_after_filters');
       return new Response(
         JSON.stringify({
           message: `No profiles need ${TARGET_VERSION} recomputation`,
@@ -107,6 +131,11 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
+    }
+
+    // Apply limit after filtering
+    if (limit_param && profiles.length > limit_param) {
+      profiles = profiles.slice(0, limit_param);
     }
 
     console.log(`evt:recompute_needed,total:${profiles.length}`);
@@ -127,7 +156,8 @@ serve(async (req) => {
           const { data: scoreResult, error: scoreError } = await supabase.functions.invoke('score_prism', {
             body: {
               session_id: profile.session_id,
-              debug: false
+              debug: false,
+              partial_session: allow_partial,
             }
           });
 
