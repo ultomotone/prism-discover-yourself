@@ -4,11 +4,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
+
+const TARGET_VERSION = Deno.env.get('SCORING_VERSION') ?? 'v0';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   try {
@@ -24,8 +27,30 @@ serve(async (req) => {
     const force_all = body.force_all === true || url.searchParams.get('force_all') === 'true';
     const days_back_param = body.days_back ?? (url.searchParams.get('days_back') ? parseInt(url.searchParams.get('days_back')!) : undefined);
     const limit_param = body.limit ?? (url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : undefined);
+    const session_id = body.session_id ?? url.searchParams.get('session_id');
 
-    console.log(`evt:backfill_v11_start,force_all:${force_all},days_back:${days_back_param ?? 'NA'},limit:${limit_param ?? 'NA'}`);
+    console.log(`evt:backfill_v11_start,force_all:${force_all},days_back:${days_back_param ?? 'NA'},limit:${limit_param ?? 'NA'},session:${session_id ?? 'NA'}`);
+
+    // Single-session fast path
+    if (session_id) {
+      console.log(`evt:single_session,session:${session_id}`);
+      const { data: scoreResult, error: scoreError } = await supabase.functions.invoke('score_prism', {
+        body: { session_id, debug: false },
+      });
+
+      const ok = !scoreError && scoreResult?.status === 'success';
+
+      return new Response(
+        JSON.stringify({
+          success: ok,
+          total_profiles: 1,
+          processed: 1,
+          updated: ok ? 1 : 0,
+          errors: ok ? 0 : 1,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Build base query
     let query = supabase
@@ -39,7 +64,7 @@ serve(async (req) => {
       }
     } else {
       // only those missing current version or missing calibrated fit
-      query = query.or('results_version.is.null,results_version.neq.v1.1.2,score_fit_calibrated.is.null');
+      query = query.or(`results_version.is.null,results_version.neq.${TARGET_VERSION},score_fit_calibrated.is.null`);
     }
 
     query = query.order('created_at', { ascending: false });
@@ -72,13 +97,16 @@ serve(async (req) => {
 
     if (!profiles || profiles.length === 0) {
       console.log('evt:no_profiles_need_recompute');
-      return new Response(JSON.stringify({ 
-        message: 'No profiles need v1.1 recomputation',
-        processed: 0,
-        updated: 0
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      return new Response(
+        JSON.stringify({
+          message: `No profiles need ${TARGET_VERSION} recomputation`,
+          processed: 0,
+          updated: 0,
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     console.log(`evt:recompute_needed,total:${profiles.length}`);
