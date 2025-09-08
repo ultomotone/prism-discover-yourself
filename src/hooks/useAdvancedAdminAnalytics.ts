@@ -67,6 +67,7 @@ const LatestAssessmentsSchema = z.array(
   })
 );
 type LatestAssessments = z.infer<typeof LatestAssessmentsSchema>;
+type LatestAssessment = LatestAssessments[0];
 
 const KPIDataSchema = z.object({
   completions: z.number(),
@@ -326,5 +327,6 @@ export type {
   QualityData,
   ChartData,
   MethodHealthData,
-  LatestAssessments as LatestAssessment
+  LatestAssessment,
+  LatestAssessments
 };

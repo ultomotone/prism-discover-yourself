@@ -1,8 +1,8 @@
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { LatestAssessment } from "@/hooks/useAdvancedAdminAnalytics";
+import type { LatestAssessments } from "@/hooks/useAdvancedAdminAnalytics";
 
-export function LatestAssessmentsTable({ data }: { data: LatestAssessment[] }) {
+export function LatestAssessmentsTable({ data }: { data: LatestAssessments }) {
   if (!data || data.length === 0) {
     return <p className="text-center text-muted-foreground py-8">No assessments found</p>;
   }
