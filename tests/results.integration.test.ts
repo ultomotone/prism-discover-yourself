@@ -4,7 +4,7 @@ import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
  (globalThis as any).window = { __APP_CONFIG__: { SUPABASE_URL: 'https://example.supabase.co', SUPABASE_ANON_KEY: 'anon' } };
 
-const { fetchResults, FetchResultsError } = await import('../src/features/results/api');
+const { fetchResultsBySession: fetchResults, FetchResultsError } = await import('../src/features/results/api');
 
 type Client = {
   functions: { invoke: (name: string, opts: any) => Promise<{ data: unknown; error: any }> };
@@ -35,7 +35,7 @@ const server = setupServer();
 server.listen({ onUnhandledRequest: 'error' });
 test.after(() => server.close());
 
-test('sends snake_case body to edge function', async () => {
+test('sends camelCase body to edge function', async () => {
   server.resetHandlers();
   let body: any;
   server.use(
@@ -49,8 +49,8 @@ test('sends snake_case body to edge function', async () => {
   );
   const client = createClient();
   await fetchResults({ sessionId: 's' }, client);
-  assert.equal(body.session_id, 's');
-  assert.ok(!('sessionId' in body));
+  assert.equal(body.sessionId, 's');
+  assert.ok(!('session_id' in body));
 });
 
 test('unauthorized does not retry', async () => {

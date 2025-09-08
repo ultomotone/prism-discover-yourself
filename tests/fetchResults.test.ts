@@ -4,7 +4,7 @@ import type { Profile } from '../src/features/results/types';
 
 (globalThis as any).window = { __APP_CONFIG__: { SUPABASE_URL: 'https://example.supabase.co', SUPABASE_ANON_KEY: 'anon' } };
 
-const { fetchResults, FetchResultsError } = await import('../src/features/results/api');
+const { fetchResultsBySession: fetchResults, FetchResultsError } = await import('../src/features/results/api');
 
 type FnFn = (...args: any[]) => Promise<{ data: unknown; error: any }>;
 
