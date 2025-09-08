@@ -1,21 +1,15 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase/client';
 
-export interface LiveAssessment {
-  session_id: string
-  created_at: string
-  primary_type: string
-  overlay_label: string
-  fit_score: number | string
-}
+export type LiveRow = {
+  created_at: string;
+  session_id: string;
+  primary_type: string | null;
+  overlay_label: string | null;
+  fit_score: number | null;
+};
 
-/**
- * Fetch the most recent assessment results.
- * Throws if the underlying RPC call fails.
- */
-export async function fetchLiveAssessments(
-  supabase: SupabaseClient
-): Promise<LiveAssessment[]> {
-  const { data, error } = await supabase.rpc('get_live_assessments')
-  if (error) throw error
-  return (data ?? []) as LiveAssessment[]
+export async function fetchLiveAssessments(): Promise<LiveRow[]> {
+  const { data, error } = await supabase.rpc<LiveRow>('get_live_assessments');
+  if (error) throw error;
+  return (data ?? []) as LiveRow[];
 }
