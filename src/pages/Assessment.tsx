@@ -35,7 +35,7 @@ const Assessment = () => {
         .eq('session_id', resume);
 
       if ((count ?? 0) >= TOTAL_PRISM_QUESTIONS) {
-        navigate(`/results/${resume}`);
+        navigate(`/results/${resume}`, { replace: true });
       }
     };
 
