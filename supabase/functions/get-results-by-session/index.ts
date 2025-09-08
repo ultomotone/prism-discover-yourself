@@ -1,121 +1,114 @@
-// PRISM Results fetcher with CORS + shareToken and owner checks
+import { createClient } from "npm:@supabase/supabase-js@2.39.7";
 
-import { createClient } from "npm:@supabase/supabase-js@2.39.3";
-
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
-const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-// allow localhost + prod domains
-const ALLOWED_ORIGINS = new Set<string>([
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'https://prismpersonality.com',
-  'https://lovable.dev',
-]);
-
-function withCors(req: Request, res: Response) {
-  const origin = req.headers.get('origin') ?? '';
-  const allow = ALLOWED_ORIGINS.has(origin) ? origin : '';
-  const h = new Headers(res.headers);
-  if (allow) h.set('Access-Control-Allow-Origin', allow);
-  h.set('Vary', 'Origin');
-  h.set('Access-Control-Allow-Methods', 'POST,OPTIONS');
-  h.set('Access-Control-Allow-Headers', 'authorization, content-type');
-  return new Response(res.body, { status: res.status, headers: h });
+interface RequestParams {
+  sessionId: string;
+  shareToken?: string | null;
 }
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return withCors(req, new Response(null, { status: 204 }));
-  }
-
+Deno.serve(async (req: Request) => {
   try {
-    const { sessionId, shareToken } = await req.json().catch(() => ({}));
+    // CORS headers for browser requests
+    const headers = {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    };
+
+    // Handle preflight requests
+    if (req.method === "OPTIONS") {
+      return new Response(null, { headers, status: 204 });
+    }
+
+    // Create Supabase client using environment variables
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Parse request body
+    const { sessionId, shareToken } = (await req.json()) as RequestParams;
+
     if (!sessionId) {
-      return withCors(
-        req,
-        new Response(JSON.stringify({ error: 'sessionId required' }), {
-          status: 400,
-          headers: { 'content-type': 'application/json' },
-        }),
+      return new Response(
+        JSON.stringify({ error: "Session ID is required" }),
+        { headers, status: 400 }
       );
     }
 
-    const caller = createClient(SUPABASE_URL, ANON_KEY, {
-      global: {
-        headers: { Authorization: req.headers.get('Authorization') ?? '' },
-      },
-    });
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-
-    const { data: userData } = await caller.auth.getUser();
-    const userId = userData?.user?.id ?? null;
-
-    const { data: sess, error: sErr } = await admin
-      .from('assessment_sessions')
-      .select('id,status,user_id,share_token')
-      .eq('id', sessionId)
+    // Get the session data
+    const { data: session, error: sessionError } = await supabase
+      .from("prism_sessions")
+      .select("*")
+      .eq("id", sessionId)
       .single();
 
-    if (sErr || !sess) {
-      return withCors(
-        req,
-        new Response(JSON.stringify({ error: 'not_found' }), {
-          status: 404,
-          headers: { 'content-type': 'application/json' },
-        }),
+    if (sessionError) {
+      console.error("Error fetching session:", sessionError);
+      return new Response(
+        JSON.stringify({ error: "Failed to retrieve session data" }),
+        { headers, status: 500 }
       );
     }
 
-    const isOwner = !!userId && userId === sess.user_id;
-    const hasValidShare = !!shareToken && shareToken === sess.share_token;
-    const isCompleted = (sess.status ?? '') === 'completed';
-
-    if (!isOwner && !hasValidShare && !isCompleted) {
-      return withCors(
-        req,
-        new Response(JSON.stringify({ error: 'forbidden' }), {
-          status: 403,
-          headers: { 'content-type': 'application/json' },
-        }),
+    if (!session) {
+      return new Response(
+        JSON.stringify({ error: "Session not found" }),
+        { headers, status: 404 }
       );
     }
 
-    const { data: profile, error: pErr } = await admin
-      .from('profiles')
-      .select('*')
-      .eq('session_id', sessionId)
+    // Check if share token is required and valid
+    if (session.requires_share_token && shareToken !== session.share_token) {
+      return new Response(
+        JSON.stringify({ error: "Invalid or missing share token" }),
+        { headers, status: 403 }
+      );
+    }
+
+    // Get the profile data
+    const { data: profile, error: profileError } = await supabase
+      .from("prism_profiles")
+      .select("*")
+      .eq("id", session.profile_id)
       .single();
 
-    if (pErr || !profile) {
-      return withCors(
-        req,
-        new Response(JSON.stringify({ error: 'not_found' }), {
-          status: 404,
-          headers: { 'content-type': 'application/json' },
-        }),
+    if (profileError) {
+      console.error("Error fetching profile:", profileError);
+      return new Response(
+        JSON.stringify({ error: "Failed to retrieve profile data" }),
+        { headers, status: 500 }
       );
     }
 
-    return withCors(
-      req,
-      new Response(
-        JSON.stringify({
-          profile,
-          session: { id: sess.id, status: sess.status ?? 'completed' },
-        }),
-        { status: 200, headers: { 'content-type': 'application/json' } },
-      ),
+    // Get answers if needed
+    const { data: answers, error: answersError } = await supabase
+      .from("prism_answers")
+      .select("*")
+      .eq("session_id", sessionId)
+      .order("question_id", { ascending: true });
+
+    if (answersError) {
+      console.error("Error fetching answers:", answersError);
+      // Continue without answers, not critical
+    }
+
+    // Return the combined data
+    return new Response(
+      JSON.stringify({
+        session,
+        profile,
+        answers: answers || [],
+      }),
+      { headers, status: 200 }
     );
-  } catch (e) {
-    return withCors(
-      req,
-      new Response(
-        JSON.stringify({ error: 'internal', detail: (e as Error).message }),
-        { status: 500, headers: { 'content-type': 'application/json' } },
-      ),
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    return new Response(
+      JSON.stringify({ error: "An unexpected error occurred" }),
+      {
+        headers: { "Content-Type": "application/json" },
+        status: 500,
+      }
     );
   }
 });
-
