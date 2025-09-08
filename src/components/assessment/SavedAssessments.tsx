@@ -3,12 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Play, Calendar } from "lucide-react";
+import { Trash2, Play, Calendar, Link as LinkIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase/client";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { TOTAL_PRISM_QUESTIONS } from "@/services/prismConfig";
+import { getSessionResumePath } from "@/services/sessionLinking";
 
 interface SavedSession {
   id: string;
@@ -85,6 +86,24 @@ export function SavedAssessments({ onStartNew }: SavedAssessmentsProps) {
       });
     } finally {
       setDeletingSessionId(null);
+    }
+  };
+
+  const handleCopyLink = async (sessionId: string) => {
+    try {
+      const url = `${window.location.origin}${getSessionResumePath(sessionId)}`;
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Link Copied",
+        description: "Share this link to resume the assessment.",
+      });
+    } catch (error) {
+      console.error('Failed to copy link', error);
+      toast({
+        title: "Copy Failed",
+        description: "Could not copy link to clipboard.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -184,7 +203,15 @@ export function SavedAssessments({ onStartNew }: SavedAssessmentsProps) {
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                      
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopyLink(session.id)}
+                      >
+                        <LinkIcon className="h-4 w-4" />
+                      </Button>
+
                       <Button
                         onClick={() => handleContinue(session.id)}
                         className="flex items-center gap-2"

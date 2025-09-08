@@ -39,3 +39,59 @@ export async function linkSessionsToUser(
     return { ok: false, error };
   }
 }
+
+export type LinkSessionResult =
+  | { ok: true }
+  | { ok: false; error: unknown };
+
+export async function linkSessionToAccount(
+  client: SupabaseClient,
+  sessionId: string,
+  userId: string,
+  email?: string,
+): Promise<LinkSessionResult> {
+  try {
+    // Try Edge Function first
+    try {
+      const { data, error } = await client.functions.invoke(
+        'link_session_to_account',
+        { body: { session_id: sessionId, user_id: userId, email } },
+      );
+
+      if (!error && (data as any)?.success) {
+        return { ok: true };
+      }
+      if (!error && (data as any) && (data as any).success === false) {
+        return { ok: false, error: (data as any).error };
+      }
+      if (error && (error as any).status && (error as any).status !== 404) {
+        return { ok: false, error };
+      }
+    } catch {
+      // Ignore network errors and fall back
+    }
+
+    // Fallback: direct update
+    const { error: updateError } = await client
+      .from('assessment_sessions')
+      .update({
+        user_id: userId,
+        email: email ?? null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', sessionId)
+      .is('user_id', null);
+
+    if (updateError) {
+      return { ok: false, error: updateError };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error };
+  }
+}
+
+export function getSessionResumePath(sessionId: string): string {
+  return `/continue/${sessionId}`;
+}
