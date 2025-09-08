@@ -14,6 +14,7 @@ import History from "./pages/History";
 import UserDashboard from "./pages/UserDashboard";
 import RealTimeType from "./pages/RealTimeType";
 import LiveDashboard from "./pages/LiveDashboard";
+import Live from "./pages/Live";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ResetPassword from "./pages/ResetPassword";
@@ -185,7 +186,8 @@ const App = () => (
                   <Route path="/history" element={<History />} />
                   <Route path="/dashboard" element={<UserDashboard />} />
 
-                  {/* Both routes preserved */}
+                  {/* Live + Real-time routes */}
+                  <Route path="/live" element={<Live />} />
                   <Route path="/real-time-type" element={<RealTimeType />} />
                   <Route path="/live-dashboard" element={<LiveDashboard />} />
 
