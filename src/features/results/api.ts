@@ -6,6 +6,8 @@ import type {
   FetchResultsResponse,
 } from './types';
 
+export type ResultsPayload = FetchResultsResponse;
+
 export type FetchResultsErrorKind =
   | 'not_found'
   | 'unauthorized'
@@ -76,7 +78,7 @@ async function edgeCall(
   const { data, error } = await client.functions.invoke(
     'get-results-by-session',
     {
-      body: { session_id: sessionId, share_token: shareToken },
+      body: { sessionId, shareToken },
       signal,
     },
   );
@@ -110,7 +112,7 @@ async function executeWithRetry<T>(
   }
 }
 
-export async function fetchResults(
+export async function fetchResultsBySession(
   { sessionId, shareToken }: { sessionId: string; shareToken?: string },
   client: SupabaseClient = supabase,
 ): Promise<FetchResultsResponse> {
