@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { fetchResultsBySession, ResultsPayload } from "@/features/results/api";
+import { supabase } from "@/lib/supabase/client";
+
+type ResultsPayload = {
+  session: { id: string; status: string };
+  profile: any;
+};
 
 export default function Results() {
   const { sessionId: paramId } = useParams<{ sessionId: string }>();
@@ -20,7 +25,12 @@ export default function Results() {
     let cancel = false;
 
     (async () => {
-      const { data, error } = await fetchResultsBySession(sessionId, shareToken);
+      const { data, error } = await supabase.functions.invoke<ResultsPayload>(
+        "get-results-by-session",
+        {
+          body: { sessionId, shareToken },
+        },
+      );
       if (error) {
         // If Edge returns 409 while scoring, auto-retry briefly
         if ((error as any)?.status === 409 && tries < 12) {
