@@ -15,10 +15,12 @@ const Assessment = () => {
   // show form whenever ?start is present (any truthy) or ?resume=:id exists
   const showForm = Boolean(resume || start !== null);
 
+  // Fire scoring and then hard-navigate to results
   const handleComplete = async (_responses: AssessmentResponse[], sessionId: string) => {
     try {
+      // NOTE: score_prism expects { session_id }, not { sessionId }
       await supabase.functions
-        .invoke('score_prism', { body: { sessionId } })
+        .invoke('score_prism', { body: { session_id: sessionId } })
         .catch(() => {});
       navigate(`/results/${sessionId}`, { replace: true });
     } catch (e) {
