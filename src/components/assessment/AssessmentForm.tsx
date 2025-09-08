@@ -112,6 +112,7 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
     loadLibrary();
   }, []);
   
+  // Filter to visible questions with comprehensive library
   const visibleQuestions = libraryLoaded ? getVisibleQuestions(assessmentLibrary) : [];
   const currentQuestion = visibleQuestions[currentQuestionIndex];
   const progress = visibleQuestions.length > 0 ? ((currentQuestionIndex + 1) / visibleQuestions.length) * 100 : 0;
@@ -121,6 +122,45 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
   const currentSection = currentQuestion?.section;
   const sectionQuestions = assessmentLibrary.filter(q => q.section === currentSection);
   const sectionProgress = sectionQuestions.findIndex(q => q.id === currentQuestion?.id) + 1;
+
+  // Early return conditions to prevent render loops
+  if (!libraryLoaded) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading assessment library...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="text-center py-8">
+            <h3 className="font-semibold mb-2 text-destructive">Session Error</h3>
+            <p className="text-muted-foreground mb-4">{loadError}</p>
+            <Button onClick={() => window.location.reload()} className="mt-4">
+              Refresh and Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isLoading || !sessionId) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Initializing assessment session...</p>
+        </div>
+      </div>
+    );
+  }
 
   
   const loadExistingSession = async (sessionId: string) => {
@@ -154,6 +194,12 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
 
   // Initialize assessment session on component mount
   useEffect(() => {
+    // Prevent initialization if library isn't loaded yet
+    if (!libraryLoaded) {
+      console.log('Waiting for library to load before initializing session');
+      return;
+    }
+
     console.log('AssessmentForm useEffect triggered with resumeSessionId:', resumeSessionId);
     
     const initializeSession = async () => {
@@ -189,11 +235,13 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
             description: "Could not start assessment session. Please refresh the page and try again.",
             variant: "destructive",
           });
+          setLoadError('Failed to create session. Please try again.');
           return;
         }
 
         const newId = sessionData.session_id;
         console.log('Session initialized successfully via edge function:', newId);
+
         setSessionId(newId);
         setQuestionStartTime(Date.now());
 
@@ -223,17 +271,51 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
       }
     };
 
-    initializeSession();
-  }, [toast, resumeSessionId]);
+    // Only initialize if we don't already have a session
+    if (!sessionId && !isLoading && !loadError) {
+      setIsLoading(true);
+      initializeSession().finally(() => setIsLoading(false));
+    }
+  }, [libraryLoaded, resumeSessionId, sessionId, toast]);
 
-  useEffect(() => {
-    if (loadError || currentQuestion) return;
-    const t = setTimeout(
-      () => setLoadError('Failed to load assessment. Please try again.'),
-      30000,
+  // Early return conditions to prevent render loops
+  if (!libraryLoaded) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading assessment library...</p>
+        </div>
+      </div>
     );
-    return () => clearTimeout(t);
-  }, [currentQuestion, loadError]);
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="text-center py-8">
+            <h3 className="font-semibold mb-2 text-destructive">Session Error</h3>
+            <p className="text-muted-foreground mb-4">{loadError}</p>
+            <Button onClick={() => window.location.reload()} className="mt-4">
+              Refresh and Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isLoading || !sessionId) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Initializing assessment session...</p>
+        </div>
+      </div>
+    );
+  }
   useEffect(() => {
     const loadConfig = async () => {
       const config = await getPrismConfig();
@@ -1024,8 +1106,10 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
               show={showValidationErrors}
               onDismiss={() => setShowValidationErrors(false)}
             />
-          )}
+           )}
 
+          {/* Early return conditions to prevent render loops */}
+          
           {/* Show FC Block Manager when in FC section */}
           {showFCBlocks && sessionId && (
             <FCBlockManager
