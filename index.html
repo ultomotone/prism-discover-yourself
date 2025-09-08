@@ -215,18 +215,33 @@
       }
 
       // Wrapper to always attach a conversion_id and click_id; returns the id we used
-      window.rdtTrack = function(eventName, props){
-        props = props || {};
-        if (!props.conversion_id) props.conversion_id = convUUID();
-        const clickId = props.click_id || getClickId();
-        if (clickId) props.click_id = clickId;
-        if (props.email && window.redditNormalizeEmail) {
-          props.email = window.redditNormalizeEmail(props.email);
-        }
-        if (window.rdt) rdt('track', eventName, props);
-        window.__lastConversionId = props.conversion_id; // for CAPI dedup
-        return props.conversion_id;
-      };
+        window.rdtTrack = function(eventName, props){
+          props = props || {};
+          if (!props.conversion_id) props.conversion_id = convUUID();
+          const clickId = props.click_id || getClickId();
+          if (clickId) props.click_id = clickId;
+          if (props.email && window.redditNormalizeEmail) {
+            props.email = window.redditNormalizeEmail(props.email);
+          }
+          if (window.rdt) rdt('track', eventName, props);
+          try {
+            fetch('/functions/v1/reddit-capi', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                event_name: eventName,
+                conversion_id: props.conversion_id,
+                click_id: props.click_id,
+                email: props.email,
+              }),
+              keepalive: true,
+            }).catch(() => {});
+          } catch (e) {
+            // no-op
+          }
+          window.__lastConversionId = props.conversion_id; // for CAPI dedup
+          return props.conversion_id;
+        };
 
       // Update advanced matching user signals after email capture
       window.rdtSetUser = function(props){
