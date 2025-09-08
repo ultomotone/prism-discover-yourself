@@ -26,9 +26,8 @@ const DashboardPreview = () => {
       try {
         // Use secure aggregated statistics instead of direct profile access
         const { data: todayStats } = await supabase
-          .from("dashboard_statistics")
-          .select("*")
-          .eq("stat_date", new Date().toISOString().split("T")[0])
+          .from('dashboard_statistics_latest')
+          .select('*')
           .maybeSingle();
 
         // If no data for today, trigger the update function
@@ -37,9 +36,8 @@ const DashboardPreview = () => {
 
           // Try to fetch again after update
           const { data: refreshedStats } = await supabase
-            .from("dashboard_statistics")
-            .select("*")
-            .eq("stat_date", new Date().toISOString().split("T")[0])
+            .from('dashboard_statistics_latest')
+            .select('*')
             .maybeSingle();
 
           if (refreshedStats) {

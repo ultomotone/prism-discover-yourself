@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useAdvancedAdminAnalytics } from "@/hooks/useAdvancedAdminAnalytics";
 import { AdminFilters } from "@/components/admin/AdminFilters";
 import { KPICard } from "@/components/admin/KPICard";
 import { QualityPanel } from "@/components/admin/QualityPanel";
 import { ChartsSection } from "@/components/admin/ChartsSection";
 import { MethodHealthSection } from "@/components/admin/MethodHealthSection";
-import { EvidenceTab } from "@/components/admin/evidence/EvidenceTab";
+import EvidencePanel from "@/components/admin/EvidencePanel";
 import { SystemStatusControl } from "@/components/admin/SystemStatusControl";
 import { LatestAssessmentsTable } from "@/components/admin/LatestAssessmentsTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,8 +15,6 @@ import { Download, AlertTriangle, RefreshCw } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import AdminControls from "@/components/admin/AdminControls";
-import { supabase } from "@/lib/supabase/client";
-import { fetchDashboardStats, fetchEvidenceKpis } from "@/lib/api/admin";
 const Admin: React.FC = () => {
   const {
     filters,
@@ -33,21 +31,6 @@ const Admin: React.FC = () => {
   } = useAdvancedAdminAnalytics();
 
   const { toast } = useToast();
-
-  const [stats, setStats] = useState<any>(null);
-  const [kpis, setKpis] = useState<any>(null);
-  const [err, setErr] = useState<string | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      const [s, k] = await Promise.all([
-        fetchDashboardStats(supabase),
-        fetchEvidenceKpis(supabase),
-      ]);
-      setStats(s);
-      setKpis(k);
-    })().catch((e) => setErr(e.message));
-  }, []);
 
   const getCompletionRateStatus = (value: number) => {
     if (value >= 85) return 'good';
@@ -119,34 +102,6 @@ const Admin: React.FC = () => {
         </Alert>
       )}
 
-      {err && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Failed to load dashboard metrics</AlertTitle>
-          <AlertDescription>{err}</AlertDescription>
-        </Alert>
-      )}
-
-      {stats && kpis && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Total Assessments</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {stats?.total_assessments?.toFixed?.(0)}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Test-Retest Reliability (r)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {kpis?.test_retest_r?.toFixed?.(2) ?? "—"}
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       {/* Tabs */}
       <Tabs defaultValue="health" className="w-full">
@@ -360,7 +315,7 @@ const Admin: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="evidence">
-          <EvidenceTab />
+          <EvidencePanel />
         </TabsContent>
       </Tabs>
 

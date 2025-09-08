@@ -1,3 +1,4 @@
+import { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
 
 export type LiveRow = {
@@ -14,24 +15,17 @@ export async function fetchLiveAssessments(): Promise<LiveRow[]> {
   return (data ?? []) as LiveRow[];
 }
 
-export async function fetchDashboardStats(supabase: any) {
-  // optional warm
-  await supabase.rpc('update_dashboard_statistics').catch(() => {});
-  const { data, error } = await supabase
-    .from('dashboard_statistics')
-    .select('*')
-    .order('stat_date', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+export async function fetchEvidenceKpis(sb: SupabaseClient) {
+  const { data, error } = await sb.rpc('get_evidence_kpis');
   if (error) throw error;
-  return data ?? null;
+  return data;
 }
 
-export async function fetchEvidenceKpis(supabase: any) {
-  const { data, error } = await supabase
-    .from('evidence_kpis')
+export async function fetchLatestDashboardStats(sb: SupabaseClient) {
+  const { data, error } = await sb
+    .from('dashboard_statistics_latest')
     .select('*')
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
