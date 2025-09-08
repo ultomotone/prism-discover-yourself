@@ -227,44 +227,9 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
           });
         }
         
-        // Generate UUIDs with fallback for browser compatibility
-        const generateUUID = () => {
-          if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-            return crypto.randomUUID();
-          }
-          // Fallback for browsers without crypto.randomUUID
-          return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            const r = Math.random() * 16 | 0;
-            const v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-          });
-        };
-        
-        const newId = generateUUID();
-        const shareToken = generateUUID();
-        
-        console.log('Generated session ID:', newId);
-        console.log('Generated share token:', shareToken);
-        console.log('Total questions for session:', visibleQuestions.length);
-        
-        const { error } = await supabase
-          .from('assessment_sessions')
-          .insert({
-            id: newId,
-            user_id: user?.id || null,
-            session_type: 'prism',
-            total_questions: visibleQuestions.length || 0, // Ensure we have a valid number
-            share_token: shareToken,
-            metadata: {
-              browser: navigator.userAgent,
-              timestamp: new Date().toISOString(),
-              anonymous: !user?.id
-            }
-          });
-
-        if (error) {
-          console.error('Error creating session:', error);
-          console.error('Error details:', error.message, error.code, error.details);
+        // Create session via edge function to respect RLS policies
+        const sessionData = await startAssessmentSession(user?.email, user?.id);
+        if (!sessionData) {
           toast({
             title: "Failed to Initialize",
             description: "Could not start assessment session. Please refresh the page and try again.",
@@ -274,7 +239,9 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
           return;
         }
 
-        console.log('Session initialized successfully:', newId);
+        const newId = sessionData.session_id;
+        console.log('Session initialized successfully via edge function:', newId);
+
         setSessionId(newId);
         setQuestionStartTime(Date.now());
 
@@ -286,7 +253,7 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
           localStorage.setItem('prism_last_session', JSON.stringify({
             id: newId,
             completed_questions: 0,
-            email: null,
+            email: user?.email || null,
             updated_at: new Date().toISOString()
           }));
           console.log('🗄️ Stored local fallback for session:', newId);
