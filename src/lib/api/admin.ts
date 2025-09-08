@@ -13,3 +13,25 @@ export async function fetchLiveAssessments(): Promise<LiveRow[]> {
   if (error) throw error;
   return (data ?? []) as LiveRow[];
 }
+
+export async function fetchDashboardStats(supabase: any) {
+  // optional warm
+  await supabase.rpc('update_dashboard_statistics').catch(() => {});
+  const { data, error } = await supabase
+    .from('dashboard_statistics')
+    .select('*')
+    .order('stat_date', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data ?? null;
+}
+
+export async function fetchEvidenceKpis(supabase: any) {
+  const { data, error } = await supabase
+    .from('evidence_kpis')
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
