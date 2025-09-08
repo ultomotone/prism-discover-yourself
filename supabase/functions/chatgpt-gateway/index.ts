@@ -738,14 +738,14 @@ serve(async (req) => {
 
       // POST /recompute - Trigger profile recomputation
       case path === '/recompute' && method === 'POST': {
-        const { data, error } = await supabase.functions.invoke('recompute_profiles_v11');
+        const { data, error } = await supabase.functions.invoke('recompute-profiles');
 
         if (error) {
           console.error('Recompute error:', error);
           throw error;
         }
         
-        console.log('Triggered recompute_profiles_v11');
+        console.log('Triggered recompute-profiles');
         return new Response(JSON.stringify({ 
           message: 'Recompute triggered successfully',
           data 
