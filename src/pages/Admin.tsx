@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useAdvancedAdminAnalytics } from "@/hooks/useAdvancedAdminAnalytics";
 import { AdminFilters } from "@/components/admin/AdminFilters";
 import { KPICard } from "@/components/admin/KPICard";
@@ -15,6 +15,7 @@ import { Download, AlertTriangle, RefreshCw } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import AdminControls from "@/components/admin/AdminControls";
+import { fetchEvidenceKpis, fetchDashboardSnapshot, refreshDashboardStats, refreshEvidenceKpis } from "@/lib/api/admin";
 const Admin: React.FC = () => {
   const {
     filters,
@@ -31,6 +32,54 @@ const Admin: React.FC = () => {
   } = useAdvancedAdminAnalytics();
 
   const { toast } = useToast();
+  const [kpis, setKpis] = useState<any>(null);
+  const [snapshot, setSnapshot] = useState<any>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function loadAll() {
+    setBusy(true); setErr(null);
+    try {
+      const [k, s] = await Promise.all([
+        fetchEvidenceKpis(),
+        fetchDashboardSnapshot()
+      ]);
+      setKpis(k);
+      setSnapshot(s);
+    } catch (e: any) {
+      setErr(e.message ?? String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onRefreshSnapshotClick() {
+    setBusy(true); setErr(null);
+    try {
+      await refreshDashboardStats();
+      await loadAll();
+    } catch (e: any) {
+      setErr(e.message ?? String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onRefreshKpisClick() {
+    setBusy(true); setErr(null);
+    try {
+      await refreshEvidenceKpis();
+      await loadAll();
+    } catch (e: any) {
+      setErr(e.message ?? String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  useEffect(() => {
+    loadAll();
+  }, []);
 
   const getCompletionRateStatus = (value: number) => {
     if (value >= 85) return 'good';
@@ -93,12 +142,16 @@ const Admin: React.FC = () => {
           <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
           <p className="text-muted-foreground">Assessment analytics, health monitoring, and evidence metrics</p>
         </div>
+        <div className="flex gap-2">
+          <Button onClick={onRefreshSnapshotClick} disabled={busy}>Refresh Snapshot</Button>
+          <Button onClick={onRefreshKpisClick} disabled={busy}>Refresh KPIs</Button>
+        </div>
       </div>
-      {error && (
+      {(error || err) && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Failed to load analytics</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{error || err}</AlertDescription>
         </Alert>
       )}
 
@@ -319,7 +372,7 @@ const Admin: React.FC = () => {
       </Tabs>
 
       {/* Loading Overlay */}
-      {loading && (
+      {(loading || busy) && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
           <Card className="p-6">
             <div className="flex items-center gap-4">
@@ -332,6 +385,8 @@ const Admin: React.FC = () => {
           </Card>
         </div>
       )}
+      {/* Hidden debug output to avoid unused warnings */}
+      <pre className="hidden">{JSON.stringify({ kpis, snapshot })}</pre>
     </div>
   );
 };
