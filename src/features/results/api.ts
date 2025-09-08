@@ -67,33 +67,6 @@ function parseEdgePayload(payload: unknown, sessionId: string): FetchResultsResp
   throw new FetchResultsError('unknown', 'invalid response');
 }
 
-async function rpcCall(
-  client: SupabaseClient,
-  sessionId: string,
-  shareToken: string,
-  _signal: AbortSignal, // note: Supabase rpc() doesn't accept signal currently
-): Promise<FetchResultsResponse> {
-  // Tip: annotate the expected return for stronger typing
-  type RpcRow = Profile;
-  const { data, error } = await client.rpc<RpcRow | RpcRow[]>(
-    'get_profile_by_session',
-    { p_session_id: sessionId, p_share_token: shareToken }
-  );
-
-  if (error) {
-    const status =
-      (error as any)?.status ??
-      ((/not\s*found/i).test((error as any)?.message ?? '') ? 404 : 500);
-    throw mapStatus(status, (error as any).message);
-  }
-
-  // Handle both single-object and array-of-rows returns
-  const profile: RpcRow | undefined = Array.isArray(data) ? data[0] : (data ?? undefined);
-  if (!profile) throw new FetchResultsError('not_found');
-
-  return { profile, session: { id: sessionId, status: 'completed' } };
-}
-
 async function edgeCall(
   client: SupabaseClient,
   sessionId: string,
@@ -148,14 +121,8 @@ export async function fetchResults(
   const controller = new AbortController();
   const promise = (async () => {
     try {
-      if (shareToken) {
-        return await executeWithRetry(
-          (signal) => rpcCall(client, sessionId, shareToken, signal),
-          controller
-        );
-      }
       return await executeWithRetry(
-        (signal) => edgeCall(client, sessionId, undefined, signal),
+        (signal) => edgeCall(client, sessionId, shareToken, signal),
         controller
       );
     } finally {
