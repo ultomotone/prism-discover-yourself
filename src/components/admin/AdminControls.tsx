@@ -37,7 +37,7 @@ function AdminControls() {
   const onBackfill = async () => {
     setBusy("backfill");
     try {
-      const res = await invokeEdge("recompute_profiles_v11", { days_back: 30, limit: 500 });
+      const res = await invokeEdge("recompute-profiles", { days_back: 30, limit: 500 });
       toast({
         title: "Backfill complete",
         description: `Updated ${res?.updated ?? 0} / ${res?.processed ?? 0} sessions`,
@@ -52,7 +52,7 @@ function AdminControls() {
   const onRecompute = async () => {
     setBusy("recompute");
     try {
-      const res = await invokeEdge("recompute_profiles_v11", {
+      const res = await invokeEdge("recompute-profiles", {
         days_back: 90,
         limit: 2000,
       });
@@ -71,7 +71,7 @@ function AdminControls() {
     if (!sessionId) return;
     setBusy("session");
     try {
-      const res = await invokeEdge("recompute_profiles_v11", { session_id: sessionId.trim() });
+      const res = await invokeEdge("recompute-profiles", { session_id: sessionId.trim() });
       toast({
         title: "Session recomputed",
         description: `Updated ${res?.updated ?? 0} / ${res?.processed ?? 0} sessions`,
