@@ -155,7 +155,7 @@ const DashboardPreview = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold text-primary">Live Dashboard</h3>
+                <h3 className="font-semibold text-primary">Real-time Type</h3>
               </div>
               <Badge variant="secondary" className="animate-pulse">
                 Live
@@ -229,12 +229,12 @@ const DashboardPreview = () => {
             </div>
 
             {/* CTA Button */}
-            <Button 
-              onClick={() => navigate('/dashboard')}
+            <Button
+              onClick={() => navigate('/real-time-type')}
               className="w-full group bg-gradient-to-r from-primary to-secondary hover:from-primary-dark hover:to-secondary-dark"
               size="sm"
             >
-              View Full Dashboard
+              View Real-time Type
               <ExternalLink className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>

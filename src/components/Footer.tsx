@@ -103,8 +103,8 @@ const Footer = () => {
                   </a>
                 </li>
                 <li>
-                  <a href="/dashboard" className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
-                    Dashboard
+                  <a href="/real-time-type" className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
+                    Real-time Type
                   </a>
                 </li>
                 <li>

@@ -12,6 +12,7 @@ import Assessment from "./pages/Assessment";
 import Results from "./pages/Results";
 import History from "./pages/History";
 import UserDashboard from "./pages/UserDashboard";
+import RealTimeType from "./pages/RealTimeType";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ResetPassword from "./pages/ResetPassword";
@@ -179,6 +180,7 @@ const App = () => (
                   } />
                   <Route path="/history" element={<History />} />
                   <Route path="/dashboard" element={<UserDashboard />} />
+                  <Route path="/real-time-type" element={<RealTimeType />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/signals" element={<Signals />} />
