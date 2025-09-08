@@ -126,8 +126,8 @@ export function AssessmentComplete({ responses, sessionId, onReturnHome, onTakeA
           if (data.share_token) {
             setShareToken(data.share_token);
           }
-          const tokenParam = data.share_token ? "?token=" + data.share_token : "";
-          navigate("/results/" + sessionId + tokenParam);
+          const tokenParam = data.share_token ? `?token=${data.share_token}` : "";
+          navigate(`/results/${sessionId}${tokenParam}`, { replace: true });
           return;
         } else {
           throw new Error(data?.error || 'Invalid response from scoring service');

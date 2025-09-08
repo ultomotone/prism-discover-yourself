@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase/client";
-    // No auto-rescoring - server-side only
+// No auto-rescoring - server-side only
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MilestoneProgress } from "@/components/ui/milestone-progress";
@@ -22,28 +22,26 @@ const DashboardPreview = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // No auto-rescoring - server-side only
-
     const fetchPreviewStats = async () => {
       try {
         // Use secure aggregated statistics instead of direct profile access
         const { data: todayStats } = await supabase
-          .from('dashboard_statistics')
-          .select('*')
-          .eq('stat_date', new Date().toISOString().split('T')[0])
+          .from("dashboard_statistics")
+          .select("*")
+          .eq("stat_date", new Date().toISOString().split("T")[0])
           .maybeSingle();
 
         // If no data for today, trigger the update function
         if (!todayStats) {
-          await supabase.rpc('update_dashboard_statistics');
-          
+          await supabase.rpc("update_dashboard_statistics");
+
           // Try to fetch again after update
           const { data: refreshedStats } = await supabase
-            .from('dashboard_statistics')
-            .select('*')
-            .eq('stat_date', new Date().toISOString().split('T')[0])
+            .from("dashboard_statistics")
+            .select("*")
+            .eq("stat_date", new Date().toISOString().split("T")[0])
             .maybeSingle();
-          
+
           if (refreshedStats) {
             processStatsData(refreshedStats);
           } else {
@@ -54,7 +52,7 @@ const DashboardPreview = () => {
 
         processStatsData(todayStats);
       } catch (error) {
-        console.error('Failed to fetch preview stats:', error);
+        console.error("Failed to fetch preview stats:", error);
         setDefaultStats();
       } finally {
         setLoading(false);
@@ -64,20 +62,25 @@ const DashboardPreview = () => {
     const processStatsData = (todayStats: any) => {
       const totalAssessments = todayStats?.total_assessments || 0;
       const todayCount = todayStats?.daily_assessments || 0;
-      const progressPercentage = Math.min(100, Math.round((totalAssessments / 1000) * 100));
+      const progressPercentage = Math.min(
+        100,
+        Math.round((totalAssessments / 1000) * 100)
+      );
 
       // Get top type from distribution
       const typeDistribution = todayStats?.type_distribution || {};
-      const topType = Object.entries(typeDistribution)
-        .sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] || null;
+      const topType =
+        Object.entries(typeDistribution).sort(
+          ([, a], [, b]) => (b as number) - (a as number)
+        )[0]?.[0] || null;
 
       // Process overlay stats
-      const overlayStats = [];
+      const overlayStats: Array<{ overlay: string; count: number }> = [];
       if (todayStats?.overlay_positive) {
-        overlayStats.push({ overlay: 'N+', count: todayStats.overlay_positive });
+        overlayStats.push({ overlay: "N+", count: todayStats.overlay_positive });
       }
       if (todayStats?.overlay_negative) {
-        overlayStats.push({ overlay: 'N–', count: todayStats.overlay_negative });
+        overlayStats.push({ overlay: "N–", count: todayStats.overlay_negative });
       }
 
       setStats({
@@ -85,7 +88,7 @@ const DashboardPreview = () => {
         todayCount,
         progressPercentage,
         topType,
-        overlayStats
+        overlayStats,
       });
     };
 
@@ -95,26 +98,27 @@ const DashboardPreview = () => {
         todayCount: 0,
         progressPercentage: 0,
         topType: null,
-        overlayStats: []
+        overlayStats: [],
       });
     };
 
     fetchPreviewStats();
 
-    // Set up real-time subscription to both dashboard_statistics and profiles
+    // Real-time subscription to stats & profiles -> refresh preview
     const channel = supabase
-      .channel('preview-updates')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'dashboard_statistics' },
+      .channel("preview-updates")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "dashboard_statistics" },
         () => {
           fetchPreviewStats();
         }
       )
-      .on('postgres_changes', 
-        { event: 'INSERT', schema: 'public', table: 'profiles' },
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "profiles" },
         () => {
-          // When new profile is created, update dashboard stats
-          supabase.rpc('update_dashboard_statistics').then(() => {
+          supabase.rpc("update_dashboard_statistics").then(() => {
             fetchPreviewStats();
           });
         }
@@ -170,8 +174,8 @@ const DashboardPreview = () => {
                   {stats?.totalAssessments || 0}/1000
                 </span>
               </div>
-              <MilestoneProgress 
-                value={stats?.totalAssessments || 0} 
+              <MilestoneProgress
+                value={stats?.totalAssessments || 0}
                 max={1000}
                 milestones={[100, 500]}
                 className="h-3"
@@ -187,17 +191,21 @@ const DashboardPreview = () => {
               <div className="text-center p-3 bg-white/50 rounded-lg">
                 <div className="flex items-center justify-center gap-1 mb-1">
                   <Users className="h-4 w-4 text-secondary" />
-                  <span className="text-xs font-medium text-muted-foreground">Total</span>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Total
+                  </span>
                 </div>
                 <div className="text-2xl font-bold text-primary">
                   {stats?.totalAssessments || 0}
                 </div>
               </div>
-              
+
               <div className="text-center p-3 bg-white/50 rounded-lg">
                 <div className="flex items-center justify-center gap-1 mb-1">
                   <TrendingUp className="h-4 w-4 text-accent" />
-                  <span className="text-xs font-medium text-muted-foreground">Today</span>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Today
+                  </span>
                 </div>
                 <div className="text-2xl font-bold text-accent">
                   +{stats?.todayCount || 0}
@@ -213,7 +221,7 @@ const DashboardPreview = () => {
                   <Badge variant="outline">{stats.topType}</Badge>
                 </div>
               )}
-              
+
               {stats?.overlayStats && stats.overlayStats.length > 0 && (
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Overlay Split:</span>
@@ -228,15 +236,25 @@ const DashboardPreview = () => {
               )}
             </div>
 
-            {/* CTA Button */}
-            <Button
-              onClick={() => navigate('/real-time-type')}
-              className="w-full group bg-gradient-to-r from-primary to-secondary hover:from-primary-dark hover:to-secondary-dark"
-              size="sm"
-            >
-              View Real-time Type
-              <ExternalLink className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
+            {/* CTAs */}
+            <div className="flex gap-2">
+              <Button
+                onClick={() => navigate("/real-time-type")}
+                className="w-full group bg-gradient-to-r from-primary to-secondary hover:from-primary-dark hover:to-secondary-dark"
+                size="sm"
+              >
+                View Real-time Type
+                <ExternalLink className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/live-dashboard")}
+                className="w-full"
+                size="sm"
+              >
+                Live Dashboard
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

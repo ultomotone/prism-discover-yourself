@@ -13,6 +13,7 @@ import Results from "./pages/Results";
 import History from "./pages/History";
 import UserDashboard from "./pages/UserDashboard";
 import RealTimeType from "./pages/RealTimeType";
+import LiveDashboard from "./pages/LiveDashboard";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ResetPassword from "./pages/ResetPassword";
@@ -97,8 +98,6 @@ class ErrorBoundary extends React.Component<
       componentStack: errorInfo.componentStack,
       timestamp: new Date().toISOString()
     });
-    
-    // Log to help identify the problematic component
     console.error("🚨 Component Stack (shows which component failed):");
     console.error(errorInfo.componentStack);
   }
@@ -164,23 +163,32 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
-<Route path="/signup" element={<Signup />} />
+                  <Route path="/signup" element={<Signup />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/assessment" element={<Assessment />} />
                   <Route path="/results/:sessionId" element={<Results />} />
                   {/* Debug route for Results testing */}
-                  <Route path="/results" element={
-                    <div className="min-h-screen bg-background flex items-center justify-center">
-                      <div className="text-center">
-                        <h1 className="text-2xl font-bold mb-4">Results Page - Missing Session ID</h1>
-                        <p className="text-muted-foreground mb-4">You need a session ID to view results</p>
-                        <Button onClick={() => window.location.href = '/'}>Go Home</Button>
+                  <Route
+                    path="/results"
+                    element={
+                      <div className="min-h-screen bg-background flex items-center justify-center">
+                        <div className="text-center">
+                          <h1 className="text-2xl font-bold mb-4">Results Page - Missing Session ID</h1>
+                          <p className="text-muted-foreground mb-4">
+                            You need a session ID to view results
+                          </p>
+                          <Button onClick={() => (window.location.href = "/")}>Go Home</Button>
+                        </div>
                       </div>
-                    </div>
-                  } />
+                    }
+                  />
                   <Route path="/history" element={<History />} />
                   <Route path="/dashboard" element={<UserDashboard />} />
+
+                  {/* Both routes preserved */}
                   <Route path="/real-time-type" element={<RealTimeType />} />
+                  <Route path="/live-dashboard" element={<LiveDashboard />} />
+
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/signals" element={<Signals />} />
@@ -214,12 +222,13 @@ const App = () => (
                   <Route path="/roadmap" element={<Roadmap />} />
                   <Route path="/your-personality-blueprint" element={<YourPersonalityBlueprint />} />
                   <Route path="/prism-relational-fit" element={<PRISMRelationalFit />} />
-                  
+
                   {/* Relational Fit Mini-App Routes */}
                   <Route path="/relational-fit" element={<RelationalFitHome />} />
                   <Route path="/relational-fit/heatmap" element={<RelationalFitHeatmap />} />
                   <Route path="/relational-fit/types" element={<RelationalFitTypes />} />
                   <Route path="/relational-fit/pair/:pairId" element={<RelationalFitPair />} />
+
                   {/* PRISM Type Routes */}
                   <Route path="/types/idea-catalyst" element={<IdeaCatalyst />} />
                   <Route path="/types/framework-architect" element={<FrameworkArchitect />} />
@@ -237,6 +246,7 @@ const App = () => (
                   <Route path="/types/practical-optimizer" element={<PracticalOptimizer />} />
                   <Route path="/types/possibility-connector" element={<PossibilityConnector />} />
                   <Route path="/types/integrity-guide" element={<IntegrityGuide />} />
+
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
