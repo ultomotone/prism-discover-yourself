@@ -1,15 +1,6 @@
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-type LatestAssessment = {
-  session_id: string;
-  user_id: string;
-  top1_fit: number | null;
-  top_gap: number | null;
-  confidence_margin: number | null;
-  overlay_label: string | null;
-  completed_at_et: string;
-};
+import type { LatestAssessment } from "@/hooks/useAdvancedAdminAnalytics";
 
 export function LatestAssessmentsTable({ data }: { data: LatestAssessment[] }) {
   if (!data || data.length === 0) {

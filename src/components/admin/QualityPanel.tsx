@@ -1,16 +1,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { KPICard } from "./KPICard";
-
-interface QualityData {
-  top1FitMedian: number;
-  topGapMedian: number;
-  closeCallsPercent: number;
-  inconsistencyMean: number;
-  sdIndexMean: number;
-  confidenceMarginMedian: number;
-  validityPassRate: number;
-}
+import type { QualityData } from "@/hooks/useAdvancedAdminAnalytics";
 
 interface QualityPanelProps {
   data: QualityData;

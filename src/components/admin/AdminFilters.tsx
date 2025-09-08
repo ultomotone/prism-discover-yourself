@@ -4,13 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 
-interface Filters {
-  dateRange: { preset: string; from?: Date; to?: Date };
-  overlay: string;
-  confidence: string;
-  primaryType: string;
-  device: string;
-}
+import type { Filters } from "@/hooks/useAdvancedAdminAnalytics";
 
 interface AdminFiltersProps {
   filters: Filters;

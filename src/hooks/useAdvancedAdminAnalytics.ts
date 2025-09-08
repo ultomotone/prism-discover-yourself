@@ -59,10 +59,10 @@ const LatestAssessmentsSchema = z.array(
   z.object({
     session_id: z.string(),
     user_id: z.string(),
-    top1_fit: z.number(),
-    top_gap: z.number(),
-    confidence_margin: z.number(),
-    overlay_label: z.string(),
+    top1_fit: z.number().nullable(),
+    top_gap: z.number().nullable(),
+    confidence_margin: z.number().nullable(),
+    overlay_label: z.string().nullable(),
     completed_at_et: z.string(),
   })
 );
@@ -223,7 +223,7 @@ export const useAdvancedAdminAnalytics = () => {
     fetchAll();
   }, []);
 
-  const kpiData: KPIData = KPIDataSchema.parse({
+  const kpiData: KPIData = useMemo(() => ({
     completions: kpiRow?.completions ?? 0,
     completionRate: kpiRow?.completion_rate_pct ?? 0,
     medianDuration: kpiRow?.median_duration_min ?? 0,
@@ -231,9 +231,9 @@ export const useAdvancedAdminAnalytics = () => {
     stallersPercent: kpiRow?.stallers_pct ?? 0,
     duplicatesPercent: kpiRow?.duplicates_pct ?? 0,
     validityPassRate: kpiRow?.validity_pass_rate_pct ?? 0,
-  });
+  }), [kpiRow]);
 
-  const qualityData: QualityData = QualityDataSchema.parse({
+  const qualityData: QualityData = useMemo(() => ({
     top1FitMedian: kpiRow?.top1_fit_median ?? 0,
     topGapMedian: kpiRow?.top_gap_median ?? 0,
     closeCallsPercent: kpiRow?.close_calls_pct ?? 0,
@@ -241,9 +241,9 @@ export const useAdvancedAdminAnalytics = () => {
     sdIndexMean: kpiRow?.sd_index_mean ?? 0,
     confidenceMarginMedian: kpiRow?.confidence_margin_median ?? 0,
     validityPassRate: kpiRow?.validity_pass_rate_pct ?? 0,
-  });
+  }), [kpiRow]);
 
-  const chartData: ChartData = ChartDataSchema.parse({
+  const chartData: ChartData = useMemo(() => ({
     confidenceDistribution: confDist.map((item) => ({
       confidence: item.bucket,
       count: item.n,
@@ -260,14 +260,14 @@ export const useAdvancedAdminAnalytics = () => {
       date: item.day_label,
       sessions: item.completions,
     })),
-  });
+  }), [confDist, overlayDist, typeDist, throughputData]);
 
-  const methodHealthData: MethodHealthData = MethodHealthDataSchema.parse({
+  const methodHealthData: MethodHealthData = useMemo(() => ({
     fcCoverage: [],
     shareEntropy: [],
     dimensionalCoverage: [],
     sectionTimes: [],
-  });
+  }), []);
 
   const refreshData = async () => {
     await fetchAll();
@@ -317,4 +317,14 @@ export const useAdvancedAdminAnalytics = () => {
     latestAssessments,
     error,
   };
+};
+
+export type {
+  DateRange,
+  Filters,
+  KPIData,
+  QualityData,
+  ChartData,
+  MethodHealthData,
+  LatestAssessments as LatestAssessment
 };

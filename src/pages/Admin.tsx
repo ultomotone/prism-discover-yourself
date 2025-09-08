@@ -37,30 +37,6 @@ const Admin: React.FC = () => {
     error,
   } = useAdvancedAdminAnalytics();
 
-  // --- SAFE DEFAULTS so UI doesn't crash while data is loading ---
-  const EMPTY_QUALITY = {
-    top1FitMedian: 0,
-    topGapMedian: 0,
-    confidenceMarginMedian: 0,
-    closeCallsPercent: 0,
-    inconsistencyMean: 0,
-    sdIndexMean: 0,
-  };
-
-  const EMPTY_KPI = {
-    completions: 0,
-    completionRate: 0,
-    medianDuration: 0,
-    speedersPercent: 0,
-    stallersPercent: 0,
-    duplicatesPercent: 0,
-    validityPassRate: 0,
-  };
-
-  // Shorthands used in the JSX
-  const q = qualityData ?? EMPTY_QUALITY;
-  const k = kpiData ?? EMPTY_KPI;
-
   const { toast } = useToast();
 
   // Evidence + snapshot state (for the top tiles & buttons)
@@ -247,64 +223,64 @@ const Admin: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
             <KPICard
               title="Top Gap Median"
-              value={`${q.topGapMedian.toFixed(1)}`}
+              value={`${qualityData.topGapMedian.toFixed(1)}`}
               tooltip="Median gap between top 2 type scores (fit difference). Higher values indicate clearer type distinctions."
               onExport={() => exportToCSV('v_quality')}
             />
             <KPICard
               title="Confidence Margin"
-              value={`${q.confidenceMarginMedian.toFixed(1)}%`}
+              value={`${qualityData.confidenceMarginMedian.toFixed(1)}%`}
               tooltip="Median P1-P2 probability difference (confidence margin). Higher values indicate more confident type assignments."
               onExport={() => exportToCSV('v_quality')}
             />
             <KPICard
               title="Close Calls"
-              value={`${q.closeCallsPercent.toFixed(1)}%`}
+              value={`${qualityData.closeCallsPercent.toFixed(1)}%`}
               subtitle="Gap < 3"
               tooltip="Percentage of assessments with top gap < 3 points (borderline cases)"
               onExport={() => exportToCSV('v_quality')}
             />
             <KPICard
               title="Completions"
-              value={k.completions.toLocaleString()}
+              value={kpiData.completions.toLocaleString()}
               tooltip="Total number of completed assessments in the selected time period"
               onExport={() => exportToCSV('v_sessions')}
             />
             <KPICard
               title="Completion Rate"
-              value={`${k.completionRate.toFixed(1)}%`}
-              status={getCompletionRateStatus(k.completionRate)}
+              value={`${kpiData.completionRate.toFixed(1)}%`}
+              status={getCompletionRateStatus(kpiData.completionRate)}
               tooltip="Percentage of started sessions that were completed."
               onExport={() => exportToCSV('v_sessions_plus')}
             />
             <KPICard
               title="Median Duration"
-              value={`${k.medianDuration.toFixed(1)}m`}
+              value={`${kpiData.medianDuration.toFixed(1)}m`}
               tooltip="Median time to complete assessment."
               onExport={() => exportToCSV('v_sessions_plus')}
             />
             <KPICard
               title="Speeders"
-              value={`${k.speedersPercent.toFixed(1)}%`}
+              value={`${kpiData.speedersPercent.toFixed(1)}%`}
               subtitle="< 12 min"
               onExport={() => exportToCSV('v_sessions_plus')}
             />
             <KPICard
               title="Stallers"
-              value={`${k.stallersPercent.toFixed(1)}%`}
+              value={`${kpiData.stallersPercent.toFixed(1)}%`}
               subtitle="> 60 min"
               onExport={() => exportToCSV('v_sessions_plus')}
             />
             <KPICard
               title="Duplicates"
-              value={`${k.duplicatesPercent.toFixed(1)}%`}
-              status={getDuplicatesStatus(k.duplicatesPercent)}
+              value={`${kpiData.duplicatesPercent.toFixed(1)}%`}
+              status={getDuplicatesStatus(kpiData.duplicatesPercent)}
               onExport={() => exportToCSV('v_duplicates')}
             />
             <KPICard
               title="Validity Pass"
-              value={`${k.validityPassRate.toFixed(1)}%`}
-              status={getValidityStatus(k.validityPassRate)}
+              value={`${kpiData.validityPassRate.toFixed(1)}%`}
+              status={getValidityStatus(kpiData.validityPassRate)}
               onExport={() => exportToCSV('v_validity')}
             />
           </div>
@@ -316,7 +292,7 @@ const Admin: React.FC = () => {
             </CardHeader>
             <CardContent>
               <QualityPanel
-                data={qualityData ?? EMPTY_QUALITY}
+                data={qualityData}
                 onExport={exportToCSV}
               />
             </CardContent>
@@ -338,7 +314,7 @@ const Admin: React.FC = () => {
               <CardTitle>Latest Assessments</CardTitle>
             </CardHeader>
             <CardContent>
-              <LatestAssessmentsTable data={latestAssessments ?? []} />
+              <LatestAssessmentsTable data={latestAssessments} />
             </CardContent>
           </Card>
 

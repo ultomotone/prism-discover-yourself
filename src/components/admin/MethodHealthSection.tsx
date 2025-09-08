@@ -11,13 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-interface MethodHealthData {
-  fcCoverage: Array<{ fc_count: number; sessions: number }>;
-  shareEntropy: Array<{ entropy_range: string; sessions: number }>;
-  dimensionalCoverage: Array<{ func: string; min_d_items: number; median_d_items: number; low_coverage_sessions: number }>;
-  sectionTimes: Array<{ section: string; median_sec: number; drop_rate: number }>;
-}
+import type { MethodHealthData } from "@/hooks/useAdvancedAdminAnalytics";
 
 interface MethodHealthSectionProps {
   data: MethodHealthData;

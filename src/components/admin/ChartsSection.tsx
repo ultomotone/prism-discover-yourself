@@ -3,13 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
-
-interface ChartData {
-  confidenceDistribution: Array<{ confidence: string; count: number }>;
-  overlayDistribution: Array<{ overlay: string; count: number }>;
-  typeDistribution: Array<{ type: string; count: number }>;
-  throughputTrend: Array<{ date: string; sessions: number }>;
-}
+import type { ChartData } from "@/hooks/useAdvancedAdminAnalytics";
 
 interface ChartsSectionProps {
   data: ChartData;
