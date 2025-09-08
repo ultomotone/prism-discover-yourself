@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useAdvancedAdminAnalytics } from "@/hooks/useAdvancedAdminAnalytics";
 import { AdminFilters } from "@/components/admin/AdminFilters";
 import { KPICard } from "@/components/admin/KPICard";
@@ -15,7 +15,13 @@ import { Download, AlertTriangle, RefreshCw } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import AdminControls from "@/components/admin/AdminControls";
-import { fetchEvidenceKpis, fetchDashboardSnapshot, refreshDashboardStats, refreshEvidenceKpis } from "@/lib/api/admin";
+import {
+  fetchEvidenceKpis,
+  fetchDashboardSnapshot,
+  refreshDashboardStats,
+  refreshEvidenceKpis,
+} from "@/lib/api/admin";
+
 const Admin: React.FC = () => {
   const {
     filters,
@@ -28,21 +34,24 @@ const Admin: React.FC = () => {
     loading,
     refreshData,
     exportToCSV,
-    error
+    error,
   } = useAdvancedAdminAnalytics();
 
   const { toast } = useToast();
+
+  // Evidence + snapshot state (for the top tiles & buttons)
   const [kpis, setKpis] = useState<any>(null);
   const [snapshot, setSnapshot] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   async function loadAll() {
-    setBusy(true); setErr(null);
+    setBusy(true);
+    setErr(null);
     try {
       const [k, s] = await Promise.all([
         fetchEvidenceKpis(),
-        fetchDashboardSnapshot()
+        fetchDashboardSnapshot(),
       ]);
       setKpis(k);
       setSnapshot(s);
@@ -54,7 +63,8 @@ const Admin: React.FC = () => {
   }
 
   async function onRefreshSnapshotClick() {
-    setBusy(true); setErr(null);
+    setBusy(true);
+    setErr(null);
     try {
       await refreshDashboardStats();
       await loadAll();
@@ -66,7 +76,8 @@ const Admin: React.FC = () => {
   }
 
   async function onRefreshKpisClick() {
-    setBusy(true); setErr(null);
+    setBusy(true);
+    setErr(null);
     try {
       await refreshEvidenceKpis();
       await loadAll();
@@ -82,21 +93,21 @@ const Admin: React.FC = () => {
   }, []);
 
   const getCompletionRateStatus = (value: number) => {
-    if (value >= 85) return 'good';
-    if (value >= 70) return 'warning';
-    return 'danger';
+    if (value >= 85) return "good";
+    if (value >= 70) return "warning";
+    return "danger";
   };
 
   const getValidityStatus = (value: number) => {
-    if (value >= 85) return 'good';
-    if (value >= 70) return 'warning';
-    return 'danger';
+    if (value >= 85) return "good";
+    if (value >= 70) return "warning";
+    return "danger";
   };
 
   const getDuplicatesStatus = (value: number) => {
-    if (value <= 5) return 'good';
-    if (value <= 15) return 'warning';
-    return 'danger';
+    if (value <= 5) return "good";
+    if (value <= 15) return "warning";
+    return "danger";
   };
 
   const handleExportAll = async () => {
@@ -107,23 +118,23 @@ const Admin: React.FC = () => {
 
     try {
       await Promise.all([
-        exportToCSV('v_sessions'),
-        exportToCSV('v_quality'),
-        exportToCSV('v_fit_ranks'),
-        exportToCSV('v_conf_dist'),
-        exportToCSV('v_overlay_conf'),
-        exportToCSV('v_kpi_throughput'),
-        exportToCSV('v_fc_coverage'),
-        exportToCSV('v_share_entropy'),
-        exportToCSV('v_dim_coverage'),
-        exportToCSV('v_section_times')
+        exportToCSV("v_sessions"),
+        exportToCSV("v_quality"),
+        exportToCSV("v_fit_ranks"),
+        exportToCSV("v_conf_dist"),
+        exportToCSV("v_overlay_conf"),
+        exportToCSV("v_kpi_throughput"),
+        exportToCSV("v_fc_coverage"),
+        exportToCSV("v_share_entropy"),
+        exportToCSV("v_dim_coverage"),
+        exportToCSV("v_section_times"),
       ]);
 
       toast({
         title: "Export Complete",
         description: "All data has been exported successfully.",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Export Failed",
         description: "Some exports may have failed. Please try again.",
@@ -132,27 +143,55 @@ const Admin: React.FC = () => {
     }
   };
 
-
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Assessment analytics, health monitoring, and evidence metrics</p>
+          <p className="text-muted-foreground">
+            Assessment analytics, health monitoring, and evidence metrics
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={onRefreshSnapshotClick} disabled={busy}>Refresh Snapshot</Button>
-          <Button onClick={onRefreshKpisClick} disabled={busy}>Refresh KPIs</Button>
+          <Button onClick={onRefreshSnapshotClick} disabled={busy}>
+            Refresh Snapshot
+          </Button>
+          <Button onClick={onRefreshKpisClick} disabled={busy}>
+            Refresh KPIs
+          </Button>
         </div>
       </div>
+
       {(error || err) && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Failed to load analytics</AlertTitle>
           <AlertDescription>{error || err}</AlertDescription>
         </Alert>
+      )}
+
+      {/* Top quick tiles (snapshot + evidence) */}
+      {snapshot && kpis && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Total Assessments</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {snapshot?.total_assessments ?? 0}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Test–Retest Reliability (r)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {kpis?.r_overall != null ? Number(kpis.r_overall).toFixed(3) : "—"}
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Tabs */}
@@ -162,18 +201,17 @@ const Admin: React.FC = () => {
           <TabsTrigger value="system">System Control</TabsTrigger>
           <TabsTrigger value="evidence">Evidence</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="health" className="space-y-6">
-          {/* Health Monitor Content */}
-            <div className="flex justify-end gap-2">
-              <Button onClick={handleExportAll} variant="outline" className="flex items-center gap-2">
-                <Download className="h-4 w-4" />
-                Export All
-              </Button>
-              <AdminControls />
-            </div>
 
-            {/* Filters */}
+        {/* Health Monitor */}
+        <TabsContent value="health" className="space-y-6">
+          <div className="flex justify-end gap-2">
+            <Button onClick={handleExportAll} variant="outline" className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              Export All
+            </Button>
+            <AdminControls />
+          </div>
+
           <AdminFilters
             filters={filters}
             onFiltersChange={setFilters}
@@ -189,151 +227,81 @@ const Admin: React.FC = () => {
               tooltip="Median gap between top 2 type scores (fit difference). Higher values indicate clearer type distinctions."
               onExport={() => exportToCSV('v_quality')}
             />
-            
             <KPICard
               title="Confidence Margin"
               value={`${qualityData.confidenceMarginMedian.toFixed(1)}%`}
               tooltip="Median P1-P2 probability difference (confidence margin). Higher values indicate more confident type assignments."
               onExport={() => exportToCSV('v_quality')}
             />
-            
             <KPICard
               title="Close Calls"
               value={`${qualityData.closeCallsPercent.toFixed(1)}%`}
               subtitle="Gap < 3"
-              tooltip="Percentage of assessments with top gap < 3 points (borderline cases requiring careful interpretation)"
+              tooltip="Percentage of assessments with top gap < 3 points (borderline cases)"
               onExport={() => exportToCSV('v_quality')}
             />
-            
             <KPICard
               title="Completions"
               value={kpiData.completions.toLocaleString()}
               tooltip="Total number of completed assessments in the selected time period"
               onExport={() => exportToCSV('v_sessions')}
             />
-            
             <KPICard
               title="Completion Rate"
               value={`${kpiData.completionRate.toFixed(1)}%`}
               status={getCompletionRateStatus(kpiData.completionRate)}
-              tooltip="Percentage of started sessions that were completed. Target: >85% ✅, 70-84% ⚠️, <70% ❌"
+              tooltip="Percentage of started sessions that were completed."
               onExport={() => exportToCSV('v_sessions_plus')}
             />
-            
             <KPICard
               title="Median Duration"
               value={`${kpiData.medianDuration.toFixed(1)}m`}
-              tooltip="Median time to complete assessment. Excludes paused/abandoned sessions"
+              tooltip="Median time to complete assessment."
               onExport={() => exportToCSV('v_sessions_plus')}
             />
-            
             <KPICard
               title="Speeders"
               value={`${kpiData.speedersPercent.toFixed(1)}%`}
               subtitle="< 12 min"
-              tooltip="Percentage of sessions completed in under 12 minutes (potential rushed responses)"
               onExport={() => exportToCSV('v_sessions_plus')}
             />
-            
             <KPICard
               title="Stallers"
               value={`${kpiData.stallersPercent.toFixed(1)}%`}
               subtitle="> 60 min"
-              tooltip="Percentage of sessions taking over 60 minutes (potential distraction/multi-tasking)"
               onExport={() => exportToCSV('v_sessions_plus')}
             />
-            
             <KPICard
               title="Duplicates"
               value={`${kpiData.duplicatesPercent.toFixed(1)}%`}
               status={getDuplicatesStatus(kpiData.duplicatesPercent)}
-              tooltip="Percentage of users with multiple sessions. Target: <5% ✅, 5-15% ⚠️, >15% ❌"
               onExport={() => exportToCSV('v_duplicates')}
             />
-            
             <KPICard
               title="Validity Pass"
               value={`${kpiData.validityPassRate.toFixed(1)}%`}
               status={getValidityStatus(kpiData.validityPassRate)}
-              tooltip="Sessions passing validity checks (inconsistency <1.0 AND SD index <4.3). Target: >85% ✅"
               onExport={() => exportToCSV('v_validity')}
             />
           </div>
 
-          {/* Quality Metrics Panel */}
+          {/* Quality Metrics */}
           <Card>
             <CardHeader>
               <CardTitle>Quality Metrics</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <KPICard
-                  title="Top-1 Fit Median"
-                  value={`${qualityData.top1FitMedian.toFixed(1)}`}
-                  tooltip="Median fit score for the top type prediction. Higher values indicate better type matches."
-                  onExport={() => exportToCSV('v_quality')}
-                />
-                
-                <KPICard
-                  title="Top-Gap Median"  
-                  value={`${qualityData.topGapMedian.toFixed(1)}`}
-                  status={qualityData.topGapMedian < 2.0 ? 'danger' : qualityData.topGapMedian < 3.0 ? 'warning' : 'good'}
-                  tooltip="Median gap between top 2 type scores. Target: >3.0 ✅, 2.0-3.0 ⚠️, <2.0 ❌"
-                  onExport={() => exportToCSV('v_quality')}
-                />
-                
-                <KPICard
-                  title="Confidence Margin"
-                  value={`${qualityData.confidenceMarginMedian.toFixed(1)}%`}
-                  tooltip="Median confidence margin between top predictions. Higher values indicate more decisive results."
-                  onExport={() => exportToCSV('v_quality')}
-                />
-                
-                <KPICard
-                  title="Close Calls %"
-                  value={`${qualityData.closeCallsPercent.toFixed(1)}%`}
-                  status={qualityData.closeCallsPercent > 20 ? 'danger' : qualityData.closeCallsPercent > 10 ? 'warning' : 'good'}
-                  tooltip="Percentage of close calls (gap < 3). Target: <10% ✅, 10-20% ⚠️, >20% ❌"
-                  onExport={() => exportToCSV('v_quality')}
-                />
-                
-                <KPICard
-                  title="Inconsistency Mean"
-                  value={`${qualityData.inconsistencyMean.toFixed(2)}`}
-                  status={qualityData.inconsistencyMean > 1.5 ? 'danger' : qualityData.inconsistencyMean > 1.0 ? 'warning' : 'good'}
-                  tooltip="Mean inconsistency score. Target: <1.0 ✅, 1.0-1.5 ⚠️, >1.5 ❌"
-                  onExport={() => exportToCSV('v_quality')}
-                />
-                
-                <KPICard
-                  title="SD Index Mean"
-                  value={`${qualityData.sdIndexMean.toFixed(2)}`}
-                  status={qualityData.sdIndexMean > 4.3 ? 'danger' : qualityData.sdIndexMean > 3.8 ? 'warning' : 'good'}
-                  tooltip="Mean social desirability index. Target: <3.8 ✅, 3.8-4.3 ⚠️, >4.3 ❌"
-                  onExport={() => exportToCSV('v_quality')}
-                />
-                
-                <KPICard
-                  title="Validity Pass Rate"
-                  value={`${kpiData.validityPassRate.toFixed(1)}%`}
-                  status={getValidityStatus(kpiData.validityPassRate)}
-                  tooltip="Percentage passing validity checks. Target: >85% ✅, 70-84% ⚠️, <70% ❌"
-                  onExport={() => exportToCSV('v_validity')}
-                />
-              </div>
+              <QualityPanel qualityData={qualityData} exportToCSV={exportToCSV} />
             </CardContent>
           </Card>
 
-          {/* Charts Section */}
+          {/* Charts */}
           <Card>
             <CardHeader>
               <CardTitle>Distribution & Trends</CardTitle>
             </CardHeader>
             <CardContent>
-              <ChartsSection 
-                data={chartData} 
-                onExport={exportToCSV}
-              />
+              <ChartsSection data={chartData} onExport={exportToCSV} />
             </CardContent>
           </Card>
 
@@ -343,7 +311,7 @@ const Admin: React.FC = () => {
               <CardTitle>Latest Assessments</CardTitle>
             </CardHeader>
             <CardContent>
-          <LatestAssessmentsTable data={latestAssessments} />
+              <LatestAssessmentsTable data={latestAssessments} />
             </CardContent>
           </Card>
 
@@ -353,19 +321,17 @@ const Admin: React.FC = () => {
               <CardTitle>Method Health</CardTitle>
             </CardHeader>
             <CardContent>
-              <MethodHealthSection 
-                data={methodHealthData} 
-                onExport={exportToCSV}
-              />
+              <MethodHealthSection data={methodHealthData} onExport={exportToCSV} />
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* System Control */}
         <TabsContent value="system" className="space-y-6">
-          {/* System Control Content */}
           <SystemStatusControl />
         </TabsContent>
 
+        {/* Evidence */}
         <TabsContent value="evidence">
           <EvidenceTab />
         </TabsContent>
@@ -385,7 +351,8 @@ const Admin: React.FC = () => {
           </Card>
         </div>
       )}
-      {/* Hidden debug output to avoid unused warnings */}
+
+      {/* Hidden debug to avoid unused warnings */}
       <pre className="hidden">{JSON.stringify({ kpis, snapshot })}</pre>
     </div>
   );
