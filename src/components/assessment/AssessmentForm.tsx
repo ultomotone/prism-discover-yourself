@@ -1083,7 +1083,7 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
               </span>
             </div>
             
-            <Progress value={progress} className="mb-2" />
+            <Progress value={progress} className="mb-2" aria-label="Assessment progress" />
             
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>{currentSection}</span>
