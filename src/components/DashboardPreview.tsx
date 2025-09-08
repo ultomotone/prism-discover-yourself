@@ -230,7 +230,7 @@ const DashboardPreview = () => {
 
             {/* CTA Button */}
             <Button 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/live-dashboard')}
               className="w-full group bg-gradient-to-r from-primary to-secondary hover:from-primary-dark hover:to-secondary-dark"
               size="sm"
             >
