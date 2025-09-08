@@ -101,7 +101,7 @@ export function SavedAssessments({ onStartNew }: SavedAssessmentsProps) {
 
     const answered = count ?? 0;
     if (answered >= total) {
-      navigate(`/results/${sessionId}`);
+      navigate(`/results/${sessionId}`, { replace: true });
       return;
     }
 
