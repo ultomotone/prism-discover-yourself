@@ -1,8 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import postgres from "npm:postgres@3.4.3";
 import { z } from "npm:zod@3.25.76";
 
 const URL = Deno.env.get('SUPABASE_URL')!;
 const SRK = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const DB_URL = Deno.env.get('SUPABASE_DB_URL')!;
 const VERSION = Deno.env.get('SCORING_VERSION') ?? 'vX';
 
 const corsHeaders = {
@@ -49,6 +51,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }
     );
 
+    const sql = postgres(DB_URL, { prepare: false });
+
     const targetsQuery = admin
       .from('assessment_sessions')
       .select('id')
@@ -74,17 +78,18 @@ Deno.serve(async (req: Request): Promise<Response> => {
       if (!t?.id) return null;
 
       if (!dryRun) {
-        const { data, error } = await admin.rpc('admin_recompute_profile', {
-          p_session_id: t.id,
-          p_version: VERSION
-        });
-
-        return {
-          session: t.id,
-          ok: !error,
-          error: error?.message,
-          profileId: data?.[0]?.id
-        };
+        try {
+          const rows = await sql<{ id: string }[]>`
+            select id from admin_recompute_profile(${t.id}::uuid, ${VERSION});
+          `;
+          return {
+            session: t.id,
+            ok: true,
+            profileId: rows[0]?.id
+          };
+        } catch (err) {
+          return { session: t.id, ok: false, error: (err as Error).message };
+        }
       }
 
       return { session: t.id, ok: true, dryRun: true };
@@ -98,6 +103,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       const batchResults = await Promise.all(batch.map(processTarget));
       results.push(...batchResults.filter((r): r is ProcessResult => Boolean(r)));
     }
+
+    await sql.end();
 
     return new Response(
       JSON.stringify({
