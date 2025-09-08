@@ -144,7 +144,13 @@ serve(async (req) => {
     if (!supabaseUrl || !supabaseKey) {
       return new Response(JSON.stringify({ status:"error", error:"Server not configured" }), { status:500, headers:{...corsHeaders,"Content-Type":"application/json"}});
     }
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(
+      supabaseUrl,
+      supabaseKey,
+      {
+        global: { headers: { Prefer: 'tx=commit' } }
+      }
+    );
     const calibration = new PrismCalibration(supabase);
 
     console.log(`evt:scoring_start,session_id:${session_id},version:v1.2.0`);
@@ -1112,6 +1118,9 @@ serve(async (req) => {
       upsertData.submitted_at = uniqueTime.toISOString();
       upsertData.created_at = uniqueTime.toISOString();
     }
+
+    // QUICK WRITE PROBE (remove after verifying)
+    // await supabase.from('profiles_probe').insert({ at: new Date().toISOString(), note: 'probe' });
 
     const { error: upsertError } = await supabase
       .from('profiles')

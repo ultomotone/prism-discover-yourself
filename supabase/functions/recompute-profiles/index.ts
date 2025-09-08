@@ -41,7 +41,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     const { sessionId, dryRun = false } = parsed.data;
-    const admin = createClient(URL, SRK);
+    const admin = createClient(
+      URL,
+      SRK,
+      {
+        global: { headers: { Prefer: 'tx=commit' } }
+      }
+    );
 
     const targetsQuery = admin
       .from('assessment_sessions')
@@ -57,7 +63,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (targetError) {
       console.error('Target query error:', targetError);
       return new Response(
-        JSON.stringify({ error: 'target_query_failed', detail: targetError.message }),
+        JSON.stringify({ error: 'target_query_failed', detail: targetError?.message ?? 'unknown' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -107,7 +113,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   } catch (e) {
     console.error('Error in recompute-profiles:', e);
     return new Response(
-      JSON.stringify({ error: 'internal', detail: (e as Error).message }),
+      JSON.stringify({ error: 'internal', detail: (e as Error)?.message ?? 'unknown' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
