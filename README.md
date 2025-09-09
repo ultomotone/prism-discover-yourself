@@ -1,36 +1,31 @@
-## PRISM Scoring v1.2.1
+# PRISM Scoring v1.2.1
 
-Unified scoring engine and tokenized results access.
+Unified scoring engine and **tokenized results access**.
 
-- Results links now require a `share_token` parameter.
-- Roll back by redeploying previous edge functions and restoring prior RLS policies.
+- Public results links require a `?t=<share_token>` parameter.
+- Owners can view their own results without a token when authenticated.
+- Roll back by redeploying prior edge functions and restoring previous RLS.
 
 ---
 
-Welcome to your Lovable project
-Project info
+# Welcome to your Lovable project
 
-URL: https://lovable.dev/projects/de95f929-2a16-4b73-9441-1460cd22bde1
+## Project info
 
-How can I edit this code?
+**URL**: https://lovable.dev/projects/de95f929-2a16-4b73-9441-1460cd22bde1
+
+## How can I edit this code?
 
 There are several ways of editing your application.
 
-Use Lovable
+### Use Lovable
 
-Simply visit the Lovable Project
- and start prompting.
-
+Visit the [Lovable Project](https://lovable.dev/projects/de95f929-2a16-4b73-9441-1460cd22bde1) and start prompting.  
 Changes made via Lovable will be committed automatically to this repo.
 
-Use your preferred IDE
+### Use your preferred IDE
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - install with nvm
-
-Follow these steps:
-
+```sh
 # Step 1: Clone the repository using the project's Git URL.
 git clone <YOUR_GIT_URL>
 
@@ -42,126 +37,3 @@ npm i
 
 # Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
-
-
-Edit a file directly in GitHub
-
-Navigate to the desired file(s).
-
-Click the "Edit" button (pencil icon) at the top right of the file view.
-
-Make your changes and commit the changes.
-
-Use GitHub Codespaces
-
-Navigate to the main page of your repository.
-
-Click on the "Code" button (green button) near the top right.
-
-Select the "Codespaces" tab.
-
-Click on "New codespace" to launch a new Codespace environment.
-
-Edit files directly within the Codespace and commit and push your changes once you're done.
-
-What technologies are used for this project?
-
-This project is built with:
-
-Vite
-
-TypeScript
-
-React
-
-shadcn-ui
-
-Tailwind CSS
-
-How can I deploy this project?
-
-Simply open Lovable
- and click on Share -> Publish.
-
-Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: Setting up a custom domain
-
-Preflight
-
-To run the preflight checks locally:
-
-cp .env.example .env.local
-# fill in values
-npm i
-npm run lint:fix
-npm run preflight
-npm run verify:sql
-npm run verify:functions
-npm run verify:smoke
-
-Environment
-
-Local .env needs:
-
-SUPABASE_URL=
-SUPABASE_ANON_KEY=
-SMOKE_SESSION_ID=
-SMOKE_SHARE_TOKEN=
-RESULTS_BASE_URL=
-
-
-If your host doesn't support env vars, set values in index.html via window.__APP_CONFIG__.
-
-For staging deployments also:
-
-Point VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY at the staging project.
-
-Set RESULTS_BASE_URL to your staging domain so links in emails and callbacks resolve correctly.
-
-Staging Cutover
-
-Set these environment variables on your staging host:
-
-VITE_SUPABASE_URL
-
-VITE_SUPABASE_ANON_KEY
-
-RESULTS_BASE_URL
-
-Smoke test staging after deploy:
-
-Complete an assessment and follow the redirect to /results/<session_id>?t=<token> in an incognito window (token path).
-
-Sign in as the owner and open /results/<session_id> without a token (owner path).
-
-Backfill & Lockdown
-
-Run SQL to generate share_token for all existing rows in profiles and assessment_sessions.
-
-Enable row level security and revoke direct table grants; expose read access via token RPCs only.
-
-
-Lovable deploy
-
-Set your Supabase values in index.html → window.__APP_CONFIG__:
-
-SUPABASE_URL: https://YOUR-PROJECT.supabase.co
-SUPABASE_ANON_KEY: (Supabase "anon" key)
-
-
-Only use the publishable (anon) key; never embed the service role key.
-
-Redeploy.
-
-Smoke test
-
-To call the deployed edge function locally:
-
-cp .env.example .env.local
-# fill in SUPABASE_URL, SUPABASE_ANON_KEY, SMOKE_SESSION_ID, SMOKE_SHARE_TOKEN
-npm run verify:smoke

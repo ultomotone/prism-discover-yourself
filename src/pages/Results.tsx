@@ -65,11 +65,11 @@ export default function Results() {
     const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#ffffff" });
     const img = canvas.toDataURL("image/png");
     const pdf = new jsPDF("p", "mm", "a4");
-    const pageWidth = 210,
-      pageHeight = 297;
+    const pageWidth = 210;
+    const pageHeight = 297;
     const imgProps = pdf.getImageProperties(img);
-    const imgWidth = pageWidth,
-      imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+    const imgWidth = pageWidth;
+    const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
 
     pdf.addImage(img, "PNG", 0, 0, imgWidth, Math.min(imgHeight, pageHeight));
     let remaining = imgHeight - pageHeight;
@@ -90,27 +90,19 @@ export default function Results() {
 
     (async () => {
       try {
-        let payload: ResultsPayload | null = null;
-
-        // Preferred RPC with token validation (incognito/public link)
+        // Single, authoritative RPC. Token path (t set) or owner path (t null).
         const { data: res, error } = await supabase.rpc<ResultsPayload>(
           "get_results_by_session",
           { session_id: sessionId, t: shareToken }
         );
 
-        if (!error && res?.profile) {
-          payload = res;
-        } else {
-          if (error) {
-            throw error;
-          }
-          throw new Error("Results not found");
-        }
+        if (error) throw error;
+        if (!res?.profile) throw new Error("Results not found");
 
-        if (!cancel) setData(payload);
+        if (!cancel) setData(res);
       } catch (e: any) {
         const status = Number((e?.code ?? e?.status) || 0);
-        // transient retry (e.g., 409/contention or 429 rate-limit if surfaced)
+        // Retry transient-ish errors briefly
         if ((status === 409 || status === 429 || (status >= 500 && status < 600)) && tries < 2) {
           setTimeout(() => !cancel && setTries((t) => t + 1), 400 * (tries + 1));
           return;
