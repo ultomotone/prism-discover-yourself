@@ -1,74 +1,82 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { setupServer } from 'msw/node';
-import { http, HttpResponse } from 'msw';
- (globalThis as any).window = { __APP_CONFIG__: { SUPABASE_URL: 'https://example.supabase.co', SUPABASE_ANON_KEY: 'anon' } };
 
-const { fetchResultsBySession: fetchResults, FetchResultsError } = await import('../src/features/results/api');
-
-type Client = {
-  functions: { invoke: (name: string, opts: any) => Promise<{ data: unknown; error: any }> };
-  rpc: (...args: any[]) => Promise<{ data: unknown; error: any }>;
+(globalThis as any).window = {
+  __APP_CONFIG__: {
+    SUPABASE_URL: 'https://example.supabase.co',
+    SUPABASE_ANON_KEY: 'anon',
+  },
 };
 
-function createClient(): Client {
-  return {
-    rpc: async () => ({ data: null, error: null }),
-    functions: {
-      invoke: async (name: string, options: any) => {
-        const res = await fetch(`https://api.test/functions/v1/${name}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(options.body),
-          signal: options.signal,
-        });
-        if (!res.ok) {
-          return { data: null, error: { status: res.status, message: await res.text() } };
-        }
-        return { data: await res.json(), error: null };
-      },
+const { fetchResultsBySession: fetchResults, FetchResultsError } = await import(
+  '../src/features/results/api'
+);
+
+type Client = {
+  rpc: (name: string, params: any) => Promise<{ data: unknown; error: any }>;
+  functions: { invoke: (name: string, opts: any) => Promise<{ data: unknown; error: any }> };
+};
+
+test('sends snake_case args to RPC', async () => {
+  let name = '';
+  let params: any;
+  const client: Client = {
+    rpc: async (n, p) => {
+      name = n;
+      params = p;
+      return {
+        data: { profile: { id: 'p' }, session: { id: 's', status: 'completed' } },
+        error: null,
+      };
     },
-  } as Client;
-}
-
-const server = setupServer();
-server.listen({ onUnhandledRequest: 'error' });
-test.after(() => server.close());
-
-test('sends camelCase body to edge function', async () => {
-  server.resetHandlers();
-  let body: any;
-  server.use(
-    http.post('https://api.test/functions/v1/get-results-by-session', async ({ request }) => {
-      body = await request.json();
-      return HttpResponse.json({
-        profile: { id: 'p' },
-        session: { id: 's', status: 'completed' },
-      });
-    }),
-  );
-  const client = createClient();
+    functions: { invoke: async () => ({ data: null, error: null }) },
+  };
   await fetchResults({ sessionId: 's' }, client);
-  assert.equal(body.sessionId, 's');
-  assert.ok(!('session_id' in body));
+  assert.equal(name, 'get_results_by_session');
+  assert.deepEqual(params, { session_id: 's' });
 });
 
 test('unauthorized does not retry', async () => {
-  server.resetHandlers();
   let calls = 0;
-  server.use(
-    http.post('https://api.test/functions/v1/get-results-by-session', async () => {
+  const client: Client = {
+    rpc: async () => {
       calls++;
       if (calls === 1) {
-        return HttpResponse.json({ message: 'nope' }, { status: 401 });
+        return { data: null, error: { code: '401', message: 'nope' } };
       }
-      return HttpResponse.json({ profile: { id: 'p' }, session: { id: 's', status: 'completed' } });
-    }),
-  );
-
-  const client = createClient();
-  await assert.rejects(() => fetchResults({ sessionId: 's' }, client), (e) =>
-    e instanceof FetchResultsError && e.kind === 'unauthorized',
+      return {
+        data: { profile: { id: 'p' }, session: { id: 's', status: 'completed' } },
+        error: null,
+      };
+    },
+    functions: { invoke: async () => ({ data: null, error: null }) },
+  };
+  await assert.rejects(
+    () => fetchResults({ sessionId: 's' }, client),
+    (e) => e instanceof FetchResultsError && e.kind === 'unauthorized',
   );
   assert.equal(calls, 1);
 });
+
+test('falls back to legacy RPC when enabled and no token', async () => {
+  process.env.VITE_ALLOW_LEGACY_RESULTS = 'true';
+  let name = '';
+  let params: any;
+  const client: Client = {
+    rpc: async (n, p) => {
+      name = n;
+      params = p;
+      return {
+        data: { profile: { id: 'p' }, session: { id: 's', status: 'completed' } },
+        error: null,
+      };
+    },
+    functions: { invoke: async () => ({ data: null, error: null }) },
+  };
+
+  await fetchResults({ sessionId: 's' }, client);
+  assert.equal(name, 'get_results_by_session_legacy');
+  assert.deepEqual(params, { session_id: 's' });
+  delete process.env.VITE_ALLOW_LEGACY_RESULTS;
+});
+

@@ -69,21 +69,28 @@ function parseEdgePayload(payload: unknown, sessionId: string): FetchResultsResp
   throw new FetchResultsError('unknown', 'invalid response');
 }
 
-async function edgeCall(
+async function rpcCall(
   client: SupabaseClient,
   sessionId: string,
   shareToken: string | undefined,
 ): Promise<FetchResultsResponse> {
-  const { data, error } = await client.functions.invoke(
-    'get-results-by-session',
-    {
-      body: { sessionId, shareToken },
-    },
-  );
+  const allowLegacy =
+    import.meta.env?.VITE_ALLOW_LEGACY_RESULTS === 'true' ||
+    (typeof process !== 'undefined' && process.env.VITE_ALLOW_LEGACY_RESULTS === 'true');
+  // remove VITE_ALLOW_LEGACY_RESULTS after legacy tokens expire
+
+  const rpcName = shareToken
+    ? 'get_results_by_session'
+    : allowLegacy
+      ? 'get_results_by_session_legacy'
+      : 'get_results_by_session';
+
+  const params: Record<string, string | undefined> = { session_id: sessionId };
+  if (shareToken) params.t = shareToken;
+
+  const { data, error } = await client.rpc(rpcName, params);
   if (error) {
-    const status =
-      (error as any)?.status ??
-      ((/not\s*found/i).test((error as any)?.message ?? '') ? 404 : 500);
+    const status = (error as any)?.code === 'PGRST116' ? 404 : Number((error as any)?.code) || 500;
     throw mapStatus(status, (error as any).message);
   }
   return parseEdgePayload(data, sessionId);
@@ -122,7 +129,7 @@ export async function fetchResultsBySession(
   const promise = (async () => {
     try {
       return await executeWithRetry(
-        () => edgeCall(client, sessionId, shareToken),
+        () => rpcCall(client, sessionId, shareToken),
         controller
       );
     } finally {
