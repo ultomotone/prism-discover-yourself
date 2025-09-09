@@ -83,26 +83,35 @@ export default function Results() {
     let cancel = false;
 
     (async () => {
-      const { data, error } = await supabase.functions.invoke<ResultsPayload>(
-        "get-results-by-session",
-        {
-          body: { sessionId, shareToken },
-        },
-      );
-      if (error) {
-        // If Edge returns 409 while scoring, auto-retry briefly
-        if ((error as any)?.status === 409 && tries < 12) {
+      try {
+        let payload: ResultsPayload | null = null;
+        if (shareToken) {
+          const { data, error } = await supabase.rpc(
+            "get_profile_by_session_token",
+            { p_share_token: shareToken, p_client_ip: "" },
+          );
+          if (error) throw error;
+          if (!data) throw new Error("Results not found");
+          payload = { session: { id: sessionId, status: "completed" }, profile: data };
+        } else {
+          const { data, error } = await supabase.rpc<ResultsPayload>(
+            "get_results_by_session",
+            { p_session_id: sessionId },
+          );
+          if (error) throw error;
+          if (!data?.profile) throw new Error("Results not found");
+          payload = data;
+        }
+        if (!cancel) setData(payload);
+      } catch (e: any) {
+        const status = Number((e?.code ?? e?.status) || 0);
+        if (status === 409 && tries < 12) {
           setTimeout(() => !cancel && setTries((t) => t + 1), 1000);
           return;
         }
-        setErr(error.message || "Failed to load results");
-        return;
+        if (!cancel)
+          setErr(e?.message && typeof e.message === "string" ? e.message : "Failed to load results");
       }
-      if (!data?.profile) {
-        setErr("Results not found");
-        return;
-      }
-      setData(data);
     })();
 
     return () => {

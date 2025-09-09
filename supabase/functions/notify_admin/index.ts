@@ -45,7 +45,6 @@ Deno.serve(async (req) => {
         <p style="margin: 0 0 8px;">Type: <strong>${payload.type}</strong></p>
         ${payload.email ? `<p style="margin: 0 0 8px;">Email: <strong>${payload.email}</strong></p>` : ""}
         ${payload.session_id ? `<p style="margin: 0 0 8px;">Session ID: <strong>${payload.session_id}</strong></p>` : ""}
-        ${payload.share_token ? `<p style="margin: 0 0 8px;">Share Token: <strong>${payload.share_token}</strong></p>` : ""}
         ${payload.session_id && payload.share_token ? `<p style=\"margin: 16px 0 0;\"><a href=\"https://prismassessment.com/results/${payload.session_id}?t=${payload.share_token}\">View results (public link)</a></p>` : ""}
       </div>
     `;
