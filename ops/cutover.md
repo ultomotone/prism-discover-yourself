@@ -38,8 +38,8 @@ select p.proname, p.prosecdef as security_definer,
        has_function_privilege('authenticated', p.oid, 'EXECUTE') as auth_can_exec
 from pg_proc p
 join pg_namespace n on n.oid = p.pronamespace
-where n.nspname='public'
-  and p.proname in ('get_results_by_session','get_results_by_session_legacy');
+  where n.nspname='public'
+  and p.proname = 'get_results_by_session';
 
 -- Verify RLS and anon privileges
 select n.nspname, c.relname, c.relrowsecurity as rls_on
@@ -51,17 +51,16 @@ select
   has_table_privilege('anon','public.assessment_sessions','SELECT') as anon_sessions_select;
 ```
 
-### Expected Results
 - `get_results_by_session` EXECUTE: `anon=true`, `auth=true`.
-- `get_results_by_session_legacy` EXECUTE: `anon=false`, `auth=false`.
 - RLS remains enabled on `profiles` and `assessment_sessions`.
 - Anon has no direct table `SELECT` privileges.
 
 ## Post-Cooldown Cleanup
 After legacy traffic has ceased (e.g., 90d):
-1. Drop the legacy RPC:
+1. Drop any remaining legacy results RPC:
    ```sql
-   drop function if exists public.get_results_by_session_legacy(uuid);
+   -- replace <legacy_results_rpc> with the actual legacy function name if it exists
+   drop function if exists public.<legacy_results_rpc>(uuid);
    ```
 2. Verify results access logs hash tokens and purge after 90 days:
    ```sql
@@ -72,7 +71,7 @@ After legacy traffic has ceased (e.g., 90d):
 ## Rollback
 1. Re-grant legacy RPC if needed:
 ```sql
-grant execute on function public.get_results_by_session_legacy(uuid) to anon, authenticated;
+grant execute on function public.<legacy_results_rpc>(uuid) to anon, authenticated;
 ```
 2. Redeploy backend if additional changes were reverted.
 
