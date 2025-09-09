@@ -103,6 +103,11 @@ If your host doesn't support env vars, set values in `index.html` via `window.__
 
 `VITE_ALLOW_LEGACY_RESULTS` defaults to `false`; set it to `true` in a staging environment to verify the legacy results fallback.
 
+For staging deployments also:
+
+- Point `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` at the staging project.
+- Set `RESULTS_BASE_URL` to your staging domain so links in emails and callbacks resolve correctly.
+
 ## Lovable deploy
 
 Set your Supabase values in `index.html` → `window.__APP_CONFIG__`:
