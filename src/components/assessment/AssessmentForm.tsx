@@ -199,22 +199,29 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
   // Initialize assessment session on component mount
   // Session initialization effect
   useEffect(() => {
+    console.log('=== SESSION INITIALIZATION EFFECT TRIGGERED ===');
+    console.log('libraryLoaded:', libraryLoaded);
+    console.log('sessionId:', sessionId);
+    console.log('isLoading:', isLoading);
+    console.log('loadError:', loadError);
+    console.log('resumeSessionId:', resumeSessionId);
+    
     // Prevent initialization if library isn't loaded yet
     if (!libraryLoaded) {
-      console.log('Waiting for library to load before initializing session');
+      console.log('❌ Waiting for library to load before initializing session');
       return;
     }
 
     // Only initialize if we don't already have a session and aren't already loading
     if (sessionId || isLoading || loadError) {
-      console.log('Skipping session initialization:', { sessionId: !!sessionId, isLoading, loadError });
+      console.log('❌ Skipping session initialization:', { sessionId: !!sessionId, isLoading, loadError });
       return;
     }
 
     if (resumeSessionId) {
-      console.log('AssessmentForm useEffect triggered with resumeSessionId:', resumeSessionId);
+      console.log('✅ AssessmentForm useEffect triggered with resumeSessionId:', resumeSessionId);
     } else {
-      console.log('AssessmentForm useEffect triggered without resumeSessionId (starting new session)');
+      console.log('✅ AssessmentForm useEffect triggered without resumeSessionId (starting new session)');
     }
     
     const initializeSession = async () => {
@@ -300,6 +307,7 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
       }
     };
 
+    console.log('🚀 About to call initializeSession()');
     initializeSession();
   }, [libraryLoaded, resumeSessionId]);
 
