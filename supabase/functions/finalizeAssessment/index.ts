@@ -84,7 +84,6 @@ Deno.serve(async (req) => {
           status: 'success',
           session_id,
           share_token: sessionData?.share_token,
-          profile: existingProfile,
           results_url: `${req.headers.get('origin') || 'https://prismassessment.com'}/results/${session_id}?t=${sessionData?.share_token}`
         }),
         {
@@ -248,17 +247,16 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         ok: true,
         status: 'success',
         session_id,
         share_token: shareToken,
-        profile: scoringResult.profile,
         results_url: resultsUrl
       }),
-      { 
+      {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
 

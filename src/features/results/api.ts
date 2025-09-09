@@ -58,35 +58,31 @@ function mapUnknown(e: unknown): FetchResultsError {
   return new FetchResultsError('unknown', e instanceof Error ? e.message : undefined);
 }
 
-function parseEdgePayload(payload: unknown, sessionId: string): FetchResultsResponse {
-  const data = payload as { profile?: Profile; session?: Partial<ResultsSession> } | null;
-  if (data?.profile && data.session && typeof data.session.id === 'string') {
-    return {
-      profile: data.profile,
-      session: { id: data.session.id, status: data.session.status ?? 'unknown' },
-    };
-  }
-  throw new FetchResultsError('unknown', 'invalid response');
-}
-
-async function edgeCall(
+async function rpcCall(
   client: SupabaseClient,
   sessionId: string,
   shareToken: string | undefined,
 ): Promise<FetchResultsResponse> {
-  const { data, error } = await client.functions.invoke(
-    'get-results-by-session',
-    {
-      body: { sessionId, shareToken },
-    },
-  );
-  if (error) {
-    const status =
-      (error as any)?.status ??
-      ((/not\s*found/i).test((error as any)?.message ?? '') ? 404 : 500);
-    throw mapStatus(status, (error as any).message);
+  if (shareToken) {
+    const { data, error } = await client.rpc(
+      'get_profile_by_session_token',
+      { p_share_token: shareToken, p_client_ip: '' },
+    );
+    if (error) throw mapStatus(Number(error.code), error.message);
+    if (!data) throw new FetchResultsError('not_found');
+    return {
+      profile: data as Profile,
+      session: { id: sessionId, status: 'completed' },
+    };
   }
-  return parseEdgePayload(data, sessionId);
+
+  const { data, error } = await client.rpc('get_results_by_session', {
+    p_session_id: sessionId,
+  });
+  if (error) throw mapStatus(Number(error.code), error.message);
+  const payload = data as { profile?: Profile; session?: ResultsSession } | null;
+  if (payload?.profile && payload.session) return payload as FetchResultsResponse;
+  throw new FetchResultsError('unknown', 'invalid response');
 }
 
 async function executeWithRetry<T>(
@@ -122,7 +118,7 @@ export async function fetchResultsBySession(
   const promise = (async () => {
     try {
       return await executeWithRetry(
-        () => edgeCall(client, sessionId, shareToken),
+        () => rpcCall(client, sessionId, shareToken),
         controller
       );
     } finally {
