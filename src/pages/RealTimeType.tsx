@@ -97,8 +97,17 @@ const RealTimeType: React.FC = () => {
 
   useEffect(() => {
     const ctx = canvasRef.current;
-    if (!ctx) return;
     const data = aggregateCompletions(daily, mode);
+
+    // Skip rendering when there's no canvas or data
+    if (!ctx || data.length === 0) {
+      if (chartRef.current) {
+        chartRef.current.destroy();
+        chartRef.current = null;
+      }
+      return;
+    }
+
     if (chartRef.current) chartRef.current.destroy();
     chartRef.current = new Chart(ctx, {
       type: "line",
@@ -196,17 +205,28 @@ const RealTimeType: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white/70 dark:bg-slate-900/20">
-              {history.slice(0, 25).map((item, idx) => (
-                <tr key={idx}>
-                  <td className="px-4 py-3 text-sm text-slate-500">{idx + 1}</td>
-                  <td className="px-4 py-3 text-sm font-medium">
-                    {new Date(item.time).toLocaleString()}
+              {history.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-4 py-6 text-center text-sm text-slate-500"
+                  >
+                    No recent assessments available
                   </td>
-                  <td className="px-4 py-3 text-sm">{item.core}</td>
-                  <td className="px-4 py-3 text-sm">{item.fit}</td>
-                  <td className="px-4 py-3 text-sm">{item.score}%</td>
                 </tr>
-              ))}
+              ) : (
+                history.slice(0, 25).map((item, idx) => (
+                  <tr key={idx}>
+                    <td className="px-4 py-3 text-sm text-slate-500">{idx + 1}</td>
+                    <td className="px-4 py-3 text-sm font-medium">
+                      {new Date(item.time).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm">{item.core}</td>
+                    <td className="px-4 py-3 text-sm">{item.fit}</td>
+                    <td className="px-4 py-3 text-sm">{item.score}%</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
