@@ -27,10 +27,14 @@ export function useEmailSessionManager() {
     userId?: string, 
     forceNew = false
   ): Promise<SessionData | null> => {
+    console.log('=== START ASSESSMENT SESSION CALLED ===');
+    console.log('Parameters:', { email, userId, forceNew });
+    
     setIsLoading(true);
     try {
       console.log('Starting assessment session:', { email, userId, forceNew });
       
+      console.log('Calling supabase.functions.invoke with start_assessment...');
       const { data, error } = await supabase.functions.invoke('start_assessment', {
         body: { 
           email, 
@@ -38,6 +42,8 @@ export function useEmailSessionManager() {
           force_new: forceNew 
         }
       });
+
+      console.log('Edge function response:', { data, error });
 
       if (error) {
         console.error('Error starting assessment session:', error);
@@ -49,11 +55,11 @@ export function useEmailSessionManager() {
         return null;
       }
 
-      if (!data.success) {
+      if (!data || !data.success) {
         console.error('Assessment session failed:', data);
         toast({
           title: "Session Error", 
-          description: data.error || "Failed to start assessment session.",
+          description: data?.error || "Failed to start assessment session.",
           variant: "destructive",
         });
         return null;

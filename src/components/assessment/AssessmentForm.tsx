@@ -197,6 +197,7 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
   };
 
   // Initialize assessment session on component mount
+  // Session initialization effect
   useEffect(() => {
     // Prevent initialization if library isn't loaded yet
     if (!libraryLoaded) {
@@ -204,16 +205,29 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
       return;
     }
 
+    // Only initialize if we don't already have a session and aren't already loading
+    if (sessionId || isLoading || loadError) {
+      console.log('Skipping session initialization:', { sessionId: !!sessionId, isLoading, loadError });
+      return;
+    }
+
     if (resumeSessionId) {
       console.log('AssessmentForm useEffect triggered with resumeSessionId:', resumeSessionId);
     } else {
-      console.log('AssessmentForm useEffect triggered without resumeSessionId');
+      console.log('AssessmentForm useEffect triggered without resumeSessionId (starting new session)');
     }
     
     const initializeSession = async () => {
+      console.log('=== INITIALIZING ASSESSMENT SESSION ===');
+      console.log('Library loaded:', libraryLoaded);
+      console.log('Resume session ID:', resumeSessionId);
+      console.log('Current session ID:', sessionId);
+      console.log('Is loading:', isLoading);
+      console.log('Load error:', loadError);
+      
+      setIsLoading(true);
+      
       try {
-        console.log('Initializing assessment session...');
-        
         // If resuming a session, load existing session data
         if (resumeSessionId) {
           console.log('Attempting to resume session:', resumeSessionId);
@@ -225,6 +239,7 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
         
         // Get current user (null if anonymous)
         const { data: { user } } = await supabase.auth.getUser();
+        console.log('Current user:', user?.id || 'anonymous');
         
         // Check if user needs to authenticate for scoring
         if (!user) {
@@ -235,9 +250,13 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
           });
         }
         
+        console.log('Calling startAssessmentSession with:', { email: user?.email, userId: user?.id });
         // Create session via edge function to respect RLS policies
         const sessionData = await startAssessmentSession(user?.email, user?.id);
+        console.log('startAssessmentSession result:', sessionData);
+        
         if (!sessionData) {
+          console.error('No session data returned from startAssessmentSession');
           toast({
             title: "Failed to Initialize",
             description: "Could not start assessment session. Please refresh the page and try again.",
@@ -276,15 +295,13 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
           variant: "destructive",
         });
         setLoadError('Failed to start assessment. Please try again.');
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    // Only initialize if we don't already have a session
-    if (!sessionId && !isLoading && !loadError) {
-      setIsLoading(true);
-      initializeSession().finally(() => setIsLoading(false));
-    }
-  }, [libraryLoaded, resumeSessionId, sessionId]);
+    initializeSession();
+  }, [libraryLoaded, resumeSessionId]);
 
   // Early return conditions to prevent render loops
   if (!libraryLoaded) {
