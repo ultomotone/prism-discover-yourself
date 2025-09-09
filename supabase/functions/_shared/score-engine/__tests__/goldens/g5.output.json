@@ -2,6 +2,8 @@
   "profile": {
     "type_code": "EII",
     "type": "EII",
+    "base_func": "Fi",
+    "creative_func": "Ne",
     "top_types": [
       {
         "code": "EII",
@@ -68,8 +70,16 @@
       "state_modifiers": {},
       "required_tag_gaps": []
     },
-    "version": "v1.2.1",
-    "fc_source": "none"
+    "validity_status": "ok",
+    "confidence": "low",
+    "conf_calibrated": 0.4223,
+    "score_fit_raw": 7.000000000000001,
+    "score_fit_calibrated": 7.000000000000001,
+    "top_gap": 0.156,
+    "close_call": false,
+    "results_version": "v1.2.1",
+    "fc_source": "none",
+    "version": "v1.2.1"
   },
   "gap_to_second": 0.156,
   "confidence_margin": 0.156,

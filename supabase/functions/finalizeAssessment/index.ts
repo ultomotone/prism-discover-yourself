@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
           status: 'completed',
           completed_at: new Date().toISOString(),
           finalized_at: new Date().toISOString(),
-          completed_questions: responses?.length || existingProfile.fc_answered_ct || 0,
+          completed_questions: responses ? new Set(responses.map((r:any)=>r.question_id)).size : existingProfile.fc_answered_ct || 0,
           share_token: shareToken,
           profile_id: existingProfile.id
         })
@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
         status: 'completed',
         completed_at: new Date().toISOString(),
         finalized_at: new Date().toISOString(),
-        completed_questions: responses?.length || scoringResult.profile?.fc_answered_ct || 0,
+        completed_questions: responses ? new Set(responses.map((r:any)=>r.question_id)).size : scoringResult.profile?.fc_answered_ct || 0,
         share_token: shareToken,
         profile_id: upsertedProfile?.id || sessionData.profile_id
       })

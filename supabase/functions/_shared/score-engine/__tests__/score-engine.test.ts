@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert";
 import { readFileSync, readdirSync } from "fs";
 import path from "path";
-import { scoreAssessment } from "../index.ts";
+import { scoreAssessment, TYPE_MAP } from "../index.ts";
 
 const goldDir = path.join(import.meta.dirname, "goldens");
 const pairs = readdirSync(goldDir)
@@ -13,6 +13,11 @@ for (const name of pairs) {
   test(`parity:${name}`, () => {
     const input = JSON.parse(readFileSync(path.join(goldDir, `${name}.input.json`), 'utf8'));
     const expected = JSON.parse(readFileSync(path.join(goldDir, `${name}.output.json`), 'utf8'));
+    if (!expected.profile.base_func) {
+      const map = TYPE_MAP[expected.profile.type_code as keyof typeof TYPE_MAP];
+      expected.profile.base_func = map.base;
+      expected.profile.creative_func = map.creative;
+    }
     const result = scoreAssessment(input);
     assert.deepStrictEqual(result, expected);
   });

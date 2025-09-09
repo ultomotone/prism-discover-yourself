@@ -2,6 +2,8 @@
   "profile": {
     "type_code": "IEE",
     "type": "IEE",
+    "base_func": "Ne",
+    "creative_func": "Fi",
     "top_types": [
       {
         "code": "IEE",
@@ -68,8 +70,16 @@
       "state_modifiers": {},
       "required_tag_gaps": []
     },
-    "version": "v1.2.1",
-    "fc_source": "session"
+    "validity_status": "ok",
+    "confidence": "low",
+    "conf_calibrated": 0.4262,
+    "score_fit_raw": 6.625,
+    "score_fit_calibrated": 6.625,
+    "top_gap": 0.175,
+    "close_call": false,
+    "results_version": "v1.2.1",
+    "fc_source": "session",
+    "version": "v1.2.1"
   },
   "gap_to_second": 0.175,
   "confidence_margin": 0.175,

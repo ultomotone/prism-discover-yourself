@@ -59,27 +59,15 @@ async function rpcCall(
   sessionId: string,
   shareToken: string | undefined,
 ): Promise<FetchResultsResponse> {
-  const allowLegacy =
-    import.meta.env?.VITE_ALLOW_LEGACY_RESULTS === 'true' ||
-    (typeof process !== 'undefined' && process.env.VITE_ALLOW_LEGACY_RESULTS === 'true');
-
-  const rpcName =
-    shareToken ? 'get_results_by_session'
-    : allowLegacy ? 'get_results_by_session_legacy'
-    : 'get_results_by_session';
-
-  const params: Record<string, string | undefined> = { session_id: sessionId };
-  if (shareToken) params.t = shareToken;
-
-  const { data, error } = await client.rpc(rpcName, params);
+  const { data, error } = await client.functions.invoke<FetchResultsResponse>(
+    'get-results-by-session',
+    { body: { session_id: sessionId, share_token: shareToken || null } },
+  );
   if (error) {
-    // PGRST116 => "No rows found"
-    const status = (error as any)?.code === 'PGRST116' ? 404 : Number((error as any)?.code) || 500;
+    const status = Number((error as any)?.code) || 500;
     throw mapStatus(status, (error as any).message);
   }
-
-  const payload = data as { profile?: Profile; session?: ResultsSession } | null;
-  if (payload?.profile && payload.session) return payload as FetchResultsResponse;
+  if (data?.profile && data.session) return data;
   throw new FetchResultsError('unknown', 'invalid response');
 }
 
