@@ -17,17 +17,25 @@ type ResultsPayload = {
 
 export default function Results() {
   const { sessionId: paramId } = useParams<{ sessionId: string }>();
-  const query = new URLSearchParams(useLocation().search);
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
   const navigate = useNavigate();
+
   const sessionId = useMemo(
     () => paramId || query.get("sessionId") || "",
-    [paramId, query],
+    [paramId, query]
   );
-  const shareToken = useMemo(() => query.get("t"), [query]);
+  const shareToken = useMemo(() => query.get("t") ?? null, [query]);
 
-    const [data, setData] = useState<ResultsPayload | null>(null);
-    const [err, setErr] = useState<string | null>(null);
-    const [tries, setTries] = useState(0);
+  const [data, setData] = useState<ResultsPayload | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [tries, setTries] = useState(0);
+
+  const allowLegacy =
+    import.meta.env?.VITE_ALLOW_LEGACY_RESULTS === "true" ||
+    // optional window shim if your host injects flags there
+    (typeof window !== "undefined" &&
+      (window as any).__APP_CONFIG__?.VITE_ALLOW_LEGACY_RESULTS === "true");
 
   const resultsUrl = shareToken
     ? `${window.location.origin}/results/${sessionId}?t=${shareToken}`
@@ -38,44 +46,48 @@ export default function Results() {
       await navigator.clipboard.writeText(resultsUrl);
       toast({
         title: "Secure link copied!",
-        description: "Your private results link has been copied to your clipboard.",
+        description:
+          "Your private results link has been copied to your clipboard.",
       });
     } catch {
-      const textArea = document.createElement('textarea');
+      const textArea = document.createElement("textarea");
       textArea.value = resultsUrl;
       document.body.appendChild(textArea);
       textArea.select();
-      document.execCommand('copy');
+      document.execCommand("copy");
       document.body.removeChild(textArea);
       toast({
         title: "Secure link copied!",
-        description: "Your private results link has been copied to your clipboard.",
+        description:
+          "Your private results link has been copied to your clipboard.",
       });
     }
   };
 
   const downloadPDF = async () => {
-    const node = document.getElementById('results-content');
+    const node = document.getElementById("results-content");
     if (!node) return;
 
-    const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff' });
-    const img = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pageWidth = 210, pageHeight = 297;
+    const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#ffffff" });
+    const img = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pageWidth = 210,
+      pageHeight = 297;
     const imgProps = pdf.getImageProperties(img);
-    const imgWidth = pageWidth, imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+    const imgWidth = pageWidth,
+      imgHeight = (imgProps.height * imgWidth) / imgProps.width;
 
-    pdf.addImage(img, 'PNG', 0, 0, imgWidth, Math.min(imgHeight, pageHeight));
+    pdf.addImage(img, "PNG", 0, 0, imgWidth, Math.min(imgHeight, pageHeight));
     let remaining = imgHeight - pageHeight;
     let y = 0;
     while (remaining > 0) {
       pdf.addPage();
       y += pageHeight;
-      pdf.addImage(img, 'PNG', 0, -y, imgWidth, imgHeight);
+      pdf.addImage(img, "PNG", 0, -y, imgWidth, imgHeight);
       remaining -= pageHeight;
     }
 
-    pdf.save('PRISM_Profile.pdf');
+    pdf.save("PRISM_Profile.pdf");
   };
 
   useEffect(() => {
@@ -84,29 +96,55 @@ export default function Results() {
 
     (async () => {
       try {
-        const { data, error } = await supabase.functions.invoke<ResultsPayload>(
-          "get-results-by-session",
-          { body: { session_id: sessionId, share_token: shareToken || null } },
+        let payload: ResultsPayload | null = null;
+
+        // Preferred RPC with token validation (incognito/public link)
+        const { data: res, error } = await supabase.rpc<ResultsPayload>(
+          "get_results_by_session",
+          { session_id: sessionId, t: shareToken }
         );
-        if (error) throw error;
-        if (!data?.profile) throw new Error("Results not found");
-        const payload = data;
+
+        if (!error && res?.profile) {
+          payload = res;
+        } else {
+          // Optional legacy fallback: only when NO token and flag enabled
+          if (!shareToken && allowLegacy) {
+            const { data: legacyRes, error: legacyErr } = await supabase.rpc<ResultsPayload>(
+              "get_results_by_session_legacy",
+              { session_id: sessionId }
+            );
+            if (legacyErr) throw legacyErr;
+            if (!legacyRes?.profile) throw new Error("Results not found");
+            payload = legacyRes;
+          } else if (error) {
+            throw error;
+          } else {
+            throw new Error("Results not found");
+          }
+        }
+
         if (!cancel) setData(payload);
       } catch (e: any) {
         const status = Number((e?.code ?? e?.status) || 0);
-        if (status === 409 && tries < 12) {
-          setTimeout(() => !cancel && setTries((t) => t + 1), 1000);
+        // transient retry (e.g., 409/contention or 429 rate-limit if surfaced)
+        if ((status === 409 || status === 429 || (status >= 500 && status < 600)) && tries < 2) {
+          setTimeout(() => !cancel && setTries((t) => t + 1), 400 * (tries + 1));
           return;
         }
-        if (!cancel)
-          setErr(e?.message && typeof e.message === "string" ? e.message : "Failed to load results");
+        if (!cancel) {
+          setErr(
+            e?.message && typeof e.message === "string"
+              ? e.message
+              : "Failed to load results"
+          );
+        }
       }
     })();
 
     return () => {
       cancel = true;
     };
-  }, [sessionId, shareToken, tries]);
+  }, [sessionId, shareToken, tries, allowLegacy]);
 
   useEffect(() => {
     if (data?.profile) {
@@ -115,23 +153,27 @@ export default function Results() {
   }, [data?.profile, sessionId]);
 
   if (err) return <div className="p-8">Error: {err}</div>;
-    if (!data) return <div className="p-8">Loading…</div>;
+  if (!data) return <div className="p-8">Loading…</div>;
 
-    return (
-      <div className="min-h-screen bg-background">
-        {query.get("debug") === "1" && data.profile && (
-          <div className="fixed top-2 right-2 bg-black/70 text-white text-xs p-2 rounded">
-            <div>version: {data.profile.version}</div>
-            <div>fc_source: {data.profile.fc_source || "none"}</div>
-            <div>
-              {data.profile.top_types?.slice(0,3).map((t:any) => `${t.code}:${t.share.toFixed(3)}`).join(" ")}
-            </div>
+  return (
+    <div className="min-h-screen bg-background">
+      {query.get("debug") === "1" && data.profile && (
+        <div className="fixed top-2 right-2 bg-black/70 text-white text-xs p-2 rounded">
+          <div>version: {data.profile.version}</div>
+          <div>fc_source: {data.profile.fc_source || "none"}</div>
+          <div>
+            {data.profile.top_types
+              ?.slice(0, 3)
+              .map((t: any) => `${t.code}:${Number(t.share).toFixed(3)}`)
+              .join(" ")}
           </div>
-        )}
-        <div className="py-8 px-4 space-y-6">
-          <div id="results-content">
-            <ResultsV2 profile={data.profile} />
-          </div>
+        </div>
+      )}
+
+      <div className="py-8 px-4 space-y-6">
+        <div id="results-content">
+          <ResultsV2 profile={data.profile} />
+        </div>
 
         <Card className="max-w-4xl mx-auto">
           <CardContent className="p-6">
@@ -161,7 +203,7 @@ export default function Results() {
                 Download PDF Report
               </Button>
               <Button
-                onClick={() => navigate('/assessment?start=true')}
+                onClick={() => navigate("/assessment?start=true")}
                 variant="outline"
                 size="lg"
                 className="flex items-center gap-2"
