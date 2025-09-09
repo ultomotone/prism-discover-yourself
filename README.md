@@ -1,3 +1,12 @@
+## PRISM Scoring v1.2.1
+
+Unified scoring engine and tokenized results access.
+
+- Results links now require a `share_token` parameter.
+- Roll back by redeploying previous edge functions and restoring prior RLS policies.
+
+---
+
 Welcome to your Lovable project
 Project info
 

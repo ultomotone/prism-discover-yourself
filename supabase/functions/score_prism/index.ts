@@ -2,7 +2,7 @@
 // Refactored to use shared scoring engine
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { scoreAssessment, FALLBACK_PROTOTYPES, TypeCode, Func, Block } from "../_shared/score-engine/index.ts";
+import { runScoreEngine, FALLBACK_PROTOTYPES, TypeCode, Func, Block } from "../_shared/scoreEngine.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -66,8 +66,10 @@ serve(async (req) => {
       return data?.value ?? null;
     };
     const softmaxTemp = (await cfg("softmax_temp")) ?? 1.0;
-      // type prototypes
-      let typePrototypes = FALLBACK_PROTOTYPES;
+    const resultsVersion = (await cfg("results_version")) ?? "v1.2.1";
+
+    // type prototypes
+    let typePrototypes = FALLBACK_PROTOTYPES;
     const { data: protoData } = await supabase
       .from('type_prototypes')
       .select('type_code, func, block');
@@ -82,6 +84,7 @@ serve(async (req) => {
 
       // fc scores (authoritative when present)
       let fcScoresObj = fcScoresPayload as Record<Func, number> | undefined;
+      let fcSource: string = "payload";
       if (!fcScoresObj) {
         const { data: fcFromDb } = await supabase
           .from('fc_scores')
@@ -90,18 +93,24 @@ serve(async (req) => {
           .eq('version', 'v1.1')
           .eq('fc_kind', 'functions')
           .maybeSingle();
-        if (fcFromDb && fcFromDb.scores_json) fcScoresObj = fcFromDb.scores_json as Record<Func, number>;
+      if (fcFromDb && fcFromDb.scores_json) {
+        fcScoresObj = fcFromDb.scores_json as Record<Func, number>;
+        fcSource = "session";
+      } else {
+        fcSource = "legacy";
       }
+    }
+    console.log(`evt:fc_source,session_id:${session_id},source:${fcSource}`);
 
-      const result = scoreAssessment({
+      const result = runScoreEngine({
         answers,
         keyByQ,
-        config: { softmaxTemp, typePrototypes },
+        config: { softmaxTemp, typePrototypes, resultsVersion },
         fc_scores: fcScoresObj,
       });
 
       const inputHash = await sha256(JSON.stringify({ answers, fc_scores: fcScoresObj }));
-      console.log(`evt:scoring_inputs,session_id:${session_id},version:${result.results_version},input_hash:${inputHash},fc_present:${!!fcScoresObj}`);
+      console.log(`evt:scoring_inputs,session_id:${session_id},version:${result.results_version},input_hash:${inputHash},fc_source:${result.fc_source}`);
 
     const profileData = {
       ...result.profile,

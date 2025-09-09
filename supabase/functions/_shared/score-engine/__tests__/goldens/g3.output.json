@@ -2,6 +2,8 @@
   "profile": {
     "type_code": "SEE",
     "type": "SEE",
+    "base_func": "Se",
+    "creative_func": "Fi",
     "top_types": [
       {
         "code": "SEE",
@@ -68,11 +70,21 @@
       "state_modifiers": {},
       "required_tag_gaps": []
     },
-    "version": "v1.2.1",
-    "fc_source": "none"
+    "validity_status": "ok",
+    "confidence": "low",
+    "conf_calibrated": 0.3952,
+    "score_fit_raw": 6.699999999999999,
+    "score_fit_calibrated": 6.699999999999999,
+    "top_gap": 0.088,
+    "close_call": false,
+    "results_version": "v1.2.1",
+    "fc_source": "none",
+    "version": "v1.2.1"
   },
   "gap_to_second": 0.088,
   "confidence_margin": 0.088,
+  "confidence_raw": 0.3952,
+  "confidence_calibrated": 0.3952,
   "results_version": "v1.2.1",
   "fc_source": "none"
 }

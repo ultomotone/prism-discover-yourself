@@ -13,20 +13,20 @@ const { fetchResultsBySession: fetchResults, FetchResultsError } = await import(
   '../src/features/results/api'
 );
 
-type RpcFn = (name: string, params: any) => Promise<{ data: unknown; error: any }>;
+type InvokeFn = (name: string, opts: any) => Promise<{ data: unknown; error: any }>;
 
-function createClient(rpcImpl: RpcFn): any {
+function createClient(invokeImpl: InvokeFn): any {
   return {
-    rpc: rpcImpl,
-    functions: { invoke: async () => ({ data: null, error: null }) },
+    rpc: async () => ({ data: null, error: null }),
+    functions: { invoke: invokeImpl },
   };
 }
 
 test('calls RPC with token when provided', async () => {
   let name = '';
-  let params: any = null;
-  const client = createClient(async (n, p) => {
-    name = n; params = p;
+  let body: any = null;
+  const client = createClient(async (n, opts) => {
+    name = n; body = opts.body;
     return {
       data: { profile: { id: 'p1' }, session: { id: 's', status: 'completed' } },
       error: null,
@@ -34,19 +34,21 @@ test('calls RPC with token when provided', async () => {
   });
   const res = await fetchResults({ sessionId: 's', shareToken: 't' }, client);
   assert.equal(res.profile.id, 'p1');
-  assert.equal(name, 'get_results_by_session');
-  assert.deepEqual(params, { session_id: 's', t: 't' });
+  assert.equal(name, 'get-results-by-session');
+  assert.deepEqual(body, { session_id: 's', share_token: 't' });
 });
 
 test('calls RPC without share token', async () => {
   let name = '';
-  const client = createClient(async (n) => {
-    name = n;
+  let body: any = null;
+  const client = createClient(async (n, opts) => {
+    name = n; body = opts.body;
     return { data: { profile: { id: 'p2' }, session: { id: 's', status: 'completed' } }, error: null };
   });
   const res = await fetchResults({ sessionId: 's' }, client);
   assert.equal(res.profile.id, 'p2');
-  assert.equal(name, 'get_results_by_session');
+  assert.equal(name, 'get-results-by-session');
+  assert.deepEqual(body, { session_id: 's', share_token: null });
 });
 
 test('dedupes concurrent calls', async () => {
