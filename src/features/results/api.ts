@@ -1,10 +1,6 @@
 import { supabase } from '@/lib/supabase/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type {
-  Profile,
-  ResultsSession,
-  FetchResultsResponse,
-} from './types';
+import type { Profile, ResultsSession, FetchResultsResponse } from './types';
 
 export type ResultsPayload = FetchResultsResponse;
 
@@ -63,23 +59,25 @@ async function rpcCall(
   sessionId: string,
   shareToken: string | undefined,
 ): Promise<FetchResultsResponse> {
-  if (shareToken) {
-    const { data, error } = await client.rpc(
-      'get_profile_by_session_token',
-      { p_share_token: shareToken, p_client_ip: '' },
-    );
-    if (error) throw mapStatus(Number(error.code), error.message);
-    if (!data) throw new FetchResultsError('not_found');
-    return {
-      profile: data as Profile,
-      session: { id: sessionId, status: 'completed' },
-    };
+  const allowLegacy =
+    import.meta.env?.VITE_ALLOW_LEGACY_RESULTS === 'true' ||
+    (typeof process !== 'undefined' && process.env.VITE_ALLOW_LEGACY_RESULTS === 'true');
+
+  const rpcName =
+    shareToken ? 'get_results_by_session'
+    : allowLegacy ? 'get_results_by_session_legacy'
+    : 'get_results_by_session';
+
+  const params: Record<string, string | undefined> = { session_id: sessionId };
+  if (shareToken) params.t = shareToken;
+
+  const { data, error } = await client.rpc(rpcName, params);
+  if (error) {
+    // PGRST116 => "No rows found"
+    const status = (error as any)?.code === 'PGRST116' ? 404 : Number((error as any)?.code) || 500;
+    throw mapStatus(status, (error as any).message);
   }
 
-  const { data, error } = await client.rpc('get_results_by_session', {
-    p_session_id: sessionId,
-  });
-  if (error) throw mapStatus(Number(error.code), error.message);
   const payload = data as { profile?: Profile; session?: ResultsSession } | null;
   if (payload?.profile && payload.session) return payload as FetchResultsResponse;
   throw new FetchResultsError('unknown', 'invalid response');
