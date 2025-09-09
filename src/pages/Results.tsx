@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase/client";
 import { ResultsV2 } from "@/components/assessment/ResultsV2";
@@ -30,6 +30,7 @@ export default function Results() {
   const [data, setData] = useState<ResultsPayload | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [tries, setTries] = useState(0);
+  const [rotating, setRotating] = useState(false);
 
   const resultsUrl = shareToken
     ? `${window.location.origin}/results/${sessionId}?t=${shareToken}`
@@ -57,6 +58,46 @@ export default function Results() {
       });
     }
   };
+
+  const applyNewToken = useCallback(
+    (newToken: string) => {
+      navigate(`/results/${sessionId}?t=${newToken}`, { replace: true });
+      setData(null);
+      setTries((t) => t + 1);
+      toast({
+        title: "New secure link generated",
+        description: "Old links are now invalid. Your URL has been updated.",
+      });
+    },
+    [navigate, sessionId]
+  );
+
+  const rotateLink = useCallback(
+    async () => {
+      if (!sessionId) return;
+      setRotating(true);
+      try {
+        const { data, error } = await supabase.rpc(
+          "rotate_results_share_token",
+          {
+            p_session_id: sessionId,
+          }
+        );
+        if (error) throw error;
+        const newToken = (data as any)?.share_token;
+        if (!newToken) {
+          throw new Error("Rotation succeeded but no token returned");
+        }
+        applyNewToken(newToken);
+      } catch (e: any) {
+        const msg = e?.message ?? "Failed to rotate link";
+        toast({ title: "Could not rotate link", description: msg });
+      } finally {
+        setRotating(false);
+      }
+    },
+    [sessionId, applyNewToken]
+  );
 
   const downloadPDF = async () => {
     const node = document.getElementById("results-content");
@@ -165,6 +206,15 @@ export default function Results() {
                 <code className="text-sm flex-1 truncate">{resultsUrl}</code>
                 <Button onClick={copyResultsLink} variant="ghost" size="sm" className="shrink-0">
                   <Copy className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={rotateLink}
+                  variant="outline"
+                  size="sm"
+                  disabled={rotating}
+                  className="shrink-0"
+                >
+                  <RotateCcw className="h-4 w-4" />
                 </Button>
               </div>
             </div>
