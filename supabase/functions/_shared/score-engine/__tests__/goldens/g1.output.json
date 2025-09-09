@@ -1,0 +1,78 @@
+{
+  "profile": {
+    "type_code": "LII",
+    "type": "LII",
+    "top_types": [
+      {
+        "code": "LII",
+        "share": 0.34074410797229066,
+        "score": 6.7
+      },
+      {
+        "code": "ILE",
+        "share": 0.25242944377581134,
+        "score": 6.3999999999999995
+      },
+      {
+        "code": "LSI",
+        "share": 0.12535275202330787,
+        "score": 5.7
+      }
+    ],
+    "strengths": {
+      "Ti": 4,
+      "Te": 0,
+      "Fi": 2,
+      "Fe": 0,
+      "Ni": 0,
+      "Ne": 3,
+      "Si": 0,
+      "Se": 1
+    },
+    "type_scores": {
+      "LIE": 2.0000000000000004,
+      "ILI": 2.0000000000000004,
+      "ESE": 2.0000000000000004,
+      "SEI": 2.0000000000000004,
+      "LII": 6.7,
+      "ILE": 6.3999999999999995,
+      "ESI": 4.1,
+      "SEE": 3.8000000000000003,
+      "LSE": 2.0000000000000004,
+      "SLI": 2.0000000000000004,
+      "EIE": 2.0000000000000004,
+      "IEI": 2.0000000000000004,
+      "LSI": 5.7,
+      "SLE": 4.8,
+      "EII": 5.1,
+      "IEE": 5.4
+    },
+    "blocks": {
+      "likert": {},
+      "fc": {}
+    },
+    "blocks_norm": {
+      "Core": 0,
+      "Critic": 0,
+      "Hidden": 0,
+      "Instinct": 0
+    },
+    "overlay": "0",
+    "overlay_neuro": "0",
+    "overlay_state": "0",
+    "validity": {
+      "attention": 0,
+      "inconsistency": 0,
+      "sd_index": 0,
+      "duplicates": 0,
+      "state_modifiers": {},
+      "required_tag_gaps": []
+    },
+    "version": "v1.2.1",
+    "fc_source": "session"
+  },
+  "gap_to_second": 0.088,
+  "confidence_margin": 0.088,
+  "results_version": "v1.2.1",
+  "fc_source": "session"
+}

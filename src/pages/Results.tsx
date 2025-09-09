@@ -25,9 +25,9 @@ export default function Results() {
   );
   const shareToken = useMemo(() => query.get("t"), [query]);
 
-  const [data, setData] = useState<ResultsPayload | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  const [tries, setTries] = useState(0);
+    const [data, setData] = useState<ResultsPayload | null>(null);
+    const [err, setErr] = useState<string | null>(null);
+    const [tries, setTries] = useState(0);
 
   const resultsUrl = shareToken
     ? `${window.location.origin}/results/${sessionId}?t=${shareToken}`
@@ -117,14 +117,23 @@ export default function Results() {
   }, [data?.profile, sessionId]);
 
   if (err) return <div className="p-8">Error: {err}</div>;
-  if (!data) return <div className="p-8">Loading…</div>;
+    if (!data) return <div className="p-8">Loading…</div>;
 
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="py-8 px-4 space-y-6">
-        <div id="results-content">
-          <ResultsV2 profile={data.profile} />
-        </div>
+    return (
+      <div className="min-h-screen bg-background">
+        {query.get("debug") === "1" && data.profile && (
+          <div className="fixed top-2 right-2 bg-black/70 text-white text-xs p-2 rounded">
+            <div>version: {data.profile.version}</div>
+            <div>fc_source: {data.profile.fc_source || "none"}</div>
+            <div>
+              {data.profile.top_types?.slice(0,3).map((t:any) => `${t.code}:${t.share.toFixed(3)}`).join(" ")}
+            </div>
+          </div>
+        )}
+        <div className="py-8 px-4 space-y-6">
+          <div id="results-content">
+            <ResultsV2 profile={data.profile} />
+          </div>
 
         <Card className="max-w-4xl mx-auto">
           <CardContent className="p-6">

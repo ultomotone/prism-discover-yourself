@@ -1,0 +1,78 @@
+{
+  "profile": {
+    "type_code": "EII",
+    "type": "EII",
+    "top_types": [
+      {
+        "code": "EII",
+        "share": 0.0898441470035404,
+        "score": 3.6500000000000004
+      },
+      {
+        "code": "ESI",
+        "share": 0.08984414700354036,
+        "score": 3.65
+      },
+      {
+        "code": "IEE",
+        "share": 0.0898441470035404,
+        "score": 3.6500000000000004
+      }
+    ],
+    "strengths": {
+      "Ti": 1.5,
+      "Te": 1.75,
+      "Fi": 1.5,
+      "Fe": 0,
+      "Ni": 0,
+      "Ne": 1.5,
+      "Si": 0.75,
+      "Se": 1.5
+    },
+    "type_scores": {
+      "LIE": 3.0999999999999996,
+      "ILI": 2.575,
+      "ESE": 2.075,
+      "SEI": 2.3,
+      "LII": 3.6500000000000004,
+      "ILE": 3.6500000000000004,
+      "ESI": 3.65,
+      "SEE": 3.65,
+      "LSE": 3.4749999999999996,
+      "SLI": 3.175,
+      "EIE": 1.7000000000000004,
+      "IEI": 1.7000000000000004,
+      "LSI": 3.65,
+      "SLE": 3.65,
+      "EII": 3.6500000000000004,
+      "IEE": 3.6500000000000004
+    },
+    "blocks": {
+      "likert": {},
+      "fc": {}
+    },
+    "blocks_norm": {
+      "Core": 0,
+      "Critic": 0,
+      "Hidden": 0,
+      "Instinct": 0
+    },
+    "overlay": "0",
+    "overlay_neuro": "0",
+    "overlay_state": "0",
+    "validity": {
+      "attention": 0,
+      "inconsistency": 0,
+      "sd_index": 0,
+      "duplicates": 0,
+      "state_modifiers": {},
+      "required_tag_gaps": []
+    },
+    "version": "v1.2.1",
+    "fc_source": "session"
+  },
+  "gap_to_second": 0,
+  "confidence_margin": 0,
+  "results_version": "v1.2.1",
+  "fc_source": "session"
+}

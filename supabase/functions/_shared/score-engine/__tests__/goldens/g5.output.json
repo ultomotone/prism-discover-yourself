@@ -1,0 +1,78 @@
+{
+  "profile": {
+    "type_code": "EII",
+    "type": "EII",
+    "top_types": [
+      {
+        "code": "EII",
+        "share": 0.39574044767369554,
+        "score": 7.000000000000001
+      },
+      {
+        "code": "ESI",
+        "share": 0.2400287148024994,
+        "score": 6.500000000000001
+      },
+      {
+        "code": "IEE",
+        "share": 0.16089605915628669,
+        "score": 6.1000000000000005
+      }
+    ],
+    "strengths": {
+      "Ti": 2,
+      "Te": 0,
+      "Fi": 5,
+      "Fe": 0,
+      "Ni": 0,
+      "Ne": 2,
+      "Si": 0,
+      "Se": 1
+    },
+    "type_scores": {
+      "LIE": 1.9999999999999998,
+      "ILI": 1.9999999999999998,
+      "ESE": 1.9999999999999998,
+      "SEI": 1.9999999999999998,
+      "LII": 4.6000000000000005,
+      "ILE": 4.6000000000000005,
+      "ESI": 6.500000000000001,
+      "SEE": 5.3,
+      "LSE": 1.9999999999999998,
+      "SLI": 1.9999999999999998,
+      "EIE": 1.9999999999999998,
+      "IEI": 1.9999999999999998,
+      "LSI": 4.1,
+      "SLE": 3.8,
+      "EII": 7.000000000000001,
+      "IEE": 6.1000000000000005
+    },
+    "blocks": {
+      "likert": {},
+      "fc": {}
+    },
+    "blocks_norm": {
+      "Core": 0,
+      "Critic": 0,
+      "Hidden": 0,
+      "Instinct": 0
+    },
+    "overlay": "0",
+    "overlay_neuro": "0",
+    "overlay_state": "0",
+    "validity": {
+      "attention": 0,
+      "inconsistency": 0,
+      "sd_index": 0,
+      "duplicates": 0,
+      "state_modifiers": {},
+      "required_tag_gaps": []
+    },
+    "version": "v1.2.1",
+    "fc_source": "none"
+  },
+  "gap_to_second": 0.156,
+  "confidence_margin": 0.156,
+  "results_version": "v1.2.1",
+  "fc_source": "none"
+}
