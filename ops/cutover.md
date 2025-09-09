@@ -57,6 +57,18 @@ select
 - RLS remains enabled on `profiles` and `assessment_sessions`.
 - Anon has no direct table `SELECT` privileges.
 
+## Post-Cooldown Cleanup
+After legacy traffic has ceased (e.g., 90d):
+1. Drop the legacy RPC:
+   ```sql
+   drop function if exists public.get_results_by_session_legacy(uuid);
+   ```
+2. Verify results access logs hash tokens and purge after 90 days:
+   ```sql
+   select token_hash from public.results_token_access_logs limit 1;
+   select jobname from cron.job where jobname='results_token_access_logs_purge';
+   ```
+
 ## Rollback
 1. Re-grant legacy RPC if needed:
 ```sql
