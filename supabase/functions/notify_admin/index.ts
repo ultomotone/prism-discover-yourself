@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { Resend } from "npm:resend@4.0.0";
+import { buildResultsLink } from "../_shared/results-link.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
 
@@ -39,13 +40,20 @@ Deno.serve(async (req) => {
         ? `New signup: ${payload.email ?? "unknown email"}`
         : `Assessment completed: ${payload.session_id ?? "unknown session"}`;
 
+    const siteUrl =
+      Deno.env.get("RESULTS_BASE_URL") ||
+      req.headers.get("origin") ||
+      "https://prismassessment.com";
+
     const html = `
       <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji; line-height: 1.6;">
         <h2 style="margin: 0 0 12px;">PRISM Notification — Applied Personality Lab</h2>
         <p style="margin: 0 0 8px;">Type: <strong>${payload.type}</strong></p>
         ${payload.email ? `<p style="margin: 0 0 8px;">Email: <strong>${payload.email}</strong></p>` : ""}
         ${payload.session_id ? `<p style="margin: 0 0 8px;">Session ID: <strong>${payload.session_id}</strong></p>` : ""}
-        ${payload.session_id && payload.share_token ? `<p style=\"margin: 16px 0 0;\"><a href=\"https://prismassessment.com/results/${payload.session_id}?t=${payload.share_token}\">View results (public link)</a></p>` : ""}
+        ${payload.session_id && payload.share_token
+          ? `<p style=\"margin: 16px 0 0;\"><a href=\"${buildResultsLink(siteUrl, payload.session_id, payload.share_token)}\">View results (public link)</a></p>`
+          : ""}
       </div>
     `;
 

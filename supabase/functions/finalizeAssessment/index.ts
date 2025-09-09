@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildResultsLink } from "../_shared/results-link.ts";
 
 const url = Deno.env.get("SUPABASE_URL")!;
 const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -90,7 +91,7 @@ Deno.serve(async (req) => {
         session_id,
         share_token: shareToken,
         profile: { ...existingProfile, share_token: shareToken },
-        results_url: `${siteUrl}/results/${session_id}?t=${shareToken}`
+        results_url: buildResultsLink(siteUrl, session_id, shareToken)
       }, 200);
     }
 
@@ -204,7 +205,7 @@ Deno.serve(async (req) => {
 
     console.log('Assessment finalized successfully for session:', session_id);
 
-    const resultsUrl = `${siteUrl}/results/${session_id}?t=${shareToken}`;
+    const resultsUrl = buildResultsLink(siteUrl, session_id, shareToken);
 
     try {
       supabase.functions.invoke('notify_admin', {
