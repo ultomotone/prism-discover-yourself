@@ -116,6 +116,7 @@ test('maps error variants', async () => {
     ['401', 'unauthorized'],
     ['403', 'forbidden'],
     ['400', 'invalid'],
+    ['PGRST116', 'not_found'],
   ];
   for (const [status, kind] of cases) {
     const client = createClient(async () => ({ data: null, error: { code: String(status) } }));
