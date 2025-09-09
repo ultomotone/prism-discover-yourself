@@ -53,25 +53,34 @@ Deno.serve(async (req) => {
 
     if (existingProfile) {
       console.log('Profile already exists for session:', session_id)
-      // Update session status and return existing profile
+
+      const shareToken = existingProfile.share_token || crypto.randomUUID()
+
       const { data: sessionData } = await supabase
         .from('assessment_sessions')
         .update({
           status: 'completed',
           completed_at: new Date().toISOString(),
-          completed_questions: responses?.length || existingProfile.fc_answered_ct || 0
+          finalized_at: new Date().toISOString(),
+          completed_questions: responses?.length || existingProfile.fc_answered_ct || 0,
+          share_token: shareToken,
+          profile_id: existingProfile.id
         })
         .eq('id', session_id)
         .select('share_token')
         .single()
 
-      // Fire-and-forget admin notify
+      await supabase
+        .from('profiles')
+        .update({ share_token: shareToken })
+        .eq('id', existingProfile.id)
+
       try {
         supabase.functions.invoke('notify_admin', {
           body: {
             type: 'assessment_completed',
             session_id,
-            share_token: sessionData?.share_token || null
+            share_token: shareToken
           }
         });
       } catch (e) {
@@ -83,9 +92,9 @@ Deno.serve(async (req) => {
           ok: true,
           status: 'success',
           session_id,
-          share_token: sessionData?.share_token,
-          profile: existingProfile,
-          results_url: `${req.headers.get('origin') || 'https://prismassessment.com'}/results/${session_id}?t=${sessionData?.share_token}`
+          share_token: shareToken,
+          profile: { ...existingProfile, share_token: shareToken },
+          results_url: `${req.headers.get('origin') || 'https://prismassessment.com'}/results/${session_id}?t=${shareToken}`
         }),
         {
           status: 200,
@@ -192,16 +201,19 @@ Deno.serve(async (req) => {
     // Update session as completed with share token
     const shareToken = sessionData.share_token || crypto.randomUUID()
 
-    // Persist profile to profiles table
-    const { error: upsertError } = await supabase
+    const profilePayload = { ...scoringResult.profile, share_token: shareToken }
+
+    const { data: upsertedProfile, error: upsertError } = await supabase
       .from('profiles')
-      .upsert(scoringResult.profile, { onConflict: 'session_id', ignoreDuplicates: false });
+      .upsert(profilePayload, { onConflict: 'session_id', ignoreDuplicates: false })
+      .select('id')
+      .single()
     if (upsertError) {
-      console.error('Profile upsert error:', upsertError);
+      console.error('Profile upsert error:', upsertError)
       return new Response(
         JSON.stringify({ ok: false, error: `Failed to save profile: ${upsertError.message}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      );
+      )
     }
 
     const { error: sessionUpdateError } = await supabase
@@ -209,8 +221,10 @@ Deno.serve(async (req) => {
       .update({
         status: 'completed',
         completed_at: new Date().toISOString(),
+        finalized_at: new Date().toISOString(),
         completed_questions: responses?.length || scoringResult.profile?.fc_answered_ct || 0,
-        share_token: shareToken
+        share_token: shareToken,
+        profile_id: upsertedProfile?.id || sessionData.profile_id
       })
       .eq('id', session_id)
 
@@ -234,7 +248,6 @@ Deno.serve(async (req) => {
 
     const resultsUrl = `${req.headers.get('origin') || 'https://prismassessment.com'}/results/${session_id}?t=${shareToken}`
 
-    // Fire-and-forget admin notify
     try {
       supabase.functions.invoke('notify_admin', {
         body: {
@@ -242,23 +255,23 @@ Deno.serve(async (req) => {
           session_id,
           share_token: shareToken
         }
-      });
+      })
     } catch (e) {
-      console.error('notify_admin failed:', e);
+      console.error('notify_admin failed:', e)
     }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         ok: true,
         status: 'success',
         session_id,
         share_token: shareToken,
-        profile: scoringResult.profile,
+        profile: { ...scoringResult.profile, id: upsertedProfile?.id, share_token: shareToken },
         results_url: resultsUrl
       }),
-      { 
+      {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
 
