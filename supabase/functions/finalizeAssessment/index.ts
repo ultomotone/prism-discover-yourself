@@ -1,8 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-type ScoreInput = { session_id: string; responses: any[] };
-
 const url = Deno.env.get("SUPABASE_URL")!;
 const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(url, key);
@@ -81,17 +79,17 @@ Deno.serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ 
-          ok: true, 
+        JSON.stringify({
+          ok: true,
           status: 'success',
-          session_id, 
+          session_id,
           share_token: sessionData?.share_token,
           profile: existingProfile,
-          results_url: `${req.headers.get('origin') || 'https://prismassessment.com'}/results/${session_id}?token=${sessionData?.share_token}`
+          results_url: `${req.headers.get('origin') || 'https://prismassessment.com'}/results/${session_id}?t=${sessionData?.share_token}`
         }),
-        { 
+        {
           status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
@@ -115,6 +113,13 @@ Deno.serve(async (req) => {
     }
 
     console.log('Processing finalization for session:', session_id, 'using PRISM v1.2.0')
+
+    // First compute FC scores (if any)
+    try {
+      await supabase.functions.invoke('score_fc_session', { body: { session_id } });
+    } catch (e) {
+      console.error('score_fc_session failed:', e);
+    }
 
     // Invoke the score_prism function to compute results
     console.log('Invoking score_prism function')
@@ -171,7 +176,19 @@ Deno.serve(async (req) => {
 
     // Update session as completed with share token
     const shareToken = sessionData.share_token || crypto.randomUUID()
-    
+
+    // Persist profile to profiles table
+    const { error: upsertError } = await supabase
+      .from('profiles')
+      .upsert(scoringResult.profile, { onConflict: 'session_id', ignoreDuplicates: false });
+    if (upsertError) {
+      console.error('Profile upsert error:', upsertError);
+      return new Response(
+        JSON.stringify({ ok: false, error: `Failed to save profile: ${upsertError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
     const { error: sessionUpdateError } = await supabase
       .from('assessment_sessions')
       .update({
@@ -185,20 +202,20 @@ Deno.serve(async (req) => {
     if (sessionUpdateError) {
       console.error('Session update error:', sessionUpdateError)
       return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          error: `Failed to update session: ${sessionUpdateError.message}` 
+        JSON.stringify({
+          ok: false,
+          error: `Failed to update session: ${sessionUpdateError.message}`
         }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
 
     console.log('Assessment finalized successfully for session:', session_id)
 
-    const resultsUrl = `${req.headers.get('origin') || 'https://prismassessment.com'}/results/${session_id}?token=${shareToken}`
+    const resultsUrl = `${req.headers.get('origin') || 'https://prismassessment.com'}/results/${session_id}?t=${shareToken}`
 
     // Fire-and-forget admin notify
     try {

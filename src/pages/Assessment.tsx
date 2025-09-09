@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import { AssessmentForm, AssessmentResponse } from '@/components/assessment/AssessmentForm';
 import { SavedAssessments } from '@/components/assessment/SavedAssessments';
 import { supabase } from '@/lib/supabase/client';
+import { trackAssessmentComplete, trackLead } from '@/lib/analytics';
 import { TOTAL_PRISM_QUESTIONS } from '@/services/prismConfig';
 
 const Assessment = () => {
@@ -15,16 +16,32 @@ const Assessment = () => {
   // show form whenever ?start is present (any truthy) or ?resume=:id exists
   const showForm = Boolean(resume || start !== null);
 
-  // Fire scoring and then hard-navigate to results
-  const handleComplete = async (_responses: AssessmentResponse[], sessionId: string) => {
+  const [finalizing, setFinalizing] = useState(false);
+
+  // Finalize assessment and navigate to results with share token
+  const handleComplete = async (
+    responses: AssessmentResponse[],
+    sessionId: string,
+  ) => {
+    setFinalizing(true);
     try {
-      // NOTE: score_prism expects { session_id }, not { sessionId }
-      await supabase.functions
-        .invoke('score_prism', { body: { session_id: sessionId } })
-        .catch(() => {});
-      navigate(`/results/${sessionId}`, { replace: true });
+      const { data, error } = await supabase.functions.invoke(
+        'finalizeAssessment',
+        { body: { session_id: sessionId, responses } },
+      );
+      if (error) throw error;
+      trackAssessmentComplete(sessionId, responses.length);
+      trackLead(undefined, { source: 'assessment_complete' });
+      const token = (data as any)?.share_token;
+      navigate(
+        `/results/${sessionId}${token ? `?t=${token}` : ''}`,
+        { replace: true },
+      );
     } catch (e) {
       console.error('post-completion redirect failed', e);
+      navigate(`/results/${sessionId}`, { replace: true });
+    } finally {
+      setFinalizing(false);
     }
   };
 
@@ -44,6 +61,17 @@ const Assessment = () => {
 
     verifyCompletion();
   }, [resume, navigate]);
+
+  if (finalizing) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+          <p>Scoring your PRISM profile…</p>
+        </div>
+      </div>
+    );
+  }
 
   if (showForm) {
     return (
