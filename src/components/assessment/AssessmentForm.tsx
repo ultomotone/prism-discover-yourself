@@ -127,40 +127,13 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
   const sectionQuestions = assessmentLibrary.filter(q => q.section === currentSection);
   const sectionProgress = sectionQuestions.findIndex(q => q.id === currentQuestion?.id) + 1;
 
-  // Early return conditions to prevent render loops
+  // Early return for library loading only
   if (!libraryLoaded) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p>Loading assessment library...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (loadError) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="text-center py-8">
-            <h3 className="font-semibold mb-2 text-destructive">Session Error</h3>
-            <p className="text-muted-foreground mb-4">{loadError}</p>
-            <Button onClick={() => window.location.reload()} className="mt-4">
-              Refresh and Try Again
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (isLoading || !sessionId) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Initializing assessment session...</p>
         </div>
       </div>
     );
@@ -196,8 +169,7 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
     }
   };
 
-  // Initialize assessment session on component mount
-  // Session initialization effect
+  // Session initialization effect - moved after library load but before early returns
   useEffect(() => {
     console.log('=== SESSION INITIALIZATION EFFECT TRIGGERED ===');
     console.log('libraryLoaded:', libraryLoaded);
@@ -311,24 +283,13 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
     initializeSession();
   }, [libraryLoaded, resumeSessionId]);
 
-  // Early return conditions to prevent render loops
-  if (!libraryLoaded) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading assessment library...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Early return conditions after session initialization attempt
   if (loadError) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="max-w-md">
           <CardContent className="text-center py-8">
-            <h3 className="font-semibold mb-2 text-destructive">Session Error</h3>
+            <h3 className="font-semibred mb-2 text-destructive">Session Error</h3>
             <p className="text-muted-foreground mb-4">{loadError}</p>
             <Button onClick={() => window.location.reload()} className="mt-4">
               Refresh and Try Again
