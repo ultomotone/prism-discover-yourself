@@ -36,6 +36,11 @@ Deno.serve(async (req) => {
 
     console.log('finalizeAssessment called for session:', session_id, 'responses:', responses?.length || 0);
 
+    const siteUrl =
+      Deno.env.get('RESULTS_BASE_URL') ||
+      req.headers.get('origin') ||
+      'https://prismassessment.com';
+
     // Check if profile already exists for this session
     const { data: existingProfile } = await supabase
       .from('profiles')
@@ -85,7 +90,7 @@ Deno.serve(async (req) => {
         session_id,
         share_token: shareToken,
         profile: { ...existingProfile, share_token: shareToken },
-        results_url: `${req.headers.get('origin') || 'https://prismassessment.com'}/results/${session_id}?t=${shareToken}`
+        results_url: `${siteUrl}/results/${session_id}?t=${shareToken}`
       }, 200);
     }
 
@@ -199,8 +204,7 @@ Deno.serve(async (req) => {
 
     console.log('Assessment finalized successfully for session:', session_id);
 
-    const resultsUrl =
-      `${req.headers.get('origin') || 'https://prismassessment.com'}/results/${session_id}?t=${shareToken}`;
+    const resultsUrl = `${siteUrl}/results/${session_id}?t=${shareToken}`;
 
     try {
       supabase.functions.invoke('notify_admin', {

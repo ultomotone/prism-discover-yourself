@@ -96,9 +96,12 @@ SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SMOKE_SESSION_ID=
 SMOKE_SHARE_TOKEN=
+RESULTS_BASE_URL=
 ```
 
 If your host doesn't support env vars, set values in `index.html` via `window.__APP_CONFIG__`.
+
+`VITE_ALLOW_LEGACY_RESULTS` defaults to `false`; set it to `true` in a staging environment to verify the legacy results fallback.
 
 ## Lovable deploy
 
