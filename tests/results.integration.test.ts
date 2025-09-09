@@ -17,20 +17,20 @@ type Client = {
   functions: { invoke: (name: string, opts: any) => Promise<{ data: unknown; error: any }> };
 };
 
-function createClient(rpcImpl: Client['rpc']): Client {
-  return { rpc: rpcImpl, functions: { invoke: async () => ({ data: null, error: null }) } };
+function createClient(invokeImpl: Client['functions']['invoke']): Client {
+  return { rpc: async () => ({ data: null, error: null }), functions: { invoke: invokeImpl } };
 }
 
-test('sends snake_case args to RPC', async () => {
+test('invokes edge function with share token', async () => {
   let name = '';
-  let params: any;
-  const client = createClient(async (n, p) => {
-    name = n; params = p;
+  let body: any;
+  const client = createClient(async (n, opts) => {
+    name = n; body = opts.body;
     return { data: { profile: { id: 'p' }, session: { id: 's', status: 'completed' } }, error: null };
   });
-  await fetchResults({ sessionId: 's' }, client as any);
-  assert.equal(name, 'get_results_by_session');
-  assert.deepEqual(params, { session_id: 's' });
+  await fetchResults({ sessionId: 's', shareToken: 't' }, client as any);
+  assert.equal(name, 'get-results-by-session');
+  assert.deepEqual(body, { session_id: 's', share_token: 't' });
 });
 
 test('unauthorized does not retry', async () => {
@@ -46,16 +46,14 @@ test('unauthorized does not retry', async () => {
   assert.equal(calls, 1);
 });
 
-test('falls back to legacy RPC when enabled and no token', async () => {
-  process.env.VITE_ALLOW_LEGACY_RESULTS = 'true';
-  let name = '';
-  let params: any;
-  const client = createClient(async (n, p) => {
-    name = n; params = p;
-    return { data: { profile: { id: 'p' }, session: { id: 's', status: 'completed' } }, error: null };
+test('requires share token', async () => {
+  let calls = 0;
+  const client = createClient(async () => {
+    calls++;
+    return { data: null, error: { code: '401' } };
   });
-  await fetchResults({ sessionId: 's' }, client as any);
-  assert.equal(name, 'get_results_by_session_legacy');
-  assert.deepEqual(params, { session_id: 's' });
-  delete process.env.VITE_ALLOW_LEGACY_RESULTS;
+  await assert.rejects(() => fetchResults({ sessionId: 's' }, client as any), (e) =>
+    e instanceof FetchResultsError && e.kind === 'unauthorized',
+  );
+  assert.equal(calls, 1);
 });

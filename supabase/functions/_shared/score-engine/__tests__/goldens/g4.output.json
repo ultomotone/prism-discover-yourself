@@ -1,20 +1,22 @@
 {
   "profile": {
-    "type_code": "EII",
-    "type": "EII",
+    "type_code": "LII",
+    "type": "LII",
+    "base_func": "Ti",
+    "creative_func": "Ne",
     "top_types": [
       {
-        "code": "EII",
+        "code": "LII",
         "share": 0.0898441470035404,
         "score": 3.6500000000000004
       },
       {
-        "code": "ESI",
-        "share": 0.08984414700354036,
-        "score": 3.65
+        "code": "ILE",
+        "share": 0.0898441470035404,
+        "score": 3.6500000000000004
       },
       {
-        "code": "IEE",
+        "code": "EII",
         "share": 0.0898441470035404,
         "score": 3.6500000000000004
       }
@@ -68,11 +70,21 @@
       "state_modifiers": {},
       "required_tag_gaps": []
     },
-    "version": "v1.2.1",
-    "fc_source": "session"
+    "validity_status": "ok",
+    "confidence": "low",
+    "conf_calibrated": 0.3194,
+    "score_fit_raw": 3.6500000000000004,
+    "score_fit_calibrated": 3.6500000000000004,
+    "top_gap": 0,
+    "close_call": true,
+    "results_version": "v1.2.1",
+    "fc_source": "session",
+    "version": "v1.2.1"
   },
   "gap_to_second": 0,
   "confidence_margin": 0,
+  "confidence_raw": 0.3194,
+  "confidence_calibrated": 0.3194,
   "results_version": "v1.2.1",
   "fc_source": "session"
 }

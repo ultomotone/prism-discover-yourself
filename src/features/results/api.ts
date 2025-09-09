@@ -34,12 +34,24 @@ function backoff(attempt: number): number {
   return base + jitter;
 }
 
-function mapStatus(status?: number, detail?: string): FetchResultsError {
-  if (status === 400) return new FetchResultsError('invalid', detail);
-  if (status === 401) return new FetchResultsError('unauthorized', detail);
-  if (status === 403) return new FetchResultsError('forbidden', detail);
-  if (status === 404) return new FetchResultsError('not_found', detail);
-  if (status === 429 || (status !== undefined && status >= 500 && status < 600)) {
+function mapStatus(code: string | number | undefined, detail?: string): FetchResultsError {
+  const str = typeof code === 'number' ? String(code) : code;
+  switch (str) {
+    case '400':
+      return new FetchResultsError('invalid', detail);
+    case '401':
+      return new FetchResultsError('unauthorized', detail);
+    case '403':
+      return new FetchResultsError('forbidden', detail);
+    case '404':
+    case 'PGRST116':
+      return new FetchResultsError('not_found', detail);
+    default:
+      break;
+  }
+
+  const num = Number(str);
+  if (num === 429 || (num >= 500 && num < 600)) {
     return new FetchResultsError('transient', detail);
   }
   return new FetchResultsError('unknown', detail);
@@ -59,27 +71,15 @@ async function rpcCall(
   sessionId: string,
   shareToken: string | undefined,
 ): Promise<FetchResultsResponse> {
-  const allowLegacy =
-    import.meta.env?.VITE_ALLOW_LEGACY_RESULTS === 'true' ||
-    (typeof process !== 'undefined' && process.env.VITE_ALLOW_LEGACY_RESULTS === 'true');
-
-  const rpcName =
-    shareToken ? 'get_results_by_session'
-    : allowLegacy ? 'get_results_by_session_legacy'
-    : 'get_results_by_session';
-
-  const params: Record<string, string | undefined> = { session_id: sessionId };
-  if (shareToken) params.t = shareToken;
-
-  const { data, error } = await client.rpc(rpcName, params);
+  const { data, error } = await client.functions.invoke<FetchResultsResponse>(
+    'get-results-by-session',
+    { body: { session_id: sessionId, share_token: shareToken || null } },
+  );
   if (error) {
-    // PGRST116 => "No rows found"
-    const status = (error as any)?.code === 'PGRST116' ? 404 : Number((error as any)?.code) || 500;
+    const status = (error as any)?.code;
     throw mapStatus(status, (error as any).message);
   }
-
-  const payload = data as { profile?: Profile; session?: ResultsSession } | null;
-  if (payload?.profile && payload.session) return payload as FetchResultsResponse;
+  if (data?.profile && data.session) return data;
   throw new FetchResultsError('unknown', 'invalid response');
 }
 

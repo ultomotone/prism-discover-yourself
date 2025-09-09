@@ -84,24 +84,13 @@ export default function Results() {
 
     (async () => {
       try {
-        let payload: ResultsPayload | null = null;
-        if (shareToken) {
-          const { data, error } = await supabase.rpc(
-            "get_profile_by_session_token",
-            { p_share_token: shareToken, p_client_ip: "" },
-          );
-          if (error) throw error;
-          if (!data) throw new Error("Results not found");
-          payload = { session: { id: sessionId, status: "completed" }, profile: data };
-        } else {
-          const { data, error } = await supabase.rpc<ResultsPayload>(
-            "get_results_by_session",
-            { session_id: sessionId },
-          );
-          if (error) throw error;
-          if (!data?.profile) throw new Error("Results not found");
-          payload = data;
-        }
+        const { data, error } = await supabase.functions.invoke<ResultsPayload>(
+          "get-results-by-session",
+          { body: { session_id: sessionId, share_token: shareToken || null } },
+        );
+        if (error) throw error;
+        if (!data?.profile) throw new Error("Results not found");
+        const payload = data;
         if (!cancel) setData(payload);
       } catch (e: any) {
         const status = Number((e?.code ?? e?.status) || 0);
