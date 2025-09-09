@@ -103,6 +103,32 @@ If your host doesn't support env vars, set values in `index.html` via `window.__
 
 `VITE_ALLOW_LEGACY_RESULTS` defaults to `false`; set it to `true` in a staging environment to verify the legacy results fallback.
 
+For staging deployments also:
+
+- Point `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` at the staging project.
+- Set `RESULTS_BASE_URL` to your staging domain so links in emails and callbacks resolve correctly.
+
+### Staging Cutover
+
+Set these environment variables on your staging host:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `RESULTS_BASE_URL`
+- `VITE_ALLOW_LEGACY_RESULTS` (use `true` only when rehearsing the legacy fallback)
+
+Smoke test staging after deploy:
+
+1. Complete an assessment and follow the redirect to `/results/<session_id>?t=<token>` in an incognito window (token path).
+2. Sign in as the owner and open `/results/<session_id>` without a token (owner path).
+3. Temporarily set `VITE_ALLOW_LEGACY_RESULTS=true` and open an older tokenless link to confirm the legacy path still works; set it back to `false` when done.
+
+### Backfill & Lockdown
+
+- Run SQL to generate `share_token` for all existing rows in `profiles` and `assessment_sessions`.
+- Enable row level security and revoke direct table grants; expose read access via token RPCs only.
+- Once staging is verified, set `VITE_ALLOW_LEGACY_RESULTS=false` so tokenless links fail with a friendly error.
+
 ## Lovable deploy
 
 Set your Supabase values in `index.html` → `window.__APP_CONFIG__`:
