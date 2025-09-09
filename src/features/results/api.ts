@@ -1,10 +1,6 @@
 import { supabase } from '@/lib/supabase/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type {
-  Profile,
-  ResultsSession,
-  FetchResultsResponse,
-} from './types';
+import type { Profile, ResultsSession, FetchResultsResponse } from './types';
 
 export type ResultsPayload = FetchResultsResponse;
 
@@ -58,17 +54,6 @@ function mapUnknown(e: unknown): FetchResultsError {
   return new FetchResultsError('unknown', e instanceof Error ? e.message : undefined);
 }
 
-function parseEdgePayload(payload: unknown, sessionId: string): FetchResultsResponse {
-  const data = payload as { profile?: Profile; session?: Partial<ResultsSession> } | null;
-  if (data?.profile && data.session && typeof data.session.id === 'string') {
-    return {
-      profile: data.profile,
-      session: { id: data.session.id, status: data.session.status ?? 'unknown' },
-    };
-  }
-  throw new FetchResultsError('unknown', 'invalid response');
-}
-
 async function rpcCall(
   client: SupabaseClient,
   sessionId: string,
@@ -77,23 +62,25 @@ async function rpcCall(
   const allowLegacy =
     import.meta.env?.VITE_ALLOW_LEGACY_RESULTS === 'true' ||
     (typeof process !== 'undefined' && process.env.VITE_ALLOW_LEGACY_RESULTS === 'true');
-  // remove VITE_ALLOW_LEGACY_RESULTS after legacy tokens expire
 
-  const rpcName = shareToken
-    ? 'get_results_by_session'
-    : allowLegacy
-      ? 'get_results_by_session_legacy'
-      : 'get_results_by_session';
+  const rpcName =
+    shareToken ? 'get_results_by_session'
+    : allowLegacy ? 'get_results_by_session_legacy'
+    : 'get_results_by_session';
 
   const params: Record<string, string | undefined> = { session_id: sessionId };
   if (shareToken) params.t = shareToken;
 
   const { data, error } = await client.rpc(rpcName, params);
   if (error) {
+    // PGRST116 => "No rows found"
     const status = (error as any)?.code === 'PGRST116' ? 404 : Number((error as any)?.code) || 500;
     throw mapStatus(status, (error as any).message);
   }
-  return parseEdgePayload(data, sessionId);
+
+  const payload = data as { profile?: Profile; session?: ResultsSession } | null;
+  if (payload?.profile && payload.session) return payload as FetchResultsResponse;
+  throw new FetchResultsError('unknown', 'invalid response');
 }
 
 async function executeWithRetry<T>(

@@ -23,9 +23,10 @@ function createClient(rpcImpl: RpcFn): any {
 }
 
 test('calls RPC with token when provided', async () => {
+  let name = '';
   let params: any = null;
-  const client = createClient(async (_n, p) => {
-    params = p;
+  const client = createClient(async (n, p) => {
+    name = n; params = p;
     return {
       data: { profile: { id: 'p1' }, session: { id: 's', status: 'completed' } },
       error: null,
@@ -33,7 +34,19 @@ test('calls RPC with token when provided', async () => {
   });
   const res = await fetchResults({ sessionId: 's', shareToken: 't' }, client);
   assert.equal(res.profile.id, 'p1');
+  assert.equal(name, 'get_results_by_session');
   assert.deepEqual(params, { session_id: 's', t: 't' });
+});
+
+test('calls RPC without share token', async () => {
+  let name = '';
+  const client = createClient(async (n) => {
+    name = n;
+    return { data: { profile: { id: 'p2' }, session: { id: 's', status: 'completed' } }, error: null };
+  });
+  const res = await fetchResults({ sessionId: 's' }, client);
+  assert.equal(res.profile.id, 'p2');
+  assert.equal(name, 'get_results_by_session');
 });
 
 test('dedupes concurrent calls', async () => {
@@ -58,7 +71,7 @@ test('retries transient errors', async () => {
   const client = createClient(async () => {
     attempts++;
     if (attempts < 2) {
-      return { data: null, error: { status: 500 } };
+      return { data: null, error: { code: '500' } };
     }
     return {
       data: { profile: { id: 'p4' }, session: { id: 's', status: 'completed' } },
@@ -67,6 +80,20 @@ test('retries transient errors', async () => {
   });
   const res = await fetchResults({ sessionId: 's' }, client);
   assert.equal(res.profile.id, 'p4');
+  assert.equal(attempts, 2);
+});
+
+test('treats 429 as transient', async () => {
+  let attempts = 0;
+  const client = createClient(async () => {
+    attempts++;
+    return attempts < 2
+      ? { data: null, error: { code: '429' } }
+      : { data: { profile: { id: 'p5' }, session: { id: 's', status: 'completed' } }, error: null };
+  });
+  const res = await fetchResults({ sessionId: 's' }, client);
+  const profile: Profile = res.profile;
+  assert.equal(profile.id, 'p5');
   assert.equal(attempts, 2);
 });
 
@@ -90,12 +117,10 @@ test('maps error variants', async () => {
     ['403', 'forbidden'],
     ['400', 'invalid'],
   ];
-  for (const [code, kind] of cases) {
-    const client = createClient(async () => ({ data: null, error: { code } }));
-    await assert.rejects(
-      () => fetchResults({ sessionId: 's' }, client),
-      (e) => e instanceof FetchResultsError && e.kind === kind,
+  for (const [status, kind] of cases) {
+    const client = createClient(async () => ({ data: null, error: { code: String(status) } }));
+    await assert.rejects(() => fetchResults({ sessionId: 's' }, client), (e) =>
+      e instanceof FetchResultsError && e.kind === kind,
     );
   }
 });
-
