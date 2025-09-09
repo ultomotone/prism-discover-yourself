@@ -75,14 +75,13 @@ export interface ScoreAssessmentInput {
   config: {
     typePrototypes?: Record<TypeCode, Record<Func, Block>>;
     softmaxTemp: number;
-    fcExpectedMin: number;
   };
-  fcInit?: {
-    usedRealFCScores?: boolean;
-    fcFuncCount?: Record<Func, number>;
-    blockFCCount?: Record<string, number>;
-    fcAnsweredCount?: number;
-  };
+  /**
+   * Normalized forced-choice scores (0-100) per function. When provided,
+   * these are treated as authoritative. If absent, scoring falls back to
+   * Likert-only data without any legacy heuristics.
+   */
+  fc_scores?: Record<Func, number>;
 }
 
 export interface ScoreAssessmentResult {
@@ -90,6 +89,7 @@ export interface ScoreAssessmentResult {
   gap_to_second: number;
   confidence_margin: number;
   results_version: string;
+  fc_source: "session" | "none";
 }
 
 const RESULTS_VERSION = "v1.2.1";
@@ -136,17 +136,12 @@ function mean(arr: number[]): number {
 }
 
 export function scoreAssessment(input: ScoreAssessmentInput): ScoreAssessmentResult {
-  const { answers, keyByQ, config, fcInit } = input;
+  const { answers, keyByQ, config, fc_scores } = input;
   const typePrototypes = config.typePrototypes || FALLBACK_PROTOTYPES;
   const temp = config.softmaxTemp || 1.0;
-  const fcExpectedMin = config.fcExpectedMin || 12;
+  const fcSource: "session" | "none" = fc_scores ? "session" : "none";
 
   const likert: Record<Func, number[]> = {} as any;
-  const fcFuncCount: Record<Func, number> = { Ti:0,Te:0,Fi:0,Fe:0,Ni:0,Ne:0,Si:0,Se:0 };
-
-  if (fcInit?.fcFuncCount) {
-    for (const f of FUNCS) fcFuncCount[f] = fcInit.fcFuncCount[f] || 0;
-  }
 
   // Aggregate answers
   for (const row of answers) {
@@ -161,21 +156,14 @@ export function scoreAssessment(input: ScoreAssessmentInput): ScoreAssessmentRes
       const func = tag.split("_")[0] as Func;
       (likert[func] ||= []).push(v);
     }
-    if (rec.fc_map) {
-      const choice = String(row.answer_value).trim().toUpperCase();
-      const func = rec.fc_map[choice];
-      if (func && FUNCS.includes(func as Func)) {
-        fcFuncCount[func as Func] = (fcFuncCount[func as Func] || 0) + 1;
-      }
-    }
   }
 
   // Compute strengths
   const strengths: Record<Func, number> = {} as any;
   for (const f of FUNCS) {
     const lik = mean(likert[f] || []);
-    const fcScore = (fcFuncCount[f] / fcExpectedMin) * 5;
-    strengths[f] = 0.5*lik + 0.5*fcScore;
+    const fcScore = fc_scores ? (fc_scores[f] / 100) * 5 : 0;
+    strengths[f] = fc_scores ? 0.5 * lik + 0.5 * fcScore : lik;
   }
 
   // Type scores based on prototypes
@@ -215,6 +203,7 @@ export function scoreAssessment(input: ScoreAssessmentInput): ScoreAssessmentRes
     overlay_state: "0",
     validity: { attention:0, inconsistency:0, sd_index:0, duplicates:0, state_modifiers:{}, required_tag_gaps:[] },
     version: RESULTS_VERSION,
+    fc_source: fcSource,
   };
 
   return {
@@ -222,6 +211,7 @@ export function scoreAssessment(input: ScoreAssessmentInput): ScoreAssessmentRes
     gap_to_second: Number(gap.toFixed(3)),
     confidence_margin: Number(gap.toFixed(3)),
     results_version: RESULTS_VERSION,
+    fc_source: fcSource,
   };
 }
 

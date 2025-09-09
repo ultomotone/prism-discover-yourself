@@ -1,0 +1,18 @@
+{
+  "answers": [
+    { "question_id": 1, "answer_value": 5 },
+    { "question_id": 2, "answer_value": 4 },
+    { "question_id": 3, "answer_value": 3 },
+    { "question_id": 4, "answer_value": 2 }
+  ],
+  "keyByQ": {
+    "1": { "tag": "Ti_S", "scale_type": "LIKERT_1_5" },
+    "2": { "tag": "Ne_S", "scale_type": "LIKERT_1_5" },
+    "3": { "tag": "Fi_S", "scale_type": "LIKERT_1_5" },
+    "4": { "tag": "Se_S", "scale_type": "LIKERT_1_5" }
+  },
+  "config": { "softmaxTemp": 1 },
+  "fc_scores": {
+    "Ti": 60, "Ne": 40, "Fi": 20, "Fe": 0, "Ni": 0, "Se": 0, "Si": 0, "Te": 0
+  }
+}

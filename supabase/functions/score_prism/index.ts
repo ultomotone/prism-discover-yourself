@@ -2,7 +2,7 @@
 // Refactored to use shared scoring engine
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { scoreAssessment, FUNCS, FALLBACK_PROTOTYPES, TypeCode, Func, Block } from "../_shared/score-engine/index.ts";
+import { scoreAssessment, FALLBACK_PROTOTYPES, TypeCode, Func, Block } from "../_shared/score-engine/index.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,7 +18,7 @@ async function sha256(text: string): Promise<string> {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { session_id } = await req.json();
+      const { session_id, fc_scores: fcScoresPayload } = await req.json();
     if (!session_id || typeof session_id !== "string") {
       return new Response(JSON.stringify({ status: "error", error: "Valid session_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -66,10 +66,8 @@ serve(async (req) => {
       return data?.value ?? null;
     };
     const softmaxTemp = (await cfg("softmax_temp")) ?? 1.0;
-    const fcExpectedMin = (await cfg("fc_expected_min")) ?? 12;
-
-    // type prototypes
-    let typePrototypes = FALLBACK_PROTOTYPES;
+      // type prototypes
+      let typePrototypes = FALLBACK_PROTOTYPES;
     const { data: protoData } = await supabase
       .from('type_prototypes')
       .select('type_code, func, block');
@@ -82,34 +80,28 @@ serve(async (req) => {
       typePrototypes = dbProtos;
     }
 
-    // fc scores (optional)
-    const { data: fcScores } = await supabase
-      .from('fc_scores')
-      .select('scores_json')
-      .eq('session_id', session_id)
-      .eq('version', 'v1.1')
-      .eq('fc_kind', 'functions')
-      .maybeSingle();
-    let fcInit: any = undefined;
-    if (fcScores && fcScores.scores_json) {
-      const fcFuncCount: Record<Func, number> = {} as any;
-      for (const f of FUNCS) {
-        const score = fcScores.scores_json[f] || 0;
-        fcFuncCount[f] = Math.max(1, Math.round((score / 100) * 12));
+      // fc scores (authoritative when present)
+      let fcScoresObj = fcScoresPayload as Record<Func, number> | undefined;
+      if (!fcScoresObj) {
+        const { data: fcFromDb } = await supabase
+          .from('fc_scores')
+          .select('scores_json')
+          .eq('session_id', session_id)
+          .eq('version', 'v1.1')
+          .eq('fc_kind', 'functions')
+          .maybeSingle();
+        if (fcFromDb && fcFromDb.scores_json) fcScoresObj = fcFromDb.scores_json as Record<Func, number>;
       }
-      fcInit = { fcFuncCount };
-    }
 
-    const result = scoreAssessment({
-      answers,
-      keyByQ,
-      config: { softmaxTemp, fcExpectedMin, typePrototypes },
-      fcInit,
-    });
+      const result = scoreAssessment({
+        answers,
+        keyByQ,
+        config: { softmaxTemp, typePrototypes },
+        fc_scores: fcScoresObj,
+      });
 
-    const answersHash = await sha256(JSON.stringify(answers));
-    const configHash = await sha256(JSON.stringify({ softmaxTemp, fcExpectedMin }));
-    console.log(`evt:scoring_inputs,session_id:${session_id},version:${result.results_version},answers_hash:${answersHash},config_hash:${configHash}`);
+      const inputHash = await sha256(JSON.stringify({ answers, fc_scores: fcScoresObj }));
+      console.log(`evt:scoring_inputs,session_id:${session_id},version:${result.results_version},input_hash:${inputHash},fc_present:${!!fcScoresObj}`);
 
     const profileData = {
       ...result.profile,
@@ -126,7 +118,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ status: "error", error: upsertError.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    return new Response(JSON.stringify({ status: "success", gap_to_second: result.gap_to_second, confidence_numeric: result.confidence_margin, profile: profileData }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ status: "success", gap_to_second: result.gap_to_second, confidence_numeric: result.confidence_margin, profile: profileData, input_hash: inputHash, fc_source: result.fc_source }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("Scoring error:", error);
     return new Response(JSON.stringify({ status: "error", error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });

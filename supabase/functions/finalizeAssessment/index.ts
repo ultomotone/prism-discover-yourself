@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('Processing finalization for session:', session_id, 'using PRISM v1.2.0')
+    console.log('Processing finalization for session:', session_id, 'using PRISM v1.2.1')
 
     // First compute FC scores (if any)
     try {
@@ -121,10 +121,25 @@ Deno.serve(async (req) => {
       console.error('score_fc_session failed:', e);
     }
 
+    // Fetch normalized FC scores
+    let fc_scores: Record<string, number> | undefined = undefined;
+    try {
+      const { data: fcRow } = await supabase
+        .from('fc_scores')
+        .select('scores_json')
+        .eq('session_id', session_id)
+        .eq('version', 'v1.1')
+        .eq('fc_kind', 'functions')
+        .maybeSingle();
+      if (fcRow?.scores_json) fc_scores = fcRow.scores_json as Record<string, number>;
+    } catch (e) {
+      console.error('fc_scores fetch failed:', e);
+    }
+
     // Invoke the score_prism function to compute results
     console.log('Invoking score_prism function')
     const { data: scoringResult, error: scoringError } = await supabase.functions.invoke('score_prism', {
-      body: { session_id }
+      body: { session_id, fc_scores }
     })
 
     if (scoringError) {
@@ -212,6 +227,8 @@ Deno.serve(async (req) => {
         }
       )
     }
+
+    console.log(`evt:finalize_results,session_id:${session_id},version:${scoringResult?.profile?.version},input_hash:${scoringResult?.input_hash},fc_present:${scoringResult?.fc_source === 'session'}`)
 
     console.log('Assessment finalized successfully for session:', session_id)
 
