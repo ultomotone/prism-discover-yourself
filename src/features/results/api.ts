@@ -74,10 +74,21 @@ async function rpcCall(
   sessionId: string,
   shareToken: string | undefined,
 ): Promise<FetchResultsResponse> {
-  const { data, error } = await client.rpc('get_results_by_session', {
-    session_id: sessionId,
-    t: shareToken,
-  });
+  const allowLegacy =
+    import.meta.env?.VITE_ALLOW_LEGACY_RESULTS === 'true' ||
+    (typeof process !== 'undefined' && process.env.VITE_ALLOW_LEGACY_RESULTS === 'true');
+  // remove VITE_ALLOW_LEGACY_RESULTS after legacy tokens expire
+
+  const rpcName = shareToken
+    ? 'get_results_by_session'
+    : allowLegacy
+      ? 'get_results_by_session_legacy'
+      : 'get_results_by_session';
+
+  const params: Record<string, string | undefined> = { session_id: sessionId };
+  if (shareToken) params.t = shareToken;
+
+  const { data, error } = await client.rpc(rpcName, params);
   if (error) {
     const status = (error as any)?.code === 'PGRST116' ? 404 : Number((error as any)?.code) || 500;
     throw mapStatus(status, (error as any).message);

@@ -22,8 +22,7 @@ test('sends snake_case args to RPC', async () => {
   };
   await fetchResults({ sessionId: 's' }, client);
   assert.equal(name, 'get_results_by_session');
-  assert.equal(params.session_id, 's');
-  assert.ok('t' in params);
+  assert.deepEqual(params, { session_id: 's' });
 });
 
 test('unauthorized does not retry', async () => {
@@ -43,4 +42,23 @@ test('unauthorized does not retry', async () => {
     e instanceof FetchResultsError && e.kind === 'unauthorized',
   );
   assert.equal(calls, 1);
+});
+
+test('falls back to legacy RPC when enabled and no token', async () => {
+  process.env.VITE_ALLOW_LEGACY_RESULTS = 'true';
+  let name = '';
+  let params: any;
+  const client: Client = {
+    rpc: async (n, p) => {
+      name = n;
+      params = p;
+      return { data: { profile: { id: 'p' }, session: { id: 's', status: 'completed' } }, error: null };
+    },
+    functions: { invoke: async () => ({ data: null, error: null }) },
+  };
+
+  await fetchResults({ sessionId: 's' }, client);
+  assert.equal(name, 'get_results_by_session_legacy');
+  assert.deepEqual(params, { session_id: 's' });
+  delete process.env.VITE_ALLOW_LEGACY_RESULTS;
 });
