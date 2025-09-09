@@ -94,10 +94,18 @@ export default function Results() {
           if (!data) throw new Error("Results not found");
           payload = { session: { id: sessionId, status: "completed" }, profile: data };
         } else {
-          const { data, error } = await supabase.rpc<ResultsPayload>(
+          let { data, error } = await supabase.rpc<ResultsPayload>(
             "get_results_by_session",
-            { p_session_id: sessionId },
+            { session_id: sessionId },
           );
+          if (error && (error.code === "42703" || /column .* does not exist/.test(error.message))) {
+            const fallback = await supabase.rpc<ResultsPayload>(
+              "get_results_by_session_legacy",
+              { session_id: sessionId },
+            );
+            data = fallback.data;
+            error = fallback.error;
+          }
           if (error) throw error;
           if (!data?.profile) throw new Error("Results not found");
           payload = data;
