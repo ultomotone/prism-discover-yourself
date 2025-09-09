@@ -75,6 +75,8 @@ export interface ScoreAssessmentInput {
   config: {
     typePrototypes?: Record<TypeCode, Record<Func, Block>>;
     softmaxTemp: number;
+    /** parameters for raw confidence logistic */
+    confRawParams?: { a: number; b: number; c: number };
   };
   /**
    * Normalized forced-choice scores (0-100) per function. When provided,
@@ -88,6 +90,8 @@ export interface ScoreAssessmentResult {
   profile: any;
   gap_to_second: number;
   confidence_margin: number;
+   confidence_raw: number;
+   confidence_calibrated: number;
   results_version: string;
   fc_source: "session" | "none";
 }
@@ -139,6 +143,7 @@ export function scoreAssessment(input: ScoreAssessmentInput): ScoreAssessmentRes
   const { answers, keyByQ, config, fc_scores } = input;
   const typePrototypes = config.typePrototypes || FALLBACK_PROTOTYPES;
   const temp = config.softmaxTemp || 1.0;
+  const { a = 0.25, b = 0.35, c = 0.2 } = config.confRawParams || {};
   const fcSource: "session" | "none" = fc_scores ? "session" : "none";
 
   const likert: Record<Func, number[]> = {} as any;
@@ -189,6 +194,12 @@ export function scoreAssessment(input: ScoreAssessmentInput): ScoreAssessmentRes
   const top3 = sorted.slice(0,3).map(code => ({ code, share: shares[code], score: typeScores[code] }));
 
   const gap = top3[0].share - (top3[1]?.share || 0);
+  const topGap = top3[0].score - (top3[1]?.score || 0);
+
+  const sharesArr = Object.values(shares).filter(v => v > 0);
+  const shareEntropy = -sharesArr.reduce((sum, p) => sum + p * Math.log2(p), 0);
+  let rawConf = 1 / (1 + Math.exp(-(a * topGap + b * gap - c * shareEntropy)));
+  rawConf = Math.max(0, Math.min(1, rawConf));
 
   const profile = {
     type_code: top3[0].code,
@@ -210,6 +221,8 @@ export function scoreAssessment(input: ScoreAssessmentInput): ScoreAssessmentRes
     profile,
     gap_to_second: Number(gap.toFixed(3)),
     confidence_margin: Number(gap.toFixed(3)),
+    confidence_raw: Number(rawConf.toFixed(4)),
+    confidence_calibrated: Number(rawConf.toFixed(4)),
     results_version: RESULTS_VERSION,
     fc_source: fcSource,
   };

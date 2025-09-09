@@ -73,6 +73,8 @@
   },
   "gap_to_second": 0.088,
   "confidence_margin": 0.088,
+  "confidence_raw": 0.3952,
+  "confidence_calibrated": 0.3952,
   "results_version": "v1.2.1",
   "fc_source": "session"
 }
