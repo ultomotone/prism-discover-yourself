@@ -14,7 +14,7 @@ This runbook describes how to disable the legacy results endpoint and cut over t
 ### Browser
 - **Token path**: Open `/results/<sessionId>?t=<token>` in an incognito window; page renders.
 - **Owner path**: While logged in, open `/results/<sessionId>`; page renders.
-- **Legacy link**: Open `/results/<legacySessionId>` in incognito; request fails with the expected error.
+- **Legacy link**: Open `/results/<legacySessionId>` in an incognito window; request fails with the expected error.
 
 ### Curl
 ```bash
