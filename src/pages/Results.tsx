@@ -96,7 +96,7 @@ export default function Results() {
         } else {
           const { data, error } = await supabase.rpc<ResultsPayload>(
             "get_results_by_session",
-            { p_session_id: sessionId },
+            { session_id: sessionId },
           );
           if (error) throw error;
           if (!data?.profile) throw new Error("Results not found");
