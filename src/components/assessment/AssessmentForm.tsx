@@ -284,7 +284,7 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
       setIsLoading(true);
       initializeSession().finally(() => setIsLoading(false));
     }
-  }, [libraryLoaded, resumeSessionId, sessionId, toast]);
+  }, [libraryLoaded, resumeSessionId, sessionId]);
 
   // Early return conditions to prevent render loops
   if (!libraryLoaded) {
