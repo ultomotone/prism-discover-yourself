@@ -62,7 +62,11 @@ interface AssessmentFormProps {
 }
 
 export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessionId }: AssessmentFormProps) {
-  console.log('AssessmentForm component mounting with resumeSessionId:', resumeSessionId);
+  if (resumeSessionId) {
+    console.log('AssessmentForm component mounting with resumeSessionId:', resumeSessionId);
+  } else {
+    console.log('AssessmentForm component mounting without resumeSessionId (starting new session)');
+  }
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<AssessmentResponse[]>([]);
   const [currentAnswer, setCurrentAnswer] = useState<string | number | string[] | number[]>('');
@@ -200,7 +204,11 @@ export function AssessmentForm({ onComplete, onBack, onSaveAndExit, resumeSessio
       return;
     }
 
-    console.log('AssessmentForm useEffect triggered with resumeSessionId:', resumeSessionId);
+    if (resumeSessionId) {
+      console.log('AssessmentForm useEffect triggered with resumeSessionId:', resumeSessionId);
+    } else {
+      console.log('AssessmentForm useEffect triggered without resumeSessionId');
+    }
     
     const initializeSession = async () => {
       try {
