@@ -31,12 +31,6 @@ export default function Results() {
   const [err, setErr] = useState<string | null>(null);
   const [tries, setTries] = useState(0);
 
-  const allowLegacy =
-    import.meta.env?.VITE_ALLOW_LEGACY_RESULTS === "true" ||
-    // optional window shim if your host injects flags there
-    (typeof window !== "undefined" &&
-      (window as any).__APP_CONFIG__?.VITE_ALLOW_LEGACY_RESULTS === "true");
-
   const resultsUrl = shareToken
     ? `${window.location.origin}/results/${sessionId}?t=${shareToken}`
     : `${window.location.origin}/results/${sessionId}`;
@@ -106,21 +100,10 @@ export default function Results() {
 
         if (!error && res?.profile) {
           payload = res;
+        } else if (error) {
+          throw error;
         } else {
-          // Optional legacy fallback: only when NO token and flag enabled
-          if (!shareToken && allowLegacy) {
-            const { data: legacyRes, error: legacyErr } = await supabase.rpc<ResultsPayload>(
-              "get_results_by_session_legacy",
-              { session_id: sessionId }
-            );
-            if (legacyErr) throw legacyErr;
-            if (!legacyRes?.profile) throw new Error("Results not found");
-            payload = legacyRes;
-          } else if (error) {
-            throw error;
-          } else {
-            throw new Error("Results not found");
-          }
+          throw new Error("Results not found");
         }
 
         if (!cancel) setData(payload);
@@ -144,7 +127,7 @@ export default function Results() {
     return () => {
       cancel = true;
     };
-  }, [sessionId, shareToken, tries, allowLegacy]);
+  }, [sessionId, shareToken, tries]);
 
   useEffect(() => {
     if (data?.profile) {
