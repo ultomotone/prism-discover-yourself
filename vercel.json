@@ -1,3 +1,11 @@
 {
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Permissions-Policy", "value": "attribution-reporting=()" }
+      ]
+    }
+  ],
   "rewrites": [{ "source": "/(.*)", "destination": "/" }]
 }
