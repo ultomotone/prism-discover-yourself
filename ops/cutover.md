@@ -7,7 +7,6 @@ This runbook describes how to disable the legacy results endpoint and cut over t
    - Ensure database migrations are applied and `get_results_by_session` is deployed.
    - Revoke legacy RPC access only after verifying the new paths.
 2. **Frontend**
-   - Set `VITE_ALLOW_LEGACY_RESULTS=false` in the environment.
    - Confirm `RESULTS_BASE_URL` points to the canonical domain.
    - Deploy the frontend.
 
@@ -15,7 +14,7 @@ This runbook describes how to disable the legacy results endpoint and cut over t
 ### Browser
 - **Token path**: Open `/results/<sessionId>?t=<token>` in an incognito window; page renders.
 - **Owner path**: While logged in, open `/results/<sessionId>`; page renders.
-- **Legacy link**: Open `/results/<legacySessionId>` in incognito; request fails with the expected error.
+- **Legacy link**: Open `/results/<legacySessionId>` in an incognito window; request fails with the expected error.
 
 ### Curl
 ```bash
@@ -59,10 +58,9 @@ select
 - Anon has no direct table `SELECT` privileges.
 
 ## Rollback
-1. Set `VITE_ALLOW_LEGACY_RESULTS=true` and redeploy the frontend.
-2. Re-grant legacy RPC if needed:
+1. Re-grant legacy RPC if needed:
 ```sql
 grant execute on function public.get_results_by_session_legacy(uuid) to anon, authenticated;
 ```
-3. Redeploy backend if additional changes were reverted.
+2. Redeploy backend if additional changes were reverted.
 
