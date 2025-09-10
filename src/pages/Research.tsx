@@ -111,7 +111,7 @@ const Research = () => {
                 <Button 
                   variant="assessment" 
                   className="bg-white text-primary hover:bg-white/90"
-                  onClick={() => window.location.href = 'mailto:daniel.joseph.speiss@gmail.com?subject=PRISM Research Participation'}
+                  onClick={() => window.location.href = 'mailto:team@prismpersonality.com?subject=PRISM Research Participation'}
                 >
                   Join the Research List
                 </Button>

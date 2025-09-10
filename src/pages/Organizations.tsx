@@ -232,7 +232,7 @@ const included = [
 
           {/* CTA */}
           <div className="text-center">
-            <Button variant="hero" size="lg" onClick={() => window.location.href = 'mailto:daniel.joseph.speiss@gmail.com?subject=Organization Inquiry'}>
+            <Button variant="hero" size="lg" onClick={() => window.location.href = 'mailto:team@prismpersonality.com?subject=Organization Inquiry'}>
               Talk to Us
             </Button>
             <p className="text-muted-foreground mt-4">Contact form available for organization inquiries</p>
