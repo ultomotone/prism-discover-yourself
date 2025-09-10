@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Target, TrendingUp, MessageSquare, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
+import CalInline from "@/components/CalInline";
 
 const Individuals = () => {
   const navigate = useNavigate();
@@ -47,6 +48,38 @@ const Individuals = () => {
               Your personal roadmap for self-awareness, adaptability, and intentional growth. PRISM helps you see the full picture of how your mind works—not just your natural strengths, but how those strengths shift in different states.
             </p>
           </div>
+
+          {/* Book a Session */}
+          <section className="mb-16" aria-labelledby="book-now">
+            <h2 id="book-now" className="prism-heading-md text-primary mb-4 text-center">
+              Book a Session
+            </h2>
+            <p className="prism-body text-muted-foreground text-center mb-8">
+              Choose any session below—booking happens right on this page.
+            </p>
+            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
+              {[
+                { title: "Personal Discovery (20m)", slug: "personal-discovery-20m-29-credit" },
+                { title: "Personality Mapping (45m)", slug: "personality-mapping-call" },
+                { title: "Compatibility Debrief (45m)", slug: "compatibility-debrief-couples" },
+                { title: "Career Clarity Mapping (60m)", slug: "career-clarity-mapping" },
+                { title: "Progress Retake & Tune-Up (30m)", slug: "progress-retake-tune-up" },
+              ].map((e) => (
+                <article key={e.slug} className="rounded-2xl border p-4 shadow-sm">
+                  <h3 className="font-medium text-primary">{e.title}</h3>
+                  <div className="mt-4">
+                    <CalInline calLink={`daniel-speiss/${e.slug}`} selector={`#cal-${e.slug}`} />
+                  </div>
+                </article>
+              ))}
+            </div>
+            <p className="text-center mt-8">
+              <a className="underline" href="/book">See all sessions →</a>
+            </p>
+            <p className="text-center text-sm text-muted-foreground mt-4">
+              Bookings are processed securely via Cal.com; availability updates live.
+            </p>
+          </section>
 
           {/* What PRISM Shows You */}
           <section className="mb-16">

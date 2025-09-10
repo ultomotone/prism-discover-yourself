@@ -22,6 +22,8 @@
     "check:no-legacy": "git grep -nE \"get_results_by_session_legacy|VITE_ALLOW_LEGACY_RESULTS\" -- ':!package.json' && (echo 'legacy references found'; exit 1) || exit 0"
   },
   "dependencies": {
+    "@calcom/embed-core": "^1.5.3",
+    "@calcom/embed-react": "^1.5.3",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",

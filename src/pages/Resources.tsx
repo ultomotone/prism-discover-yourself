@@ -33,7 +33,7 @@ const Resources = () => {
       icon: <Users className="h-6 w-6" />,
       items: [
         { name: "For Individuals", href: "/individuals" },
-        { name: "For Teams", href: "/teams" },
+        { name: "For Organizations", href: "/organizations" },
         { name: "Profiles Overview", href: "/profiles" },
         { name: "Insights & Guides", href: "/insights" }
       ]

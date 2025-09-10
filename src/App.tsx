@@ -34,9 +34,10 @@ import StateOverlay from "./pages/StateOverlay";
 import HowItWorks from "./pages/HowItWorks";
 import Profiles from "./pages/Profiles";
 import Individuals from "./pages/Individuals";
-import Teams from "./pages/Teams";
+import Organizations from "./pages/Organizations";
 import Consultants from "./pages/Consultants";
 import Education from "./pages/Education";
+import Book from "./pages/Book";
 import PersonalDiscovery from "./pages/solutions/individuals/PersonalDiscovery";
 import PersonalityMapping from "./pages/solutions/individuals/PersonalityMapping";
 import CompatibilityDebrief from "./pages/solutions/individuals/CompatibilityDebrief";
@@ -110,7 +111,7 @@ class ErrorBoundary extends React.Component<
       error: error.message,
       stack: error.stack,
       componentStack: errorInfo.componentStack,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
     console.error("🚨 Component Stack (shows which component failed):");
     console.error(errorInfo.componentStack);
@@ -121,7 +122,9 @@ class ErrorBoundary extends React.Component<
       return (
         <div className="min-h-screen flex items-center justify-center bg-background">
           <div className="text-center p-8 max-w-md">
-            <h1 className="text-2xl font-bold text-destructive mb-4">Something went wrong</h1>
+            <h1 className="text-2xl font-bold text-destructive mb-4">
+              Something went wrong
+            </h1>
             <p className="text-muted-foreground mb-4">
               The page encountered an error and couldn't load properly.
             </p>
@@ -187,11 +190,15 @@ const App = () => (
                     element={
                       <div className="min-h-screen bg-background flex items-center justify-center">
                         <div className="text-center">
-                          <h1 className="text-2xl font-bold mb-4">Results Page - Missing Session ID</h1>
+                          <h1 className="text-2xl font-bold mb-4">
+                            Results Page - Missing Session ID
+                          </h1>
                           <p className="text-muted-foreground mb-4">
                             You need a session ID to view results
                           </p>
-                          <Button onClick={() => (window.location.href = "/")}>Go Home</Button>
+                          <Button onClick={() => (window.location.href = "/")}>
+                            Go Home
+                          </Button>
                         </div>
                       </div>
                     }
@@ -221,25 +228,71 @@ const App = () => (
                   <Route path="/how-it-works" element={<HowItWorks />} />
                   <Route path="/profiles" element={<Profiles />} />
                   <Route path="/individuals" element={<Individuals />} />
-                  <Route path="/teams" element={<Teams />} />
+                  <Route path="/organizations" element={<Organizations />} />
                   <Route path="/consultants" element={<Consultants />} />
                   <Route path="/education" element={<Education />} />
-                  <Route path="/solutions/individuals/personal-discovery-20m-29-credit" element={<PersonalDiscovery />} />
-                  <Route path="/solutions/individuals/personality-mapping-call" element={<PersonalityMapping />} />
-                  <Route path="/solutions/individuals/compatibility-debrief-couples" element={<CompatibilityDebrief />} />
-                  <Route path="/solutions/individuals/career-clarity-mapping" element={<CareerClarityMapping />} />
-                  <Route path="/solutions/individuals/progress-retake-tune-up" element={<ProgressRetakeTuneUp />} />
-                  <Route path="/solutions/organizations/owner-leader-discovery-20m-49-credit" element={<OwnerLeaderDiscovery />} />
-                  <Route path="/solutions/organizations/team-compass-workshop-group-up-to-8" element={<TeamCompassWorkshop />} />
-                  <Route path="/solutions/organizations/leadership-debrief" element={<LeadershipDebrief />} />
-                  <Route path="/solutions/organizations/sales-persona-play" element={<SalesPersonaPlay />} />
-                  <Route path="/solutions/organizations/manager-coaching-by-persona" element={<ManagerCoachingByPersona />} />
-                  <Route path="/solutions/organizations/hiring-fit-screen" element={<HiringFitScreen />} />
-                  <Route path="/solutions/organizations/leader-coaching-training" element={<LeaderCoachingTraining />} />
-                  <Route path="/solutions/organizations/team-performance-sprint-4-950-mo-8-12-people-2-months" element={<TeamPerformanceSprint />} />
+
+                  {/* Booking + Solutions */}
+                  <Route path="/book" element={<Book />} />
+                  <Route
+                    path="/solutions/individuals/personal-discovery-20m-29-credit"
+                    element={<PersonalDiscovery />}
+                  />
+                  <Route
+                    path="/solutions/individuals/personality-mapping-call"
+                    element={<PersonalityMapping />}
+                  />
+                  <Route
+                    path="/solutions/individuals/compatibility-debrief-couples"
+                    element={<CompatibilityDebrief />}
+                  />
+                  <Route
+                    path="/solutions/individuals/career-clarity-mapping"
+                    element={<CareerClarityMapping />}
+                  />
+                  <Route
+                    path="/solutions/individuals/progress-retake-tune-up"
+                    element={<ProgressRetakeTuneUp />}
+                  />
+                  <Route
+                    path="/solutions/organizations/owner-leader-discovery-20m-49-credit"
+                    element={<OwnerLeaderDiscovery />}
+                  />
+                  <Route
+                    path="/solutions/organizations/team-compass-workshop-group-up-to-8"
+                    element={<TeamCompassWorkshop />}
+                  />
+                  <Route
+                    path="/solutions/organizations/leadership-debrief"
+                    element={<LeadershipDebrief />}
+                  />
+                  <Route
+                    path="/solutions/organizations/sales-persona-play"
+                    element={<SalesPersonaPlay />}
+                  />
+                  <Route
+                    path="/solutions/organizations/manager-coaching-by-persona"
+                    element={<ManagerCoachingByPersona />}
+                  />
+                  <Route
+                    path="/solutions/organizations/hiring-fit-screen"
+                    element={<HiringFitScreen />}
+                  />
+                  <Route
+                    path="/solutions/organizations/leader-coaching-training"
+                    element={<LeaderCoachingTraining />}
+                  />
+                  <Route
+                    path="/solutions/organizations/team-performance-sprint-4-950-mo-8-12-people-2-months"
+                    element={<TeamPerformanceSprint />}
+                  />
+
                   <Route path="/insights" element={<Insights />} />
                   <Route path="/research" element={<Research />} />
-                  <Route path="/research/first-hundred-study" element={<FirstHundredStudy />} />
+                  <Route
+                    path="/research/first-hundred-study"
+                    element={<FirstHundredStudy />}
+                  />
                   <Route path="/faq" element={<FAQ />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/privacy" element={<Privacy />} />
@@ -248,32 +301,89 @@ const App = () => (
                   <Route path="/core-alignments" element={<CoreAlignments />} />
                   <Route path="/resources" element={<Resources />} />
                   <Route path="/roadmap" element={<Roadmap />} />
-                  <Route path="/your-personality-blueprint" element={<YourPersonalityBlueprint />} />
-                  <Route path="/prism-relational-fit" element={<PRISMRelationalFit />} />
+                  <Route
+                    path="/your-personality-blueprint"
+                    element={<YourPersonalityBlueprint />}
+                  />
+                  <Route
+                    path="/prism-relational-fit"
+                    element={<PRISMRelationalFit />}
+                  />
 
                   {/* Relational Fit Mini-App Routes */}
                   <Route path="/relational-fit" element={<RelationalFitHome />} />
-                  <Route path="/relational-fit/heatmap" element={<RelationalFitHeatmap />} />
-                  <Route path="/relational-fit/types" element={<RelationalFitTypes />} />
-                  <Route path="/relational-fit/pair/:pairId" element={<RelationalFitPair />} />
+                  <Route
+                    path="/relational-fit/heatmap"
+                    element={<RelationalFitHeatmap />}
+                  />
+                  <Route
+                    path="/relational-fit/types"
+                    element={<RelationalFitTypes />}
+                  />
+                  <Route
+                    path="/relational-fit/pair/:pairId"
+                    element={<RelationalFitPair />}
+                  />
 
                   {/* PRISM Type Routes */}
                   <Route path="/types/idea-catalyst" element={<IdeaCatalyst />} />
-                  <Route path="/types/framework-architect" element={<FrameworkArchitect />} />
-                  <Route path="/types/comfort-harmonizer" element={<ComfortHarmonizer />} />
-                  <Route path="/types/atmosphere-host" element={<AtmosphereHost />} />
-                  <Route path="/types/tactical-commander" element={<TacticalCommander />} />
-                  <Route path="/types/systems-marshal" element={<SystemsMarshal />} />
+                  <Route
+                    path="/types/framework-architect"
+                    element={<FrameworkArchitect />}
+                  />
+                  <Route
+                    path="/types/comfort-harmonizer"
+                    element={<ComfortHarmonizer />}
+                  />
+                  <Route
+                    path="/types/atmosphere-host"
+                    element={<AtmosphereHost />}
+                  />
+                  <Route
+                    path="/types/tactical-commander"
+                    element={<TacticalCommander />}
+                  />
+                  <Route
+                    path="/types/systems-marshal"
+                    element={<SystemsMarshal />}
+                  />
                   <Route path="/types/vision-muse" element={<VisionMuse />} />
-                  <Route path="/types/inspiration-orchestrator" element={<InspirationOrchestrator />} />
-                  <Route path="/types/strategic-executor" element={<StrategicExecutor />} />
-                  <Route path="/types/foresight-analyst" element={<ForesightAnalyst />} />
-                  <Route path="/types/relational-driver" element={<RelationalDriver />} />
-                  <Route path="/types/boundary-guardian" element={<BoundaryGuardian />} />
-                  <Route path="/types/operations-steward" element={<OperationsSteward />} />
-                  <Route path="/types/practical-optimizer" element={<PracticalOptimizer />} />
-                  <Route path="/types/possibility-connector" element={<PossibilityConnector />} />
-                  <Route path="/types/integrity-guide" element={<IntegrityGuide />} />
+                  <Route
+                    path="/types/inspiration-orchestrator"
+                    element={<InspirationOrchestrator />}
+                  />
+                  <Route
+                    path="/types/strategic-executor"
+                    element={<StrategicExecutor />}
+                  />
+                  <Route
+                    path="/types/foresight-analyst"
+                    element={<ForesightAnalyst />}
+                  />
+                  <Route
+                    path="/types/relational-driver"
+                    element={<RelationalDriver />}
+                  />
+                  <Route
+                    path="/types/boundary-guardian"
+                    element={<BoundaryGuardian />}
+                  />
+                  <Route
+                    path="/types/operations-steward"
+                    element={<OperationsSteward />}
+                  />
+                  <Route
+                    path="/types/practical-optimizer"
+                    element={<PracticalOptimizer />}
+                  />
+                  <Route
+                    path="/types/possibility-connector"
+                    element={<PossibilityConnector />}
+                  />
+                  <Route
+                    path="/types/integrity-guide"
+                    element={<IntegrityGuide />}
+                  />
 
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
