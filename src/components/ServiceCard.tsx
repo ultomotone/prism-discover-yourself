@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import type { Service } from "@/data/services";
 
 export function ServiceCard({ service }: { service: Service }) {
