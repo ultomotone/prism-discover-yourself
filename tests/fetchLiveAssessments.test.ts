@@ -21,7 +21,10 @@ test('returns RPC data', async () => {
   ];
 
   (globalThis as any).window = {
-    __APP_CONFIG__: { SUPABASE_URL: 'url', SUPABASE_ANON_KEY: 'key' },
+    __APP_CONFIG__: {
+      SUPABASE_URL: 'https://example.supabase.co',
+      SUPABASE_ANON_KEY: 'key',
+    },
   };
 
   const supabaseModule = await import('../src/lib/supabase/client');
@@ -39,7 +42,10 @@ test('returns RPC data', async () => {
 
 test('throws on RPC error', async () => {
   (globalThis as any).window = {
-    __APP_CONFIG__: { SUPABASE_URL: 'url', SUPABASE_ANON_KEY: 'key' },
+    __APP_CONFIG__: {
+      SUPABASE_URL: 'https://example.supabase.co',
+      SUPABASE_ANON_KEY: 'key',
+    },
   };
 
   const supabaseModule = await import('../src/lib/supabase/client');

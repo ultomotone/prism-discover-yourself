@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAdvancedAdminAnalytics } from "@/hooks/useAdvancedAdminAnalytics";
+import { createClient } from "@/lib/supabase/client";
 import { AdminFilters } from "@/components/admin/AdminFilters";
 import { KPICard } from "@/components/admin/KPICard";
 import { QualityPanel } from "@/components/admin/QualityPanel";
@@ -26,18 +27,54 @@ const Admin: React.FC = () => {
   const {
     filters,
     setFilters,
-    kpiData,
-    qualityData,
-    chartData,
-    methodHealthData,
-    latestAssessments,
-    loading,
-    refreshData,
-    exportToCSV,
-    error,
+    refetchAll,
+    summary,
+    quality,
+    distributions,
+    throughput,
+    latest,
+    trr,
+    methodHealth,
+    isLoadingAny,
+    isErrorAny,
+    errors,
   } = useAdvancedAdminAnalytics();
 
   const { toast } = useToast();
+
+  const supabase = createClient();
+
+  const qualityData = {
+    top1FitMedian: quality.top1FitMedian,
+    topGapMedian: quality.topGapMedian,
+    confidenceMarginMedian: quality.confidenceMarginPct,
+    closeCallsPercent: quality.closeCallsPct,
+    inconsistencyMean: quality.inconsistencyMean,
+    sdIndexMean: quality.sdIndexMean,
+    validityPassRate: quality.validityPassRatePct,
+  };
+
+  const chartData = {
+    confidenceDistribution: distributions.confidence.map((c) => ({
+      confidence: c.bucket,
+      count: c.count,
+    })),
+    overlayDistribution: distributions.overlay,
+    typeDistribution: distributions.types,
+    throughputTrend: throughput.map((t) => ({ date: t.date, sessions: t.count })),
+  };
+
+  const latestTableData = latest.map((l) => ({
+    session_id: l.sessionId,
+    user_id: l.userId ?? '',
+    top1_fit: null,
+    top_gap: null,
+    confidence_margin: l.confidence,
+    overlay_label: null,
+    completed_at_et: l.completedAt,
+  }));
+
+  const hookError = errors[0] as Error | undefined;
 
   // Evidence + snapshot state (for the top tiles & buttons)
   const [kpis, setKpis] = useState<any>(null);
@@ -80,7 +117,7 @@ const Admin: React.FC = () => {
     setErr(null);
     try {
       await refreshEvidenceKpis();
-      await loadAll();
+      await Promise.all([loadAll(), refetchAll()]);
     } catch (e: any) {
       setErr(e.message ?? String(e));
     } finally {
@@ -91,6 +128,17 @@ const Admin: React.FC = () => {
   useEffect(() => {
     loadAll();
   }, []);
+
+  useEffect(() => {
+    if (isErrorAny && hookError) {
+      console.error('admin dashboard data load failed', hookError);
+      toast({
+        variant: 'destructive',
+        title: 'Failed to load admin data',
+        description: hookError.message,
+      });
+    }
+  }, [isErrorAny, hookError, toast]);
 
   const getCompletionRateStatus = (value: number) => {
     if (value >= 85) return "good";
@@ -108,6 +156,39 @@ const Admin: React.FC = () => {
     if (value <= 5) return "good";
     if (value <= 15) return "warning";
     return "danger";
+  };
+
+  const exportToCSV = async (viewName: string) => {
+    const { data, error } = await supabase.from(viewName).select('*');
+    if (error || !data) return;
+    const csv = convertToCSV(data as any[]);
+    downloadCSV(csv, `${viewName}_export.csv`);
+  };
+
+  const convertToCSV = (data: any[]) => {
+    const headers = Object.keys(data[0] || {});
+    const csvHeaders = headers.join(',');
+    const csvRows = data.map((row) =>
+      headers
+        .map((header) => {
+          const value = row[header];
+          return typeof value === 'string' ? `"${value}"` : value;
+        })
+        .join(',')
+    );
+    return [csvHeaders, ...csvRows].join('\n');
+  };
+
+  const downloadCSV = (csvContent: string, filename: string) => {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleExportAll = async () => {
@@ -163,11 +244,11 @@ const Admin: React.FC = () => {
         </div>
       </div>
 
-      {(error || err) && (
+      {(hookError || err) && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Failed to load analytics</AlertTitle>
-          <AlertDescription>{error || err}</AlertDescription>
+          <AlertDescription>{hookError?.message || err}</AlertDescription>
         </Alert>
       )}
 
@@ -188,7 +269,10 @@ const Admin: React.FC = () => {
               <CardTitle>Test–Retest Reliability (r)</CardTitle>
             </CardHeader>
             <CardContent>
-              {kpis?.r_overall != null ? Number(kpis.r_overall).toFixed(3) : "—"}
+              {trr.r != null ? Number(trr.r).toFixed(3) : "—"}
+              {trr.r != null && (
+                <p className="text-xs text-muted-foreground">n={trr.pairs}</p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -215,72 +299,72 @@ const Admin: React.FC = () => {
           <AdminFilters
             filters={filters}
             onFiltersChange={setFilters}
-            onRefresh={refreshData}
-            loading={loading}
+            onRefresh={refetchAll}
+            loading={isLoadingAny}
           />
 
           {/* KPI Strip */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
             <KPICard
               title="Top Gap Median"
-              value={`${qualityData.topGapMedian.toFixed(1)}`}
+              value={`${summary.topGapMedian.toFixed(1)}`}
               tooltip="Median gap between top 2 type scores (fit difference). Higher values indicate clearer type distinctions."
               onExport={() => exportToCSV('v_quality')}
             />
             <KPICard
               title="Confidence Margin"
-              value={`${qualityData.confidenceMarginMedian.toFixed(1)}%`}
+              value={`${summary.confidenceMarginPct.toFixed(1)}%`}
               tooltip="Median P1-P2 probability difference (confidence margin). Higher values indicate more confident type assignments."
               onExport={() => exportToCSV('v_quality')}
             />
             <KPICard
               title="Close Calls"
-              value={`${qualityData.closeCallsPercent.toFixed(1)}%`}
+              value={`${summary.closeCallsPct.toFixed(1)}%`}
               subtitle="Gap < 3"
               tooltip="Percentage of assessments with top gap < 3 points (borderline cases)"
               onExport={() => exportToCSV('v_quality')}
             />
             <KPICard
               title="Completions"
-              value={kpiData.completions.toLocaleString()}
+              value={summary.completions.toLocaleString()}
               tooltip="Total number of completed assessments in the selected time period"
               onExport={() => exportToCSV('v_sessions')}
             />
             <KPICard
               title="Completion Rate"
-              value={`${kpiData.completionRate.toFixed(1)}%`}
-              status={getCompletionRateStatus(kpiData.completionRate)}
+              value={`${summary.completionRatePct.toFixed(1)}%`}
+              status={getCompletionRateStatus(summary.completionRatePct)}
               tooltip="Percentage of started sessions that were completed."
               onExport={() => exportToCSV('v_sessions_plus')}
             />
             <KPICard
               title="Median Duration"
-              value={`${kpiData.medianDuration.toFixed(1)}m`}
+              value={`${summary.medianDurationMin.toFixed(1)}m`}
               tooltip="Median time to complete assessment."
               onExport={() => exportToCSV('v_sessions_plus')}
             />
             <KPICard
               title="Speeders"
-              value={`${kpiData.speedersPercent.toFixed(1)}%`}
+              value={`${summary.speedersPct.toFixed(1)}%`}
               subtitle="< 12 min"
               onExport={() => exportToCSV('v_sessions_plus')}
             />
             <KPICard
               title="Stallers"
-              value={`${kpiData.stallersPercent.toFixed(1)}%`}
+              value={`${summary.stallersPct.toFixed(1)}%`}
               subtitle="> 60 min"
               onExport={() => exportToCSV('v_sessions_plus')}
             />
             <KPICard
               title="Duplicates"
-              value={`${kpiData.duplicatesPercent.toFixed(1)}%`}
-              status={getDuplicatesStatus(kpiData.duplicatesPercent)}
+              value={`${summary.duplicatesPct.toFixed(1)}%`}
+              status={getDuplicatesStatus(summary.duplicatesPct)}
               onExport={() => exportToCSV('v_duplicates')}
             />
             <KPICard
               title="Validity Pass"
-              value={`${kpiData.validityPassRate.toFixed(1)}%`}
-              status={getValidityStatus(kpiData.validityPassRate)}
+              value={`${summary.validityPassPct.toFixed(1)}%`}
+              status={getValidityStatus(summary.validityPassPct)}
               onExport={() => exportToCSV('v_validity')}
             />
           </div>
@@ -314,7 +398,7 @@ const Admin: React.FC = () => {
               <CardTitle>Latest Assessments</CardTitle>
             </CardHeader>
             <CardContent>
-              <LatestAssessmentsTable data={latestAssessments} />
+              <LatestAssessmentsTable data={latestTableData} />
             </CardContent>
           </Card>
 
@@ -325,7 +409,7 @@ const Admin: React.FC = () => {
             </CardHeader>
             <CardContent>
               <MethodHealthSection
-                data={methodHealthData}
+                data={methodHealth}
                 onExport={exportToCSV}
               />
             </CardContent>
@@ -344,7 +428,7 @@ const Admin: React.FC = () => {
       </Tabs>
 
       {/* Loading Overlay */}
-      {(loading || busy) && (
+      {(isLoadingAny || busy) && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
           <Card className="p-6">
             <div className="flex items-center gap-4">

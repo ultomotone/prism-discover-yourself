@@ -1,4 +1,28 @@
 import { supabase } from '@/lib/supabase/client';
+import { z } from 'zod';
+
+// ---- Filter model ----------------------------------------------------------
+
+const AdminFiltersSchema = z.object({
+  from: z.string(),
+  to: z.string(),
+  overlay: z.string().optional(),
+  confidence: z.string().optional(),
+  type: z.string().optional(),
+  device: z.string().optional(),
+});
+export type AdminFilters = z.infer<typeof AdminFiltersSchema>;
+
+function normalizeFilters(filters: AdminFilters) {
+  return {
+    ...filters,
+    overlay: filters.overlay === 'all' ? null : filters.overlay,
+    confidence: filters.confidence === 'all' ? null : filters.confidence,
+    type: filters.type === 'all' ? null : filters.type,
+    device: filters.device === 'all' ? null : filters.device,
+  } as Record<string, any>;
+}
+export { normalizeFilters };
 
 // ---- Live feed -------------------------------------------------------------
 
@@ -75,4 +99,236 @@ export async function refreshEvidenceKpis() {
   const { data, error } = await supabase.rpc('refresh_evidence_kpis');
   if (error) throw error;
   return data;
+}
+
+// ---- Method health ---------------------------------------------------------
+
+const FcCoverageSchema = z.array(
+  z.object({ fc_count: z.number(), sessions: z.number() })
+);
+const ShareEntropySchema = z.array(
+  z.object({ entropy_range: z.string(), sessions: z.number() })
+);
+const DimensionalCoverageSchema = z.array(
+  z.object({
+    func: z.string(),
+    min_d_items: z.number(),
+    median_d_items: z.number(),
+    low_coverage_sessions: z.number(),
+  })
+);
+const SectionTimesSchema = z.array(
+  z.object({ section: z.string(), median_sec: z.number(), drop_rate: z.number() })
+);
+
+const MethodHealthDataSchema = z.object({
+  fcCoverage: FcCoverageSchema,
+  shareEntropy: ShareEntropySchema,
+  dimensionalCoverage: DimensionalCoverageSchema,
+  sectionTimes: SectionTimesSchema,
+});
+export type MethodHealthData = z.infer<typeof MethodHealthDataSchema>;
+
+export async function fetchMethodHealthData(): Promise<MethodHealthData> {
+  const [fc, share, dim, section] = await Promise.all([
+    supabase.from('v_fc_coverage').select('*'),
+    supabase.from('v_share_entropy').select('*'),
+    supabase.from('v_dim_coverage').select('*'),
+    supabase.from('v_section_times').select('*'),
+  ]);
+
+  if (fc.error) throw fc.error;
+  if (share.error) throw share.error;
+  if (dim.error) throw dim.error;
+  if (section.error) throw section.error;
+
+  const parsed = MethodHealthDataSchema.safeParse({
+    fcCoverage: fc.data ?? [],
+    shareEntropy: share.data ?? [],
+    dimensionalCoverage: dim.data ?? [],
+    sectionTimes: section.data ?? [],
+  });
+
+  if (!parsed.success) throw new Error('Invalid method health data');
+  return parsed.data;
+}
+
+// ---- Summary KPIs ----------------------------------------------------------
+
+const num = z.preprocess((v) => (v == null ? 0 : Number(v)), z.number());
+
+const SummaryKpisSchema = z.object({
+  topGapMedian: num,
+  confidenceMarginPct: num,
+  closeCallsPct: num,
+  completions: num,
+  completionRatePct: num,
+  medianDurationMin: num,
+  speedersPct: num,
+  stallersPct: num,
+  duplicatesPct: num,
+  validityPassPct: num,
+});
+export type SummaryKpis = z.infer<typeof SummaryKpisSchema>;
+
+export async function fetchSummaryKPIs(
+  filters: AdminFilters
+): Promise<SummaryKpis> {
+  const params = normalizeFilters(filters);
+  const { data, error } = await supabase.rpc('admin_fetch_summary_kpis', params);
+  if (error) {
+    console.error('fetchSummaryKPIs', { params, error });
+    throw error;
+  }
+  const parsed = SummaryKpisSchema.safeParse(data ?? {});
+  if (!parsed.success) {
+    console.error('fetchSummaryKPIs parse', parsed.error);
+    throw new Error('Invalid summary KPI data');
+  }
+  return parsed.data;
+}
+
+// ---- Quality metrics -------------------------------------------------------
+
+const QualityMetricsSchema = z.object({
+  top1FitMedian: num,
+  topGapMedian: num,
+  confidenceMarginPct: num,
+  closeCallsPct: num,
+  inconsistencyMean: num,
+  sdIndexMean: num,
+  validityPassRatePct: num,
+});
+export type QualityMetrics = z.infer<typeof QualityMetricsSchema>;
+
+export async function fetchQualityMetrics(
+  filters: AdminFilters
+): Promise<QualityMetrics> {
+  const params = normalizeFilters(filters);
+  const { data, error } = await supabase.rpc('admin_fetch_quality_metrics', params);
+  if (error) {
+    console.error('fetchQualityMetrics', { params, error });
+    throw error;
+  }
+  const parsed = QualityMetricsSchema.safeParse(data ?? {});
+  if (!parsed.success) {
+    console.error('fetchQualityMetrics parse', parsed.error);
+    throw new Error('Invalid quality metrics data');
+  }
+  return parsed.data;
+}
+
+// ---- Distributions ---------------------------------------------------------
+
+const BucketSchema = z.object({ bucket: z.string(), count: num });
+const OverlayBucketSchema = z.object({ overlay: z.string(), count: num });
+const TypeBucketSchema = z.object({ type: z.string(), count: num });
+
+const DistributionsSchema = z.object({
+  confidence: z.array(BucketSchema),
+  overlay: z.array(OverlayBucketSchema),
+  types: z.array(TypeBucketSchema),
+});
+export type Distributions = z.infer<typeof DistributionsSchema>;
+
+export async function fetchDistributions(
+  filters: AdminFilters
+): Promise<Distributions> {
+  const params = normalizeFilters(filters);
+  const { data, error } = await supabase.rpc('admin_fetch_distributions', params);
+  if (error) {
+    console.error('fetchDistributions', { params, error });
+    throw error;
+  }
+  const parsed = DistributionsSchema.safeParse({
+    confidence: data?.confidence ?? [],
+    overlay: data?.overlay ?? [],
+    types: data?.types ?? [],
+  });
+  if (!parsed.success) {
+    console.error('fetchDistributions parse', parsed.error);
+    throw new Error('Invalid distributions data');
+  }
+  return parsed.data;
+}
+
+// ---- Throughput trend ------------------------------------------------------
+
+const ThroughputTrendSchema = z.array(
+  z.object({ date: z.string(), count: num })
+);
+export type ThroughputTrend = z.infer<typeof ThroughputTrendSchema>;
+
+export async function fetchThroughputTrend(
+  filters: AdminFilters
+): Promise<ThroughputTrend> {
+  const params = normalizeFilters(filters);
+  const { data, error } = await supabase.rpc('admin_fetch_throughput_trend', params);
+  if (error) {
+    console.error('fetchThroughputTrend', { params, error });
+    throw error;
+  }
+  const parsed = ThroughputTrendSchema.safeParse(data ?? []);
+  if (!parsed.success) {
+    console.error('fetchThroughputTrend parse', parsed.error);
+    throw new Error('Invalid throughput trend data');
+  }
+  return parsed.data;
+}
+
+// ---- Latest assessments ----------------------------------------------------
+
+const LatestAssessmentsSchema = z.array(
+  z.object({
+    sessionId: z.string(),
+    userId: z.string().nullable(),
+    completedAt: z.string(),
+    device: z.string().nullable(),
+    type: z.string().nullable(),
+    confidence: z.number().nullable(),
+  })
+);
+export type LatestAssessments = z.infer<typeof LatestAssessmentsSchema>;
+
+export async function fetchLatestAssessments(
+  filters: AdminFilters
+): Promise<LatestAssessments> {
+  const params = normalizeFilters(filters);
+  const { data, error } = await supabase.rpc('admin_fetch_latest_assessments', params);
+  if (error) {
+    console.error('fetchLatestAssessments', { params, error });
+    throw error;
+  }
+  const parsed = LatestAssessmentsSchema.safeParse(data ?? []);
+  if (!parsed.success) {
+    console.error('fetchLatestAssessments parse', parsed.error);
+    throw new Error('Invalid latest assessments data');
+  }
+  return parsed.data;
+}
+
+// ---- Test-retest reliability ----------------------------------------------
+
+const TestRetestSchema = z.object({
+  r: z.number().nullable(),
+  pairs: num,
+  medianDaysApart: z.number().nullable(),
+});
+export type TestRetestReliability = z.infer<typeof TestRetestSchema>;
+
+export async function fetchTestRetestReliability(
+  filters: AdminFilters
+): Promise<TestRetestReliability> {
+  const params = normalizeFilters(filters);
+  const { data, error } = await supabase.rpc('admin_fetch_trr', params);
+  if (error) {
+    console.error('fetchTestRetestReliability', { params, error });
+    throw error;
+  }
+  const parsed = TestRetestSchema.safeParse(data ?? {});
+  if (!parsed.success) {
+    console.error('fetchTestRetestReliability parse', parsed.error);
+    throw new Error('Invalid test-retest data');
+  }
+  return parsed.data;
 }
