@@ -1,6 +1,6 @@
 "use client";
 
-import { PropsWithChildren } from "react";
+import React, { PropsWithChildren } from "react";
 
 export function PageShell({ title, subtitle, children }: PropsWithChildren<{ title: string; subtitle: string }>) {
   return (

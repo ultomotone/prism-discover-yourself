@@ -2,29 +2,26 @@
 import "./setup/dom";
 
 import test, { afterEach } from "node:test";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import assert from "node:assert/strict";
 import React from "react";
-import { MemoryRouter } from "react-router-dom";
-import Individuals from "../src/pages/Individuals";
+import IndividualsPage from "../src/app/individuals/page";
+import { SERVICES } from "../src/data/services";
 
 afterEach(() => {
   cleanup();
 });
 
-test("renders all individual services and Learn more links", async () => {
-  render(
-    <MemoryRouter>
-      <Individuals />
-    </MemoryRouter>
-  );
-  const cards = await screen.findAllByTestId("individual-service");
-  assert.ok(cards.length > 0, "should render at least one service card");
+test("renders service cards and updates selection", async () => {
+  process.env.NEXT_PUBLIC_SCHED_PROVIDER = "tidycal";
+  const options = SERVICES.filter((s) => s.scope === "individuals");
+  render(<IndividualsPage />);
+  const buttons = await screen.findAllByRole("button", { name: /book/i });
+  assert.equal(buttons.length, options.length, "should render a Book button for each service");
 
-  const links = screen.getAllByRole("link", { name: /learn more/i });
-  assert.ok(links.length === cards.length, "each card should have a Learn more link");
-  links.forEach((a) => {
-    const href = (a as HTMLAnchorElement).getAttribute("href");
-    assert.ok(href && href.startsWith("/solutions/"), "link href should target a solutions route");
-  });
+  const initial = options[1] || options[0];
+  await screen.findByRole("heading", { level: 2, name: initial.title });
+
+  fireEvent.click(buttons[0]);
+  await screen.findByRole("heading", { level: 2, name: options[0].title });
 });
