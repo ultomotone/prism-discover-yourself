@@ -1,34 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { SERVICES, type Service } from "@/data/services";
-import SchedulerEmbed from "@/components/SchedulerEmbed";
+import { SERVICES } from "@/data/services";
 import { ServiceCard } from "@/components/ServiceCard";
-import Script from "next/script";
 import { PageShell } from "@/app/(marketing)/_components/PageShell";
-import { buildServiceJsonLd, buildFaqJsonLd } from "@/app/(marketing)/_components/jsonld";
-
-const FAQS_T = [
-  {
-    q: "What will I leave with?",
-    a: "A clear next-step program, a 30–90 day plan, and team/leader-specific playbooks.",
-  },
-  {
-    q: "How soon do I see ROI?",
-    a: "Most teams feel alignment within 30 days; sprints target cycle-time reductions in 60 days.",
-  },
-  {
-    q: "What’s the reschedule/no-show policy?",
-    a: "Discovery credits apply if you book within 7 days. Reschedule ≥24h; no-show forfeits credit.",
-  },
-];
 
 export default function TeamsPage() {
-  const options = useMemo(() => SERVICES.filter((s) => s.scope === "teams"), []);
-  const [selected, setSelected] = useState<Service>(options[0]);
-
-  const serviceJsonLd = useMemo(() => buildServiceJsonLd(selected), [selected]);
-  const faqJsonLd = buildFaqJsonLd(FAQS_T);
+  const options = SERVICES.filter((s) => s.scope === "teams");
 
   return (
     <PageShell
@@ -56,20 +33,10 @@ export default function TeamsPage() {
         <div className="mb-3 text-sm font-semibold">Pick a service</div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {options.map((svc) => (
-            <ServiceCard
-              key={svc.id}
-              service={svc}
-              selected={selected.id === svc.id}
-              onSelect={setSelected}
-            />
+            <ServiceCard key={svc.id} service={svc} />
           ))}
         </div>
       </section>
-
-      <SchedulerEmbed service={selected} />
-
-      <Script id="ld-service-team" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }} />
-      <Script id="ld-faq-team" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
     </PageShell>
   );
 }

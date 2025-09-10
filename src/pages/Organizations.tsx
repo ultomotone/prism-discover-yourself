@@ -1,4 +1,4 @@
-import React, { useState, type ComponentType } from "react";
+import React, { type ComponentType } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,7 +22,6 @@ import {
   Rocket,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import CalInline from "@/components/CalInline";
 
 export interface Service {
   key: string;
@@ -32,7 +31,6 @@ export interface Service {
   duration: string;
   price?: string;
   icon: ComponentType<{ className?: string }>;
-  calEventType: string;
 }
 
 export const organizationServices: Service[] = [
@@ -45,7 +43,6 @@ export const organizationServices: Service[] = [
     duration: "20m",
     price: "49 credits",
     icon: User,
-    calEventType: "owner-leader-discovery-20m-49-credit",
   },
   {
     key: "team-compass-workshop",
@@ -55,7 +52,6 @@ export const organizationServices: Service[] = [
       "/solutions/organizations/team-compass-workshop-group-up-to-8",
     duration: "90m",
     icon: Compass,
-    calEventType: "team-compass-workshop-group-up-to-8",
   },
   {
     key: "leadership-debrief",
@@ -64,7 +60,6 @@ export const organizationServices: Service[] = [
     routePath: "/solutions/organizations/leadership-debrief",
     duration: "60m",
     icon: Lightbulb,
-    calEventType: "leadership-debrief",
   },
   {
     key: "sales-persona-play",
@@ -73,7 +68,6 @@ export const organizationServices: Service[] = [
     routePath: "/solutions/organizations/sales-persona-play",
     duration: "45m",
     icon: DollarSign,
-    calEventType: "sales-persona-play",
   },
   {
     key: "manager-coaching",
@@ -82,7 +76,6 @@ export const organizationServices: Service[] = [
     routePath: "/solutions/organizations/manager-coaching-by-persona",
     duration: "60m",
     icon: UserCog,
-    calEventType: "manager-coaching-by-persona",
   },
   {
     key: "hiring-fit-screen",
@@ -91,7 +84,6 @@ export const organizationServices: Service[] = [
     routePath: "/solutions/organizations/hiring-fit-screen",
     duration: "30m",
     icon: Search,
-    calEventType: "hiring-fit-screen",
   },
   {
     key: "leader-coaching-training",
@@ -100,7 +92,6 @@ export const organizationServices: Service[] = [
     routePath: "/solutions/organizations/leader-coaching-training",
     duration: "Varies",
     icon: BookOpen,
-    calEventType: "leader-coaching-training",
   },
   {
     key: "team-performance-sprint",
@@ -110,18 +101,10 @@ export const organizationServices: Service[] = [
       "/solutions/organizations/team-performance-sprint-4-950-mo-8-12-people-2-months",
     duration: "2 months",
     icon: Rocket,
-    calEventType:
-      "team-performance-sprint-4-950-mo-8-12-people-2-months",
   },
 ];
 
 const Organizations = () => {
-  const [eventType, setEventType] = useState<string | undefined>();
-
-  const handleBook = (slug: string) => {
-    setEventType(slug);
-    document.getElementById("book")?.scrollIntoView({ behavior: "smooth" });
-  };
 
   const outcomes = [
     {
@@ -193,28 +176,9 @@ const included = [
                     <Button asChild variant="outline">
                       <Link to={service.routePath}>Learn more</Link>
                     </Button>
-                    <Button
-                      onClick={() => handleBook(service.calEventType)}
-                      aria-controls="book"
-                    >
-                      Book now
-                    </Button>
                   </CardContent>
                 </Card>
               ))}
-            </div>
-          </section>
-
-          {/* Booking Embed */}
-          <section id="book" className="mb-16" aria-labelledby="book-org">
-            <h2 id="book-org" className="prism-heading-md text-primary mb-4 text-center">
-              Book a Session
-            </h2>
-            <p className="prism-body text-muted-foreground text-center mb-8">
-              Pick a time directly below.
-            </p>
-            <div data-testid="organizations-cal">
-              <CalInline calLink="daniel-speiss" eventType={eventType} />
             </div>
           </section>
 
