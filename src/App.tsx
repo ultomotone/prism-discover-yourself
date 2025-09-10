@@ -37,6 +37,19 @@ import Individuals from "./pages/Individuals";
 import Teams from "./pages/Teams";
 import Consultants from "./pages/Consultants";
 import Education from "./pages/Education";
+import PersonalDiscovery from "./pages/solutions/individuals/PersonalDiscovery";
+import PersonalityMapping from "./pages/solutions/individuals/PersonalityMapping";
+import CompatibilityDebrief from "./pages/solutions/individuals/CompatibilityDebrief";
+import CareerClarityMapping from "./pages/solutions/individuals/CareerClarityMapping";
+import ProgressRetakeTuneUp from "./pages/solutions/individuals/ProgressRetakeTuneUp";
+import OwnerLeaderDiscovery from "./pages/solutions/organizations/OwnerLeaderDiscovery";
+import TeamCompassWorkshop from "./pages/solutions/organizations/TeamCompassWorkshop";
+import LeadershipDebrief from "./pages/solutions/organizations/LeadershipDebrief";
+import SalesPersonaPlay from "./pages/solutions/organizations/SalesPersonaPlay";
+import ManagerCoachingByPersona from "./pages/solutions/organizations/ManagerCoachingByPersona";
+import HiringFitScreen from "./pages/solutions/organizations/HiringFitScreen";
+import LeaderCoachingTraining from "./pages/solutions/organizations/LeaderCoachingTraining";
+import TeamPerformanceSprint from "./pages/solutions/organizations/TeamPerformanceSprint";
 import Insights from "./pages/Insights";
 import Research from "./pages/Research";
 import FirstHundredStudy from "./pages/FirstHundredStudy";
@@ -211,6 +224,19 @@ const App = () => (
                   <Route path="/teams" element={<Teams />} />
                   <Route path="/consultants" element={<Consultants />} />
                   <Route path="/education" element={<Education />} />
+                  <Route path="/solutions/individuals/personal-discovery-20m-29-credit" element={<PersonalDiscovery />} />
+                  <Route path="/solutions/individuals/personality-mapping-call" element={<PersonalityMapping />} />
+                  <Route path="/solutions/individuals/compatibility-debrief-couples" element={<CompatibilityDebrief />} />
+                  <Route path="/solutions/individuals/career-clarity-mapping" element={<CareerClarityMapping />} />
+                  <Route path="/solutions/individuals/progress-retake-tune-up" element={<ProgressRetakeTuneUp />} />
+                  <Route path="/solutions/organizations/owner-leader-discovery-20m-49-credit" element={<OwnerLeaderDiscovery />} />
+                  <Route path="/solutions/organizations/team-compass-workshop-group-up-to-8" element={<TeamCompassWorkshop />} />
+                  <Route path="/solutions/organizations/leadership-debrief" element={<LeadershipDebrief />} />
+                  <Route path="/solutions/organizations/sales-persona-play" element={<SalesPersonaPlay />} />
+                  <Route path="/solutions/organizations/manager-coaching-by-persona" element={<ManagerCoachingByPersona />} />
+                  <Route path="/solutions/organizations/hiring-fit-screen" element={<HiringFitScreen />} />
+                  <Route path="/solutions/organizations/leader-coaching-training" element={<LeaderCoachingTraining />} />
+                  <Route path="/solutions/organizations/team-performance-sprint-4-950-mo-8-12-people-2-months" element={<TeamPerformanceSprint />} />
                   <Route path="/insights" element={<Insights />} />
                   <Route path="/research" element={<Research />} />
                   <Route path="/research/first-hundred-study" element={<FirstHundredStudy />} />
