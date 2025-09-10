@@ -8,7 +8,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint .",
-    "test": "c8 tsx --test tests/fetchResults.test.ts tests/results.integration.test.ts tests/linkSessionsToUser.test.ts tests/linkSessionToAccount.test.ts tests/assessmentApi.test.ts tests/dashboardUtils.test.ts tests/recompute.invoke.test.ts tests/resultsLink.test.ts supabase/functions/_shared/score-engine/__tests__/score-engine.test.ts",
+    "test": "c8 tsx --test tests/fetchResults.test.ts tests/results.integration.test.ts tests/linkSessionsToUser.test.ts tests/linkSessionToAccount.test.ts tests/assessmentApi.test.ts tests/dashboardUtils.test.ts tests/recompute.invoke.test.ts tests/resultsLink.test.ts tests/backfillProfiles.test.ts supabase/functions/_shared/score-engine/__tests__/score-engine.test.ts",
     "test:ci": "npm test",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit || echo \"typecheck skipped: no tsconfig.json\"",
@@ -18,6 +18,7 @@
     "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.tsx --fix",
     "verify:functions": "node scripts/ci-guard.js && tsx scripts/functions-compile.ts || true",
     "verify:smoke": "tsx scripts/smoke.ts",
+    "backfill:profiles": "tsx src/utils/backfillProfiles.ts",
     "check:merge-markers": "git grep -nE '^(<<<<<<<|=======|>>>>>>>)' && (echo 'merge markers found'; exit 1) || exit 0",
     "check:no-legacy": "git grep -nE \"get_results_by_session_legacy|VITE_ALLOW_LEGACY_RESULTS\" -- ':!package.json' && (echo 'legacy references found'; exit 1) || exit 0"
   },

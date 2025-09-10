@@ -1,6 +1,10 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.55.0";
+import {
+  findSessionsNeedingProfile,
+  SessionRecord,
+} from "../_shared/backfillUtils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -35,19 +39,23 @@ serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const dryRun = !!body.dry_run;
 
-    // 1) Find completed sessions in last 90 days with no profile
-    const { data: completedSessions, error: sessErr } = await supabase
+    // 1) Load sessions from last 90 days that might need profiles
+    const ninetyDaysAgo = new Date(
+      Date.now() - 90 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const { data: candidateSessions, error: sessErr } = await supabase
       .from('assessment_sessions')
-      .select('id')
-      .eq('status', 'completed')
-      .gte('started_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString());
+      .select('id,status,completed_questions,total_questions,completed_at')
+      .in('status', ['completed', 'in_progress'])
+      .gte('started_at', ninetyDaysAgo);
 
     if (sessErr) {
       console.error('backfill: sessions error', sessErr);
       return new Response(JSON.stringify({ success: false, error: sessErr.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const sessionIds = (completedSessions || []).map(s => s.id);
+    const sessions = (candidateSessions || []) as SessionRecord[];
+    const sessionIds = sessions.map((s) => s.id);
 
     // Load profiles for these sessions
     const { data: existingProfiles, error: profErr } = await supabase
@@ -60,22 +68,44 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ success: false, error: profErr.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const haveProfile = new Set(existingProfiles?.map(p => p.session_id) || []);
-    const missing = sessionIds.filter(id => !haveProfile.has(id));
+    const missingSessions = findSessionsNeedingProfile(
+      sessions,
+      existingProfiles || [],
+    );
 
-    console.log(`backfill: total completed=${sessionIds.length}, with_profile=${haveProfile.size}, missing=${missing.length}`);
+    console.log(
+      `backfill: total candidates=${sessions.length}, with_profile=${(existingProfiles || []).length}, missing=${missingSessions.length}`,
+    );
 
     if (dryRun) {
-      return new Response(JSON.stringify({ success: true, dryRun: true, missingCount: missing.length, missingSample: missing.slice(0, 20) }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(
+        JSON.stringify({
+          success: true,
+          dryRun: true,
+          missingCount: missingSessions.length,
+          missingSample: missingSessions.slice(0, 20).map((s) => s.id),
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     let success = 0;
-    let failed: Array<{ session_id: string; error: string }> = [];
+    const failed: Array<{ session_id: string; error: string }> = [];
 
-    // 2) For each missing session, score via existing edge function
-    for (const session_id of missing) {
+    // 2) For each missing session, mark complete and score
+    for (const sess of missingSessions) {
+      const session_id = sess.id;
       try {
-        const { data, error } = await supabase.functions.invoke('score_prism', {
+        await supabase
+          .from('assessment_sessions')
+          .update({
+            status: 'completed',
+            completed_at: sess.completed_at || new Date().toISOString(),
+            completed_questions: sess.completed_questions ?? sess.total_questions,
+          })
+          .eq('id', session_id);
+
+        const { error } = await supabase.functions.invoke('score_prism', {
           body: { session_id },
         });
         if (error) {
@@ -93,7 +123,15 @@ serve(async (req: Request) => {
     // 3) Update dashboard stats once
     await supabase.rpc('update_dashboard_statistics');
 
-    return new Response(JSON.stringify({ success: true, processed: missing.length, created: success, failed }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        processed: missingSessions.length,
+        created: success,
+        failed,
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
   } catch (e) {
     console.error('backfill_profiles error', e);
     return new Response(JSON.stringify({ success: false, error: String(e) }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
