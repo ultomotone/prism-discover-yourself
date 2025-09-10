@@ -1,10 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, MessageSquare, TrendingUp, Target } from "lucide-react";
-import Header from "@/components/Header";
 import CalInline from "@/components/CalInline";
 
 const Organizations = () => {
+  const sessions = [
+    { title: "Owner/Leader Discovery (20m)", slug: "owner-leader-discovery-20m-49-credit" },
+    { title: "Team Compass Workshop (90m)", slug: "team-compass-workshop-group-up-to-8" },
+    { title: "Leadership Debrief (60m)", slug: "leadership-debrief" },
+    { title: "Sales Persona Play (45m)", slug: "sales-persona-play" },
+    { title: "Manager: Coaching by Persona (60m)", slug: "manager-coaching-by-persona" },
+    { title: "Hiring Fit Screen (30m)", slug: "hiring-fit-screen" },
+    { title: "Team Performance Sprint (2 Months)", slug: "team-performance-sprint-4-950-mo-8-12-people-2-months" },
+  ];
+
   const outcomes = [
     {
       icon: MessageSquare,
@@ -30,10 +39,8 @@ const included = [
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="prism-container pt-24 pb-16">
-        <div className="max-w-6xl mx-auto">
+    <div className="prism-container pt-24 pb-16">
+      <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="text-center mb-16">
             <h1 className="prism-heading-lg text-primary mb-6">
@@ -49,15 +56,7 @@ const included = [
             <h2 id="book-org" className="prism-heading-md text-primary mb-4 text-center">Book a Session</h2>
             <p className="prism-body text-muted-foreground text-center mb-8">Choose any session below—booking happens right on this page.</p>
             <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
-              {[
-                { title: "Owner/Leader Discovery (20m)", slug: "owner-leader-discovery-20m-49-credit" },
-                { title: "Team Compass Workshop (90m)", slug: "team-compass-workshop-group-up-to-8" },
-                { title: "Leadership Debrief (60m)", slug: "leadership-debrief" },
-                { title: "Sales Persona Play (45m)", slug: "sales-persona-play" },
-                { title: "Manager: Coaching by Persona (60m)", slug: "manager-coaching-by-persona" },
-                { title: "Hiring Fit Screen (30m)", slug: "hiring-fit-screen" },
-                { title: "Team Performance Sprint (2 Months)", slug: "team-performance-sprint-4-950-mo-8-12-people-2-months" },
-              ].map((e) => (
+              {sessions.map((e) => (
                 <article key={e.slug} className="rounded-2xl border p-4 shadow-sm">
                   <h3 className="font-medium text-primary">{e.title}</h3>
                   <div className="mt-4">
@@ -72,6 +71,27 @@ const included = [
             <p className="text-center text-sm text-muted-foreground mt-4">
               Bookings are processed securely via Cal.com; availability updates live.
             </p>
+          </section>
+
+          {/* Service Details Links */}
+          <section className="mb-16" aria-labelledby="org-services">
+            <h2 id="org-services" className="prism-heading-md text-primary mb-4 text-center">
+              Service Details
+            </h2>
+            <p className="prism-body text-muted-foreground text-center mb-8">
+              Learn more about what each session includes.
+            </p>
+            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
+              {sessions.map((e) => (
+                <a
+                  key={e.slug}
+                  href={`/solutions/organizations/${e.slug}`}
+                  className="rounded-2xl border p-4 text-center hover:bg-accent/50 prism-transition"
+                >
+                  {e.title}
+                </a>
+              ))}
+            </div>
           </section>
 
           {/* Team outcomes */}
@@ -131,7 +151,6 @@ const included = [
           </div>
         </div>
       </div>
-    </div>
   );
 };
 

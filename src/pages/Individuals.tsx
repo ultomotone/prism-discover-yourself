@@ -2,12 +2,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Target, TrendingUp, MessageSquare, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import Header from "@/components/Header";
 import CalInline from "@/components/CalInline";
 
 const Individuals = () => {
   const navigate = useNavigate();
-  const assessmentLink = "https://docs.google.com/forms/d/e/1FAIpQLScVFSAWRNUZT10hEoziD1oMXeS_FyCVP9NFTWD61eR8xDQaDA/viewform";
+  const sessions = [
+    { title: "Personal Discovery (20m)", slug: "personal-discovery-20m-29-credit" },
+    { title: "Personality Mapping (45m)", slug: "personality-mapping-call" },
+    { title: "Compatibility Debrief (45m)", slug: "compatibility-debrief-couples" },
+    { title: "Career Clarity Mapping (60m)", slug: "career-clarity-mapping" },
+    { title: "Progress Retake & Tune-Up (30m)", slug: "progress-retake-tune-up" },
+  ];
 
   const insights = [
     {
@@ -35,10 +40,8 @@ const Individuals = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="prism-container pt-24 pb-16">
-        <div className="max-w-6xl mx-auto">
+    <div className="prism-container pt-24 pb-16">
+      <div className="max-w-6xl mx-auto">
           {/* Hero */}
           <div className="text-center mb-16">
             <h1 className="prism-heading-lg text-primary mb-6">
@@ -58,13 +61,7 @@ const Individuals = () => {
               Choose any session below—booking happens right on this page.
             </p>
             <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
-              {[
-                { title: "Personal Discovery (20m)", slug: "personal-discovery-20m-29-credit" },
-                { title: "Personality Mapping (45m)", slug: "personality-mapping-call" },
-                { title: "Compatibility Debrief (45m)", slug: "compatibility-debrief-couples" },
-                { title: "Career Clarity Mapping (60m)", slug: "career-clarity-mapping" },
-                { title: "Progress Retake & Tune-Up (30m)", slug: "progress-retake-tune-up" },
-              ].map((e) => (
+              {sessions.map((e) => (
                 <article key={e.slug} className="rounded-2xl border p-4 shadow-sm">
                   <h3 className="font-medium text-primary">{e.title}</h3>
                   <div className="mt-4">
@@ -79,6 +76,27 @@ const Individuals = () => {
             <p className="text-center text-sm text-muted-foreground mt-4">
               Bookings are processed securely via Cal.com; availability updates live.
             </p>
+          </section>
+
+          {/* Service Details Links */}
+          <section className="mb-16" aria-labelledby="services">
+            <h2 id="services" className="prism-heading-md text-primary mb-4 text-center">
+              Service Details
+            </h2>
+            <p className="prism-body text-muted-foreground text-center mb-8">
+              Learn more about what each session includes.
+            </p>
+            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
+              {sessions.map((e) => (
+                <a
+                  key={e.slug}
+                  href={`/solutions/individuals/${e.slug}`}
+                  className="rounded-2xl border p-4 text-center hover:bg-accent/50 prism-transition"
+                >
+                  {e.title}
+                </a>
+              ))}
+            </div>
           </section>
 
           {/* What PRISM Shows You */}
@@ -260,7 +278,6 @@ const Individuals = () => {
           </div>
         </div>
       </div>
-    </div>
   );
 };
 
