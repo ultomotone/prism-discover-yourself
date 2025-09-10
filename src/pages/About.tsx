@@ -210,7 +210,7 @@ const About = () => {
                     </li>
                   </ul>
                   <Button variant="outline" asChild className="mt-4">
-                    <a href="/individuals">Learn More</a>
+                    <a href="/solutions/individuals">Learn More</a>
                   </Button>
                 </div>
                 <div>
@@ -230,7 +230,7 @@ const About = () => {
                     </li>
                   </ul>
                   <Button variant="outline" asChild className="mt-4">
-                    <a href="/teams">Learn More</a>
+                    <a href="/solutions/organizations">Learn More</a>
                   </Button>
                 </div>
               </div>

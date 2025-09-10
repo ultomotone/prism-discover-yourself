@@ -16,8 +16,8 @@ const Header = () => {
   ];
 
   const solutionsItems = [
-    { name: "Individuals", href: "/individuals" },
-    { name: "Organizations", href: "/teams" },
+    { name: "Individuals", href: "/solutions/individuals" },
+    { name: "Organizations", href: "/solutions/organizations" },
     { name: "Consultants", href: "/consultants" },
     { name: "Education", href: "/education" },
   ];

@@ -32,8 +32,8 @@ const Resources = () => {
       title: "Applications",
       icon: <Users className="h-6 w-6" />,
       items: [
-        { name: "For Individuals", href: "/individuals" },
-        { name: "For Teams", href: "/teams" },
+        { name: "For Individuals", href: "/solutions/individuals" },
+        { name: "For Organizations", href: "/solutions/organizations" },
         { name: "Profiles Overview", href: "/profiles" },
         { name: "Insights & Guides", href: "/insights" }
       ]
