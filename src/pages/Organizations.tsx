@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, MessageSquare, TrendingUp, Target } from "lucide-react";
 import Header from "@/components/Header";
-import CalInline from "@/components/CalInline";
+import { services } from "@/data/services";
+import ServiceCard from "@/components/ServiceCard";
 
 const Organizations = () => {
   const outcomes = [
@@ -44,34 +45,21 @@ const included = [
             </p>
           </div>
 
-          {/* Book a Session */}
-          <section className="mb-16" aria-labelledby="book-org">
-            <h2 id="book-org" className="prism-heading-md text-primary mb-4 text-center">Book a Session</h2>
-            <p className="prism-body text-muted-foreground text-center mb-8">Choose any session below—booking happens right on this page.</p>
+          {/* Services */}
+          <section className="mb-16" aria-labelledby="services-org">
+            <h2
+              id="services-org"
+              className="prism-heading-md text-primary mb-12 text-center"
+            >
+              Services
+            </h2>
             <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
-              {[
-                { title: "Owner/Leader Discovery (20m)", slug: "owner-leader-discovery-20m-49-credit" },
-                { title: "Team Compass Workshop (90m)", slug: "team-compass-workshop-group-up-to-8" },
-                { title: "Leadership Debrief (60m)", slug: "leadership-debrief" },
-                { title: "Sales Persona Play (45m)", slug: "sales-persona-play" },
-                { title: "Manager: Coaching by Persona (60m)", slug: "manager-coaching-by-persona" },
-                { title: "Hiring Fit Screen (30m)", slug: "hiring-fit-screen" },
-                { title: "Team Performance Sprint (2 Months)", slug: "team-performance-sprint-4-950-mo-8-12-people-2-months" },
-              ].map((e) => (
-                <article key={e.slug} className="rounded-2xl border p-4 shadow-sm">
-                  <h3 className="font-medium text-primary">{e.title}</h3>
-                  <div className="mt-4">
-                    <CalInline calLink={`daniel-speiss/${e.slug}`} selector={`#cal-${e.slug}`} />
-                  </div>
-                </article>
-              ))}
+              {services
+                .filter((s) => s.audience === "organizations")
+                .map((s) => (
+                  <ServiceCard key={s.id} service={s} />
+                ))}
             </div>
-            <p className="text-center mt-8">
-              <a className="underline" href="/book">See all sessions →</a>
-            </p>
-            <p className="text-center text-sm text-muted-foreground mt-4">
-              Bookings are processed securely via Cal.com; availability updates live.
-            </p>
           </section>
 
           {/* Team outcomes */}

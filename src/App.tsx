@@ -39,6 +39,7 @@ import Consultants from "./pages/Consultants";
 import Education from "./pages/Education";
 // Booking flows
 import Book from "./pages/Book";
+import ServiceDetail from "./pages/ServiceDetail";
 import Insights from "./pages/Insights";
 import Research from "./pages/Research";
 import FirstHundredStudy from "./pages/FirstHundredStudy";
@@ -210,7 +211,9 @@ const App = () => (
                   <Route path="/how-it-works" element={<HowItWorks />} />
                   <Route path="/profiles" element={<Profiles />} />
                   <Route path="/solutions/individuals" element={<Individuals />} />
+                  <Route path="/solutions/individuals/:slug" element={<ServiceDetail />} />
                   <Route path="/solutions/organizations" element={<Organizations />} />
+                  <Route path="/solutions/organizations/:slug" element={<ServiceDetail />} />
                   <Route path="/consultants" element={<Consultants />} />
                   <Route path="/education" element={<Education />} />
                   {/* Cal.com full profile */}
