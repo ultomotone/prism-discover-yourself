@@ -7,13 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertCircle, CheckCircle, Clock, Save } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-interface SystemStatus {
-  status: 'green' | 'yellow' | 'red';
-  message: string;
-  last_updated?: string;
-  updated_by?: string;
-}
+import { SystemStatus, normalizeSystemStatus } from '@/utils/systemStatus';
 
 export const SystemStatusControl = () => {
   const [status, setStatus] = useState<SystemStatus>({
@@ -39,7 +33,7 @@ export const SystemStatusControl = () => {
         .maybeSingle();
 
       if (!error && data?.value) {
-        const currentStatus = data.value as unknown as SystemStatus;
+        const currentStatus = normalizeSystemStatus(data.value);
         setStatus(currentStatus);
         setSelectedStatus(currentStatus.status);
         setMessage(currentStatus.message);
