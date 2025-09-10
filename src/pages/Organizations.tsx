@@ -1,3 +1,4 @@
+import { useState, type ComponentType } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -6,70 +7,122 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import { Users, MessageSquare, TrendingUp, Target } from "lucide-react";
+import {
+  Users,
+  MessageSquare,
+  TrendingUp,
+  Target,
+  User,
+  Compass,
+  Lightbulb,
+  DollarSign,
+  UserCog,
+  Search,
+  BookOpen,
+  Rocket,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import CalInline from "@/components/CalInline";
-import { getCalApi } from "@calcom/embed-react";
 
-interface Service {
+export interface Service {
+  key: string;
   title: string;
-  slug: string;
   description: string;
+  routePath: string;
   duration: string;
   price?: string;
+  icon: ComponentType<{ className?: string }>;
+  calEventType: string;
 }
 
-const Organizations = () => {
-  const services: Service[] = [
-    {
-      title: "Owner/Leader Discovery",
-      slug: "owner-leader-discovery-20m-49-credit",
-      description: "Snapshot of leadership signals and growth areas.",
-      duration: "20m",
-      price: "49 credits",
-    },
-    {
-      title: "Team Compass Workshop",
-      slug: "team-compass-workshop-group-up-to-8",
-      description: "Interactive session for teams up to eight people.",
-      duration: "90m",
-    },
-    {
-      title: "Leadership Debrief",
-      slug: "leadership-debrief",
-      description: "Deep dive on leadership style and blind spots.",
-      duration: "60m",
-    },
-    {
-      title: "Sales Persona Play",
-      slug: "sales-persona-play",
-      description: "Align sales tactics to customer cognition.",
-      duration: "45m",
-    },
-    {
-      title: "Manager: Coaching by Persona",
-      slug: "manager-coaching-by-persona",
-      description: "Coaching framework tailored to manager profiles.",
-      duration: "60m",
-    },
-    {
-      title: "Hiring Fit Screen",
-      slug: "hiring-fit-screen",
-      description: "Evaluate candidate fit before hiring decisions.",
-      duration: "30m",
-    },
-    {
-      title: "Team Performance Sprint",
-      slug: "team-performance-sprint-4-950-mo-8-12-people-2-months",
-      description: "Two-month sprint to raise team effectiveness.",
-      duration: "2 months",
-    },
-  ];
+export const organizationServices: Service[] = [
+  {
+    key: "owner-leader-discovery",
+    title: "Owner/Leader Discovery",
+    description: "Snapshot of leadership signals and growth areas.",
+    routePath:
+      "/solutions/organizations/owner-leader-discovery-20m-49-credit",
+    duration: "20m",
+    price: "49 credits",
+    icon: User,
+    calEventType: "owner-leader-discovery-20m-49-credit",
+  },
+  {
+    key: "team-compass-workshop",
+    title: "Team Compass Workshop",
+    description: "Interactive session for teams up to eight people.",
+    routePath:
+      "/solutions/organizations/team-compass-workshop-group-up-to-8",
+    duration: "90m",
+    icon: Compass,
+    calEventType: "team-compass-workshop-group-up-to-8",
+  },
+  {
+    key: "leadership-debrief",
+    title: "Leadership Debrief",
+    description: "Deep dive on leadership style and blind spots.",
+    routePath: "/solutions/organizations/leadership-debrief",
+    duration: "60m",
+    icon: Lightbulb,
+    calEventType: "leadership-debrief",
+  },
+  {
+    key: "sales-persona-play",
+    title: "Sales Persona Play",
+    description: "Align sales tactics to customer cognition.",
+    routePath: "/solutions/organizations/sales-persona-play",
+    duration: "45m",
+    icon: DollarSign,
+    calEventType: "sales-persona-play",
+  },
+  {
+    key: "manager-coaching",
+    title: "Manager: Coaching by Persona",
+    description: "Coaching framework tailored to manager profiles.",
+    routePath: "/solutions/organizations/manager-coaching-by-persona",
+    duration: "60m",
+    icon: UserCog,
+    calEventType: "manager-coaching-by-persona",
+  },
+  {
+    key: "hiring-fit-screen",
+    title: "Hiring Fit Screen",
+    description: "Evaluate candidate fit before hiring decisions.",
+    routePath: "/solutions/organizations/hiring-fit-screen",
+    duration: "30m",
+    icon: Search,
+    calEventType: "hiring-fit-screen",
+  },
+  {
+    key: "leader-coaching-training",
+    title: "Leader Coaching & Training",
+    description: "Ongoing coaching and training for leaders.",
+    routePath: "/solutions/organizations/leader-coaching-training",
+    duration: "Varies",
+    icon: BookOpen,
+    calEventType: "leader-coaching-training",
+  },
+  {
+    key: "team-performance-sprint",
+    title: "Team Performance Sprint",
+    description: "Two-month sprint to raise team effectiveness.",
+    routePath:
+      "/solutions/organizations/team-performance-sprint-4-950-mo-8-12-people-2-months",
+    duration: "2 months",
+    icon: Rocket,
+    calEventType:
+      "team-performance-sprint-4-950-mo-8-12-people-2-months",
+  },
+];
 
-  const handleBook = async (slug: string) => {
-    const cal = await getCalApi({ namespace: "prism" });
-    cal("open", { calLink: `daniel-speiss/${slug}` });
-    document.getElementById("booking")?.scrollIntoView({ behavior: "smooth" });
+const Organizations = () => {
+  const [eventType, setEventType] = useState<string | undefined>();
+
+  const handleBook = (slug: string) => {
+    setEventType(slug);
+    document
+      .getElementById("booking")
+      ?.scrollIntoView({ behavior: "smooth" });
   };
 
   const outcomes = [
@@ -121,14 +174,17 @@ const included = [
               className="grid gap-6 sm:grid-cols-2 md:grid-cols-3"
               data-testid="organizations-services"
             >
-              {services.map((service) => (
+              {organizationServices.map((service) => (
                 <Card
-                  key={service.slug}
+                  key={service.key}
                   className="prism-card-hover"
                   data-testid="organization-service"
                 >
                   <CardHeader>
-                    <CardTitle className="text-lg">{service.title}</CardTitle>
+                    <div className="flex items-center gap-2 mb-2">
+                      <service.icon className="h-6 w-6 text-primary" />
+                      <CardTitle className="text-lg">{service.title}</CardTitle>
+                    </div>
                     <CardDescription>{service.description}</CardDescription>
                     <p className="text-sm text-muted-foreground">
                       {service.duration}
@@ -137,11 +193,9 @@ const included = [
                   </CardHeader>
                   <CardContent className="flex gap-2">
                     <Button asChild variant="outline">
-                      <Link to={`/solutions/organizations/${service.slug}`}>
-                        Learn more
-                      </Link>
+                      <Link to={service.routePath}>Learn more</Link>
                     </Button>
-                    <Button onClick={() => handleBook(service.slug)}>
+                    <Button onClick={() => handleBook(service.calEventType)}>
                       Book now
                     </Button>
                   </CardContent>
@@ -159,7 +213,7 @@ const included = [
               Pick a time directly below.
             </p>
             <div data-testid="organizations-cal">
-              <CalInline calLink="daniel-speiss" selector="#cal-booking" />
+              <CalInline calLink="daniel-speiss" eventType={eventType} />
             </div>
           </section>
 

@@ -1,3 +1,4 @@
+import { useState, type ComponentType } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -6,58 +7,93 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import { Target, TrendingUp, MessageSquare, CheckCircle } from "lucide-react";
+import {
+  Target,
+  TrendingUp,
+  MessageSquare,
+  CheckCircle,
+  Compass,
+  Map,
+  Users,
+  Briefcase,
+  RefreshCw,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import CalInline from "@/components/CalInline";
-import { getCalApi } from "@calcom/embed-react";
 
-interface Service {
+export interface Service {
+  key: string;
   title: string;
-  slug: string;
   description: string;
+  routePath: string;
   duration: string;
   price?: string;
+  icon: ComponentType<{ className?: string }>;
+  calEventType: string;
 }
 
-const Individuals = () => {
-  const services: Service[] = [
-    {
-      title: "Personal Discovery",
-      slug: "personal-discovery-20m-29-credit",
-      description: "Quick scan of your cognitive signals and next steps.",
-      duration: "20m",
-      price: "29 credits",
-    },
-    {
-      title: "Personality Mapping",
-      slug: "personality-mapping-call",
-      description: "Map your PRISM profile with a specialist.",
-      duration: "45m",
-    },
-    {
-      title: "Compatibility Debrief",
-      slug: "compatibility-debrief-couples",
-      description: "Understand relational dynamics with a partner.",
-      duration: "45m",
-    },
-    {
-      title: "Career Clarity Mapping",
-      slug: "career-clarity-mapping",
-      description: "Align your strengths to your career path.",
-      duration: "60m",
-    },
-    {
-      title: "Progress Retake & Tune-Up",
-      slug: "progress-retake-tune-up",
-      description: "Reassess and calibrate your development.",
-      duration: "30m",
-    },
-  ];
+export const individualServices: Service[] = [
+  {
+    key: "personal-discovery",
+    title: "Personal Discovery",
+    description: "Quick scan of your cognitive signals and next steps.",
+    routePath:
+      "/solutions/individuals/personal-discovery-20m-29-credit",
+    duration: "20m",
+    price: "29 credits",
+    icon: Compass,
+    calEventType: "personal-discovery-20m-29-credit",
+  },
+  {
+    key: "personality-mapping",
+    title: "Personality Mapping",
+    description: "Map your PRISM profile with a specialist.",
+    routePath:
+      "/solutions/individuals/personality-mapping-call",
+    duration: "45m",
+    icon: Map,
+    calEventType: "personality-mapping-call",
+  },
+  {
+    key: "compatibility-debrief",
+    title: "Compatibility Debrief",
+    description: "Understand relational dynamics with a partner.",
+    routePath:
+      "/solutions/individuals/compatibility-debrief-couples",
+    duration: "45m",
+    icon: Users,
+    calEventType: "compatibility-debrief-couples",
+  },
+  {
+    key: "career-clarity",
+    title: "Career Clarity Mapping",
+    description: "Align your strengths to your career path.",
+    routePath:
+      "/solutions/individuals/career-clarity-mapping",
+    duration: "60m",
+    icon: Briefcase,
+    calEventType: "career-clarity-mapping",
+  },
+  {
+    key: "progress-retake",
+    title: "Progress Retake & Tune-Up",
+    description: "Reassess and calibrate your development.",
+    routePath:
+      "/solutions/individuals/progress-retake-tune-up",
+    duration: "30m",
+    icon: RefreshCw,
+    calEventType: "progress-retake-tune-up",
+  },
+];
 
-  const handleBook = async (slug: string) => {
-    const cal = await getCalApi({ namespace: "prism" });
-    cal("open", { calLink: `daniel-speiss/${slug}` });
-    document.getElementById("booking")?.scrollIntoView({ behavior: "smooth" });
+const Individuals = () => {
+  const [eventType, setEventType] = useState<string | undefined>();
+
+  const handleBook = (slug: string) => {
+    setEventType(slug);
+    document
+      .getElementById("booking")
+      ?.scrollIntoView({ behavior: "smooth" });
   };
 
   const insights = [
@@ -110,14 +146,17 @@ const Individuals = () => {
               className="grid gap-6 sm:grid-cols-2 md:grid-cols-3"
               data-testid="individuals-services"
             >
-              {services.map((service) => (
+              {individualServices.map((service) => (
                 <Card
-                  key={service.slug}
+                  key={service.key}
                   className="prism-card-hover"
                   data-testid="individual-service"
                 >
                   <CardHeader>
-                    <CardTitle className="text-lg">{service.title}</CardTitle>
+                    <div className="flex items-center gap-2 mb-2">
+                      <service.icon className="h-6 w-6 text-primary" />
+                      <CardTitle className="text-lg">{service.title}</CardTitle>
+                    </div>
                     <CardDescription>{service.description}</CardDescription>
                     <p className="text-sm text-muted-foreground">
                       {service.duration}
@@ -126,11 +165,9 @@ const Individuals = () => {
                   </CardHeader>
                   <CardContent className="flex gap-2">
                     <Button asChild variant="outline">
-                      <Link to={`/solutions/individuals/${service.slug}`}>
-                        Learn more
-                      </Link>
+                      <Link to={service.routePath}>Learn more</Link>
                     </Button>
-                    <Button onClick={() => handleBook(service.slug)}>
+                    <Button onClick={() => handleBook(service.calEventType)}>
                       Book now
                     </Button>
                   </CardContent>
@@ -148,7 +185,7 @@ const Individuals = () => {
               Select a time that works for you below.
             </p>
             <div data-testid="individuals-cal">
-              <CalInline calLink="daniel-speiss" selector="#cal-booking" />
+              <CalInline calLink="daniel-speiss" eventType={eventType} />
             </div>
           </section>
 

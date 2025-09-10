@@ -1,31 +1,45 @@
-import React from "react";
-import { renderToString } from "react-dom/server";
-import { StaticRouter } from "react-router-dom/server";
-import { describe, it } from "node:test";
+import test, { mock } from "node:test";
+import { JSDOM } from "jsdom";
+import { render, screen, fireEvent } from "@testing-library/react";
 import assert from "node:assert/strict";
-import Organizations from "../src/pages/Organizations";
+import Organizations, { organizationServices } from "../src/pages/Organizations";
+import * as calReact from "@calcom/embed-react";
 
-describe("Organizations page", () => {
-  it("renders services and booking embed", () => {
-    const html = renderToString(
-      <StaticRouter location="/organizations">
-        <Organizations />
-      </StaticRouter>
-    );
-    const services = html.match(/data-testid="organization-service"/g) ?? [];
-    assert.equal(services.length, 7);
-    const slugs = [
-      "owner-leader-discovery-20m-49-credit",
-      "team-compass-workshop-group-up-to-8",
-      "leadership-debrief",
-      "sales-persona-play",
-      "manager-coaching-by-persona",
-      "hiring-fit-screen",
-      "team-performance-sprint-4-950-mo-8-12-people-2-months",
-    ];
-    for (const slug of slugs) {
-      assert.ok(html.includes(`/solutions/organizations/${slug}`));
-    }
-    assert.ok(html.includes("organizations-cal"));
-  });
+// Create JSDOM environment and assign globals
+const dom = new JSDOM("<!doctype html><html><body></body></html>", {
+  url: "http://localhost",
 });
+
+Object.assign(globalThis, {
+  window: dom.window as unknown as Window & typeof globalThis,
+  document: dom.window.document,
+  navigator: dom.window.navigator,
+});
+
+mock.method(calReact, "getCalApi", async () => {
+  return () => undefined;
+});
+
+test("Organization services render and book scrolls", () => {
+  render(<Organizations />);
+
+  const cards = screen.getAllByTestId("organization-service");
+  assert.equal(cards.length, organizationServices.length);
+
+  const learnLinks = screen.getAllByRole("link", { name: "Learn more" });
+  organizationServices.forEach((service, idx) => {
+    assert.equal(learnLinks[idx].getAttribute("href"), service.routePath);
+  });
+
+  let scrolled = false;
+  (document.getElementById("booking") as HTMLElement).scrollIntoView = () => {
+    scrolled = true;
+  };
+
+  const bookButtons = screen.getAllByRole("button", { name: "Book now" });
+  fireEvent.click(bookButtons[0]);
+  assert.ok(scrolled);
+
+  assert.ok(screen.getByTestId("organizations-cal"));
+});
+
