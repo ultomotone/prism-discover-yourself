@@ -2,7 +2,7 @@
 import "./setup/dom";
 
 import test, { afterEach } from "node:test";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import assert from "node:assert/strict";
 import React from "react";
 import { ServiceCard } from "../src/components/ServiceCard";
@@ -12,7 +12,7 @@ afterEach(() => {
   cleanup();
 });
 
-test("renders Learn more link and no Book button", () => {
+test("renders Book button and triggers onSelect", () => {
   const svc: Service = {
     id: "daniel-speiss/personality-mapping-call",
     scope: "individuals",
@@ -25,13 +25,14 @@ test("renders Learn more link and no Book button", () => {
     roi: "ROI info",
   };
 
-  render(<ServiceCard service={svc} />);
+  let selected: Service | null = null;
+  const onSelect = (s: Service) => {
+    selected = s;
+  };
 
-  const link = screen.getByRole("link", { name: /learn more/i });
-  assert.equal(
-    (link as HTMLAnchorElement).getAttribute("href"),
-    "/solutions/individuals/personality-mapping-call"
-  );
-  const book = screen.queryByText(/book/i);
-  assert.equal(book, null);
+  render(<ServiceCard service={svc} onSelect={onSelect} />);
+
+  const button = screen.getByRole("button", { name: /book/i });
+  fireEvent.click(button);
+  assert.equal(selected, svc);
 });
