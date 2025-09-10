@@ -1,18 +1,76 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
 import { Users, MessageSquare, TrendingUp, Target } from "lucide-react";
+import { Link } from "react-router-dom";
 import CalInline from "@/components/CalInline";
+import { getCalApi } from "@calcom/embed-react";
+
+interface Service {
+  title: string;
+  slug: string;
+  description: string;
+  duration: string;
+  price?: string;
+}
 
 const Organizations = () => {
-  const sessions = [
-    { title: "Owner/Leader Discovery (20m)", slug: "owner-leader-discovery-20m-49-credit" },
-    { title: "Team Compass Workshop (90m)", slug: "team-compass-workshop-group-up-to-8" },
-    { title: "Leadership Debrief (60m)", slug: "leadership-debrief" },
-    { title: "Sales Persona Play (45m)", slug: "sales-persona-play" },
-    { title: "Manager: Coaching by Persona (60m)", slug: "manager-coaching-by-persona" },
-    { title: "Hiring Fit Screen (30m)", slug: "hiring-fit-screen" },
-    { title: "Team Performance Sprint (2 Months)", slug: "team-performance-sprint-4-950-mo-8-12-people-2-months" },
+  const services: Service[] = [
+    {
+      title: "Owner/Leader Discovery",
+      slug: "owner-leader-discovery-20m-49-credit",
+      description: "Snapshot of leadership signals and growth areas.",
+      duration: "20m",
+      price: "49 credits",
+    },
+    {
+      title: "Team Compass Workshop",
+      slug: "team-compass-workshop-group-up-to-8",
+      description: "Interactive session for teams up to eight people.",
+      duration: "90m",
+    },
+    {
+      title: "Leadership Debrief",
+      slug: "leadership-debrief",
+      description: "Deep dive on leadership style and blind spots.",
+      duration: "60m",
+    },
+    {
+      title: "Sales Persona Play",
+      slug: "sales-persona-play",
+      description: "Align sales tactics to customer cognition.",
+      duration: "45m",
+    },
+    {
+      title: "Manager: Coaching by Persona",
+      slug: "manager-coaching-by-persona",
+      description: "Coaching framework tailored to manager profiles.",
+      duration: "60m",
+    },
+    {
+      title: "Hiring Fit Screen",
+      slug: "hiring-fit-screen",
+      description: "Evaluate candidate fit before hiring decisions.",
+      duration: "30m",
+    },
+    {
+      title: "Team Performance Sprint",
+      slug: "team-performance-sprint-4-950-mo-8-12-people-2-months",
+      description: "Two-month sprint to raise team effectiveness.",
+      duration: "2 months",
+    },
   ];
+
+  const handleBook = async (slug: string) => {
+    const cal = await getCalApi({ namespace: "prism" });
+    cal("open", { calLink: `daniel-speiss/${slug}` });
+    document.getElementById("booking")?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const outcomes = [
     {
@@ -51,46 +109,57 @@ const included = [
             </p>
           </div>
 
-          {/* Book a Session */}
-          <section className="mb-16" aria-labelledby="book-org">
-            <h2 id="book-org" className="prism-heading-md text-primary mb-4 text-center">Book a Session</h2>
-            <p className="prism-body text-muted-foreground text-center mb-8">Choose any session below—booking happens right on this page.</p>
-            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
-              {sessions.map((e) => (
-                <article key={e.slug} className="rounded-2xl border p-4 shadow-sm">
-                  <h3 className="font-medium text-primary">{e.title}</h3>
-                  <div className="mt-4">
-                    <CalInline calLink={`daniel-speiss/${e.slug}`} selector={`#cal-${e.slug}`} />
-                  </div>
-                </article>
-              ))}
-            </div>
-            <p className="text-center mt-8">
-              <a className="underline" href="/book">See all sessions →</a>
-            </p>
-            <p className="text-center text-sm text-muted-foreground mt-4">
-              Bookings are processed securely via Cal.com; availability updates live.
-            </p>
-          </section>
-
-          {/* Service Details Links */}
+          {/* Services */}
           <section className="mb-16" aria-labelledby="org-services">
             <h2 id="org-services" className="prism-heading-md text-primary mb-4 text-center">
-              Service Details
+              Services
             </h2>
             <p className="prism-body text-muted-foreground text-center mb-8">
-              Learn more about what each session includes.
+              Solutions tailored for teams and leaders.
             </p>
-            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
-              {sessions.map((e) => (
-                <a
-                  key={e.slug}
-                  href={`/solutions/organizations/${e.slug}`}
-                  className="rounded-2xl border p-4 text-center hover:bg-accent/50 prism-transition"
+            <div
+              className="grid gap-6 sm:grid-cols-2 md:grid-cols-3"
+              data-testid="organizations-services"
+            >
+              {services.map((service) => (
+                <Card
+                  key={service.slug}
+                  className="prism-card-hover"
+                  data-testid="organization-service"
                 >
-                  {e.title}
-                </a>
+                  <CardHeader>
+                    <CardTitle className="text-lg">{service.title}</CardTitle>
+                    <CardDescription>{service.description}</CardDescription>
+                    <p className="text-sm text-muted-foreground">
+                      {service.duration}
+                      {service.price && ` · ${service.price}`}
+                    </p>
+                  </CardHeader>
+                  <CardContent className="flex gap-2">
+                    <Button asChild variant="outline">
+                      <Link to={`/solutions/organizations/${service.slug}`}>
+                        Learn more
+                      </Link>
+                    </Button>
+                    <Button onClick={() => handleBook(service.slug)}>
+                      Book now
+                    </Button>
+                  </CardContent>
+                </Card>
               ))}
+            </div>
+          </section>
+
+          {/* Booking Embed */}
+          <section id="booking" className="mb-16" aria-labelledby="book-org">
+            <h2 id="book-org" className="prism-heading-md text-primary mb-4 text-center">
+              Book a Session
+            </h2>
+            <p className="prism-body text-muted-foreground text-center mb-8">
+              Pick a time directly below.
+            </p>
+            <div data-testid="organizations-cal">
+              <CalInline calLink="daniel-speiss" selector="#cal-booking" />
             </div>
           </section>
 

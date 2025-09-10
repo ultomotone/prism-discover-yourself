@@ -1,18 +1,64 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
 import { Target, TrendingUp, MessageSquare, CheckCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import CalInline from "@/components/CalInline";
+import { getCalApi } from "@calcom/embed-react";
+
+interface Service {
+  title: string;
+  slug: string;
+  description: string;
+  duration: string;
+  price?: string;
+}
 
 const Individuals = () => {
-  const navigate = useNavigate();
-  const sessions = [
-    { title: "Personal Discovery (20m)", slug: "personal-discovery-20m-29-credit" },
-    { title: "Personality Mapping (45m)", slug: "personality-mapping-call" },
-    { title: "Compatibility Debrief (45m)", slug: "compatibility-debrief-couples" },
-    { title: "Career Clarity Mapping (60m)", slug: "career-clarity-mapping" },
-    { title: "Progress Retake & Tune-Up (30m)", slug: "progress-retake-tune-up" },
+  const services: Service[] = [
+    {
+      title: "Personal Discovery",
+      slug: "personal-discovery-20m-29-credit",
+      description: "Quick scan of your cognitive signals and next steps.",
+      duration: "20m",
+      price: "29 credits",
+    },
+    {
+      title: "Personality Mapping",
+      slug: "personality-mapping-call",
+      description: "Map your PRISM profile with a specialist.",
+      duration: "45m",
+    },
+    {
+      title: "Compatibility Debrief",
+      slug: "compatibility-debrief-couples",
+      description: "Understand relational dynamics with a partner.",
+      duration: "45m",
+    },
+    {
+      title: "Career Clarity Mapping",
+      slug: "career-clarity-mapping",
+      description: "Align your strengths to your career path.",
+      duration: "60m",
+    },
+    {
+      title: "Progress Retake & Tune-Up",
+      slug: "progress-retake-tune-up",
+      description: "Reassess and calibrate your development.",
+      duration: "30m",
+    },
   ];
+
+  const handleBook = async (slug: string) => {
+    const cal = await getCalApi({ namespace: "prism" });
+    cal("open", { calLink: `daniel-speiss/${slug}` });
+    document.getElementById("booking")?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const insights = [
     {
@@ -52,50 +98,57 @@ const Individuals = () => {
             </p>
           </div>
 
-          {/* Book a Session */}
-          <section className="mb-16" aria-labelledby="book-now">
+          {/* Services */}
+          <section className="mb-16" aria-labelledby="services">
+            <h2 id="services" className="prism-heading-md text-primary mb-4 text-center">
+              Services
+            </h2>
+            <p className="prism-body text-muted-foreground text-center mb-8">
+              Explore sessions designed for personal clarity.
+            </p>
+            <div
+              className="grid gap-6 sm:grid-cols-2 md:grid-cols-3"
+              data-testid="individuals-services"
+            >
+              {services.map((service) => (
+                <Card
+                  key={service.slug}
+                  className="prism-card-hover"
+                  data-testid="individual-service"
+                >
+                  <CardHeader>
+                    <CardTitle className="text-lg">{service.title}</CardTitle>
+                    <CardDescription>{service.description}</CardDescription>
+                    <p className="text-sm text-muted-foreground">
+                      {service.duration}
+                      {service.price && ` · ${service.price}`}
+                    </p>
+                  </CardHeader>
+                  <CardContent className="flex gap-2">
+                    <Button asChild variant="outline">
+                      <Link to={`/solutions/individuals/${service.slug}`}>
+                        Learn more
+                      </Link>
+                    </Button>
+                    <Button onClick={() => handleBook(service.slug)}>
+                      Book now
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+
+          {/* Booking Embed */}
+          <section id="booking" className="mb-16" aria-labelledby="book-now">
             <h2 id="book-now" className="prism-heading-md text-primary mb-4 text-center">
               Book a Session
             </h2>
             <p className="prism-body text-muted-foreground text-center mb-8">
-              Choose any session below—booking happens right on this page.
+              Select a time that works for you below.
             </p>
-            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
-              {sessions.map((e) => (
-                <article key={e.slug} className="rounded-2xl border p-4 shadow-sm">
-                  <h3 className="font-medium text-primary">{e.title}</h3>
-                  <div className="mt-4">
-                    <CalInline calLink={`daniel-speiss/${e.slug}`} selector={`#cal-${e.slug}`} />
-                  </div>
-                </article>
-              ))}
-            </div>
-            <p className="text-center mt-8">
-              <a className="underline" href="/book">See all sessions →</a>
-            </p>
-            <p className="text-center text-sm text-muted-foreground mt-4">
-              Bookings are processed securely via Cal.com; availability updates live.
-            </p>
-          </section>
-
-          {/* Service Details Links */}
-          <section className="mb-16" aria-labelledby="services">
-            <h2 id="services" className="prism-heading-md text-primary mb-4 text-center">
-              Service Details
-            </h2>
-            <p className="prism-body text-muted-foreground text-center mb-8">
-              Learn more about what each session includes.
-            </p>
-            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
-              {sessions.map((e) => (
-                <a
-                  key={e.slug}
-                  href={`/solutions/individuals/${e.slug}`}
-                  className="rounded-2xl border p-4 text-center hover:bg-accent/50 prism-transition"
-                >
-                  {e.title}
-                </a>
-              ))}
+            <div data-testid="individuals-cal">
+              <CalInline calLink="daniel-speiss" selector="#cal-booking" />
             </div>
           </section>
 
@@ -265,13 +318,13 @@ const Individuals = () => {
                 <p className="text-white/90 mb-8 max-w-2xl mx-auto">
                   Get clear insights into your thinking patterns, decision-making style, and growth opportunities.
                 </p>
-                <Button 
-                  variant="default" 
-                  size="lg" 
+                <Button
+                  variant="default"
+                  size="lg"
                   className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-3"
-                  onClick={() => navigate('/assessment')}
+                  asChild
                 >
-                  Take the Assessment
+                  <Link to="/assessment">Take the Assessment</Link>
                 </Button>
               </CardContent>
             </Card>
