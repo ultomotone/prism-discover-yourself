@@ -14,6 +14,7 @@ interface NewsletterSignupModalProps {
 const NewsletterSignupModal = ({ isOpen, onClose }: NewsletterSignupModalProps) => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
   const { toast } = useToast();
 
   if (!isOpen) return null;
@@ -44,9 +45,7 @@ const NewsletterSignupModal = ({ isOpen, onClose }: NewsletterSignupModalProps) 
         description: "You've been subscribed to our newsletter. Check your email for confirmation.",
       });
 
-      // Close modal and redirect to assessment
-      onClose();
-      window.location.href = "/assessment?start=true";
+      setIsSubscribed(true);
     } catch (error: any) {
       console.error('Newsletter signup error:', error);
       toast({
@@ -57,6 +56,11 @@ const NewsletterSignupModal = ({ isOpen, onClose }: NewsletterSignupModalProps) 
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleTakeAssessment = () => {
+    onClose();
+    window.location.href = "/assessment?start=true";
   };
 
   const benefits = [
@@ -146,27 +150,43 @@ const NewsletterSignupModal = ({ isOpen, onClose }: NewsletterSignupModalProps) 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full"
-                  disabled={isLoading}
+                  disabled={isLoading || isSubscribed}
                 />
               </div>
               
-              <Button 
-                type="submit" 
-                className="w-full h-12 font-semibold"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent mr-2" />
-                    Subscribing...
-                  </>
-                ) : (
-                  <>
-                    Subscribe & Take Assessment
-                    <Sparkles className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
+              <div className="space-y-3">
+                <Button 
+                  type="submit" 
+                  className="w-full h-12 font-semibold"
+                  disabled={isLoading || isSubscribed}
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent mr-2" />
+                      Subscribing...
+                    </>
+                  ) : isSubscribed ? (
+                    <>
+                      ✓ Subscribed!
+                    </>
+                  ) : (
+                    <>
+                      Subscribe to Newsletter
+                    </>
+                  )}
+                </Button>
+
+                <Button 
+                  type="button"
+                  onClick={handleTakeAssessment}
+                  variant="outline"
+                  className="w-full h-12 font-semibold"
+                  disabled={isLoading}
+                >
+                  Take Assessment
+                  <Sparkles className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </form>
 
             {/* Footer */}
