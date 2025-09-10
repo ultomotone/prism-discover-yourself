@@ -1,4 +1,4 @@
-import React, { useState, type ComponentType } from "react";
+import React, { type ComponentType } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,7 +19,6 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import CalInline from "@/components/CalInline";
 
 export interface Service {
   key: string;
@@ -29,7 +28,6 @@ export interface Service {
   duration: string;
   price?: string;
   icon: ComponentType<{ className?: string }>;
-  calEventType: string;
 }
 
 export const individualServices: Service[] = [
@@ -42,7 +40,6 @@ export const individualServices: Service[] = [
     duration: "20m",
     price: "29 credits",
     icon: Compass,
-    calEventType: "personal-discovery-20m-29-credit",
   },
   {
     key: "personality-mapping",
@@ -52,7 +49,6 @@ export const individualServices: Service[] = [
       "/solutions/individuals/personality-mapping-call",
     duration: "45m",
     icon: Map,
-    calEventType: "personality-mapping-call",
   },
   {
     key: "compatibility-debrief",
@@ -62,7 +58,6 @@ export const individualServices: Service[] = [
       "/solutions/individuals/compatibility-debrief-couples",
     duration: "45m",
     icon: Users,
-    calEventType: "compatibility-debrief-couples",
   },
   {
     key: "career-clarity",
@@ -72,7 +67,6 @@ export const individualServices: Service[] = [
       "/solutions/individuals/career-clarity-mapping",
     duration: "60m",
     icon: Briefcase,
-    calEventType: "career-clarity-mapping",
   },
   {
     key: "progress-retake",
@@ -82,17 +76,10 @@ export const individualServices: Service[] = [
       "/solutions/individuals/progress-retake-tune-up",
     duration: "30m",
     icon: RefreshCw,
-    calEventType: "progress-retake-tune-up",
   },
 ];
 
 const Individuals = () => {
-  const [eventType, setEventType] = useState<string | undefined>();
-
-  const handleBook = (slug: string) => {
-    setEventType(slug);
-    document.getElementById("book")?.scrollIntoView({ behavior: "smooth" });
-  };
 
   const insights = [
     {
@@ -165,28 +152,9 @@ const Individuals = () => {
                     <Button asChild variant="outline">
                       <Link to={service.routePath}>Learn more</Link>
                     </Button>
-                    <Button
-                      onClick={() => handleBook(service.calEventType)}
-                      aria-controls="book"
-                    >
-                      Book now
-                    </Button>
                   </CardContent>
                 </Card>
               ))}
-            </div>
-          </section>
-
-          {/* Booking Embed */}
-          <section id="book" className="mb-16" aria-labelledby="book-now">
-            <h2 id="book-now" className="prism-heading-md text-primary mb-4 text-center">
-              Book a Session
-            </h2>
-            <p className="prism-body text-muted-foreground text-center mb-8">
-              Select a time that works for you below.
-            </p>
-            <div data-testid="individuals-cal">
-              <CalInline calLink="daniel-speiss" eventType={eventType} />
             </div>
           </section>
 

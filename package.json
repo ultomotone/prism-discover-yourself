@@ -8,7 +8,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint .",
-    "test": "c8 tsx --test tests/fetchResults.test.ts tests/results.integration.test.ts tests/linkSessionsToUser.test.ts tests/linkSessionToAccount.test.ts tests/assessmentApi.test.ts tests/dashboardUtils.test.ts tests/recompute.invoke.test.ts tests/resultsLink.test.ts tests/backfillProfiles.test.ts tests/systemStatus.test.ts tests/individualsPage.test.tsx tests/organizationsPage.test.tsx supabase/functions/_shared/score-engine/__tests__/score-engine.test.ts",
+    "test": "c8 tsx --test tests/fetchResults.test.ts tests/results.integration.test.ts tests/linkSessionsToUser.test.ts tests/linkSessionToAccount.test.ts tests/assessmentApi.test.ts tests/dashboardUtils.test.ts tests/recompute.invoke.test.ts tests/resultsLink.test.ts tests/backfillProfiles.test.ts tests/systemStatus.test.ts tests/individualsPage.test.tsx tests/organizationsPage.test.tsx tests/serviceCard.test.tsx supabase/functions/_shared/score-engine/__tests__/score-engine.test.ts",
     "test:ci": "npm test",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit || echo \"typecheck skipped: no tsconfig.json\"",
