@@ -21,7 +21,7 @@ const Education = () => {
             <Button 
               size="lg" 
               variant="hero"
-              onClick={() => window.location.href = 'mailto:daniel.joseph.speiss@gmail.com?subject=PRISM Education Interest'}
+              onClick={() => window.location.href = 'mailto:team@prismpersonality.com?subject=PRISM Education Interest'}
             >
               Explore PRISM for Education
             </Button>
@@ -182,7 +182,7 @@ const Education = () => {
               <Button 
                 size="lg" 
                 variant="hero"
-                onClick={() => window.location.href = 'mailto:daniel.joseph.speiss@gmail.com?subject=PRISM Education Interest'}
+                onClick={() => window.location.href = 'mailto:team@prismpersonality.com?subject=PRISM Education Interest'}
               >
                 Get Started Today
               </Button>

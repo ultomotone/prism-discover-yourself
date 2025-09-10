@@ -22,7 +22,7 @@ const Consultants = () => {
             <Button 
               size="lg" 
               variant="hero"
-              onClick={() => window.location.href = 'mailto:daniel.joseph.speiss@gmail.com?subject=PRISM Consultant Interest'}
+              onClick={() => window.location.href = 'mailto:team@prismpersonality.com?subject=PRISM Consultant Interest'}
             >
               Get Started with PRISM
             </Button>
@@ -116,7 +116,7 @@ const Consultants = () => {
               <Button 
                 size="lg" 
                 variant="hero"
-                onClick={() => window.location.href = 'mailto:daniel.joseph.speiss@gmail.com?subject=PRISM Consultant Interest'}
+                onClick={() => window.location.href = 'mailto:team@prismpersonality.com?subject=PRISM Consultant Interest'}
               >
                 Start Your Journey
               </Button>
