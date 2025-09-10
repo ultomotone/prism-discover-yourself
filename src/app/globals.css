@@ -1,0 +1,2 @@
+html:focus-within { scroll-behavior: smooth; }
+:target { scroll-margin-top: 1.5rem; }
