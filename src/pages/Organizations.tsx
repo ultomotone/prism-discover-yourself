@@ -1,10 +1,130 @@
+import { useState, type ComponentType } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Users, MessageSquare, TrendingUp, Target } from "lucide-react";
-import Header from "@/components/Header";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Users,
+  MessageSquare,
+  TrendingUp,
+  Target,
+  User,
+  Compass,
+  Lightbulb,
+  DollarSign,
+  UserCog,
+  Search,
+  BookOpen,
+  Rocket,
+} from "lucide-react";
+import { Link } from "react-router-dom";
 import CalInline from "@/components/CalInline";
 
+export interface Service {
+  key: string;
+  title: string;
+  description: string;
+  routePath: string;
+  duration: string;
+  price?: string;
+  icon: ComponentType<{ className?: string }>;
+  calEventType: string;
+}
+
+export const organizationServices: Service[] = [
+  {
+    key: "owner-leader-discovery",
+    title: "Owner/Leader Discovery",
+    description: "Snapshot of leadership signals and growth areas.",
+    routePath:
+      "/solutions/organizations/owner-leader-discovery-20m-49-credit",
+    duration: "20m",
+    price: "49 credits",
+    icon: User,
+    calEventType: "owner-leader-discovery-20m-49-credit",
+  },
+  {
+    key: "team-compass-workshop",
+    title: "Team Compass Workshop",
+    description: "Interactive session for teams up to eight people.",
+    routePath:
+      "/solutions/organizations/team-compass-workshop-group-up-to-8",
+    duration: "90m",
+    icon: Compass,
+    calEventType: "team-compass-workshop-group-up-to-8",
+  },
+  {
+    key: "leadership-debrief",
+    title: "Leadership Debrief",
+    description: "Deep dive on leadership style and blind spots.",
+    routePath: "/solutions/organizations/leadership-debrief",
+    duration: "60m",
+    icon: Lightbulb,
+    calEventType: "leadership-debrief",
+  },
+  {
+    key: "sales-persona-play",
+    title: "Sales Persona Play",
+    description: "Align sales tactics to customer cognition.",
+    routePath: "/solutions/organizations/sales-persona-play",
+    duration: "45m",
+    icon: DollarSign,
+    calEventType: "sales-persona-play",
+  },
+  {
+    key: "manager-coaching",
+    title: "Manager: Coaching by Persona",
+    description: "Coaching framework tailored to manager profiles.",
+    routePath: "/solutions/organizations/manager-coaching-by-persona",
+    duration: "60m",
+    icon: UserCog,
+    calEventType: "manager-coaching-by-persona",
+  },
+  {
+    key: "hiring-fit-screen",
+    title: "Hiring Fit Screen",
+    description: "Evaluate candidate fit before hiring decisions.",
+    routePath: "/solutions/organizations/hiring-fit-screen",
+    duration: "30m",
+    icon: Search,
+    calEventType: "hiring-fit-screen",
+  },
+  {
+    key: "leader-coaching-training",
+    title: "Leader Coaching & Training",
+    description: "Ongoing coaching and training for leaders.",
+    routePath: "/solutions/organizations/leader-coaching-training",
+    duration: "Varies",
+    icon: BookOpen,
+    calEventType: "leader-coaching-training",
+  },
+  {
+    key: "team-performance-sprint",
+    title: "Team Performance Sprint",
+    description: "Two-month sprint to raise team effectiveness.",
+    routePath:
+      "/solutions/organizations/team-performance-sprint-4-950-mo-8-12-people-2-months",
+    duration: "2 months",
+    icon: Rocket,
+    calEventType:
+      "team-performance-sprint-4-950-mo-8-12-people-2-months",
+  },
+];
+
 const Organizations = () => {
+  const [eventType, setEventType] = useState<string | undefined>();
+
+  const handleBook = (slug: string) => {
+    setEventType(slug);
+    document
+      .getElementById("booking")
+      ?.scrollIntoView({ behavior: "smooth" });
+  };
+
   const outcomes = [
     {
       icon: MessageSquare,
@@ -30,10 +150,8 @@ const included = [
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="prism-container pt-24 pb-16">
-        <div className="max-w-6xl mx-auto">
+    <div className="prism-container pt-24 pb-16">
+      <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="text-center mb-16">
             <h1 className="prism-heading-lg text-primary mb-6">
@@ -44,34 +162,59 @@ const included = [
             </p>
           </div>
 
-          {/* Book a Session */}
-          <section className="mb-16" aria-labelledby="book-org">
-            <h2 id="book-org" className="prism-heading-md text-primary mb-4 text-center">Book a Session</h2>
-            <p className="prism-body text-muted-foreground text-center mb-8">Choose any session below—booking happens right on this page.</p>
-            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
-              {[
-                { title: "Owner/Leader Discovery (20m)", slug: "owner-leader-discovery-20m-49-credit" },
-                { title: "Team Compass Workshop (90m)", slug: "team-compass-workshop-group-up-to-8" },
-                { title: "Leadership Debrief (60m)", slug: "leadership-debrief" },
-                { title: "Sales Persona Play (45m)", slug: "sales-persona-play" },
-                { title: "Manager: Coaching by Persona (60m)", slug: "manager-coaching-by-persona" },
-                { title: "Hiring Fit Screen (30m)", slug: "hiring-fit-screen" },
-                { title: "Team Performance Sprint (2 Months)", slug: "team-performance-sprint-4-950-mo-8-12-people-2-months" },
-              ].map((e) => (
-                <article key={e.slug} className="rounded-2xl border p-4 shadow-sm">
-                  <h3 className="font-medium text-primary">{e.title}</h3>
-                  <div className="mt-4">
-                    <CalInline calLink={`daniel-speiss/${e.slug}`} selector={`#cal-${e.slug}`} />
-                  </div>
-                </article>
+          {/* Services */}
+          <section className="mb-16" aria-labelledby="org-services">
+            <h2 id="org-services" className="prism-heading-md text-primary mb-4 text-center">
+              Services
+            </h2>
+            <p className="prism-body text-muted-foreground text-center mb-8">
+              Solutions tailored for teams and leaders.
+            </p>
+            <div
+              className="grid gap-6 sm:grid-cols-2 md:grid-cols-3"
+              data-testid="organizations-services"
+            >
+              {organizationServices.map((service) => (
+                <Card
+                  key={service.key}
+                  className="prism-card-hover"
+                  data-testid="organization-service"
+                >
+                  <CardHeader>
+                    <div className="flex items-center gap-2 mb-2">
+                      <service.icon className="h-6 w-6 text-primary" />
+                      <CardTitle className="text-lg">{service.title}</CardTitle>
+                    </div>
+                    <CardDescription>{service.description}</CardDescription>
+                    <p className="text-sm text-muted-foreground">
+                      {service.duration}
+                      {service.price && ` · ${service.price}`}
+                    </p>
+                  </CardHeader>
+                  <CardContent className="flex gap-2">
+                    <Button asChild variant="outline">
+                      <Link to={service.routePath}>Learn more</Link>
+                    </Button>
+                    <Button onClick={() => handleBook(service.calEventType)}>
+                      Book now
+                    </Button>
+                  </CardContent>
+                </Card>
               ))}
             </div>
-            <p className="text-center mt-8">
-              <a className="underline" href="/book">See all sessions →</a>
+          </section>
+
+          {/* Booking Embed */}
+          <section id="booking" className="mb-16" aria-labelledby="book-org">
+            <h2 id="book-org" className="prism-heading-md text-primary mb-4 text-center">
+              Book a Session
+            </h2>
+            <p className="prism-body text-muted-foreground text-center mb-8">
+              Pick a time directly below.
             </p>
-            <p className="text-center text-sm text-muted-foreground mt-4">
-              Bookings are processed securely via Cal.com; availability updates live.
-            </p>
+            <div data-testid="organizations-cal">
+              <CalInline calLink="daniel-speiss" eventType={eventType} />
+            </div>
           </section>
 
           {/* Team outcomes */}
@@ -131,7 +274,6 @@ const included = [
           </div>
         </div>
       </div>
-    </div>
   );
 };
 

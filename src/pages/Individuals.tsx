@@ -1,13 +1,100 @@
+import { useState, type ComponentType } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Target, TrendingUp, MessageSquare, CheckCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import Header from "@/components/Header";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Target,
+  TrendingUp,
+  MessageSquare,
+  CheckCircle,
+  Compass,
+  Map,
+  Users,
+  Briefcase,
+  RefreshCw,
+} from "lucide-react";
+import { Link } from "react-router-dom";
 import CalInline from "@/components/CalInline";
 
+export interface Service {
+  key: string;
+  title: string;
+  description: string;
+  routePath: string;
+  duration: string;
+  price?: string;
+  icon: ComponentType<{ className?: string }>;
+  calEventType: string;
+}
+
+export const individualServices: Service[] = [
+  {
+    key: "personal-discovery",
+    title: "Personal Discovery",
+    description: "Quick scan of your cognitive signals and next steps.",
+    routePath:
+      "/solutions/individuals/personal-discovery-20m-29-credit",
+    duration: "20m",
+    price: "29 credits",
+    icon: Compass,
+    calEventType: "personal-discovery-20m-29-credit",
+  },
+  {
+    key: "personality-mapping",
+    title: "Personality Mapping",
+    description: "Map your PRISM profile with a specialist.",
+    routePath:
+      "/solutions/individuals/personality-mapping-call",
+    duration: "45m",
+    icon: Map,
+    calEventType: "personality-mapping-call",
+  },
+  {
+    key: "compatibility-debrief",
+    title: "Compatibility Debrief",
+    description: "Understand relational dynamics with a partner.",
+    routePath:
+      "/solutions/individuals/compatibility-debrief-couples",
+    duration: "45m",
+    icon: Users,
+    calEventType: "compatibility-debrief-couples",
+  },
+  {
+    key: "career-clarity",
+    title: "Career Clarity Mapping",
+    description: "Align your strengths to your career path.",
+    routePath:
+      "/solutions/individuals/career-clarity-mapping",
+    duration: "60m",
+    icon: Briefcase,
+    calEventType: "career-clarity-mapping",
+  },
+  {
+    key: "progress-retake",
+    title: "Progress Retake & Tune-Up",
+    description: "Reassess and calibrate your development.",
+    routePath:
+      "/solutions/individuals/progress-retake-tune-up",
+    duration: "30m",
+    icon: RefreshCw,
+    calEventType: "progress-retake-tune-up",
+  },
+];
+
 const Individuals = () => {
-  const navigate = useNavigate();
-  const assessmentLink = "https://docs.google.com/forms/d/e/1FAIpQLScVFSAWRNUZT10hEoziD1oMXeS_FyCVP9NFTWD61eR8xDQaDA/viewform";
+  const [eventType, setEventType] = useState<string | undefined>();
+
+  const handleBook = (slug: string) => {
+    setEventType(slug);
+    document
+      .getElementById("booking")
+      ?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const insights = [
     {
@@ -35,10 +122,8 @@ const Individuals = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="prism-container pt-24 pb-16">
-        <div className="max-w-6xl mx-auto">
+    <div className="prism-container pt-24 pb-16">
+      <div className="max-w-6xl mx-auto">
           {/* Hero */}
           <div className="text-center mb-16">
             <h1 className="prism-heading-lg text-primary mb-6">
@@ -49,36 +134,59 @@ const Individuals = () => {
             </p>
           </div>
 
-          {/* Book a Session */}
-          <section className="mb-16" aria-labelledby="book-now">
+          {/* Services */}
+          <section className="mb-16" aria-labelledby="services">
+            <h2 id="services" className="prism-heading-md text-primary mb-4 text-center">
+              Services
+            </h2>
+            <p className="prism-body text-muted-foreground text-center mb-8">
+              Explore sessions designed for personal clarity.
+            </p>
+            <div
+              className="grid gap-6 sm:grid-cols-2 md:grid-cols-3"
+              data-testid="individuals-services"
+            >
+              {individualServices.map((service) => (
+                <Card
+                  key={service.key}
+                  className="prism-card-hover"
+                  data-testid="individual-service"
+                >
+                  <CardHeader>
+                    <div className="flex items-center gap-2 mb-2">
+                      <service.icon className="h-6 w-6 text-primary" />
+                      <CardTitle className="text-lg">{service.title}</CardTitle>
+                    </div>
+                    <CardDescription>{service.description}</CardDescription>
+                    <p className="text-sm text-muted-foreground">
+                      {service.duration}
+                      {service.price && ` · ${service.price}`}
+                    </p>
+                  </CardHeader>
+                  <CardContent className="flex gap-2">
+                    <Button asChild variant="outline">
+                      <Link to={service.routePath}>Learn more</Link>
+                    </Button>
+                    <Button onClick={() => handleBook(service.calEventType)}>
+                      Book now
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+
+          {/* Booking Embed */}
+          <section id="booking" className="mb-16" aria-labelledby="book-now">
             <h2 id="book-now" className="prism-heading-md text-primary mb-4 text-center">
               Book a Session
             </h2>
             <p className="prism-body text-muted-foreground text-center mb-8">
-              Choose any session below—booking happens right on this page.
+              Select a time that works for you below.
             </p>
-            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
-              {[
-                { title: "Personal Discovery (20m)", slug: "personal-discovery-20m-29-credit" },
-                { title: "Personality Mapping (45m)", slug: "personality-mapping-call" },
-                { title: "Compatibility Debrief (45m)", slug: "compatibility-debrief-couples" },
-                { title: "Career Clarity Mapping (60m)", slug: "career-clarity-mapping" },
-                { title: "Progress Retake & Tune-Up (30m)", slug: "progress-retake-tune-up" },
-              ].map((e) => (
-                <article key={e.slug} className="rounded-2xl border p-4 shadow-sm">
-                  <h3 className="font-medium text-primary">{e.title}</h3>
-                  <div className="mt-4">
-                    <CalInline calLink={`daniel-speiss/${e.slug}`} selector={`#cal-${e.slug}`} />
-                  </div>
-                </article>
-              ))}
+            <div data-testid="individuals-cal">
+              <CalInline calLink="daniel-speiss" eventType={eventType} />
             </div>
-            <p className="text-center mt-8">
-              <a className="underline" href="/book">See all sessions →</a>
-            </p>
-            <p className="text-center text-sm text-muted-foreground mt-4">
-              Bookings are processed securely via Cal.com; availability updates live.
-            </p>
           </section>
 
           {/* What PRISM Shows You */}
@@ -247,20 +355,19 @@ const Individuals = () => {
                 <p className="text-white/90 mb-8 max-w-2xl mx-auto">
                   Get clear insights into your thinking patterns, decision-making style, and growth opportunities.
                 </p>
-                <Button 
-                  variant="default" 
-                  size="lg" 
+                <Button
+                  variant="default"
+                  size="lg"
                   className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-3"
-                  onClick={() => navigate('/assessment')}
+                  asChild
                 >
-                  Take the Assessment
+                  <Link to="/assessment">Take the Assessment</Link>
                 </Button>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
-    </div>
   );
 };
 

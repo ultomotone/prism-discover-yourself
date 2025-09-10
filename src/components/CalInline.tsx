@@ -1,13 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { getCalApi } from "@calcom/embed-react";
 
 interface CalInlineProps {
   calLink: string;
-  selector: string;
+  eventType?: string;
   ui?: { theme?: "light" | "dark" };
 }
 
-const CalInline = ({ calLink, selector, ui = { theme: "light" } }: CalInlineProps) => {
+const CalInline = ({ calLink, eventType, ui = { theme: "light" } }: CalInlineProps) => {
+  const ref = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     (async () => {
       const cal = await getCalApi({ namespace: "prism" });
@@ -15,11 +17,14 @@ const CalInline = ({ calLink, selector, ui = { theme: "light" } }: CalInlineProp
         styles: { body: { background: "transparent" } },
         theme: ui.theme,
       });
-      cal("inline", { elementOrSelector: selector, calLink });
+      cal("inline", {
+        elementOrSelector: ref.current!,
+        calLink: `${calLink}${eventType ? `/${eventType}` : ""}`,
+      });
     })();
-  }, [calLink, selector, ui]);
+  }, [calLink, eventType, ui]);
 
-  return <div id={selector.replace("#", "")} />;
+  return <div ref={ref} />;
 };
 
 export default CalInline;
