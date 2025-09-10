@@ -14,6 +14,18 @@ export type Database = {
   }
   public: {
     Tables: {
+      _write_probe: {
+        Row: {
+          ts: string | null
+        }
+        Insert: {
+          ts?: string | null
+        }
+        Update: {
+          ts?: string | null
+        }
+        Relationships: []
+      }
       assessment_questions: {
         Row: {
           created_at: string
@@ -198,11 +210,13 @@ export type Database = {
           created_at: string
           created_at_original: string | null
           email: string | null
+          finalized_at: string | null
           id: string
           ip_hash: string | null
           metadata: Json | null
           session_type: string
           share_token: string
+          share_token_expires_at: string | null
           started_at: string
           started_at_original: string | null
           status: string | null
@@ -219,11 +233,13 @@ export type Database = {
           created_at?: string
           created_at_original?: string | null
           email?: string | null
+          finalized_at?: string | null
           id?: string
           ip_hash?: string | null
           metadata?: Json | null
           session_type?: string
           share_token: string
+          share_token_expires_at?: string | null
           started_at?: string
           started_at_original?: string | null
           status?: string | null
@@ -240,11 +256,13 @@ export type Database = {
           created_at?: string
           created_at_original?: string | null
           email?: string | null
+          finalized_at?: string | null
           id?: string
           ip_hash?: string | null
           metadata?: Json | null
           session_type?: string
           share_token?: string
+          share_token_expires_at?: string | null
           started_at?: string
           started_at_original?: string | null
           status?: string | null
@@ -314,6 +332,7 @@ export type Database = {
       }
       dashboard_statistics: {
         Row: {
+          created_at: string | null
           daily_assessments: number
           id: string
           overlay_negative: number
@@ -324,6 +343,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          created_at?: string | null
           daily_assessments?: number
           id?: string
           overlay_negative?: number
@@ -334,6 +354,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          created_at?: string | null
           daily_assessments?: number
           id?: string
           overlay_negative?: number
@@ -341,6 +362,60 @@ export type Database = {
           stat_date?: string
           total_assessments?: number
           type_distribution?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      evidence_kpis: {
+        Row: {
+          id: number
+          mai_overall: number | null
+          median_days_apart: number | null
+          pairs_n: number
+          r_fe: number | null
+          r_fi: number | null
+          r_ne: number | null
+          r_ni: number | null
+          r_overall: number | null
+          r_se: number | null
+          r_si: number | null
+          r_te: number | null
+          r_ti: number | null
+          type_stability_pct: number | null
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          mai_overall?: number | null
+          median_days_apart?: number | null
+          pairs_n?: number
+          r_fe?: number | null
+          r_fi?: number | null
+          r_ne?: number | null
+          r_ni?: number | null
+          r_overall?: number | null
+          r_se?: number | null
+          r_si?: number | null
+          r_te?: number | null
+          r_ti?: number | null
+          type_stability_pct?: number | null
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          mai_overall?: number | null
+          median_days_apart?: number | null
+          pairs_n?: number
+          r_fe?: number | null
+          r_fi?: number | null
+          r_ne?: number | null
+          r_ni?: number | null
+          r_overall?: number | null
+          r_se?: number | null
+          r_si?: number | null
+          r_te?: number | null
+          r_ti?: number | null
+          type_stability_pct?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -479,6 +554,27 @@ export type Database = {
         }
         Relationships: []
       }
+      fn_logs: {
+        Row: {
+          at: string | null
+          evt: string
+          id: number
+          payload: Json | null
+        }
+        Insert: {
+          at?: string | null
+          evt: string
+          id?: number
+          payload?: Json | null
+        }
+        Update: {
+          at?: string | null
+          evt?: string
+          id?: number
+          payload?: Json | null
+        }
+        Relationships: []
+      }
       kb_definitions: {
         Row: {
           content: Json
@@ -518,6 +614,39 @@ export type Database = {
         }
         Relationships: []
       }
+      newsletter_signups: {
+        Row: {
+          confirmation_token: string | null
+          confirmed: boolean | null
+          created_at: string
+          email: string
+          id: string
+          interests: string[] | null
+          signup_source: string | null
+          updated_at: string
+        }
+        Insert: {
+          confirmation_token?: string | null
+          confirmed?: boolean | null
+          created_at?: string
+          email: string
+          id?: string
+          interests?: string[] | null
+          signup_source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          confirmation_token?: string | null
+          confirmed?: boolean | null
+          created_at?: string
+          email?: string
+          id?: string
+          interests?: string[] | null
+          signup_source?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           base_func: string | null
@@ -545,8 +674,12 @@ export type Database = {
           id: string
           invalid_combo_flag: boolean | null
           ip_hash: string | null
+          neuro_mean: number | null
+          neuro_z: number | null
           neuroticism: Json | null
           overlay: string | null
+          overlay_neuro: string | null
+          overlay_state: string | null
           parent_session_id: string | null
           person_key: string | null
           prev_session_id: string | null
@@ -557,6 +690,8 @@ export type Database = {
           score_fit_raw: number | null
           session_id: string
           session_kind: string | null
+          share_token: string
+          state_index: number | null
           strengths: Json | null
           submitted_at: string | null
           top_3_fits: Json | null
@@ -597,8 +732,12 @@ export type Database = {
           id?: string
           invalid_combo_flag?: boolean | null
           ip_hash?: string | null
+          neuro_mean?: number | null
+          neuro_z?: number | null
           neuroticism?: Json | null
           overlay?: string | null
+          overlay_neuro?: string | null
+          overlay_state?: string | null
           parent_session_id?: string | null
           person_key?: string | null
           prev_session_id?: string | null
@@ -609,6 +748,8 @@ export type Database = {
           score_fit_raw?: number | null
           session_id: string
           session_kind?: string | null
+          share_token?: string
+          state_index?: number | null
           strengths?: Json | null
           submitted_at?: string | null
           top_3_fits?: Json | null
@@ -649,8 +790,12 @@ export type Database = {
           id?: string
           invalid_combo_flag?: boolean | null
           ip_hash?: string | null
+          neuro_mean?: number | null
+          neuro_z?: number | null
           neuroticism?: Json | null
           overlay?: string | null
+          overlay_neuro?: string | null
+          overlay_state?: string | null
           parent_session_id?: string | null
           person_key?: string | null
           prev_session_id?: string | null
@@ -661,6 +806,8 @@ export type Database = {
           score_fit_raw?: number | null
           session_id?: string
           session_kind?: string | null
+          share_token?: string
+          state_index?: number | null
           strengths?: Json | null
           submitted_at?: string | null
           top_3_fits?: Json | null
@@ -675,23 +822,111 @@ export type Database = {
           validity_status?: string | null
           version?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       rate_limits: {
         Row: {
+          count: number
           key: string
           window_ends_at: string
-          count: number
         }
         Insert: {
+          count?: number
           key: string
           window_ends_at: string
-          count?: number
         }
         Update: {
+          count?: number
           key?: string
           window_ends_at?: string
-          count?: number
+        }
+        Relationships: []
+      }
+      results_token_access_logs: {
+        Row: {
+          id: number
+          ip: string | null
+          profile_id: string | null
+          session_id: string | null
+          success: boolean
+          token_hash: string
+          ts: string
+          ua: string | null
+        }
+        Insert: {
+          id?: never
+          ip?: string | null
+          profile_id?: string | null
+          session_id?: string | null
+          success?: boolean
+          token_hash: string
+          ts?: string
+          ua?: string | null
+        }
+        Update: {
+          id?: never
+          ip?: string | null
+          profile_id?: string | null
+          session_id?: string | null
+          success?: boolean
+          token_hash?: string
+          ts?: string
+          ua?: string | null
+        }
+        Relationships: []
+      }
+      results_token_events: {
+        Row: {
+          event: string
+          id: number
+          new_token_hash: string
+          old_token_hash: string | null
+          profile_id: string | null
+          session_id: string
+          ts: string
+          user_id: string | null
+        }
+        Insert: {
+          event: string
+          id?: never
+          new_token_hash: string
+          old_token_hash?: string | null
+          profile_id?: string | null
+          session_id: string
+          ts?: string
+          user_id?: string | null
+        }
+        Update: {
+          event?: string
+          id?: never
+          new_token_hash?: string
+          old_token_hash?: string | null
+          profile_id?: string | null
+          session_id?: string
+          ts?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -710,6 +945,24 @@ export type Database = {
           key?: string
           updated_at?: string | null
           value?: Json
+        }
+        Relationships: []
+      }
+      scoring_configs: {
+        Row: {
+          config: Json
+          created_at: string | null
+          version: string
+        }
+        Insert: {
+          config: Json
+          created_at?: string | null
+          version: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string | null
+          version?: string
         }
         Relationships: []
       }
@@ -758,8 +1011,66 @@ export type Database = {
         }
         Relationships: []
       }
+      users: {
+        Row: {
+          email: string
+          id: string
+          name: string
+        }
+        Insert: {
+          email: string
+          id?: string
+          name: string
+        }
+        Update: {
+          email?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
+      admin_confidence_dist_last_30d: {
+        Row: {
+          band: string | null
+          ct: number | null
+          pct: number | null
+        }
+        Relationships: []
+      }
+      admin_kpis_last_30d: {
+        Row: {
+          completion_rate_30d: number | null
+          profiles_created_30d: number | null
+          sessions_completed_30d: number | null
+          sessions_started_30d: number | null
+          unique_users_30d: number | null
+        }
+        Relationships: []
+      }
+      admin_overlay_dist_last_30d: {
+        Row: {
+          ct: number | null
+          overlay: string | null
+          pct: number | null
+        }
+        Relationships: []
+      }
+      admin_throughput_last_14d: {
+        Row: {
+          completions: number | null
+          day: string | null
+        }
+        Relationships: []
+      }
+      admin_type_dist_last_30d: {
+        Row: {
+          n: number | null
+          primary_type: string | null
+        }
+        Relationships: []
+      }
       assessment_landscape: {
         Row: {
           assessment_id: string | null
@@ -785,7 +1096,29 @@ export type Database = {
           type_code: string | null
           validity_pass: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       assessment_questions_view: {
         Row: {
@@ -843,6 +1176,42 @@ export type Database = {
           fit_band: string | null
           overlay: string | null
           type_code: string | null
+        }
+        Relationships: []
+      }
+      dashboard_statistics_latest: {
+        Row: {
+          created_at: string | null
+          daily_assessments: number | null
+          id: string | null
+          overlay_negative: number | null
+          overlay_positive: number | null
+          stat_date: string | null
+          total_assessments: number | null
+          type_distribution: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          daily_assessments?: number | null
+          id?: string | null
+          overlay_negative?: number | null
+          overlay_positive?: number | null
+          stat_date?: string | null
+          total_assessments?: number | null
+          type_distribution?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          daily_assessments?: number | null
+          id?: string | null
+          overlay_negative?: number | null
+          overlay_positive?: number | null
+          stat_date?: string | null
+          total_assessments?: number | null
+          type_distribution?: Json | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -906,7 +1275,50 @@ export type Database = {
           type_a: string | null
           type_b: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_a"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_b"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_a"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_b"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_a"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_b"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       v_close_call_resolution: {
         Row: {
@@ -919,7 +1331,50 @@ export type Database = {
           user_id: string | null
           was_close_call: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_1"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_1"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_1"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       v_conf_dist: {
         Row: {
@@ -1008,7 +1463,50 @@ export type Database = {
           ti_dim_1_retest: number | null
           user_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_1"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_1"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_1"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       v_duplicates: {
         Row: {
@@ -1048,7 +1546,29 @@ export type Database = {
           session_id?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       v_fc_coverage: {
         Row: {
@@ -1097,7 +1617,29 @@ export type Database = {
           top1_fit: number | null
           top2_fit: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       v_incomplete_sessions: {
         Row: {
@@ -1192,7 +1734,29 @@ export type Database = {
           type_code?: never
           type_share?: never
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       v_kpi_overlay: {
         Row: {
@@ -1282,7 +1846,61 @@ export type Database = {
           type_code?: string | null
           version?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      v_live_assessments: {
+        Row: {
+          created_at: string | null
+          fit_score: number | null
+          overlay_label: string | null
+          primary_type: string | null
+          session_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       v_method_agreement: {
         Row: {
@@ -1365,7 +1983,29 @@ export type Database = {
           overlay?: string | null
           session_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       v_profiles_ext: {
         Row: {
@@ -1473,7 +2113,29 @@ export type Database = {
           validity?: Json | null
           version?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       v_quality: {
         Row: {
@@ -1485,15 +2147,47 @@ export type Database = {
           top1_fit: number | null
           top2_fit: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       v_recent_assessments_safe: {
         Row: {
           country_display: string | null
           created_at: string | null
-          fit_score: number | null
-          session_id: string | null
-          type_display: string | null
+          fit_indicator: string | null
+          overlay: string | null
+          time_period: string | null
+          type_prefix: string | null
+        }
+        Relationships: []
+      }
+      v_results_access_last_24h: {
+        Row: {
+          calls: number | null
+          hour: string | null
+          legacy_calls: number | null
+          successes: number | null
         }
         Relationships: []
       }
@@ -1509,7 +2203,50 @@ export type Database = {
           type_same: number | null
           user_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_1"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_1"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_1"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       v_retest_pairs: {
         Row: {
@@ -1529,7 +2266,50 @@ export type Database = {
           type_2: string | null
           user_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_1"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_1"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_1"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       v_section_progress: {
         Row: {
@@ -1648,7 +2428,29 @@ export type Database = {
           type3?: never
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       v_sessions_plus: {
         Row: {
@@ -1671,14 +2473,58 @@ export type Database = {
           type3: string | null
           user_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       v_share_entropy: {
         Row: {
           session_id: string | null
           share_entropy: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       v_state_index: {
         Row: {
@@ -1721,7 +2567,29 @@ export type Database = {
           strengths_mean: number | null
           user_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       v_test_retest_strength_r: {
         Row: {
@@ -1737,7 +2605,50 @@ export type Database = {
           top1_b: string | null
           user_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_1"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_1"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_1"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       v_throughput: {
         Row: {
@@ -1786,7 +2697,29 @@ export type Database = {
           session_id?: string | null
           type_code?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       v_type_distribution: {
         Row: {
@@ -1811,10 +2744,140 @@ export type Database = {
           pass_validity: boolean | null
           session_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
     }
     Functions: {
+      admin_get_confidence_dist_last_30d: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          confidence_band: string
+          n: number
+        }[]
+      }
+      admin_get_kpis_last_30d: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          metric: string
+          value: number
+        }[]
+      }
+      admin_get_latest_assessments: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          completed_at_et: string
+          confidence_margin: number
+          overlay_label: string
+          session_id: string
+          top_gap: number
+          top1_fit: number
+          user_id: string
+        }[]
+      }
+      admin_get_overlay_dist_last_30d: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          n: number
+          overlay_name: string
+        }[]
+      }
+      admin_get_throughput_last_14d: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          completions: number
+          day: string
+        }[]
+      }
+      admin_get_type_dist_last_30d: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          n: number
+          primary_type: string
+        }[]
+      }
+      admin_recompute_profile: {
+        Args: { p_session_id: string; p_version: string }
+        Returns: {
+          base_func: string | null
+          baseline_session_id: string | null
+          blocks: Json | null
+          blocks_norm: Json | null
+          close_call: boolean | null
+          conf_band: string | null
+          conf_calibrated: number | null
+          conf_raw: number | null
+          confidence: string | null
+          created_at: string | null
+          creative_func: string | null
+          deltas: Json | null
+          dimensions: Json | null
+          dims_highlights: Json | null
+          email_mask: string | null
+          fc_answered_ct: number | null
+          fc_count: number | null
+          fc_coverage_bucket: string | null
+          fit_band: string | null
+          fit_explainer: Json | null
+          gap_minutes: number | null
+          glossary_version: number | null
+          id: string
+          invalid_combo_flag: boolean | null
+          ip_hash: string | null
+          neuro_mean: number | null
+          neuro_z: number | null
+          neuroticism: Json | null
+          overlay: string | null
+          overlay_neuro: string | null
+          overlay_state: string | null
+          parent_session_id: string | null
+          person_key: string | null
+          prev_session_id: string | null
+          recomputed_at: string | null
+          results_version: string | null
+          run_index: number | null
+          score_fit_calibrated: number | null
+          score_fit_raw: number | null
+          session_id: string
+          session_kind: string | null
+          share_token: string
+          state_index: number | null
+          strengths: Json | null
+          submitted_at: string | null
+          top_3_fits: Json | null
+          top_gap: number | null
+          top_types: Json | null
+          type_code: string | null
+          type_scores: Json | null
+          ua_hash: string | null
+          updated_at: string | null
+          user_id: string | null
+          validity: Json | null
+          validity_status: string | null
+          version: string | null
+        }[]
+      }
       calculate_scores: {
         Args: { p_session_id: string }
         Returns: Json
@@ -1834,6 +2897,32 @@ export type Database = {
           has_recent_completion: boolean
           last_completion_date: string
         }[]
+      }
+      compute_profile_from_responses: {
+        Args: { p_session_id: string; p_version: string }
+        Returns: Json
+      }
+      example_rate_limited_function: {
+        Args: { client_ip: string }
+        Returns: string
+      }
+      fetch_live_assessments: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          fit_score: number
+          overlay_label: string
+          primary_type: string
+          session_id: string
+        }[]
+      }
+      fix_v_recent_assessments_safe: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      generate_continue_url: {
+        Args: { session_id: string }
+        Returns: string
       }
       get_config_number: {
         Args: { p_default: number; p_key: string }
@@ -1856,6 +2945,46 @@ export type Database = {
           profile_overlay: string
           results_version: string
           type_code: string
+        }[]
+      }
+      get_evidence_kpis: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: number
+          mai_overall: number | null
+          median_days_apart: number | null
+          pairs_n: number
+          r_fe: number | null
+          r_fi: number | null
+          r_ne: number | null
+          r_ni: number | null
+          r_overall: number | null
+          r_se: number | null
+          r_si: number | null
+          r_te: number | null
+          r_ti: number | null
+          type_stability_pct: number | null
+          updated_at: string
+        }
+      }
+      get_live_assessments: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string | null
+          fit_score: number | null
+          overlay_label: string | null
+          primary_type: string | null
+          session_id: string | null
+        }[]
+      }
+      get_live_assessments_v2: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          fit_score: number
+          overlay_label: string
+          primary_type: string
+          session_id: string
         }[]
       }
       get_profile_by_session: {
@@ -1886,8 +3015,12 @@ export type Database = {
           id: string
           invalid_combo_flag: boolean | null
           ip_hash: string | null
+          neuro_mean: number | null
+          neuro_z: number | null
           neuroticism: Json | null
           overlay: string | null
+          overlay_neuro: string | null
+          overlay_state: string | null
           parent_session_id: string | null
           person_key: string | null
           prev_session_id: string | null
@@ -1898,6 +3031,8 @@ export type Database = {
           score_fit_raw: number | null
           session_id: string
           session_kind: string | null
+          share_token: string
+          state_index: number | null
           strengths: Json | null
           submitted_at: string | null
           top_3_fits: Json | null
@@ -1914,7 +3049,111 @@ export type Database = {
         }
       }
       get_profile_by_session_token: {
-        Args: { p_share_token: string; p_client_ip: string }
+        Args:
+          | { p_client_ip: string; p_token: string }
+          | { p_session_id: string; p_share_token: string }
+          | { p_session_id: string; p_share_token: string }
+        Returns: Json
+      }
+      get_recent_assessments: {
+        Args: { _limit?: number; _offset?: number }
+        Returns: {
+          base_func: string
+          completed_at: string
+          completed_questions: number
+          created_at: string
+          creative_func: string
+          email: string
+          profile_id: string
+          session_id: string
+          session_type: string
+          started_at: string
+          status: string
+          total_questions: number
+          type_code: string
+          user_id: string
+          validity_status: string
+        }[]
+      }
+      get_recent_assessments_safe: {
+        Args: Record<PropertyKey, never> | { _limit?: number; _offset?: number }
+        Returns: {
+          base_func: string
+          completed_at: string
+          completed_questions: number
+          created_at: string
+          creative_func: string
+          session_id: string
+          session_type: string
+          started_at: string
+          status: string
+          total_questions: number
+          type_code: string
+          validity_status: string
+        }[]
+      }
+      get_recent_assessments_safe_cursor: {
+        Args: { p_after?: string; p_limit?: number }
+        Returns: {
+          country_display: string
+          created_at: string
+          fit_indicator: string
+          overlay: string
+          time_period: string
+          type_prefix: string
+        }[]
+      }
+      get_recent_assessments_safe_v2: {
+        Args:
+          | Record<PropertyKey, never>
+          | { client_ip: string; user_id: string }
+        Returns: Json[]
+      }
+      get_results_by_session: {
+        Args: { session_id: string; t?: string }
+        Returns: Json
+      }
+      get_user_assessment_scores: {
+        Args: { p_session_id: string }
+        Returns: Json
+      }
+      health_probe: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          db: string
+          has_profiles: boolean
+          rls_enabled: boolean
+        }[]
+      }
+      kpi_country_activity_v11: {
+        Args: { end_ts?: string; start_ts?: string }
+        Returns: {
+          country: string
+          sessions: number
+        }[]
+      }
+      log_fn: {
+        Args: { evt: string; payload: Json }
+        Returns: undefined
+      }
+      make_share_token: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      pg_execute: {
+        Args: { query: string }
+        Returns: Json
+      }
+      purge_old_access_logs: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      rate_limit: {
+        Args: { p_key: string; p_max: number; p_window: unknown }
+        Returns: boolean
+      }
+      recompute_profile: {
+        Args: { p_session_id: string; p_version: string }
         Returns: {
           base_func: string | null
           baseline_session_id: string | null
@@ -1941,8 +3180,12 @@ export type Database = {
           id: string
           invalid_combo_flag: boolean | null
           ip_hash: string | null
+          neuro_mean: number | null
+          neuro_z: number | null
           neuroticism: Json | null
           overlay: string | null
+          overlay_neuro: string | null
+          overlay_state: string | null
           parent_session_id: string | null
           person_key: string | null
           prev_session_id: string | null
@@ -1953,6 +3196,8 @@ export type Database = {
           score_fit_raw: number | null
           session_id: string
           session_kind: string | null
+          share_token: string
+          state_index: number | null
           strengths: Json | null
           submitted_at: string | null
           top_3_fits: Json | null
@@ -1968,30 +3213,13 @@ export type Database = {
           version: string | null
         }
       }
-      get_recent_assessments_safe: {
+      refresh_evidence_kpis: {
         Args: Record<PropertyKey, never>
-        Returns: {
-          country_display: string
-          created_at: string
-          fit_score: number
-          session_id: string
-          type_display: string
-        }[]
+        Returns: undefined
       }
-      get_user_assessment_scores: {
+      rotate_results_share_token: {
         Args: { p_session_id: string }
         Returns: Json
-      }
-      kpi_country_activity_v11: {
-        Args: { end_ts?: string; start_ts?: string }
-        Returns: {
-          country: string
-          sessions: number
-        }[]
-      }
-      rate_limit: {
-        Args: { p_key: string; p_max: number; p_window: string }
-        Returns: boolean
       }
       save_assessment_response: {
         Args: {
@@ -2001,6 +3229,12 @@ export type Database = {
           p_source?: string
         }
         Returns: undefined
+      }
+      sessions_with_min_answers: {
+        Args: { days_back?: number; min_answers?: number }
+        Returns: {
+          session_id: string
+        }[]
       }
       update_dashboard_statistics: {
         Args: Record<PropertyKey, never>
@@ -2013,6 +3247,10 @@ export type Database = {
       update_dashboard_statistics_range: {
         Args: { end_date: string; start_date: string }
         Returns: undefined
+      }
+      your_function_name: {
+        Args: { client_ip: string; param1?: string; param2?: number }
+        Returns: string
       }
     }
     Enums: {

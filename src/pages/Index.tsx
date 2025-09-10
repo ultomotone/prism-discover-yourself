@@ -4,10 +4,13 @@ import IndividualsSection from "@/components/IndividualsSection";
 import PrismModel from "@/components/PrismModel";
 import BookSection from "@/components/BookSection";
 import YourPersonalityBlueprintModal from "@/components/YourPersonalityBlueprintModal";
+import NewsletterSignupModal from "@/components/NewsletterSignupModal";
 import { useYPBModal } from "@/hooks/useYPBModal";
+import { useNewsletterModal } from "@/hooks/useNewsletterModal";
 
 const Index = () => {
   const { isOpen, closeModal } = useYPBModal();
+  const { isOpen: isNewsletterOpen, closeModal: closeNewsletterModal } = useNewsletterModal();
 
   return (
     <div className="min-h-screen bg-background">
@@ -23,6 +26,12 @@ const Index = () => {
       <YourPersonalityBlueprintModal 
         isOpen={isOpen} 
         onClose={closeModal} 
+      />
+      
+      {/* Newsletter Signup Modal */}
+      <NewsletterSignupModal 
+        isOpen={isNewsletterOpen} 
+        onClose={closeNewsletterModal} 
       />
     </div>
   );
