@@ -3,6 +3,7 @@ export interface SessionRecord {
   status: string | null;
   completed_questions: number | null;
   total_questions: number | null;
+  completed_at?: string | null;
 }
 
 export interface ProfileRecord {

@@ -263,6 +263,12 @@ const About = () => {
                         <ArrowRight className="h-4 w-4" />
                       </a>
                     </Button>
+                    <Button variant="ghost" asChild className="w-full justify-start">
+                      <a href="/relational-fit" className="flex items-center justify-between">
+                        <span>Relationship Fit</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </a>
+                    </Button>
                   </div>
                 </div>
                 <div className="space-y-4">

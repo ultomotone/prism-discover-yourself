@@ -9,7 +9,6 @@ import {
   buildServiceJsonLd,
   buildFaqJsonLd,
 } from "@/app/(marketing)/_components/jsonld";
-import { Helmet } from "react-helmet";
 
 const FAQS = [
   {
@@ -21,7 +20,7 @@ const FAQS = [
     a: "Most sessions drive a measurable shift within 7–30 days. Discovery calls give immediate direction in 10–15 minutes.",
   },
   {
-    q: "What’s the reschedule/no-show policy?",
+    q: "What's the reschedule/no-show policy?",
     a: "Reschedule ≥24h in advance. Discovery credits apply if you book within 7 days. No-shows forfeit credit.",
   },
 ];
@@ -75,14 +74,15 @@ export default function IndividualsPage() {
       {/* Selected service + embed */}
       <SchedulerEmbed service={selected} />
 
-      {/* SEO JSON-LD */}
-      <Helmet>
-        <script type="application/ld+json">
-          {JSON.stringify(serviceJsonLd)}
-        </script>
-        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
-      </Helmet>
+      {/* SEO JSON-LD - inject into head */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
     </PageShell>
   );
 }
-

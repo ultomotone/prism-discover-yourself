@@ -21,6 +21,7 @@ const Footer = () => {
       { name: "Dimensionality", href: "/dimensionality" },
       { name: "Block Dynamics", href: "/blocks" },
       { name: "State Overlay", href: "/state-overlay" },
+      { name: "Relationship Fit", href: "/relational-fit" },
     ],
     support: [
       { name: "FAQ", href: "/faq" },
@@ -42,12 +43,12 @@ const Footer = () => {
           <div className="grid lg:grid-cols-4 gap-8">
             {/* Brand Column */}
             <div>
-              <div className="flex items-center mb-4">
+              <a href="/" className="flex items-center mb-4 prism-transition hover:opacity-80">
                 <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center mr-3">
                   <span className="text-primary font-bold text-lg">P</span>
                 </div>
                 <span className="text-2xl font-bold">PRISM</span>
-              </div>
+              </a>
               <p className="text-primary-foreground/80 mb-6">
                 Empowering individuals and teams through scientifically-backed 
                 personality insights.

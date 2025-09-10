@@ -9,7 +9,6 @@ import {
   buildServiceJsonLd,
   buildFaqJsonLd,
 } from "@/app/(marketing)/_components/jsonld";
-import { Helmet } from "react-helmet";
 
 const FAQS_T = [
   {
@@ -21,7 +20,7 @@ const FAQS_T = [
     a: "Most teams feel alignment within 30 days; sprints target cycle-time reductions in 60 days.",
   },
   {
-    q: "What’s the reschedule/no-show policy?",
+    q: "What's the reschedule/no-show policy?",
     a: "Discovery credits apply if you book within 7 days. Reschedule ≥24h; no-show forfeits credit.",
   },
 ];
@@ -71,12 +70,15 @@ export default function TeamsPage() {
 
       <SchedulerEmbed service={selected} />
 
-      {/* SEO JSON-LD */}
-      <Helmet>
-        <script type="application/ld+json">{JSON.stringify(serviceJsonLd)}</script>
-        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
-      </Helmet>
+      {/* SEO JSON-LD - inject into head */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
     </PageShell>
   );
 }
-
