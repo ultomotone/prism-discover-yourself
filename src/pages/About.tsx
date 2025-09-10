@@ -3,13 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Brain, BarChart3, Zap, Shield, ArrowRight, CheckCircle, HelpCircle } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "@/components/Header";
-
 const About = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const navigate = useNavigate();
-
-  const assessmentLink = "https://docs.google.com/forms/d/e/1FAIpQLScVFSAWRNUZT10hEoziD1oMXeS_FyCVP9NFTWD61eR8xDQaDA/viewform";
 
   const elements = [
     { code: "Ti", name: "Internal logic", desc: "make it make sense" },
@@ -67,10 +63,8 @@ const About = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="prism-container pt-24 pb-16">
-        <div className="max-w-6xl mx-auto">
+    <div className="prism-container pt-24 pb-16">
+      <div className="max-w-6xl mx-auto">
           {/* Hero */}
           <div className="text-center mb-16">
             <h1 className="prism-heading-lg text-primary mb-6">
@@ -438,7 +432,6 @@ const About = () => {
           </section>
         </div>
       </div>
-    </div>
   );
 };
 

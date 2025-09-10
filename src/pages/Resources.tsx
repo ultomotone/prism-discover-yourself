@@ -1,5 +1,3 @@
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import BookSection from "@/components/BookSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,9 +47,7 @@ const Resources = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="pt-24">
+    <div className="pt-24">
         {/* Hero Section */}
         <section className="py-20 bg-background">
           <div className="prism-container">
@@ -133,8 +129,6 @@ const Resources = () => {
             </div>
           </div>
         </section>
-      </main>
-      <Footer />
     </div>
   );
 };
