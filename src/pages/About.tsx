@@ -81,15 +81,22 @@ const About = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-              <Button 
-                variant="assessment" 
+              <Button
+                variant="assessment"
                 size="lg"
                 onClick={() => navigate('/assessment')}
+                data-analytics="about_take_assessment_click"
               >
                 Take the Assessment
               </Button>
-              <Button variant="outline-primary" size="lg" asChild>
-                <a href="/profiles">View the Profiles</a>
+              <Button
+                variant="outline-primary"
+                size="lg"
+                asChild
+              >
+                <a href="/profiles" data-analytics="about_view_profiles_click">
+                  View the Profiles
+                </a>
               </Button>
             </div>
 
@@ -425,11 +432,12 @@ const About = () => {
                 <p className="text-white/90 mb-8 max-w-2xl mx-auto">
                   Take the assessment and get a clear, confidence-rated profile you can apply immediately.
                 </p>
-                <Button 
-                  variant="assessment" 
-                  size="lg" 
+                <Button
+                  variant="assessment"
+                  size="lg"
                   className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-3"
                   onClick={() => navigate('/assessment')}
+                  data-analytics="about_final_take_assessment_click"
                 >
                   Take the Assessment
                 </Button>

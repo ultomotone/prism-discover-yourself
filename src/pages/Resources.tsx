@@ -123,10 +123,11 @@ const Resources = () => {
               <p className="text-xl text-muted-foreground mb-8">
                 Take the assessment and begin your journey of self-discovery.
               </p>
-              <Button 
-                variant="hero" 
+              <Button
+                variant="hero"
                 size="lg"
                 onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLScVFSAWRNUZT10hEoziD1oMXeS_FyCVP9NFTWD61eR8xDQaDA/viewform', '_blank')}
+                data-analytics="resources_take_assessment_click"
               >
                 Take Assessment
               </Button>
