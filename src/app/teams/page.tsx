@@ -53,9 +53,28 @@ export default function TeamsPage() {
         </ol>
       </section>
 
-      {/* Services grid */}
-      <section aria-label="Services for teams" className="mb-10">
-        <div className="mb-3 text-sm font-semibold">Pick a service</div>
+      {/* Recommended Starting Point */}
+      <section aria-label="Recommended starting point" className="mb-8">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-slate-900">🌟 Recommended Starting Point</h3>
+          <p className="text-sm text-slate-600 mt-1">Not sure which service fits your team? Start here for expert guidance.</p>
+        </div>
+        {(() => {
+          const discoveryService = options.find(s => s.id.includes('owner-leader-discovery'));
+          return discoveryService ? (
+            <ServiceCard
+              key={discoveryService.id}
+              service={discoveryService}
+              selected={selected.id === discoveryService.id}
+              onSelect={setSelected}
+            />
+          ) : null;
+        })()}
+      </section>
+
+      {/* All Services */}
+      <section aria-label="All services for teams" className="mb-10">
+        <div className="mb-3 text-sm font-semibold">All Services</div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {options.map((svc) => (
             <ServiceCard
