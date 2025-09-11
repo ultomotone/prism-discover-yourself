@@ -27,7 +27,6 @@ const Footer = () => {
       { name: "FAQ", href: "/faq" },
       { name: "Research", href: "/research" },
       { name: "Contact Us", href: "/contact" },
-      { name: "Accessibility", href: "/accessibility" },
     ],
     legal: [
       { name: "Privacy Policy", href: "/privacy" },
@@ -88,16 +87,6 @@ const Footer = () => {
             <li>
               <a href="/roadmap" className="hover:text-white transition-colors">
                 Roadmap
-              </a>
-            </li>
-            <li>
-              <a href="https://chatgpt.com/g/g-68a233600af0819182cfa8c558a63112-prism-personality-ai-coach" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                PRISM AI Coach
-              </a>
-            </li>
-            <li>
-              <a href="/your-personality-blueprint" className="hover:text-white transition-colors">
-                Your Personality Blueprint
               </a>
             </li>
             {popularLinks.support.map((link) => (
