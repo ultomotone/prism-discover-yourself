@@ -119,10 +119,43 @@ const Individuals = () => {
             </p>
           </div>
 
-          {/* Services */}
+          {/* Recommended Starting Point */}
+          <section className="mb-12" aria-label="Recommended starting point">
+            <div className="mb-6 text-center">
+              <h3 className="text-xl font-semibold text-primary mb-2">🌟 Recommended Starting Point</h3>
+              <p className="text-muted-foreground">Not sure which service fits? Start here for personalized guidance.</p>
+            </div>
+            {(() => {
+              const discoveryService = individualServices.find(s => s.key === 'personal-discovery');
+              return discoveryService ? (
+                <div className="max-w-md mx-auto">
+                  <Card className="prism-card-hover ring-2 ring-primary">
+                    <CardHeader>
+                      <div className="flex items-center gap-2 mb-2">
+                        <discoveryService.icon className="h-6 w-6 text-primary" />
+                        <CardTitle className="text-lg">{discoveryService.title}</CardTitle>
+                      </div>
+                      <CardDescription>{discoveryService.description}</CardDescription>
+                      <p className="text-sm text-muted-foreground">
+                        {discoveryService.duration}
+                        {discoveryService.price && ` · ${discoveryService.price}`}
+                      </p>
+                    </CardHeader>
+                    <CardContent className="flex gap-2">
+                      <Button asChild variant="outline">
+                        <Link to={discoveryService.routePath}>Learn more</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : null;
+            })()}
+          </section>
+
+          {/* All Services */}
           <section className="mb-16" aria-labelledby="services">
             <h2 id="services" className="prism-heading-md text-primary mb-4 text-center">
-              Services
+              All Services
             </h2>
             <p className="prism-body text-muted-foreground text-center mb-8">
               Explore sessions designed for personal clarity.
