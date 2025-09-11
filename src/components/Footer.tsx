@@ -36,183 +36,148 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-primary text-primary-foreground">
-      <div className="prism-container">
-        {/* Main Footer Content */}
-        <div className="py-16">
-          <div className="grid lg:grid-cols-4 gap-8">
-            {/* Brand Column */}
-            <div>
-              <a href="/" className="flex items-center mb-4 prism-transition hover:opacity-80">
-                <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center mr-3">
-                  <span className="text-primary font-bold text-lg">P</span>
-                </div>
-                <span className="text-2xl font-bold">PRISM</span>
-              </a>
-              <p className="text-primary-foreground/80 mb-6">
-                Empowering individuals and teams through scientifically-backed 
-                personality insights.
-              </p>
-              
-              {/* Contact Info */}
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center">
-                  <Mail className="h-4 w-4 mr-3 text-primary-foreground/60" />
-                  <span className="text-primary-foreground/80 text-sm">team@prismpersonality.com</span>
-                </div>
-                <div className="flex items-center">
-                  <Phone className="h-4 w-4 mr-3 text-primary-foreground/60" />
-                  <span className="text-primary-foreground/80 text-sm">(631)745-8686</span>
-                </div>
-              </div>
-
-              {/* Social Links */}
-              <div className="flex space-x-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/10"
-                  aria-label="LinkedIn"
-                >
-                  <Linkedin className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/10"
-                  aria-label="Twitter"
-                >
-                  <Twitter className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/10"
-                  aria-label="Facebook"
-                >
-                  <Facebook className="h-5 w-5" />
-                </Button>
-              </div>
+    <footer className="bg-indigo-900 text-white py-12">
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-10 text-sm">
+        
+        {/* About PRISM */}
+        <div>
+          <div className="flex items-center space-x-2 mb-4">
+            <a href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+              <div className="bg-white text-indigo-900 font-bold rounded w-6 h-6 flex items-center justify-center">P</div>
+              <h2 className="font-bold text-lg">PRISM</h2>
+            </a>
+          </div>
+          <p className="mb-4 text-gray-300">
+            Empowering individuals and teams through scientifically-backed personality insights.
+          </p>
+          <div className="space-y-2 text-gray-400">
+            <div className="flex items-center space-x-2">
+              <Mail className="w-4 h-4 text-gray-400" />
+              <a href="mailto:team@prismpersonality.com">team@prismpersonality.com</a>
             </div>
-
-            {/* PRISM Components Column */}
-            <div>
-              <h3 className="font-semibold mb-4">PRISM Components</h3>
-              <ul className="space-y-2">
-                {popularLinks.components.map((link) => (
-                  <li key={link.name}>
-                    <a href={link.href} className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
-                      {link.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Resources Column */}
-            <div>
-              <h3 className="font-semibold mb-4">Resources</h3>
-              <ul className="space-y-2">
-                <li>
-                  <a href="/resources" className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
-                    Resources
-                  </a>
-                </li>
-                <li>
-                  <a href="/real-time-type" className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
-                    Real-time Type
-                  </a>
-                </li>
-                <li>
-                  <a href="/roadmap" className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
-                    Roadmap
-                  </a>
-                </li>
-                <li>
-                  <a href="https://chatgpt.com/g/g-68a233600af0819182cfa8c558a63112-prism-personality-ai-coach" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
-                    PRISM AI Coach
-                  </a>
-                </li>
-                <li>
-                  <a href="/your-personality-blueprint" className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
-                    Your Personality Blueprint
-                  </a>
-                </li>
-                {popularLinks.support.map((link) => (
-                  <li key={link.name}>
-                    <a href={link.href} className="text-primary-foreground/80 hover:text-primary-foreground prism-transition">
-                      {link.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Support PRISM Column */}
-            <div>
-              <h3 className="font-semibold mb-4">Support PRISM</h3>
-              <Button
-                onClick={() => {
-                  if (typeof window !== 'undefined' && (window as any).rdtTrack) {
-                    (window as any).rdtTrack('Custom', { custom_event_name: 'DonateClick' });
-                  }
-                  if (typeof window !== 'undefined' && (window as any).fbTrack) {
-                    (window as any).fbTrack('Custom', { custom_event_name: 'DonateClick' });
-                  }
-                  window.open('https://donate.stripe.com/3cI6oHdR3cLg4n0eK56Ri04', '_blank');
-                }}
-                rel="noopener noreferrer"
-              >
-                Donate via Stripe
-              </Button>
+            <div className="flex items-center space-x-2">
+              <Phone className="w-4 h-4 text-gray-400" />
+              <span>(631) 745-8686</span>
             </div>
           </div>
         </div>
 
-        {/* Newsletter Signup */}
-        <div className="pb-16">
-          <div className="max-w-md mx-auto text-center">
-            <h3 className="font-semibold mb-4">Subscribe for updates</h3>
-            <form
-              onSubmit={handleSubscribe}
-              className="flex flex-col sm:flex-row gap-2"
-            >
+        {/* PRISM Components */}
+        <div>
+          <h3 className="font-semibold mb-4">PRISM Components</h3>
+          <ul className="space-y-2 text-gray-300">
+            {popularLinks.components.map((link) => (
+              <li key={link.name}>
+                <a href={link.href} className="hover:text-white transition-colors">
+                  {link.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Resources */}
+        <div>
+          <h3 className="font-semibold mb-4">Resources</h3>
+          <ul className="space-y-2 text-gray-300">
+            <li>
+              <a href="/real-time-type" className="hover:text-white transition-colors">
+                Real-time Type
+              </a>
+            </li>
+            <li>
+              <a href="/roadmap" className="hover:text-white transition-colors">
+                Roadmap
+              </a>
+            </li>
+            <li>
+              <a href="https://chatgpt.com/g/g-68a233600af0819182cfa8c558a63112-prism-personality-ai-coach" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                PRISM AI Coach
+              </a>
+            </li>
+            <li>
+              <a href="/your-personality-blueprint" className="hover:text-white transition-colors">
+                Your Personality Blueprint
+              </a>
+            </li>
+            {popularLinks.support.map((link) => (
+              <li key={link.name}>
+                <a href={link.href} className="hover:text-white transition-colors">
+                  {link.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Stay Connected */}
+        <div>
+          <h3 className="font-semibold mb-4">Stay Connected</h3>
+          <div className="mb-4">
+            <form onSubmit={handleSubscribe} className="flex space-x-2">
               <Input
                 type="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-primary-foreground text-primary placeholder:text-primary/70"
+                className="w-full px-3 py-2 rounded bg-white text-indigo-900 placeholder-gray-500 focus:outline-none border-none"
                 required
               />
-              <Button type="submit" variant="secondary">
+              <Button 
+                type="submit"
+                className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded"
+              >
                 Subscribe
               </Button>
             </form>
           </div>
-        </div>
-
-        <Separator className="bg-primary-foreground/20" />
-
-        {/* Bottom Footer */}
-        <div className="py-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="text-primary-foreground/60 text-sm">
-              © 2024 PRISM Personality System. All rights reserved.
-            </div>
-            <div className="flex space-x-6 mt-4 md:mt-0">
-              {popularLinks.legal.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  className="text-primary-foreground/60 hover:text-primary-foreground text-sm prism-transition"
-                >
-                  {link.name}
-                </a>
-              ))}
-            </div>
+          <div className="flex space-x-4 text-gray-400 mt-6">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white p-0"
+              aria-label="LinkedIn"
+            >
+              <Linkedin className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white p-0"
+              aria-label="Twitter"
+            >
+              <Twitter className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white p-0"
+              aria-label="Facebook"
+            >
+              <Facebook className="h-5 w-5" />
+            </Button>
+          </div>
+          <div className="mt-4 text-gray-300">
+            <button
+              onClick={() => {
+                if (typeof window !== 'undefined' && (window as any).rdtTrack) {
+                  (window as any).rdtTrack('Custom', { custom_event_name: 'DonateClick' });
+                }
+                if (typeof window !== 'undefined' && (window as any).fbTrack) {
+                  (window as any).fbTrack('Custom', { custom_event_name: 'DonateClick' });
+                }
+                window.open('https://donate.stripe.com/3cI6oHdR3cLg4n0eK56Ri04', '_blank');
+              }}
+              className="hover:underline"
+            >
+              Donate via Stripe
+            </button>
           </div>
         </div>
+      </div>
+
+      <div className="text-center text-gray-400 text-xs mt-12">
+        © 2025 PRISM. All rights reserved.
       </div>
     </footer>
   );
