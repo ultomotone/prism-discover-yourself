@@ -12,16 +12,18 @@ afterEach(() => {
   cleanup();
 });
 
-test("renders service cards and updates selection", async () => {
+test("renders path cards and updates selection", async () => {
   process.env.NEXT_PUBLIC_SCHED_PROVIDER = "tidycal";
-  const options = SERVICES.filter((s) => s.scope === "individuals");
+  const all = SERVICES.filter((s) => s.scope === "individuals");
+  const paths = all.slice(1);
   render(<IndividualsPage />);
   const buttons = await screen.findAllByRole("button", { name: /book/i });
-  assert.equal(buttons.length, options.length, "should render a Book button for each service");
+  assert.equal(buttons.length, paths.length, "should render a Book button for each path");
 
-  const initial = options[1] || options[0];
-  await screen.findByRole("heading", { level: 2, name: initial.title });
+  await screen.findByRole("heading", { level: 2, name: all[0].title });
 
-  fireEvent.click(buttons[0]);
-  await screen.findByRole("heading", { level: 2, name: options[0].title });
+  if (buttons.length > 0) {
+    fireEvent.click(buttons[0]);
+    await screen.findByRole("heading", { level: 2, name: paths[0].title });
+  }
 });
