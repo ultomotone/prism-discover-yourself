@@ -171,7 +171,9 @@ function bindCalClickTracking(
   selector = '[data-cal-link], .cal-link, a[href*="cal.com/"]'
 ) {
   document.addEventListener('click', (e) => {
-    const el = e.target.closest(selector);
+    const target = e.target;
+    if (!(target instanceof Element)) return;
+    const el = target.closest(selector);
     if (!el) return;
     const name = el.dataset.contentName || el.textContent?.trim() || 'Cal Link';
     const eventID = uuid();
