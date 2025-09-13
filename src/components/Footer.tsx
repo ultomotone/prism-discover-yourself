@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Mail, Phone, Linkedin, Twitter, Facebook } from "lucide-react";
+import { Mail, Phone, Linkedin, Facebook, Youtube, Users } from "lucide-react";
 
 const Footer = () => {
 
@@ -126,6 +126,7 @@ const Footer = () => {
               size="icon"
               className="text-gray-400 hover:text-white p-0"
               aria-label="LinkedIn"
+              onClick={() => window.open('https://www.linkedin.com/company/prism-personality-regulation-information-system-mapping', '_blank')}
             >
               <Linkedin className="h-5 w-5" />
             </Button>
@@ -133,17 +134,28 @@ const Footer = () => {
               variant="ghost"
               size="icon"
               className="text-gray-400 hover:text-white p-0"
-              aria-label="Twitter"
+              aria-label="Facebook"
+              onClick={() => window.open('https://www.facebook.com/profile.php?id=61579334970712', '_blank')}
             >
-              <Twitter className="h-5 w-5" />
+              <Facebook className="h-5 w-5" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
               className="text-gray-400 hover:text-white p-0"
-              aria-label="Facebook"
+              aria-label="YouTube"
+              onClick={() => window.open('https://www.youtube.com/channel/UCeHPDPqxfp2YVMI1aX-0Dag/', '_blank')}
             >
-              <Facebook className="h-5 w-5" />
+              <Youtube className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white p-0"
+              aria-label="Skool Community"
+              onClick={() => window.open('https://www.skool.com/your-personality-blueprint?c=541fd1febb454e4792fec796f6c7e5dc', '_blank')}
+            >
+              <Users className="h-5 w-5" />
             </Button>
           </div>
           <div className="mt-4 text-gray-300">
