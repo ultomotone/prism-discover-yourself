@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import { AssessmentForm, AssessmentResponse } from '@/components/assessment/AssessmentForm';
 import { SavedAssessments } from '@/components/assessment/SavedAssessments';
+import { AssessmentIntro } from '@/components/assessment/AssessmentIntro';
 import { supabase } from '@/lib/supabase/client';
 import { trackAssessmentComplete, trackLead } from '@/lib/analytics';
 import { TOTAL_PRISM_QUESTIONS } from '@/services/prismConfig';
@@ -87,14 +88,7 @@ const Assessment = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="pt-24 pb-8">
-        <div className="prism-container">
-          <SavedAssessments onStartNew={() => navigate('/assessment?start=true')} />
-        </div>
-      </div>
-    </div>
+    <AssessmentIntro onStart={() => navigate('/assessment?start=true')} />
   );
 };
 
