@@ -21,6 +21,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npx playwright install --with-deps
       - run: npm run check:no-legacy
       - run: npm run lint
       - name: Check env presence

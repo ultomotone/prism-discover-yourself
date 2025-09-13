@@ -17,7 +17,13 @@ test("renders service cards and updates selection", async () => {
   const options = SERVICES.filter((s) => s.scope === "individuals");
   render(<IndividualsPage />);
   const buttons = await screen.findAllByRole("button", { name: /book/i });
-  assert.equal(buttons.length, options.length, "should render a Book button for each service");
+  // includes duplicate "recommended" card
+  const expected = options.length + 1;
+  assert.equal(
+    buttons.length,
+    expected,
+    "should render a Book button for each service (plus recommended)"
+  );
 
   const initial = options[1] || options[0];
   await screen.findByRole("heading", { level: 2, name: initial.title });
