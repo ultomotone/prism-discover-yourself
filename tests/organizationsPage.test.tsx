@@ -17,12 +17,14 @@ test("renders team services and updates selection", async () => {
   const options = SERVICES.filter((s) => s.scope === "teams");
   render(<TeamsPage />);
   const buttons = await screen.findAllByRole("button", { name: /book/i });
-  assert.equal(buttons.length, options.length);
+  // includes duplicate "recommended" card
+  const expected = options.length + 1;
+  assert.equal(buttons.length, expected);
 
   await screen.findByRole("heading", { level: 2, name: options[0].title });
 
-  if (buttons.length > 1) {
-    fireEvent.click(buttons[1]);
+  if (buttons.length > 2) {
+    fireEvent.click(buttons[2]);
     await screen.findByRole("heading", { level: 2, name: options[1].title });
   }
 });
