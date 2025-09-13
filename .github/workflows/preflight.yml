@@ -21,8 +21,10 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npx playwright install --with-deps
       - run: npm run check:no-legacy
       - run: npm run lint
+      - run: npm run typecheck
       - name: Check env presence
         run: |
           echo URL=${SUPABASE_URL:+set}
