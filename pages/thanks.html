@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Thanks</title>
+</head>
+<body>
+  <h1>Thank you!</h1>
+  <p>Your booking is confirmed.</p>
+  <script type="module">
+    import CalTracking from '../tracking/cal-tracking.js';
+    CalTracking.init();
+    const params = new URLSearchParams(window.location.search);
+    const type = params.get('type');
+    if (type) {
+      const value = parseFloat(params.get('price')) || undefined;
+      const currency = params.get('currency') || undefined;
+      const name = params.get('name') || undefined;
+      const eventID = params.get('bookingId') || CalTracking.uuid();
+      if (!CalTracking.wasSent(eventID)) {
+        CalTracking.markSent(eventID);
+        const payload = { type, value, currency, name, eventID };
+        CalTracking.fireAllNetworks(payload);
+        CalTracking.sendServerSide(payload);
+      }
+    }
+  </script>
+</body>
+</html>
