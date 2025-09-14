@@ -9,28 +9,12 @@ import { toast } from "@/hooks/use-toast";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { trackResultsViewed } from "@/lib/analytics";
+import { classifyRpcError, type RpcErrorCategory } from "@/features/results/errorClassifier";
 
 type ResultsPayload = {
   session: { id: string; status: string };
   profile: any;
 };
-
-export type RpcErrorCategory =
-  | "expired_or_invalid_token"
-  | "not_authorized"
-  | "transient"
-  | "unknown";
-
-export function classifyRpcError(err: any): RpcErrorCategory {
-  const status =
-    typeof err?.status === "number" ? err.status : Number(err?.code);
-  const msg = String(err?.message ?? "").toLowerCase();
-
-  if (status === 404 || msg === "no_data_found") return "expired_or_invalid_token";
-  if (status === 403) return "not_authorized";
-  if (status === 429 || status === 503) return "transient";
-  return "unknown";
-}
 
 export default function Results() {
   const { sessionId: paramId } = useParams<{ sessionId: string }>();
@@ -46,9 +30,7 @@ export default function Results() {
 
   const [data, setData] = useState<ResultsPayload | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [errKind, setErrKind] = useState<
-    "expired_or_invalid_token" | "not_authorized" | "unknown" | null
-  >(null);
+  const [errKind, setErrKind] = useState<RpcErrorCategory | null>(null);
   const [tries, setTries] = useState(0);
   const [rotating, setRotating] = useState(false);
 
