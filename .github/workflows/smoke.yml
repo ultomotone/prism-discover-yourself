@@ -2,22 +2,28 @@ name: Smoke
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
+  workflow_dispatch:        # enables the “Run workflow” button
 
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: npm
+
       - run: npm ci
       - run: npm run lint
       - run: npm test
-      - name: Token smoke
+
+      # Token path (needs SESSION_ID + SHARE_TOKEN)
+      - name: Smoke token
         if: ${{ secrets.SUPABASE_URL && secrets.SUPABASE_ANON_KEY && secrets.SESSION_ID && secrets.SHARE_TOKEN }}
         run: npm run smoke:results:token
         env:
@@ -25,11 +31,24 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SESSION_ID: ${{ secrets.SESSION_ID }}
           SHARE_TOKEN: ${{ secrets.SHARE_TOKEN }}
-      - name: Owner smoke
+
+      # Owner path (needs SESSION_ID + USER_JWT)
+      - name: Smoke owner
         if: ${{ secrets.SUPABASE_URL && secrets.SUPABASE_ANON_KEY && secrets.SESSION_ID && secrets.USER_JWT }}
         run: npm run smoke:results:owner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SESSION_ID: ${{ secrets.SESSION_ID }}
+          USER_JWT: ${{ secrets.USER_JWT }}
+
+      # Rotation path (needs SESSION_ID + SHARE_TOKEN + USER_JWT)
+      - name: Smoke rotate
+        if: ${{ secrets.SUPABASE_URL && secrets.SUPABASE_ANON_KEY && secrets.SESSION_ID && secrets.SHARE_TOKEN && secrets.USER_JWT }}
+        run: npm run smoke:results:rotate
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SESSION_ID: ${{ secrets.SESSION_ID }}
+          SHARE_TOKEN: ${{ secrets.SHARE_TOKEN }}
           USER_JWT: ${{ secrets.USER_JWT }}
