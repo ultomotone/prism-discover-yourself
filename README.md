@@ -56,4 +56,11 @@ Set the following repository secrets to enable smoke tests in CI:
 - `SUPABASE_ANON_KEY`
 - `SESSION_ID`
 - `SHARE_TOKEN`
-- `USER_JWT` (for owner path)
+- `USER_JWT` (for owner path) **or** `AUTH_EMAIL` + `AUTH_PASSWORD`
+
+For the owner and rotation smokes, you can either:
+
+1. Provide `USER_JWT` directly as a secret; or
+2. Provide `AUTH_EMAIL` and `AUTH_PASSWORD` secrets and the workflow will fetch a JWT automatically.
+
+Add these under **Settings → Actions → Secrets**.

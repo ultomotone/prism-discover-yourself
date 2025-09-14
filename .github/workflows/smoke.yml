@@ -32,23 +32,43 @@ jobs:
           SESSION_ID: ${{ secrets.SESSION_ID }}
           SHARE_TOKEN: ${{ secrets.SHARE_TOKEN }}
 
+      # Fetch user JWT for owner/rotation paths
+      - name: Fetch user JWT (secret)
+        if: ${{ secrets.USER_JWT != '' }}
+        run: |
+          echo "::add-mask::${{ secrets.USER_JWT }}"
+          echo "USER_JWT=${{ secrets.USER_JWT }}" >> "$GITHUB_ENV"
+
+      - name: Fetch user JWT (login)
+        if: ${{ secrets.USER_JWT == '' && secrets.AUTH_EMAIL && secrets.AUTH_PASSWORD }}
+        run: npx tsx scripts/get-user-jwt.ts
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          AUTH_EMAIL: ${{ secrets.AUTH_EMAIL }}
+          AUTH_PASSWORD: ${{ secrets.AUTH_PASSWORD }}
+
+      - name: Skipping owner/rotate smokes
+        if: ${{ !secrets.USER_JWT && (!secrets.AUTH_EMAIL || !secrets.AUTH_PASSWORD) }}
+        run: echo 'Skipping owner/rotate smokes: set USER_JWT or AUTH_EMAIL/AUTH_PASSWORD'
+
       # Owner path (needs SESSION_ID + USER_JWT)
       - name: Smoke owner
-        if: ${{ secrets.SUPABASE_URL && secrets.SUPABASE_ANON_KEY && secrets.SESSION_ID && secrets.USER_JWT }}
+        if: ${{ env.USER_JWT != '' }}
         run: npm run smoke:results:owner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SESSION_ID: ${{ secrets.SESSION_ID }}
-          USER_JWT: ${{ secrets.USER_JWT }}
+          USER_JWT: ${{ env.USER_JWT }}
 
       # Rotation path (needs SESSION_ID + SHARE_TOKEN + USER_JWT)
       - name: Smoke rotate
-        if: ${{ secrets.SUPABASE_URL && secrets.SUPABASE_ANON_KEY && secrets.SESSION_ID && secrets.SHARE_TOKEN && secrets.USER_JWT }}
+        if: ${{ env.USER_JWT != '' }}
         run: npm run smoke:results:rotate
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SESSION_ID: ${{ secrets.SESSION_ID }}
           SHARE_TOKEN: ${{ secrets.SHARE_TOKEN }}
-          USER_JWT: ${{ secrets.USER_JWT }}
+          USER_JWT: ${{ env.USER_JWT }}
