@@ -1,0 +1,42 @@
+name: PR Audit
+
+on:
+  workflow_dispatch:    # gives you the "Run workflow" button
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read   # needed to read PR status/details
+  checks: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: List open PRs (summary)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # built-in token, no setup needed
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq
+          echo "Open PRs:"
+          gh pr list --state open --json number,title,author,headRefName,baseRefName,isDraft,mergeStateStatus,mergeable | \
+            jq -r '.[] | "• #\(.number) \(.title) [\(.headRefName)→\(.baseRefName)] draft=\(.isDraft) merge_state=\(.mergeStateStatus)"'
+
+      - name: Detailed status per PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq
+          prs=$(gh pr list --state open --json number | jq '.[].number')
+          if [ -z "$prs" ]; then
+            echo "No open PRs"; exit 0
+          fi
+          for n in $prs; do
+            echo ""
+            echo "### PR #$n"
+            gh pr view $n --json number,title,headRefName,baseRefName,mergeStateStatus,mergeable,isDraft,reviewDecision,latestChecks,url | jq .
+          done
