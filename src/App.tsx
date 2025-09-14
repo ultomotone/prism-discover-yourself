@@ -82,7 +82,7 @@ import IntegrityGuide from "./pages/types/IntegrityGuide";
 import Roadmap from "./pages/Roadmap";
 import Admin from "./pages/Admin";
 import YourPersonalityBlueprint from "./pages/YourPersonalityBlueprint";
-import PRISMRelationalFit from "./pages/PRISMRelationalFit";
+import RelationalFitPage from "./pages/prism-relational-fit/page";
 import RelationalFitHome from "./pages/relational-fit/RelationalFitHome";
 import RelationalFitHeatmap from "./pages/relational-fit/RelationalFitHeatmap";
 import RelationalFitTypes from "./pages/relational-fit/RelationalFitTypes";
@@ -308,7 +308,7 @@ const App = () => (
                   />
                   <Route
                     path="/prism-relational-fit"
-                    element={<PRISMRelationalFit />}
+                    element={<RelationalFitPage />}
                   />
 
                   {/* Relational Fit Mini-App Routes */}
