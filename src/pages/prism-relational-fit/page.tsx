@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight } from "lucide-react";
 import Header from "@/components/Header";
 import RelationalFitHeatmap from "./components/RelationalFitHeatmap";
-import RelationalFitDriftDemo from "./components/RelationalFitDriftDemo";
+import ComprehensiveDriftDemo from "./components/ComprehensiveDriftDemo";
 import PairReportMini from "./components/PairReportMini";
 
 const toc = [
@@ -195,7 +195,7 @@ export default function RelationalFitPage() {
                 Stress—the trade balance goes negative even when the baseline match is “ideal.”
               </p>
               <div className="mt-4">
-                <RelationalFitDriftDemo />
+                <ComprehensiveDriftDemo />
               </div>
             </section>
 
@@ -211,7 +211,7 @@ export default function RelationalFitPage() {
             {/* Visuals */}
             <section id="visuals">
               <h2 className="mb-4 text-xl font-semibold">Visuals</h2>
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-8">
                 <RelationalFitHeatmap />
                 <PairReportMini />
               </div>
