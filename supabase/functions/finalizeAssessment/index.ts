@@ -27,7 +27,9 @@ Deno.serve(async (req) => {
 
     // FC scoring (best-effort)
     try {
-      await supabase.functions.invoke("score_fc_session", { body: { session_id } });
+      await supabase.functions.invoke("score_fc_session", {
+        body: { session_id, version: "v1.2", basis: "functions" },
+      });
     } catch {
       /* ignore */
     }
@@ -46,14 +48,17 @@ Deno.serve(async (req) => {
     const share_token = sessRow?.share_token ?? crypto.randomUUID();
     const ttl = sessRow?.share_token_expires_at ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    await supabase.from("profiles").update({ share_token }).eq("session_id", session_id);
+    const completedCount = Array.isArray(responses)
+      ? responses.length
+      : data.profile.fc_answered_ct || 0;
+
     const { error: sessionUpdateError } = await supabase
       .from("assessment_sessions")
       .update({
         status: "completed",
         completed_at: new Date().toISOString(),
         finalized_at: new Date().toISOString(),
-        completed_questions: responses ? new Set(responses.map((r: any) => r.question_id)).size : 0,
+        completed_questions: completedCount,
         share_token,
         share_token_expires_at: ttl,
         profile_id: data.profile.id,
@@ -68,7 +73,7 @@ Deno.serve(async (req) => {
 
     const resultsUrl = buildResultsLink(siteUrl, session_id, share_token);
     return json(
-      { status: "success", session_id, share_token, profile: { ...data.profile, share_token }, results_url: resultsUrl },
+      { ok: true, status: "success", session_id, share_token, profile: data.profile, results_url: resultsUrl },
       200,
     );
   } catch (e: any) {

@@ -1,18 +1,29 @@
 {
-  "answers": [
+  "sessionId": "s",
+  "responses": [
     { "question_id": 1, "answer_value": 3 },
     { "question_id": 2, "answer_value": 3 },
     { "question_id": 3, "answer_value": 3 },
     { "question_id": 4, "answer_value": 3 }
   ],
-  "keyByQ": {
+  "scoringKey": {
     "1": { "tag": "Ti_S", "scale_type": "LIKERT_1_5" },
     "2": { "tag": "Ne_S", "scale_type": "LIKERT_1_5" },
     "3": { "tag": "Fi_S", "scale_type": "LIKERT_1_5" },
     "4": { "tag": "Se_S", "scale_type": "LIKERT_1_5" }
   },
-  "config": { "softmaxTemp": 1 },
-  "fc_scores": {
+  "config": {
+    "results_version": "v1.2.1",
+    "dim_thresholds": {"one":0, "two":0, "three":0},
+    "neuro_norms": {"mean":0, "sd":1},
+    "overlay_neuro_cut": 0,
+    "overlay_state_weights": {"stress":0, "time":0, "sleep":0, "focus":0},
+    "softmax_temp": 1,
+    "conf_raw_params": {"a":0.25, "b":0.35, "c":0.2},
+    "fit_band_thresholds": {"high_fit":10, "moderate_fit":5, "high_gap":0.2, "moderate_gap":0.1},
+    "fc_expected_min": 0
+  },
+  "fcFunctionScores": {
     "Te": 70, "Si": 30, "Ti": 0, "Ne": 0, "Fi": 0, "Fe": 0, "Ni": 0, "Se": 0
   }
 }

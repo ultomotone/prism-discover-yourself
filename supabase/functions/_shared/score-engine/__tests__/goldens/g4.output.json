@@ -1,90 +1,90 @@
 {
-  "profile": {
-    "type_code": "LII",
-    "type": "LII",
-    "base_func": "Ti",
-    "creative_func": "Ne",
-    "top_types": [
-      {
-        "code": "LII",
-        "share": 0.0898441470035404,
-        "score": 3.6500000000000004
-      },
-      {
-        "code": "ILE",
-        "share": 0.0898441470035404,
-        "score": 3.6500000000000004
-      },
-      {
-        "code": "EII",
-        "share": 0.0898441470035404,
-        "score": 3.6500000000000004
-      }
-    ],
-    "strengths": {
-      "Ti": 1.5,
-      "Te": 1.75,
-      "Fi": 1.5,
-      "Fe": 0,
-      "Ni": 0,
-      "Ne": 1.5,
-      "Si": 0.75,
-      "Se": 1.5
+  "type_code": "LII",
+  "base_func": "Ti",
+  "creative_func": "Ne",
+  "top_types": [
+    {
+      "code": "LII",
+      "share": 0.08984414700354038
     },
-    "type_scores": {
-      "LIE": 3.0999999999999996,
-      "ILI": 2.575,
-      "ESE": 2.075,
-      "SEI": 2.3,
-      "LII": 3.6500000000000004,
-      "ILE": 3.6500000000000004,
-      "ESI": 3.65,
-      "SEE": 3.65,
-      "LSE": 3.4749999999999996,
-      "SLI": 3.175,
-      "EIE": 1.7000000000000004,
-      "IEI": 1.7000000000000004,
-      "LSI": 3.65,
-      "SLE": 3.65,
-      "EII": 3.6500000000000004,
-      "IEE": 3.6500000000000004
+    {
+      "code": "ILE",
+      "share": 0.08984414700354038
     },
-    "blocks": {
-      "likert": {},
-      "fc": {}
+    {
+      "code": "ESI",
+      "share": 0.08984414700354038
+    }
+  ],
+  "top_3_fits": [
+    {
+      "code": "LII",
+      "fit": 3.65,
+      "share": 0.08984414700354038
     },
-    "blocks_norm": {
-      "Core": 0,
-      "Critic": 0,
-      "Hidden": 0,
-      "Instinct": 0
+    {
+      "code": "ILE",
+      "fit": 3.65,
+      "share": 0.08984414700354038
     },
-    "overlay": "0",
-    "overlay_neuro": "0",
-    "overlay_state": "0",
-    "validity": {
-      "attention": 0,
-      "inconsistency": 0,
-      "sd_index": 0,
-      "duplicates": 0,
-      "state_modifiers": {},
-      "required_tag_gaps": []
-    },
-    "validity_status": "ok",
-    "confidence": "low",
-    "conf_calibrated": 0.3194,
-    "score_fit_raw": 3.6500000000000004,
-    "score_fit_calibrated": 3.6500000000000004,
-    "top_gap": 0,
-    "close_call": true,
-    "results_version": "v1.2.1",
-    "fc_source": "session",
-    "version": "v1.2.1"
+    {
+      "code": "ESI",
+      "fit": 3.65,
+      "share": 0.08984414700354038
+    }
+  ],
+  "score_fit_raw": 3.65,
+  "score_fit_calibrated": 3.65,
+  "fit_band": "low_fit",
+  "top_gap": 0,
+  "close_call": true,
+  "strengths": {
+    "Ti": 1.5,
+    "Te": 1.75,
+    "Fi": 1.5,
+    "Fe": 0,
+    "Ni": 0,
+    "Ne": 1.5,
+    "Si": 0.75,
+    "Se": 1.5
   },
-  "gap_to_second": 0,
-  "confidence_margin": 0,
-  "confidence_raw": 0.3194,
-  "confidence_calibrated": 0.3194,
-  "results_version": "v1.2.1",
-  "fc_source": "session"
+  "dimensions": {
+    "Ti": 0,
+    "Te": 0,
+    "Fi": 0,
+    "Fe": 0,
+    "Ni": 0,
+    "Ne": 0,
+    "Si": 0,
+    "Se": 0
+  },
+  "dims_highlights": {
+    "coherent": [],
+    "unique": []
+  },
+  "blocks_norm": {
+    "Core": 0,
+    "Critic": 0,
+    "Hidden": 0,
+    "Instinct": 0
+  },
+  "neuro_mean": 0,
+  "neuro_z": 0,
+  "overlay_neuro": "none",
+  "overlay_state": "none",
+  "state_index": 0,
+  "overlay": "0",
+  "validity_status": "valid",
+  "validity": {
+    "attention": 0,
+    "inconsistency": 0,
+    "sd_index": 0
+  },
+  "confidence": "Low",
+  "conf_raw": 0.3194,
+  "conf_calibrated": 0.3194,
+  "fc_answered_ct": 8,
+  "fc_coverage_bucket": "full",
+  "version": "v1.2.1",
+  "results_version": "v1.2.1"
 }

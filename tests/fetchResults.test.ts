@@ -38,19 +38,6 @@ test('calls RPC with token when provided', async () => {
   assert.deepEqual(body, { session_id: 's', share_token: 't' });
 });
 
-test('calls RPC without share token', async () => {
-  let name = '';
-  let body: any = null;
-  const client = createClient(async (n, opts) => {
-    name = n; body = opts.body;
-    return { data: { profile: { id: 'p2' }, session: { id: 's', status: 'completed' } }, error: null };
-  });
-  const res = await fetchResults({ sessionId: 's' }, client);
-  assert.equal(res.profile.id, 'p2');
-  assert.equal(name, 'get-results-by-session');
-  assert.deepEqual(body, { session_id: 's', share_token: null });
-});
-
 test('dedupes concurrent calls', async () => {
   let calls = 0;
   const client = createClient(async () => {
@@ -61,8 +48,8 @@ test('dedupes concurrent calls', async () => {
     };
   });
   const [a, b] = await Promise.all([
-    fetchResults({ sessionId: 's' }, client),
-    fetchResults({ sessionId: 's' }, client),
+    fetchResults({ sessionId: 's', shareToken: 't' }, client),
+    fetchResults({ sessionId: 's', shareToken: 't' }, client),
   ]);
   assert.equal(calls, 1);
   assert.deepEqual(a, b);
@@ -80,7 +67,7 @@ test('retries transient errors', async () => {
       error: null,
     };
   });
-  const res = await fetchResults({ sessionId: 's' }, client);
+  const res = await fetchResults({ sessionId: 's', shareToken: 't' }, client);
   assert.equal(res.profile.id, 'p4');
   assert.equal(attempts, 2);
 });
@@ -93,7 +80,7 @@ test('treats 429 as transient', async () => {
       ? { data: null, error: { code: '429' } }
       : { data: { profile: { id: 'p5' }, session: { id: 's', status: 'completed' } }, error: null };
   });
-  const res = await fetchResults({ sessionId: 's' }, client);
+  const res = await fetchResults({ sessionId: 's', shareToken: 't' }, client);
   const profile: Profile = res.profile;
   assert.equal(profile.id, 'p5');
   assert.equal(attempts, 2);
@@ -106,7 +93,7 @@ test('does not retry non-transient errors', async () => {
     return { data: null, error: { code: '401' } };
   });
   await assert.rejects(
-    () => fetchResults({ sessionId: 's' }, client),
+    () => fetchResults({ sessionId: 's', shareToken: 't' }, client),
     (e) => e instanceof FetchResultsError && e.kind === 'unauthorized',
   );
   assert.equal(attempts, 1);
@@ -122,8 +109,16 @@ test('maps error variants', async () => {
   ];
   for (const [status, kind] of cases) {
     const client = createClient(async () => ({ data: null, error: { code: String(status) } }));
-    await assert.rejects(() => fetchResults({ sessionId: 's' }, client), (e) =>
+    await assert.rejects(() => fetchResults({ sessionId: 's', shareToken: 't' }, client), (e) =>
       e instanceof FetchResultsError && e.kind === kind,
     );
   }
+});
+
+test('missing share token throws unauthorized', async () => {
+  const client = createClient(async () => ({ data: null, error: { code: '401' } }));
+  await assert.rejects(
+    () => fetchResults({ sessionId: 's' }, client),
+    (e) => e instanceof FetchResultsError && e.kind === 'unauthorized',
+  );
 });
