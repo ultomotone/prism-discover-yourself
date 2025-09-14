@@ -16,17 +16,28 @@ type ResultsPayload = {
   profile: any;
 };
 
+type RotateResponse = { share_token: string };
+
 export default function Results() {
   const { sessionId: paramId } = useParams<{ sessionId: string }>();
   const location = useLocation();
-  const query = new URLSearchParams(location.search);
+  const query = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  );
   const navigate = useNavigate();
 
   const sessionId = useMemo(
     () => paramId || query.get("sessionId") || "",
     [paramId, query]
   );
-  const shareToken = useMemo(() => query.get("t") ?? null, [query]);
+
+  const [shareToken, setShareToken] = useState<string | null>(
+    query.get("t") ?? null
+  );
+  useEffect(() => {
+    setShareToken(query.get("t") ?? null);
+  }, [query]);
 
   const [data, setData] = useState<ResultsPayload | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -34,9 +45,13 @@ export default function Results() {
   const [tries, setTries] = useState(0);
   const [rotating, setRotating] = useState(false);
 
-  const resultsUrl = shareToken
-    ? `${window.location.origin}/results/${sessionId}?t=${shareToken}`
-    : `${window.location.origin}/results/${sessionId}`;
+  const resultsUrl = useMemo(
+    () =>
+      shareToken
+        ? `${window.location.origin}/results/${sessionId}?t=${shareToken}`
+        : `${window.location.origin}/results/${sessionId}`,
+    [sessionId, shareToken]
+  );
 
   const copyResultsLink = async () => {
     try {
@@ -61,45 +76,51 @@ export default function Results() {
     }
   };
 
-  const applyNewToken = useCallback(
-    (newToken: string) => {
-      navigate(`/results/${sessionId}?t=${newToken}`, { replace: true });
-      setData(null);
-      setTries((t) => t + 1);
-      toast({
-        title: "New secure link generated",
-        description: "Old links are now invalid. Your URL has been updated.",
-      });
-    },
-    [navigate, sessionId]
-  );
+  const rotateLink = useCallback(async () => {
+    if (!sessionId) {
+      toast({ title: "Session not found." });
+      return;
+    }
+    setRotating(true);
+    try {
+      const { data, error } = await supabase.rpc<RotateResponse>(
+        "rotate_results_share_token",
+        { p_session_id: sessionId }
+      );
 
-  const rotateLink = useCallback(
-    async () => {
-      if (!sessionId) return;
-      setRotating(true);
-      try {
-        const { data, error } = await supabase.rpc(
-          "rotate_results_share_token",
-          {
-            p_session_id: sessionId,
-          }
-        );
-        if (error) throw error;
-        const newToken = (data as any)?.share_token;
-        if (!newToken) {
-          throw new Error("Rotation succeeded but no token returned");
+      if (error) {
+        if (error.code === "403" || (error as any).status === 403) {
+          toast({
+            title: "You must be signed in as the session owner to rotate the link.",
+          });
+        } else if (error.code === "404" || (error as any).status === 404) {
+          toast({ title: "Session not found." });
+        } else {
+          toast({ title: "Could not rotate link. Please try again." });
         }
-        applyNewToken(newToken);
-      } catch (e: any) {
-        const msg = e?.message ?? "Failed to rotate link";
-        toast({ title: "Could not rotate link", description: msg });
-      } finally {
-        setRotating(false);
+        return;
       }
-    },
-    [sessionId, applyNewToken]
-  );
+
+      const newToken = data?.share_token;
+      if (!newToken) {
+        toast({ title: "Could not rotate link. Please try again." });
+        return;
+      }
+
+      setShareToken(newToken);
+      window.history.replaceState(
+        null,
+        "",
+        `/results/${sessionId}?t=${newToken}`
+      );
+      navigate(`/results/${sessionId}?t=${newToken}`, { replace: true });
+      toast({ title: "New secure link generated." });
+    } catch {
+      toast({ title: "Could not rotate link. Please try again." });
+    } finally {
+      setRotating(false);
+    }
+  }, [sessionId, navigate]);
 
   const downloadPDF = async () => {
     const node = document.getElementById("results-content");
@@ -270,6 +291,16 @@ export default function Results() {
               <Button onClick={downloadPDF} size="lg" className="flex items-center gap-2">
                 <Download className="h-4 w-4" />
                 Download PDF Report
+              </Button>
+              <Button
+                onClick={rotateLink}
+                variant="outline"
+                size="lg"
+                disabled={rotating}
+                className="flex items-center gap-2"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Rotate Link
               </Button>
               <Button
                 onClick={() => navigate("/assessment?start=true")}
