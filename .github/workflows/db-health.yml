@@ -1,0 +1,29 @@
+name: DB Health
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 5 * * *'
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call health RPC
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          response=$(curl --fail -sS -X POST "$SUPABASE_URL/rest/v1/rpc/health_results_path" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+          echo "$response" | jq -r 'to_entries | ("check\tvalue"),(.[]|[.key, (.value|tostring)]|@tsv)' | column -t
+          failing=$(echo "$response" | jq -r '[ to_entries[] | select(.value|not) | .key ] | @sh')
+          if [ "$failing" != "" ] && [ "$failing" != "''" ]; then
+            echo "Failing checks: $failing"
+            exit 1
+          fi

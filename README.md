@@ -64,3 +64,14 @@ For the owner and rotation smokes, you can either:
 2. Provide `AUTH_EMAIL` and `AUTH_PASSWORD` secrets and the workflow will fetch a JWT automatically.
 
 Add these under **Settings → Actions → Secrets**.
+
+## Nightly DB health audit
+
+The `DB Health` workflow calls the `public.health_results_path()` RPC each night to verify key database invariants.
+
+Required repository secrets:
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+
+Run it manually from **Actions → DB Health → Run workflow**.
