@@ -64,7 +64,7 @@ function saveUTMs() {
   const params = new URLSearchParams(window.location.search);
   const current = getUTMs();
   let changed = false;
-  ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach((k) => {
+  ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'ttclid', 'ttp'].forEach((k) => {
     const v = params.get(k);
     if (v) {
       current[k] = v;
@@ -87,6 +87,22 @@ async function hashPII(email) {
   return Array.from(new Uint8Array(hash))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+async function postTikTokEvent(body) {
+  if (window.TRACK_TEST) {
+    console.log('TRACK_TEST server', body);
+    return;
+  }
+  try {
+    await fetch('/functions/v1/tiktok-capi', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    /* swallow */
+  }
 }
 
 function fireAllNetworks({ type, value, currency, name, eventID }) {
@@ -133,7 +149,7 @@ function fireAllNetworks({ type, value, currency, name, eventID }) {
       window.fbq('track', 'InitiateCheckout', payload);
     }
     if (window.rdt) window.rdt('track', 'Lead', payload);
-    if (window.ttq) window.ttq.track('Contact', payload);
+    if (window.ttq) window.ttq.track('Lead', payload);
     if (window.gtag)
       window.gtag('event', 'generate_lead', {
         send_to: `${PIXELS.GOOGLE.ID}/${PIXELS.GOOGLE.LEAD_LABEL}`,
@@ -147,24 +163,59 @@ function fireAllNetworks({ type, value, currency, name, eventID }) {
 
 async function sendServerSide({ type, value, currency, name, eventID, email }) {
   const utms = getUTMs();
-  const body = { type, value, currency, name, eventID, utms };
-  if (email) body.emailHash = await hashPII(email);
-  if (window.__ip) body.ip = window.__ip;
-
-  if (window.TRACK_TEST) {
-    console.log('TRACK_TEST server', body);
-    return;
+  const user = {};
+  if (email) {
+    const hashedEmail = await hashPII(email);
+    user.email = hashedEmail;
+    if (window.ttq && consentGranted()) {
+      window.ttq.identify({ email: hashedEmail });
+    }
   }
+  if (window.__ip) user.ip = window.__ip;
+  user.user_agent = navigator.userAgent;
+  if (utms.ttclid) user.ttclid = utms.ttclid;
+  if (utms.ttp) user.ttp = utms.ttp;
+  const properties = { value, currency, content_name: name };
+  const event =
+    type === 'purchase' ? 'CompletePayment' : type === 'lead' ? 'Lead' : 'Contact';
+  const body = { event, event_id: eventID, properties, user };
+  await postTikTokEvent(body);
+}
 
-  try {
-    await fetch('/api/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-  } catch {
-    /* swallow */
+async function trackTikTokEvent(
+  event,
+  properties = {},
+  { email, phone, external_id } = {},
+) {
+  if (!consentGranted() || !window.ttq) return;
+  const eventID = uuid();
+  const utms = getUTMs();
+  const identify = {};
+  const user = { user_agent: navigator.userAgent };
+  if (window.__ip) user.ip = window.__ip;
+  if (utms.ttclid) user.ttclid = utms.ttclid;
+  if (utms.ttp) user.ttp = utms.ttp;
+  if (email) {
+    const h = await hashPII(email);
+    identify.email = h;
+    user.email = h;
   }
+  if (phone) {
+    const h = await hashPII(phone);
+    identify.phone_number = h;
+    user.phone = h;
+  }
+  if (external_id) {
+    const h = await hashPII(external_id);
+    identify.external_id = h;
+    user.external_id = h;
+  }
+  if (Object.keys(identify).length) {
+    window.ttq.identify(identify);
+  }
+  window.ttq.track(event, { ...properties, event_id: eventID });
+  await postTikTokEvent({ event, event_id: eventID, properties, user });
+  return eventID;
 }
 
 function bindCalClickTracking(
@@ -221,6 +272,10 @@ function listenForCalMessages() {
 
 function init() {
   saveUTMs();
+  trackTikTokEvent('ViewContent', {
+    content_name: document.title || 'Page',
+    url: window.location.href,
+  });
   bindCalClickTracking();
   listenForCalMessages();
 }
@@ -234,6 +289,7 @@ export {
   consentGranted,
   uuid,
   hashPII,
+  trackTikTokEvent,
   bindCalClickTracking,
   listenForCalMessages,
   wasSent,
@@ -247,4 +303,5 @@ export default {
   uuid,
   wasSent,
   markSent,
+  trackTikTokEvent,
 };
