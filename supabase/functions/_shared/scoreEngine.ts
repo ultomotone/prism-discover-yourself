@@ -165,19 +165,22 @@ export function processResponses(input: EngineInput): {
     const qid = String(row.question_id);
     const rec = keyByQ[qid];
     if (!rec) continue;
-    const raw = parseNum(row.answer_value);
-    if (raw == null) continue;
-    const v = toCommon5(rec.reverse_scored ? reverseOnNative(raw, rec.scale_type) : raw, rec.scale_type);
-    const tag = rec.tag || undefined;
-    if (tag?.endsWith("_S")) {
-      const func = tag.split("_")[0] as Func;
-      (likert[func] ||= []).push(v);
-    }
+    // 1) FC derivation must run even when answer_value is non-numeric
     if (!fc_scores && rec.fc_map) {
       const choice = rec.fc_map[String(row.answer_value)];
       if (choice && FUNCS.includes(choice as Func)) {
-        const func = choice as Func;
-        fcTallies[func] = (fcTallies[func] || 0) + 1;
+        const f = choice as Func;
+        fcTallies[f] = (fcTallies[f] || 0) + 1;
+      }
+    }
+    // 2) Likert handling (numeric only)
+    const raw = parseNum(row.answer_value);
+    if (raw != null) {
+      const v = toCommon5(rec.reverse_scored ? reverseOnNative(raw, rec.scale_type) : raw, rec.scale_type);
+      const tag = rec.tag || undefined;
+      if (tag?.endsWith("_S")) {
+        const f = tag.split("_")[0] as Func;
+        (likert[f] ||= []).push(v);
       }
     }
   }
