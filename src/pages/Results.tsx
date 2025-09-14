@@ -83,7 +83,7 @@ export default function Results() {
     }
     setRotating(true);
     try {
-      const { data, error } = await supabase.rpc<RotateResponse>(
+      const { data, error } = await supabase.rpc(
         "rotate_results_share_token",
         { p_session_id: sessionId }
       );

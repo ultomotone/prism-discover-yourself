@@ -30,13 +30,15 @@ export default function RelationalFitPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>PRISM Relational Fit</title>
-        <meta
-          name="description"
-          content="See how your natural style, current regulation, and what you supply vs. need add up to everyday chemistry."
-        />
-      </Helmet>
+      <Helmet 
+        title="PRISM Relational Fit"
+        meta={[
+          {
+            name: "description",
+            content: "See how your natural style, current regulation, and what you supply vs. need add up to everyday chemistry."
+          }
+        ]}
+      />
       <Header />
 
       {/* Hero */}
