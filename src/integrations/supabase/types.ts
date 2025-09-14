@@ -691,6 +691,7 @@ export type Database = {
           session_id: string
           session_kind: string | null
           share_token: string
+          fc_source: string | null
           state_index: number | null
           strengths: Json | null
           submitted_at: string | null
@@ -749,6 +750,7 @@ export type Database = {
           session_id: string
           session_kind?: string | null
           share_token?: string
+          fc_source?: string | null
           state_index?: number | null
           strengths?: Json | null
           submitted_at?: string | null
@@ -807,6 +809,7 @@ export type Database = {
           session_id?: string
           session_kind?: string | null
           share_token?: string
+          fc_source?: string | null
           state_index?: number | null
           strengths?: Json | null
           submitted_at?: string | null
