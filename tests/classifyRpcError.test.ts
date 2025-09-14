@@ -6,11 +6,14 @@ import assert from 'node:assert/strict';
   document: { createElement: () => ({ setAttribute: () => {}, style: {} }) },
   location: { href: '' },
   __APP_CONFIG__: { SUPABASE_URL: 'http://localhost', SUPABASE_ANON_KEY: 'anon' },
+  atob,
+  btoa,
 };
 (globalThis as any).document = (globalThis as any).window.document;
 (globalThis as any).navigator = { userAgent: '' };
 
 const { classifyRpcError } = await import('../src/pages/Results.tsx');
+const { supabase } = await import('../src/lib/supabase/client');
 
 test('classifyRpcError categorizes common RPC errors', () => {
   assert.equal(classifyRpcError({ status: 404 }), 'expired_or_invalid_token');
@@ -22,4 +25,10 @@ test('classifyRpcError categorizes common RPC errors', () => {
   assert.equal(classifyRpcError({ status: 429 }), 'transient');
   assert.equal(classifyRpcError({ status: 503 }), 'transient');
   assert.equal(classifyRpcError({ status: 418 }), 'unknown');
+  assert.equal(classifyRpcError({ status: 500 }), 'unknown');
+});
+
+test.after(() => {
+  supabase.removeAllChannels();
+  supabase.realtime.disconnect();
 });
