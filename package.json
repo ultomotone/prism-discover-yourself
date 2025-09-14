@@ -25,7 +25,8 @@
     "smoke:get-user-jwt": "tsx scripts/get-user-jwt.ts",
     "backfill:profiles": "tsx src/utils/backfillProfiles.ts",
     "check:merge-markers": "git grep -nE '^(<<<<<<<|=======|>>>>>>>)' && (echo 'merge markers found'; exit 1) || exit 0",
-    "check:no-legacy": "git grep -nE \"get_results_by_session_legacy|VITE_ALLOW_LEGACY_RESULTS\" -- ':!package.json' && (echo 'legacy references found'; exit 1) || exit 0"
+    "check:no-legacy": "git grep -nE \"get_results_by_session_legacy|VITE_ALLOW_LEGACY_RESULTS\" -- ':!package.json' && (echo 'legacy references found'; exit 1) || exit 0",
+    "audit:prs": "tsx scripts/audit-prs.ts"
   },
   "dependencies": {
     "@calcom/embed-core": "^1.5.3",
