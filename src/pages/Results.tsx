@@ -15,22 +15,20 @@ type ResultsPayload = {
   profile: any;
 };
 
-type RpcErrorKind =
+export type RpcErrorCategory =
   | "expired_or_invalid_token"
   | "not_authorized"
   | "transient"
   | "unknown";
 
-export function classifyRpcError(e: any): RpcErrorKind {
-  const status = Number((e?.code ?? e?.status) || 0);
-  const msg = String(e?.message ?? "").toLowerCase();
-  if (status === 404 || msg.includes("no_data_found")) {
-    return "expired_or_invalid_token";
-  }
+export function classifyRpcError(err: any): RpcErrorCategory {
+  const status =
+    typeof err?.status === "number" ? err.status : Number(err?.code);
+  const msg = String(err?.message ?? "").toLowerCase();
+
+  if (status === 404 || msg === "no_data_found") return "expired_or_invalid_token";
   if (status === 403) return "not_authorized";
-  if (status === 409 || status === 429 || (status >= 500 && status < 600)) {
-    return "transient";
-  }
+  if (status === 429 || status === 503) return "transient";
   return "unknown";
 }
 
