@@ -15,6 +15,25 @@ type ResultsPayload = {
   profile: any;
 };
 
+type RpcErrorKind =
+  | "expired_or_invalid_token"
+  | "not_authorized"
+  | "transient"
+  | "unknown";
+
+export function classifyRpcError(e: any): RpcErrorKind {
+  const status = Number((e?.code ?? e?.status) || 0);
+  const msg = String(e?.message ?? "").toLowerCase();
+  if (status === 404 || msg.includes("no_data_found")) {
+    return "expired_or_invalid_token";
+  }
+  if (status === 403) return "not_authorized";
+  if (status === 409 || status === 429 || (status >= 500 && status < 600)) {
+    return "transient";
+  }
+  return "unknown";
+}
+
 export default function Results() {
   const { sessionId: paramId } = useParams<{ sessionId: string }>();
   const location = useLocation();
@@ -29,6 +48,9 @@ export default function Results() {
 
   const [data, setData] = useState<ResultsPayload | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [errKind, setErrKind] = useState<
+    "expired_or_invalid_token" | "not_authorized" | "unknown" | null
+  >(null);
   const [tries, setTries] = useState(0);
   const [rotating, setRotating] = useState(false);
 
@@ -128,6 +150,8 @@ export default function Results() {
   useEffect(() => {
     if (!sessionId) return;
     let cancel = false;
+    setErr(null);
+    setErrKind(null);
 
     (async () => {
       try {
@@ -142,18 +166,22 @@ export default function Results() {
 
         if (!cancel) setData(res);
       } catch (e: any) {
-        const status = Number((e?.code ?? e?.status) || 0);
-        // Retry transient-ish errors briefly
-        if ((status === 409 || status === 429 || (status >= 500 && status < 600)) && tries < 2) {
+        const kind = classifyRpcError(e);
+        if (kind === "transient" && tries < 2) {
           setTimeout(() => !cancel && setTries((t) => t + 1), 400 * (tries + 1));
           return;
         }
         if (!cancel) {
-          setErr(
-            e?.message && typeof e.message === "string"
-              ? e.message
-              : "Failed to load results"
-          );
+          if (kind === "expired_or_invalid_token" || kind === "not_authorized") {
+            setErrKind(kind);
+          } else {
+            setErr(
+              e?.message && typeof e.message === "string"
+                ? e.message
+                : "Failed to load results"
+            );
+            setErrKind(null);
+          }
         }
       }
     })();
@@ -169,6 +197,41 @@ export default function Results() {
     }
   }, [data?.profile, sessionId]);
 
+  if (errKind) {
+    const content =
+      errKind === "expired_or_invalid_token"
+        ? {
+            title: "This results link has expired or was rotated",
+            message:
+              "Ask the owner for a fresh link, or sign in (if you’re the owner) to view your results.",
+          }
+        : {
+            title: "You’re not authorized to view these results",
+            message:
+              "Sign in with the account that owns this assessment, or request a share link from the owner.",
+          };
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 space-y-4 text-center">
+            <h2 className="text-lg font-semibold">{content.title}</h2>
+            <p className="text-muted-foreground">{content.message}</p>
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+              <Button onClick={() => navigate(`/login?redirect=/results/${sessionId}`)}>
+                Sign in to view
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/assessment?start=true")}
+              >
+                Retake assessment
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   if (err) return <div className="p-8">Error: {err}</div>;
   if (!data) return <div className="p-8">Loading…</div>;
 
