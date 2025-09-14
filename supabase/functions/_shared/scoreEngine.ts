@@ -147,8 +147,19 @@ export function scoreAssessment(input: ProfileInput): ProfileResult {
   for (const r of responses) {
     const key = scoringKey[String(r.question_id)];
     if (!key) continue;
+
+    // first handle forced-choice mapping regardless of numeric value
+    if (!fcFunctionScores && key.fc_map) {
+      const f = key.fc_map[String(r.answer_value)] as Func | undefined;
+      if (f) {
+        fcDerived[f] = (fcDerived[f] || 0) + 1;
+        fcAnswered++;
+      }
+    }
+
     const val = parseNumber(r.answer_value);
     if (val === null) continue;
+
     if (key.reverse_scored) {
       // assume 1-5 scale
       const max = 5;
@@ -156,19 +167,13 @@ export function scoreAssessment(input: ProfileInput): ProfileResult {
       const flipped = max + min - val;
       r.answer_value = flipped;
     }
-    const tag = key.tag ? key.tag.substring(0,2) as Func : undefined;
+
+    const tag = key.tag ? (key.tag.substring(0, 2) as Func) : undefined;
     if (tag && key.scale_type.startsWith('LIKERT')) {
       const entry = likert[tag] || { sum: 0, count: 0 };
       entry.sum += Number(r.answer_value);
       entry.count += 1;
       likert[tag] = entry;
-    }
-    if (!fcFunctionScores && key.fc_map) {
-      const f = key.fc_map[String(r.answer_value)] as Func | undefined;
-      if (f) {
-        fcDerived[f] = (fcDerived[f] || 0) + 1;
-        fcAnswered++;
-      }
     }
   }
 
