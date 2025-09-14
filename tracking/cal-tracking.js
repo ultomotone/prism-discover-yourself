@@ -64,7 +64,7 @@ function saveUTMs() {
   const params = new URLSearchParams(window.location.search);
   const current = getUTMs();
   let changed = false;
-  ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach((k) => {
+  ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'ttclid', 'ttp'].forEach((k) => {
     const v = params.get(k);
     if (v) {
       current[k] = v;
@@ -133,7 +133,7 @@ function fireAllNetworks({ type, value, currency, name, eventID }) {
       window.fbq('track', 'InitiateCheckout', payload);
     }
     if (window.rdt) window.rdt('track', 'Lead', payload);
-    if (window.ttq) window.ttq.track('Contact', payload);
+    if (window.ttq) window.ttq.track('Lead', payload);
     if (window.gtag)
       window.gtag('event', 'generate_lead', {
         send_to: `${PIXELS.GOOGLE.ID}/${PIXELS.GOOGLE.LEAD_LABEL}`,
@@ -147,9 +147,23 @@ function fireAllNetworks({ type, value, currency, name, eventID }) {
 
 async function sendServerSide({ type, value, currency, name, eventID, email }) {
   const utms = getUTMs();
-  const body = { type, value, currency, name, eventID, utms };
-  if (email) body.emailHash = await hashPII(email);
-  if (window.__ip) body.ip = window.__ip;
+  const user = {};
+  if (email) {
+    const hashedEmail = await hashPII(email);
+    user.email = hashedEmail;
+    if (window.ttq && consentGranted()) {
+      window.ttq.identify({ email: hashedEmail });
+    }
+  }
+  if (window.__ip) user.ip = window.__ip;
+  user.user_agent = navigator.userAgent;
+  if (utms.ttclid) user.ttclid = utms.ttclid;
+  if (utms.ttp) user.ttp = utms.ttp;
+  const properties = { value, currency, content_name: name };
+  const event =
+    type === 'purchase' ? 'CompletePayment' : type === 'lead' ? 'Lead' : 'Contact';
+
+  const body = { event, event_id: eventID, properties, user };
 
   if (window.TRACK_TEST) {
     console.log('TRACK_TEST server', body);
@@ -157,7 +171,7 @@ async function sendServerSide({ type, value, currency, name, eventID, email }) {
   }
 
   try {
-    await fetch('/api/track', {
+    await fetch('/functions/v1/tiktok-capi', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
