@@ -5,7 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight } from "lucide-react";
 import Header from "@/components/Header";
-import CoreTypesMatrix from "./components/CoreTypesMatrix";
+import { CoreTypesCompatibilityMatrix } from "@/components/relational/CoreTypesCompatibilityMatrix";
+import { CORE_BASELINE_MATRIX, CORE_BASELINE } from "@/data/coreBaseline";
 import ComprehensiveDriftDemo from "./components/ComprehensiveDriftDemo";
 import PairReportMini from "./components/PairReportMini";
 import MicroLessonsAccordion from "./components/learning/MicroLessonsAccordion";
@@ -53,7 +54,7 @@ export default function RelationalFitPage() {
       <Header />
 
       {/* Hero */}
-      <section className="bg-background py-12 text-center">
+      <section className="bg-background py-12 pt-24 text-center">
         <h1 className="mb-4 text-4xl font-bold">Relational Fit = Need‑meeting in real life</h1>
         <p className="mx-auto mb-6 max-w-2xl text-lg text-muted-foreground">
           See how your natural style, current regulation, and what you supply vs. need add up to everyday chemistry.
@@ -243,7 +244,17 @@ export default function RelationalFitPage() {
             <section id="visuals">
               <h2 className="mb-4 text-xl font-semibold">Visuals</h2>
               <div className="space-y-8">
-                <CoreTypesMatrix />
+                <div>
+                  <CoreTypesCompatibilityMatrix matrix={CORE_BASELINE_MATRIX} map={CORE_BASELINE} />
+                  <div className="mt-6 text-center">
+                    <Button asChild variant="outline" size="lg">
+                      <a href="/relational-fit/heatmap" aria-label="View Detailed Heatmap">
+                        View Detailed Interactive Heatmap
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </a>
+                    </Button>
+                  </div>
+                </div>
                 <PairReportMini />
               </div>
             </section>
