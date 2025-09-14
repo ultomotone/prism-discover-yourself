@@ -5,9 +5,20 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight } from "lucide-react";
 import Header from "@/components/Header";
-import RelationalFitHeatmap from "./components/RelationalFitHeatmap";
+import CoreTypesMatrix from "./components/CoreTypesMatrix";
 import ComprehensiveDriftDemo from "./components/ComprehensiveDriftDemo";
 import PairReportMini from "./components/PairReportMini";
+import MicroLessonsAccordion from "./components/learning/MicroLessonsAccordion";
+import QuickSelfCheck from "./components/learning/QuickSelfCheck";
+import TinyHabitsTabs from "./components/learning/TinyHabitsTabs";
+import ConversationScripts from "./components/learning/ConversationScripts";
+import RolePlayAccordion from "./components/learning/RolePlayAccordion";
+import MiniCourseChecklist from "./components/learning/MiniCourseChecklist";
+import ContextToggleExamples from "./components/learning/ContextToggleExamples";
+import MythFactRows from "./components/learning/MythFactRows";
+import ReflectionPrompts from "./components/learning/ReflectionPrompts";
+import InlineGlossary from "./components/learning/InlineGlossary";
+import DebriefBanner from "./components/learning/DebriefBanner";
 
 const toc = [
   { id: "overview", label: "Overview" },
@@ -17,12 +28,12 @@ const toc = [
   { id: "core", label: "Core Alignment" },
   { id: "drift", label: "Drift: Temporary Orientations" },
   { id: "traits", label: "Trait Nudges (Big Five)" },
+  { id: "learn", label: "Learn & Practice" },
   { id: "visuals", label: "Visuals" },
   { id: "how", label: "How the Fit Score Works" },
   { id: "examples", label: "Examples" },
-  { id: "debrief", label: "For Individuals: Compatibility Debrief" },
-  { id: "faqs", label: "FAQs" },
-  { id: "glossary", label: "Glossary" }
+  { id: "debrief", label: "Compatibility Debrief" },
+  { id: "faqs", label: "FAQs" }
 ];
 
 export default function RelationalFitPage() {
@@ -55,8 +66,8 @@ export default function RelationalFitPage() {
             </a>
           </Button>
           <Button asChild variant="outline" size="lg">
-            <a href="/relational-fit/heatmap" aria-label="View 16×16 Heatmap">
-              View 16×16 Heatmap
+            <a href="/relational-fit/heatmap" aria-label="View Detailed Heatmap">
+              View Detailed Heatmap
             </a>
           </Button>
         </div>
@@ -115,7 +126,7 @@ export default function RelationalFitPage() {
                 </li>
               </ul>
               <p className="mt-2">
-                We highlight Supply↔Demand because it explains why non‑ideal type matches can feel great—or “textbook” pairs
+                We highlight Supply↔Demand because it explains why non‑ideal type matches can feel great—or "textbook" pairs
                 can struggle.
               </p>
             </section>
@@ -161,7 +172,7 @@ export default function RelationalFitPage() {
             {/* Regulation */}
             <section id="regulation">
               <h2 className="mb-2 text-xl font-semibold">Base Regulation (Calm / Neutral / Stressed)</h2>
-              <p>People oscillate between states. We track the mix you’re usually in:</p>
+              <p>People oscillate between states. We track the mix you're usually in:</p>
               <ul className="ml-6 list-disc space-y-1">
                 <li>Calm (Reg+) — well‑regulated; more bandwidth and generosity</li>
                 <li>Neutral (Reg0) — steady baseline</li>
@@ -191,8 +202,8 @@ export default function RelationalFitPage() {
                 with it, and because partners may not drift in overlapping directions at the same time.
               </p>
               <p className="mt-2">
-                Why “duals” can still clash: if both partners drift away from overlapping orientations—or meet mostly in
-                Stress—the trade balance goes negative even when the baseline match is “ideal.”
+                Why "duals" can still clash: if both partners drift away from overlapping orientations—or meet mostly in
+                Stress—the trade balance goes negative even when the baseline match is "ideal."
               </p>
               <div className="mt-4">
                 <ComprehensiveDriftDemo />
@@ -208,61 +219,77 @@ export default function RelationalFitPage() {
               </p>
             </section>
 
+            {/* Learn & Practice */}
+            <section id="learn" className="space-y-10">
+              <header>
+                <h2 className="text-xl font-semibold">Learn & Practice</h2>
+                <p className="text-muted-foreground">Short lessons and ready-to-use exercises—no charts, just clarity.</p>
+              </header>
+
+              <MicroLessonsAccordion />
+              <QuickSelfCheck />
+              <TinyHabitsTabs />
+              <ConversationScripts />
+              <RolePlayAccordion />
+              <MiniCourseChecklist />
+              <ContextToggleExamples />
+              <MythFactRows />
+              <ReflectionPrompts />
+              <InlineGlossary />
+              <DebriefBanner />
+            </section>
+
             {/* Visuals */}
             <section id="visuals">
               <h2 className="mb-4 text-xl font-semibold">Visuals</h2>
               <div className="space-y-8">
-                <RelationalFitHeatmap />
+                <CoreTypesMatrix />
                 <PairReportMini />
               </div>
             </section>
 
             {/* How it works */}
             <section id="how">
-              <h2 className="mb-2 text-xl font-semibold">How the Fit Score Works (plain math)</h2>
-              <p>
-                Fit = 0.5×(Supply↔Demand trade balance) + 0.35×(Core × Regulation) + 0.15×(Drift overlap)
-              </p>
-              <p>
-                Core × Regulation: baseline alignment scaled by your Calm/Neutral vs. Stressed overlap.
-              </p>
-              <p>
-                Supply↔Demand: how completely each partner’s supply covers the other’s demand across the five lanes (heavily
-                weighted).
-              </p>
-              <p>
-                Drift overlap: how often your temporary orientations meet in compatible zones.
-              </p>
-              <p>Traits: small final nudges.</p>
-              <p>
-                Output: band (🟩/🟨/🟥) + what’s working + watch‑outs + two tiny habits.
-              </p>
+              <h2 className="mb-2 text-xl font-semibold">How the Fit Score Works</h2>
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <p className="font-mono text-sm mb-3">
+                  Fit = 0.5×(Supply↔Demand) + 0.35×(Core × Regulation) + 0.15×(Drift overlap)
+                </p>
+                <ul className="space-y-2 text-sm">
+                  <li><strong>Supply↔Demand:</strong> How completely each partner's supply covers the other's demand across five lanes</li>
+                  <li><strong>Core × Regulation:</strong> Baseline alignment scaled by Calm/Neutral vs. Stressed overlap</li>
+                  <li><strong>Drift overlap:</strong> How often temporary orientations meet in compatible zones</li>
+                  <li><strong>Traits:</strong> Small final nudges from Big Five patterns</li>
+                </ul>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  Output: 🟩/🟨/🟥 band + what's working + watch-outs + two tiny habits
+                </p>
+              </div>
             </section>
 
             {/* Examples */}
             <section id="examples">
               <h2 className="mb-2 text-xl font-semibold">Examples</h2>
-              <p>
-                Example A: Close to Dual &amp; Well‑regulated — 🟩 Supportive
-              </p>
-              <p>
-                Strong lane coverage (4 greens), Calm/Neutral dominant.
-              </p>
-              <p>
-                Tiny Habits: 15‑min weekly pacing sync; use a “pause word” for values friction.
-              </p>
-              <p className="mt-4">
-                Example B: Great Core, Weak Lane Coverage — 🟨 Stretch (near 🟥 under pressure)
-              </p>
-              <p>Missing Care/Boundaries and Timing; Stressed overlap is common.</p>
-              <p>Tiny Habits: time‑box emotional labor; end‑of‑day handoff ritual.</p>
+              <div className="space-y-4">
+                <Card className="p-4 border-green-200 bg-green-50/50">
+                  <p className="font-semibold text-green-800 mb-2">🟩 Supportive: Close to Dual & Well-regulated</p>
+                  <p className="text-sm mb-2">Strong lane coverage (4 greens), Calm/Neutral dominant.</p>
+                  <p className="text-sm"><strong>Tiny Habits:</strong> 15-min weekly pacing sync; use a "pause word" for values friction.</p>
+                </Card>
+                
+                <Card className="p-4 border-yellow-200 bg-yellow-50/50">
+                  <p className="font-semibold text-yellow-800 mb-2">🟨 Stretch: Great Core, Weak Lane Coverage</p>
+                  <p className="text-sm mb-2">Missing Care/Boundaries and Timing; Stressed overlap is common.</p>
+                  <p className="text-sm"><strong>Tiny Habits:</strong> Time-box emotional labor; end-of-day handoff ritual.</p>
+                </Card>
+              </div>
             </section>
 
-            {/* Debrief CTA */}
+            {/* Debrief */}
             <section id="debrief" className="text-center">
-              <h2 className="mb-2 text-xl font-semibold">For Individuals: Compatibility Debrief (CTA)</h2>
+              <h2 className="mb-2 text-xl font-semibold">Compatibility Debrief</h2>
               <p className="mb-4">
-                Want a personalized breakdown? Book a 1‑on‑1 Compatibility Debrief—we’ll walk through your lanes, state mix, and
+                Want a personalized breakdown? Book a 1-on-1 Compatibility Debrief—we'll walk through your lanes, state mix, and
                 drift map, and set two tiny habits you can use this week.
               </p>
               <Button asChild size="lg" className="mx-auto">
@@ -275,43 +302,25 @@ export default function RelationalFitPage() {
 
             {/* FAQs */}
             <section id="faqs">
-              <h2 className="mb-2 text-xl font-semibold">FAQs</h2>
-              <ul className="ml-6 list-disc space-y-2">
-                <li>
-                  Does this replace classic intertype relations? No—PRISM builds on them and adds regulation and lane coverage for
-                  day‑to‑day accuracy.
-                </li>
-                <li>Why emphasize Supply↔Demand? It’s the best proxy for how supported people feel most days.</li>
-                <li>
-                  Can a red lane improve? Yes—rituals, boundaries, or targeted role swaps.
-                </li>
-                <li>Is stress a deal‑breaker? No—recover capacity first, then tackle big decisions.</li>
-              </ul>
-            </section>
-
-            {/* Glossary */}
-            <section id="glossary">
-              <h2 className="mb-2 text-xl font-semibold">Glossary</h2>
-              <ul className="ml-6 list-disc space-y-1">
-                <li>
-                  <strong>Supply:</strong> strengths you can deliver on repeat without resentment.
-                </li>
-                <li>
-                  <strong>Demand:</strong> support you reliably value and request.
-                </li>
-                <li>
-                  <strong>Lanes:</strong> Structure, Care, Energy, Timing, Meaning.
-                </li>
-                <li>
-                  <strong>Reg+ / Reg0 / Reg−:</strong> Calm, Neutral, Stressed.
-                </li>
-                <li>
-                  <strong>Drift:</strong> temporary orientation that resembles another type in a specific context.
-                </li>
-                <li>
-                  <strong>Fit Band:</strong> Supportive / Stretch / Friction.
-                </li>
-              </ul>
+              <h2 className="mb-4 text-xl font-semibold">FAQs</h2>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold mb-1">Does this replace classic intertype relations?</h4>
+                  <p className="text-sm text-muted-foreground">No—PRISM builds on them and adds regulation and lane coverage for day-to-day accuracy.</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-1">Why emphasize Supply↔Demand?</h4>
+                  <p className="text-sm text-muted-foreground">It's the best proxy for how supported people feel most days.</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-1">Can a red lane improve?</h4>
+                  <p className="text-sm text-muted-foreground">Yes—through rituals, boundaries, or targeted role swaps.</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-1">Is stress a deal-breaker?</h4>
+                  <p className="text-sm text-muted-foreground">No—recover capacity first, then tackle big decisions.</p>
+                </div>
+              </div>
             </section>
           </div>
         </div>
@@ -319,4 +328,3 @@ export default function RelationalFitPage() {
     </div>
   );
 }
-
