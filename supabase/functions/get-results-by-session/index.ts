@@ -11,42 +11,42 @@ serve(async (req) => {
   try {
     const { session_id, share_token } = await req.json();
     if (!session_id) {
-      return new Response(JSON.stringify({ error: "session_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ status: "error", error: "session_id required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
-
-    const url = Deno.env.get("SUPABASE_URL");
-    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!url || !key) {
-      return new Response(JSON.stringify({ error: "Server not configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+    const url = Deno.env.get("SUPABASE_URL")!;
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(url, key);
 
-    if (share_token) {
-      const { data, error } = await supabase.rpc("get_profile_by_session", { session_id, share_token });
-      if (error) {
-        const status = Number(error.code) || 401;
-        return new Response(JSON.stringify({ error: error.message }), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      if (!data) {
-        return new Response(JSON.stringify({ error: "not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      const profile = (data as any).profile ?? data;
-      delete profile.share_token;
-      return new Response(JSON.stringify({ profile, session: { id: session_id, status: "completed" } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { data, error } = await supabase.rpc("get_results_by_session", {
+      session_id,
+      t: share_token ?? null,
+    });
+    if (error) {
+      return new Response(JSON.stringify({ status: "error", error: error.message }), {
+        status: Number(error.code) || 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
-
-    // temporary fallback without token
-    const { data } = await supabase.rpc("get_results_by_session", { session_id });
-    if (data?.profile) {
-      console.log(`evt:tokenless_access,session_id:${session_id}`);
-      const profile = data.profile;
-      delete profile.share_token;
-      return new Response(JSON.stringify({ profile, session: data.session }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!data?.profile) {
+      return new Response(JSON.stringify({ status: "error", error: "not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
-
-    return new Response(JSON.stringify({ error: "share token required" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const profile = data.profile;
+    delete profile.share_token;
+    return new Response(
+      JSON.stringify({ status: "success", profile, session: data.session }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (e: any) {
-    console.error("get-results-by-session error", e);
-    return new Response(JSON.stringify({ error: e?.message || "internal error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ status: "error", error: e.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
+

@@ -62,7 +62,7 @@ export interface EngineProfile {
   top_gap: number;
   close_call: boolean;
   results_version: string;
-  fc_source: "session" | "none";
+  fc_source: "session" | "derived" | "none";
   version: string;
 }
 
@@ -73,7 +73,7 @@ export interface EngineResult {
   confidence_raw: number;
   confidence_calibrated: number;
   results_version: string;
-  fc_source: "session" | "none";
+  fc_source: "session" | "derived" | "none";
 }
 
 export const FUNCS: Func[] = ["Ti","Te","Fi","Fe","Ni","Ne","Si","Se"];
@@ -153,9 +153,14 @@ function mean(arr: number[]): number {
 }
 
 // --- pipeline steps -------------------------------------------------------
-export function processResponses(input: EngineInput) {
+export function processResponses(input: EngineInput): {
+  strengths: Record<Func, number>;
+  fcSource: "session" | "derived" | "none";
+} {
   const { answers, keyByQ, fc_scores } = input;
   const likert: Record<Func, number[]> = {} as any;
+  const fcTallies: Record<Func, number> = {} as any;
+
   for (const row of answers) {
     const qid = String(row.question_id);
     const rec = keyByQ[qid];
@@ -168,14 +173,37 @@ export function processResponses(input: EngineInput) {
       const func = tag.split("_")[0] as Func;
       (likert[func] ||= []).push(v);
     }
+    if (!fc_scores && rec.fc_map) {
+      const choice = rec.fc_map[String(row.answer_value)];
+      if (choice && FUNCS.includes(choice as Func)) {
+        const func = choice as Func;
+        fcTallies[func] = (fcTallies[func] || 0) + 1;
+      }
+    }
   }
+
+  let fcNorm: Record<Func, number> | undefined = fc_scores;
+  let fcSource: "session" | "derived" | "none" = "none";
+
+  if (fc_scores) {
+    fcSource = "session";
+  } else if (Object.keys(fcTallies).length) {
+    const max = Math.max(...Object.values(fcTallies));
+    fcNorm = {} as any;
+    for (const f of FUNCS) {
+      fcNorm[f] = max ? (fcTallies[f] || 0) / max * 100 : 0;
+    }
+    fcSource = "derived";
+  }
+
   const strengths: Record<Func, number> = {} as any;
   for (const f of FUNCS) {
     const lik = mean(likert[f] || []);
-    const fcScore = fc_scores ? (fc_scores[f] / 100) * 5 : 0;
-    strengths[f] = fc_scores ? 0.5 * lik + 0.5 * fcScore : lik;
+    const fcScore = fcNorm ? (fcNorm[f] / 100) * 5 : 0;
+    strengths[f] = fcNorm ? 0.5 * lik + 0.5 * fcScore : lik;
   }
-  return strengths;
+
+  return { strengths, fcSource };
 }
 
 export function computeTypeMatches(strengths: Record<Func, number>, protos: Record<TypeCode, Record<Func, Block>>) {
@@ -238,6 +266,7 @@ export function assembleProfileResult(
   top3: Array<{code:TypeCode;share:number;score:number}>,
   gap: number,
   conf: { raw:number; band:string },
+  fcSource: "session" | "derived" | "none"
 ): EngineProfile {
   const type = top3[0].code;
   const base = TYPE_MAP[type].base;
@@ -266,20 +295,20 @@ export function assembleProfileResult(
     top_gap: Number(gap.toFixed(3)),
     close_call: closeCall,
     results_version: resultsVersion,
-    fc_source: input.fc_scores ? "session" : "none",
+    fc_source: fcSource,
     version: resultsVersion,
   };
 }
 
 export function runScoreEngine(input: EngineInput): EngineResult {
   const protos = input.config.typePrototypes || FALLBACK_PROTOTYPES;
-  const strengths = processResponses(input);
+  const { strengths, fcSource } = processResponses(input);
   const matches = computeTypeMatches(strengths, protos);
   const calibrated = calibrateFitScores(matches);
   const shares = computeTypeProbabilities(calibrated, input.config.softmaxTemp || 1.0);
   const { top3, gap, scoreGap } = rankTypes(shares, calibrated);
   const conf = computeConfidence(scoreGap, gap, shares, input.config.confRawParams || { a:0.25, b:0.35, c:0.2 });
-  const profile = assembleProfileResult(input, strengths, calibrated, top3, gap, conf);
+  const profile = assembleProfileResult(input, strengths, calibrated, top3, gap, conf, fcSource);
   return {
     profile,
     gap_to_second: profile.top_gap,
@@ -287,7 +316,7 @@ export function runScoreEngine(input: EngineInput): EngineResult {
     confidence_raw: Number(conf.raw.toFixed(4)),
     confidence_calibrated: profile.conf_calibrated,
     results_version: profile.results_version,
-    fc_source: profile.fc_source,
+    fc_source: fcSource,
   };
 }
 

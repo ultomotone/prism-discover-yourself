@@ -39,3 +39,21 @@ test('resumed session yields same final result', () => {
   const resumed = scoreAssessment(input);
   assert.deepStrictEqual(resumed, singleShot);
 });
+
+test('fc_map derives forced-choice strengths', () => {
+  const input = {
+    answers: [
+      { question_id: 1, answer_value: 'A' },
+      { question_id: 2, answer_value: 'B' },
+    ],
+    keyByQ: {
+      '1': { scale_type: 'LIKERT_1_5', fc_map: { A: 'Ti', B: 'Te' } },
+      '2': { scale_type: 'LIKERT_1_5', fc_map: { B: 'Fe' } },
+    },
+    config: { softmaxTemp: 1 },
+  };
+  const result = scoreAssessment(input as any);
+  assert.strictEqual(result.fc_source, 'derived');
+  assert(result.profile.strengths.Ti > 0);
+  assert(result.profile.strengths.Fe > 0);
+});
