@@ -89,6 +89,22 @@ async function hashPII(email) {
     .join('');
 }
 
+async function postTikTokEvent(body) {
+  if (window.TRACK_TEST) {
+    console.log('TRACK_TEST server', body);
+    return;
+  }
+  try {
+    await fetch('/functions/v1/tiktok-capi', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    /* swallow */
+  }
+}
+
 function fireAllNetworks({ type, value, currency, name, eventID }) {
   if (!consentGranted()) return;
   if (window.TRACK_TEST) {
@@ -162,23 +178,44 @@ async function sendServerSide({ type, value, currency, name, eventID, email }) {
   const properties = { value, currency, content_name: name };
   const event =
     type === 'purchase' ? 'CompletePayment' : type === 'lead' ? 'Lead' : 'Contact';
-
   const body = { event, event_id: eventID, properties, user };
+  await postTikTokEvent(body);
+}
 
-  if (window.TRACK_TEST) {
-    console.log('TRACK_TEST server', body);
-    return;
+async function trackTikTokEvent(
+  event,
+  properties = {},
+  { email, phone, external_id } = {},
+) {
+  if (!consentGranted() || !window.ttq) return;
+  const eventID = uuid();
+  const utms = getUTMs();
+  const identify = {};
+  const user = { user_agent: navigator.userAgent };
+  if (window.__ip) user.ip = window.__ip;
+  if (utms.ttclid) user.ttclid = utms.ttclid;
+  if (utms.ttp) user.ttp = utms.ttp;
+  if (email) {
+    const h = await hashPII(email);
+    identify.email = h;
+    user.email = h;
   }
-
-  try {
-    await fetch('/functions/v1/tiktok-capi', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-  } catch {
-    /* swallow */
+  if (phone) {
+    const h = await hashPII(phone);
+    identify.phone_number = h;
+    user.phone = h;
   }
+  if (external_id) {
+    const h = await hashPII(external_id);
+    identify.external_id = h;
+    user.external_id = h;
+  }
+  if (Object.keys(identify).length) {
+    window.ttq.identify(identify);
+  }
+  window.ttq.track(event, { ...properties, event_id: eventID });
+  await postTikTokEvent({ event, event_id: eventID, properties, user });
+  return eventID;
 }
 
 function bindCalClickTracking(
@@ -235,6 +272,10 @@ function listenForCalMessages() {
 
 function init() {
   saveUTMs();
+  trackTikTokEvent('ViewContent', {
+    content_name: document.title || 'Page',
+    url: window.location.href,
+  });
   bindCalClickTracking();
   listenForCalMessages();
 }
@@ -248,6 +289,7 @@ export {
   consentGranted,
   uuid,
   hashPII,
+  trackTikTokEvent,
   bindCalClickTracking,
   listenForCalMessages,
   wasSent,
@@ -261,4 +303,5 @@ export default {
   uuid,
   wasSent,
   markSent,
+  trackTikTokEvent,
 };
