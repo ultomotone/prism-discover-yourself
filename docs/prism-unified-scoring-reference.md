@@ -1,6 +1,6 @@
 # PRISM Unified Scoring – Implementation Reference (Design + API + Checklist)
 
-This reference consolidates the architecture, contracts, and operational requirements for the unified PRISM scoring flow. It’s structured as documentation for implementers and reviewers.
+This reference consolidates the architecture, contracts, and operational requirements for the unified PRISM scoring flow. It’s structured as documentation for implementers and reviewers. The shared scoring engine lives at `supabase/functions/_shared/scoreEngine.ts`.
 
 ## Frontend Integration (React)
 

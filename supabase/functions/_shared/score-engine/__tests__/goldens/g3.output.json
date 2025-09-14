@@ -1,90 +1,90 @@
 {
-  "profile": {
-    "type_code": "SEE",
-    "type": "SEE",
-    "base_func": "Se",
-    "creative_func": "Fi",
-    "top_types": [
-      {
-        "code": "SEE",
-        "share": 0.3407441079722905,
-        "score": 6.699999999999999
-      },
-      {
-        "code": "ESI",
-        "share": 0.25242944377581167,
-        "score": 6.4
-      },
-      {
-        "code": "SLE",
-        "share": 0.12535275202330795,
-        "score": 5.7
-      }
-    ],
-    "strengths": {
-      "Ti": 1,
-      "Te": 0,
-      "Fi": 3,
-      "Fe": 0,
-      "Ni": 0,
-      "Ne": 2,
-      "Si": 0,
-      "Se": 4
+  "type_code": "SEE",
+  "base_func": "Se",
+  "creative_func": "Fi",
+  "top_types": [
+    {
+      "code": "SEE",
+      "share": 0.34074410797229066
     },
-    "type_scores": {
-      "LIE": 2,
-      "ILI": 2,
-      "ESE": 2,
-      "SEI": 2,
-      "LII": 3.8,
-      "ILE": 4.1,
-      "ESI": 6.4,
-      "SEE": 6.699999999999999,
-      "LSE": 2,
-      "SLI": 2,
-      "EIE": 2,
-      "IEI": 2,
-      "LSI": 4.8,
-      "SLE": 5.7,
-      "EII": 5.3999999999999995,
-      "IEE": 5.1
+    {
+      "code": "ESI",
+      "share": 0.25242944377581156
     },
-    "blocks": {
-      "likert": {},
-      "fc": {}
+    {
+      "code": "SLE",
+      "share": 0.1253527520233079
+    }
+  ],
+  "top_3_fits": [
+    {
+      "code": "SEE",
+      "fit": 6.7,
+      "share": 0.34074410797229066
     },
-    "blocks_norm": {
-      "Core": 0,
-      "Critic": 0,
-      "Hidden": 0,
-      "Instinct": 0
+    {
+      "code": "ESI",
+      "fit": 6.4,
+      "share": 0.25242944377581156
     },
-    "overlay": "0",
-    "overlay_neuro": "0",
-    "overlay_state": "0",
-    "validity": {
-      "attention": 0,
-      "inconsistency": 0,
-      "sd_index": 0,
-      "duplicates": 0,
-      "state_modifiers": {},
-      "required_tag_gaps": []
-    },
-    "validity_status": "ok",
-    "confidence": "low",
-    "conf_calibrated": 0.3952,
-    "score_fit_raw": 6.699999999999999,
-    "score_fit_calibrated": 6.699999999999999,
-    "top_gap": 0.088,
-    "close_call": false,
-    "results_version": "v1.2.1",
-    "fc_source": "none",
-    "version": "v1.2.1"
+    {
+      "code": "SLE",
+      "fit": 5.7,
+      "share": 0.1253527520233079
+    }
+  ],
+  "score_fit_raw": 6.7,
+  "score_fit_calibrated": 6.7,
+  "fit_band": "moderate_fit",
+  "top_gap": 0.088,
+  "close_call": false,
+  "strengths": {
+    "Ti": 1,
+    "Te": 0,
+    "Fi": 3,
+    "Fe": 0,
+    "Ni": 0,
+    "Ne": 2,
+    "Si": 0,
+    "Se": 4
   },
-  "gap_to_second": 0.088,
-  "confidence_margin": 0.088,
-  "confidence_raw": 0.3952,
-  "confidence_calibrated": 0.3952,
-  "results_version": "v1.2.1",
-  "fc_source": "none"
+  "dimensions": {
+    "Ti": 0,
+    "Te": 0,
+    "Fi": 0,
+    "Fe": 0,
+    "Ni": 0,
+    "Ne": 0,
+    "Si": 0,
+    "Se": 0
+  },
+  "dims_highlights": {
+    "coherent": [],
+    "unique": []
+  },
+  "blocks_norm": {
+    "Core": 0,
+    "Critic": 0,
+    "Hidden": 0,
+    "Instinct": 0
+  },
+  "neuro_mean": 0,
+  "neuro_z": 0,
+  "overlay_neuro": "none",
+  "overlay_state": "none",
+  "state_index": 0,
+  "overlay": "0",
+  "validity_status": "valid",
+  "validity": {
+    "attention": 0,
+    "inconsistency": 0,
+    "sd_index": 0
+  },
+  "confidence": "Low",
+  "conf_raw": 0.3952,
+  "conf_calibrated": 0.3952,
+  "fc_answered_ct": 0,
+  "fc_coverage_bucket": "full",
+  "version": "v1.2.1",
+  "results_version": "v1.2.1"
 }

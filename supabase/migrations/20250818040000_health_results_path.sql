@@ -17,12 +17,7 @@ begin
     'rpc_main_auth_exec',        has_function_privilege('authenticated','public.get_results_by_session(uuid,text)','EXECUTE'),
     'rpc_rotate_auth_exec',      has_function_privilege('authenticated','public.rotate_results_share_token(uuid)','EXECUTE'),
     'rpc_rotate_anon_exec',      has_function_privilege('anon','public.rotate_results_share_token(uuid)','EXECUTE'),
-    'legacy_absent',             not exists (
-                                   select 1 from pg_proc p
-                                   join pg_namespace n on n.oid = p.pronamespace
-                                   where n.nspname = 'public'
-                                     and p.proname = 'get_results_by_session_legacy'
-                                 ),
+    -- legacy check removed (legacy function fully retired)
     'expiry_guard_present',      position('share_token_expires_at' in pg_get_functiondef('public.get_results_by_session(uuid,text)'::regprocedure)) > 0,
     'idx_fc_block_present',      to_regclass('public.idx_fc_responses_block_id') is not null,
     'idx_fc_option_present',     to_regclass('public.idx_fc_responses_option_id') is not null

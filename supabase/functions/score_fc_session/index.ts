@@ -12,7 +12,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 
   try {
-    const { session_id, basis = "functions", version = "v1.1" } = await req.json();
+    const { session_id, basis = "functions", version = "v1.2" } = await req.json();
     if (!session_id) {
       return new Response(JSON.stringify({ error: "session_id required" }), {
         status: 400, headers: { ...cors, "Content-Type": "application/json" },

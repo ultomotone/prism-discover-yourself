@@ -1,90 +1,90 @@
 {
-  "profile": {
-    "type_code": "IEE",
-    "type": "IEE",
-    "base_func": "Ne",
-    "creative_func": "Fi",
-    "top_types": [
-      {
-        "code": "IEE",
-        "share": 0.37751556794748914,
-        "score": 6.625
-      },
-      {
-        "code": "ILE",
-        "share": 0.20206952218773094,
-        "score": 6
-      },
-      {
-        "code": "EII",
-        "share": 0.19221447529976943,
-        "score": 5.949999999999999
-      }
-    ],
-    "strengths": {
-      "Ti": 1,
-      "Te": 0,
-      "Fi": 2.25,
-      "Fe": 0,
-      "Ni": 0,
-      "Ne": 4.5,
-      "Si": 0,
-      "Se": 1.75
+  "type_code": "IEE",
+  "base_func": "Ne",
+  "creative_func": "Fi",
+  "top_types": [
+    {
+      "code": "IEE",
+      "share": 0.377515567947489
     },
-    "type_scores": {
-      "LIE": 1.9000000000000001,
-      "ILI": 1.9000000000000001,
-      "ESE": 1.9000000000000001,
-      "SEI": 1.9000000000000001,
-      "LII": 4.949999999999999,
-      "ILE": 6,
-      "ESI": 4.575,
-      "SEE": 4.425,
-      "LSE": 1.9000000000000001,
-      "SLI": 1.9000000000000001,
-      "EIE": 1.9000000000000001,
-      "IEI": 1.9000000000000001,
-      "LSI": 3.575,
-      "SLE": 3.8,
-      "EII": 5.949999999999999,
-      "IEE": 6.625
+    {
+      "code": "ILE",
+      "share": 0.2020695221877309
     },
-    "blocks": {
-      "likert": {},
-      "fc": {}
+    {
+      "code": "EII",
+      "share": 0.19221447529976954
+    }
+  ],
+  "top_3_fits": [
+    {
+      "code": "IEE",
+      "fit": 6.625,
+      "share": 0.377515567947489
     },
-    "blocks_norm": {
-      "Core": 0,
-      "Critic": 0,
-      "Hidden": 0,
-      "Instinct": 0
+    {
+      "code": "ILE",
+      "fit": 6,
+      "share": 0.2020695221877309
     },
-    "overlay": "0",
-    "overlay_neuro": "0",
-    "overlay_state": "0",
-    "validity": {
-      "attention": 0,
-      "inconsistency": 0,
-      "sd_index": 0,
-      "duplicates": 0,
-      "state_modifiers": {},
-      "required_tag_gaps": []
-    },
-    "validity_status": "ok",
-    "confidence": "low",
-    "conf_calibrated": 0.4262,
-    "score_fit_raw": 6.625,
-    "score_fit_calibrated": 6.625,
-    "top_gap": 0.175,
-    "close_call": false,
-    "results_version": "v1.2.1",
-    "fc_source": "session",
-    "version": "v1.2.1"
+    {
+      "code": "EII",
+      "fit": 5.95,
+      "share": 0.19221447529976954
+    }
+  ],
+  "score_fit_raw": 6.625,
+  "score_fit_calibrated": 6.625,
+  "fit_band": "moderate_fit",
+  "top_gap": 0.175,
+  "close_call": false,
+  "strengths": {
+    "Ti": 1,
+    "Te": 0,
+    "Fi": 2.25,
+    "Fe": 0,
+    "Ni": 0,
+    "Ne": 4.5,
+    "Si": 0,
+    "Se": 1.75
   },
-  "gap_to_second": 0.175,
-  "confidence_margin": 0.175,
-  "confidence_raw": 0.4262,
-  "confidence_calibrated": 0.4262,
-  "results_version": "v1.2.1",
-  "fc_source": "session"
+  "dimensions": {
+    "Ti": 0,
+    "Te": 0,
+    "Fi": 0,
+    "Fe": 0,
+    "Ni": 0,
+    "Ne": 0,
+    "Si": 0,
+    "Se": 0
+  },
+  "dims_highlights": {
+    "coherent": [],
+    "unique": []
+  },
+  "blocks_norm": {
+    "Core": 0,
+    "Critic": 0,
+    "Hidden": 0,
+    "Instinct": 0
+  },
+  "neuro_mean": 0,
+  "neuro_z": 0,
+  "overlay_neuro": "none",
+  "overlay_state": "none",
+  "state_index": 0,
+  "overlay": "0",
+  "validity_status": "valid",
+  "validity": {
+    "attention": 0,
+    "inconsistency": 0,
+    "sd_index": 0
+  },
+  "confidence": "Low",
+  "conf_raw": 0.4262,
+  "conf_calibrated": 0.4262,
+  "fc_answered_ct": 8,
+  "fc_coverage_bucket": "full",
+  "version": "v1.2.1",
+  "results_version": "v1.2.1"
 }

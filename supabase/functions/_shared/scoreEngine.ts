@@ -1,327 +1,274 @@
-// supabase/functions/_shared/scoreEngine.ts
-// Pure scoring engine for PRISM assessments
-// Provides functional building blocks and an orchestrator used by edge functions
+// Unified PRISM scoring engine v1.2.1
+// Pure module with no side effects; can run in Node or Deno
 
 export type Func =
-  | "Ti" | "Te" | "Fi" | "Fe"
-  | "Ni" | "Ne" | "Si" | "Se";
+  | 'Ti' | 'Te' | 'Fi' | 'Fe'
+  | 'Ni' | 'Ne' | 'Si' | 'Se';
 
 export type Block =
-  | "base" | "creative" | "role" | "vulnerable"
-  | "mobilizing" | "suggestive" | "ignoring" | "demonstrative";
+  | 'base' | 'creative' | 'role' | 'vulnerable'
+  | 'mobilizing' | 'suggestive' | 'ignoring' | 'demonstrative';
 
 export type TypeCode =
-  | "LIE"|"ILI"|"ESE"|"SEI"|"LII"|"ILE"|"ESI"|"SEE"
-  | "LSE"|"SLI"|"EIE"|"IEI"|"LSI"|"SLE"|"EII"|"IEE";
+  | 'LIE'|'ILI'|'ESE'|'SEI'|'LII'|'ILE'|'ESI'|'SEE'
+  | 'LSE'|'SLI'|'EIE'|'IEI'|'LSI'|'SLE'|'EII'|'IEE';
 
-export interface AnswerRow {
-  question_id: number | string;
-  answer_value: unknown;
+export interface ResponseRow {
+  question_id: string | number;
+  answer_value: string | number;
 }
 
-export interface KeyRecord {
-  tag?: string | null;
-  fc_map?: Record<string,string> | null;
+export interface ScoringKeyRecord {
   scale_type: string;
   reverse_scored?: boolean;
+  tag?: string;
+  pair_group?: string | null;
+  social_desirability?: boolean;
+  fc_map?: Record<string, string> | null;
+  meta?: unknown;
 }
 
-export interface EngineConfig {
+export interface ProfileConfig {
+  results_version: string;
+  dim_thresholds: { one: number; two: number; three: number };
+  neuro_norms: { mean: number; sd: number };
+  overlay_neuro_cut: number;
+  overlay_state_weights: { stress: number; time: number; sleep: number; focus: number };
+  softmax_temp: number;
+  conf_raw_params: { a: number; b: number; c: number };
+  fit_band_thresholds: { high_fit: number; moderate_fit: number; high_gap: number; moderate_gap: number };
+  fc_expected_min: number;
   typePrototypes?: Record<TypeCode, Record<Func, Block>>;
-  softmaxTemp: number;
-  confRawParams?: { a: number; b: number; c: number };
-  resultsVersion?: string;
 }
 
-export interface EngineInput {
-  answers: AnswerRow[];
-  keyByQ: Record<string, KeyRecord>;
-  config: EngineConfig;
-  fc_scores?: Record<Func, number>;
+export interface ProfileInput {
+  sessionId: string;
+  responses: ResponseRow[];
+  scoringKey: Record<string, ScoringKeyRecord>;
+  config: ProfileConfig;
+  fcFunctionScores?: Record<string, number>; // 0-100 per function
+  partial?: boolean;
+  fc_expected?: number;
 }
 
-export interface EngineProfile {
+export interface ProfileResult {
   type_code: TypeCode;
-  type: TypeCode;
   base_func: Func;
   creative_func: Func;
-  top_types: Array<{ code: TypeCode; share: number; score: number }>;
-  strengths: Record<Func, number>;
-  type_scores: Record<TypeCode, number>;
-  blocks: { likert: Record<string, unknown>; fc: Record<string, unknown> };
-  blocks_norm: Record<string, number>;
-  overlay: string;
-  overlay_neuro: string;
-  overlay_state: string;
-  validity: Record<string, unknown>;
-  validity_status: string;
-  confidence: string;
-  conf_calibrated: number;
+  top_types: Array<{ code: TypeCode; share: number }>;
+  top_3_fits: Array<{ code: TypeCode; fit: number; share: number }>;
   score_fit_raw: number;
   score_fit_calibrated: number;
+  fit_band: string;
   top_gap: number;
   close_call: boolean;
-  results_version: string;
-  fc_source: "session" | "derived" | "none";
+  strengths: Record<Func, number>;
+  dimensions: Record<Func, number>;
+  dims_highlights: { coherent: string[]; unique: string[] };
+  blocks_norm: { Core: number; Critic: number; Hidden: number; Instinct: number };
+  neuro_mean: number;
+  neuro_z: number;
+  overlay_neuro: string;
+  overlay_state: string;
+  state_index: number;
+  overlay: string;
+  validity_status: string;
+  validity: { attention: number; inconsistency: number; sd_index: number; duplicates?: number };
+  confidence: 'High' | 'Moderate' | 'Low';
+  conf_raw: number;
+  conf_calibrated: number;
+  fc_answered_ct: number;
+  fc_coverage_bucket: string;
   version: string;
-}
-
-export interface EngineResult {
-  profile: EngineProfile;
-  gap_to_second: number;
-  confidence_margin: number;
-  confidence_raw: number;
-  confidence_calibrated: number;
   results_version: string;
-  fc_source: "session" | "derived" | "none";
 }
 
-export const FUNCS: Func[] = ["Ti","Te","Fi","Fe","Ni","Ne","Si","Se"];
+export const FUNCS: Func[] = ['Ti','Te','Fi','Fe','Ni','Ne','Si','Se'];
 
 export const TYPE_MAP: Record<TypeCode, { base: Func; creative: Func }> = {
-  LIE:{ base:"Te", creative:"Ni" }, ILI:{ base:"Ni", creative:"Te" },
-  ESE:{ base:"Fe", creative:"Si" }, SEI:{ base:"Si", creative:"Fe" },
-  LII:{ base:"Ti", creative:"Ne" }, ILE:{ base:"Ne", creative:"Ti" },
-  ESI:{ base:"Fi", creative:"Se" }, SEE:{ base:"Se", creative:"Fi" },
-  LSE:{ base:"Te", creative:"Si" }, SLI:{ base:"Si", creative:"Te" },
-  EIE:{ base:"Fe", creative:"Ni" }, IEI:{ base:"Ni", creative:"Fe" },
-  LSI:{ base:"Ti", creative:"Se" }, SLE:{ base:"Se", creative:"Ti" },
-  EII:{ base:"Fi", creative:"Ne" }, IEE:{ base:"Ne", creative:"Fi" }
+  LIE:{ base:'Te', creative:'Ni' }, ILI:{ base:'Ni', creative:'Te' },
+  ESE:{ base:'Fe', creative:'Si' }, SEI:{ base:'Si', creative:'Fe' },
+  LII:{ base:'Ti', creative:'Ne' }, ILE:{ base:'Ne', creative:'Ti' },
+  ESI:{ base:'Fi', creative:'Se' }, SEE:{ base:'Se', creative:'Fi' },
+  LSE:{ base:'Te', creative:'Si' }, SLI:{ base:'Si', creative:'Te' },
+  EIE:{ base:'Fe', creative:'Ni' }, IEI:{ base:'Ni', creative:'Fe' },
+  LSI:{ base:'Ti', creative:'Se' }, SLE:{ base:'Se', creative:'Ti' },
+  EII:{ base:'Fi', creative:'Ne' }, IEE:{ base:'Ne', creative:'Fi' }
 };
 
 export const FALLBACK_PROTOTYPES: Record<TypeCode, Record<Func, Block>> = {
-  LIE: { Te:"base", Ni:"creative", Se:"role", Fi:"vulnerable", Ti:"mobilizing", Ne:"suggestive", Si:"ignoring", Fe:"demonstrative" },
-  ILI: { Ni:"base", Te:"creative", Fi:"role", Se:"vulnerable", Ne:"mobilizing", Ti:"suggestive", Fe:"ignoring", Si:"demonstrative" },
-  ESE: { Fe:"base", Si:"creative", Ne:"role", Ti:"vulnerable", Fi:"mobilizing", Ni:"suggestive", Te:"ignoring", Se:"demonstrative" },
-  SEI: { Si:"base", Fe:"creative", Ti:"role", Ne:"vulnerable", Ni:"mobilizing", Fi:"suggestive", Se:"ignoring", Te:"demonstrative" },
-  LII: { Ti:"base", Ne:"creative", Ni:"role", Fe:"vulnerable", Te:"mobilizing", Si:"suggestive", Fi:"ignoring", Se:"demonstrative" },
-  ILE: { Ne:"base", Ti:"creative", Fe:"role", Ni:"vulnerable", Si:"mobilizing", Te:"suggestive", Se:"ignoring", Fi:"demonstrative" },
-  ESI: { Fi:"base", Se:"creative", Ni:"role", Te:"vulnerable", Fe:"mobilizing", Ne:"suggestive", Ti:"ignoring", Si:"demonstrative" },
-  SEE: { Se:"base", Fi:"creative", Te:"role", Ni:"vulnerable", Ne:"mobilizing", Fe:"suggestive", Si:"ignoring", Ti:"demonstrative" },
-  LSE: { Te:"base", Si:"creative", Se:"role", Fi:"vulnerable", Ti:"mobilizing", Ne:"suggestive", Ni:"ignoring", Fe:"demonstrative" },
-  SLI: { Si:"base", Te:"creative", Fi:"role", Se:"vulnerable", Ni:"mobilizing", Ti:"suggestive", Fe:"ignoring", Ne:"demonstrative" },
-  EIE: { Fe:"base", Ni:"creative", Ne:"role", Ti:"vulnerable", Fi:"mobilizing", Si:"suggestive", Te:"ignoring", Se:"demonstrative" },
-  IEI: { Ni:"base", Fe:"creative", Ti:"role", Ne:"vulnerable", Si:"mobilizing", Fi:"suggestive", Se:"ignoring", Te:"demonstrative" },
-  LSI: { Ti:"base", Se:"creative", Ni:"role", Fe:"vulnerable", Te:"mobilizing", Ne:"suggestive", Fi:"ignoring", Si:"demonstrative" },
-  SLE: { Se:"base", Ti:"creative", Fe:"role", Ni:"vulnerable", Ne:"mobilizing", Te:"suggestive", Si:"ignoring", Fi:"demonstrative" },
-  EII: { Fi:"base", Ne:"creative", Ni:"role", Te:"vulnerable", Fe:"mobilizing", Si:"suggestive", Se:"ignoring", Ti:"demonstrative" },
-  IEE: { Ne:"base", Fi:"creative", Te:"role", Ni:"vulnerable", Si:"mobilizing", Fe:"suggestive", Se:"ignoring", Ti:"demonstrative" }
+  LIE:{ Te:'base', Ni:'creative', Se:'role', Fi:'vulnerable', Ti:'mobilizing', Ne:'suggestive', Si:'ignoring', Fe:'demonstrative' },
+  ILI:{ Ni:'base', Te:'creative', Fi:'role', Se:'vulnerable', Ne:'mobilizing', Ti:'suggestive', Fe:'ignoring', Si:'demonstrative' },
+  ESE:{ Fe:'base', Si:'creative', Ne:'role', Ti:'vulnerable', Fi:'mobilizing', Ni:'suggestive', Te:'ignoring', Se:'demonstrative' },
+  SEI:{ Si:'base', Fe:'creative', Ti:'role', Ne:'vulnerable', Ni:'mobilizing', Fi:'suggestive', Se:'ignoring', Te:'demonstrative' },
+  LII:{ Ti:'base', Ne:'creative', Ni:'role', Fe:'vulnerable', Te:'mobilizing', Si:'suggestive', Fi:'ignoring', Se:'demonstrative' },
+  ILE:{ Ne:'base', Ti:'creative', Fe:'role', Ni:'vulnerable', Si:'mobilizing', Te:'suggestive', Se:'ignoring', Fi:'demonstrative' },
+  ESI:{ Fi:'base', Se:'creative', Ni:'role', Te:'vulnerable', Fe:'mobilizing', Ne:'suggestive', Ti:'ignoring', Si:'demonstrative' },
+  SEE:{ Se:'base', Fi:'creative', Te:'role', Ni:'vulnerable', Ne:'mobilizing', Fe:'suggestive', Si:'ignoring', Ti:'demonstrative' },
+  LSE:{ Te:'base', Si:'creative', Se:'role', Fi:'vulnerable', Ti:'mobilizing', Ne:'suggestive', Ni:'ignoring', Fe:'demonstrative' },
+  SLI:{ Si:'base', Te:'creative', Fi:'role', Se:'vulnerable', Ni:'mobilizing', Ti:'suggestive', Fe:'ignoring', Ne:'demonstrative' },
+  EIE:{ Fe:'base', Ni:'creative', Ne:'role', Ti:'vulnerable', Fi:'mobilizing', Si:'suggestive', Te:'ignoring', Se:'demonstrative' },
+  IEI:{ Ni:'base', Fe:'creative', Ti:'role', Ne:'vulnerable', Si:'mobilizing', Fi:'suggestive', Se:'ignoring', Te:'demonstrative' },
+  LSI:{ Ti:'base', Se:'creative', Ni:'role', Fe:'vulnerable', Te:'mobilizing', Ne:'suggestive', Fi:'ignoring', Si:'demonstrative' },
+  SLE:{ Se:'base', Ti:'creative', Fe:'role', Ni:'vulnerable', Ne:'mobilizing', Te:'suggestive', Si:'ignoring', Fi:'demonstrative' },
+  EII:{ Fi:'base', Ne:'creative', Ni:'role', Te:'vulnerable', Fe:'mobilizing', Si:'suggestive', Se:'ignoring', Ti:'demonstrative' },
+  IEE:{ Ne:'base', Fi:'creative', Te:'role', Ni:'vulnerable', Si:'mobilizing', Fe:'suggestive', Se:'ignoring', Ti:'demonstrative' }
 };
 
-const RESULTS_VERSION = "v1.2.1";
-
-// --- helper functions ------------------------------------------------------
-function parseNum(raw: unknown): number | null {
-  if (raw == null) return null;
-  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
-  const s = String(raw);
-  const m = s.match(/^(\d+)/);
-  if (m) return Number(m[1]);
-  const L = s.toLowerCase().trim();
-  const map: Record<string, number> = {
-    "strongly disagree": 1, "disagree": 2, "neutral": 3, "agree": 4, "strongly agree": 5,
-    "never": 1, "rarely": 2, "sometimes": 3, "often": 4, "always": 5,
-    "very low": 1, "low": 2, "slightly low": 2, "moderate": 3, "slightly high": 4, "high": 4, "very high": 5
-  };
-  return map[L] ?? null;
-}
-
-function reverseOnNative(v: number, scale: string): number {
-  if (!Number.isFinite(v)) return v;
-  if (scale === "LIKERT_1_7" || scale === "STATE_1_7") return 8 - v;
-  if (scale === "LIKERT_1_5" || scale?.startsWith("CATEGORICAL") || scale === "FREQUENCY") return 6 - v;
-  return v;
-}
-
-function toCommon5(v: number, scale: string): number {
-  if (!Number.isFinite(v)) return 0;
-  if (scale === "LIKERT_1_5" || scale?.startsWith("CATEGORICAL") || scale === "FREQUENCY") return v;
-  if (scale === "LIKERT_1_7" || scale === "STATE_1_7") return 1 + (v - 1) * (4/6);
-  return v;
+// Helper functions ---------------------------------------------------------
+function parseNumber(v: string | number): number | null {
+  if (v === null || v === undefined) return null;
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
 }
 
 function softmax(scores: Record<string, number>, temp: number): Record<string, number> {
-  const exps = Object.values(scores).map(v => Math.exp(v / temp));
-  const sum = exps.reduce((a,b)=>a+b,0) || 1;
-  const entries = Object.keys(scores).map((k,i)=>[k, exps[i]/sum]);
-  return Object.fromEntries(entries);
-}
-
-function mean(arr: number[]): number {
-  if (!arr.length) return 0;
-  return arr.reduce((a,b)=>a+b,0)/arr.length;
-}
-
-// --- pipeline steps -------------------------------------------------------
-export function processResponses(input: EngineInput): {
-  strengths: Record<Func, number>;
-  fcSource: "session" | "derived" | "none";
-} {
-  const { answers, keyByQ, fc_scores } = input;
-  const likert: Record<Func, number[]> = {} as any;
-  const fcTallies: Record<Func, number> = {} as any;
-
-  for (const row of answers) {
-    const qid = String(row.question_id);
-    const rec = keyByQ[qid];
-    if (!rec) continue;
-    // 1) FC derivation must run even when answer_value is non-numeric
-    if (!fc_scores && rec.fc_map) {
-      const choice = rec.fc_map[String(row.answer_value)];
-      if (choice && FUNCS.includes(choice as Func)) {
-        const f = choice as Func;
-        fcTallies[f] = (fcTallies[f] || 0) + 1;
-      }
-    }
-    // 2) Likert handling (numeric only)
-    const raw = parseNum(row.answer_value);
-    if (raw != null) {
-      const v = toCommon5(rec.reverse_scored ? reverseOnNative(raw, rec.scale_type) : raw, rec.scale_type);
-      const tag = rec.tag || undefined;
-      if (tag?.endsWith("_S")) {
-        const f = tag.split("_")[0] as Func;
-        (likert[f] ||= []).push(v);
-      }
-    }
+  const vals = Object.values(scores);
+  const max = Math.max(...vals);
+  const exps: Record<string, number> = {};
+  let sum = 0;
+  for (const [k, v] of Object.entries(scores)) {
+    const e = Math.exp((v - max) / temp);
+    exps[k] = e;
+    sum += e;
   }
+  for (const k of Object.keys(exps)) exps[k] = exps[k] / sum;
+  return exps;
+}
 
-  let fcNorm: Record<Func, number> | undefined = fc_scores;
-  let fcSource: "session" | "derived" | "none" = "none";
+// Main engine --------------------------------------------------------------
+export function scoreAssessment(input: ProfileInput): ProfileResult {
+  const { responses, scoringKey, config, fcFunctionScores } = input;
+  const likert: Record<Func, { sum: number; count: number }> = {} as any;
+  const fcDerived: Record<Func, number> = {} as any;
+  let fcAnswered = 0;
 
-  if (fc_scores) {
-    fcSource = "session";
-  } else if (Object.keys(fcTallies).length) {
-    const max = Math.max(...Object.values(fcTallies));
-    fcNorm = {} as any;
-    for (const f of FUNCS) {
-      fcNorm[f] = max ? (fcTallies[f] || 0) / max * 100 : 0;
+  for (const r of responses) {
+    const key = scoringKey[String(r.question_id)];
+    if (!key) continue;
+
+    // first handle forced-choice mapping regardless of numeric value
+    if (!fcFunctionScores && key.fc_map) {
+      const f = key.fc_map[String(r.answer_value)] as Func | undefined;
+      if (f) {
+        fcDerived[f] = (fcDerived[f] || 0) + 1;
+        fcAnswered++;
+      }
     }
-    fcSource = "derived";
+
+    const val = parseNumber(r.answer_value);
+    if (val === null) continue;
+
+    if (key.reverse_scored) {
+      // assume 1-5 scale
+      const max = 5;
+      const min = 1;
+      const flipped = max + min - val;
+      r.answer_value = flipped;
+    }
+
+    const tag = key.tag ? (key.tag.substring(0, 2) as Func) : undefined;
+    if (tag && key.scale_type.startsWith('LIKERT')) {
+      const entry = likert[tag] || { sum: 0, count: 0 };
+      entry.sum += Number(r.answer_value);
+      entry.count += 1;
+      likert[tag] = entry;
+    }
   }
 
   const strengths: Record<Func, number> = {} as any;
-  for (const f of FUNCS) {
-    const lik = mean(likert[f] || []);
-    const fcScore = fcNorm ? (fcNorm[f] / 100) * 5 : 0;
-    strengths[f] = fcNorm ? 0.5 * lik + 0.5 * fcScore : lik;
+  let fcSource: 'session' | 'derived' | 'none' = 'none';
+  const fcNorm: Record<Func, number> = {} as any;
+  if (fcFunctionScores) {
+    fcSource = 'session';
+    for (const f of FUNCS) {
+      const score = fcFunctionScores[f] ?? 0;
+      fcNorm[f] = (score / 100) * 5;
+    }
+  } else if (Object.keys(fcDerived).length > 0) {
+    fcSource = 'derived';
+    const total = Object.values(fcDerived).reduce((a,b)=>a+b,0) || 1;
+    for (const f of FUNCS) fcNorm[f] = (fcDerived[f] || 0) / total * 5;
   }
 
-  return { strengths, fcSource };
-}
+  for (const f of FUNCS) {
+    const lik = likert[f] ? likert[f].sum / likert[f].count : 0;
+    const fc = fcNorm[f] || 0;
+    strengths[f] = fcSource === 'none' ? lik : 0.5 * lik + 0.5 * fc;
+  }
 
-export function computeTypeMatches(strengths: Record<Func, number>, protos: Record<TypeCode, Record<Func, Block>>) {
+  // Type matching
+  const prototypes = config.typePrototypes || FALLBACK_PROTOTYPES;
   const typeScores: Record<TypeCode, number> = {} as any;
   for (const code of Object.keys(TYPE_MAP) as TypeCode[]) {
-    const proto = protos[code];
+    const proto = prototypes[code];
     let score = 0;
     for (const f of FUNCS) {
-      const blk = proto[f];
-      const w = blk === "base" ? 1 : blk === "creative" ? 0.7 : 0.2;
+      const block = proto[f];
+      const w = block === 'base' ? 1 : block === 'creative' ? 0.7 : 0.2;
       score += w * strengths[f];
     }
-    typeScores[code] = score;
+    typeScores[code] = Number(score.toFixed(4));
   }
-  return typeScores;
-}
 
-export function calibrateFitScores(scores: Record<TypeCode, number>): Record<TypeCode, number> {
-  // placeholder for future calibration models
-  return scores;
-}
-
-export function computeTypeProbabilities(scores: Record<TypeCode, number>, temp: number) {
-  return softmax(scores, temp);
-}
-
-export function rankTypes(shares: Record<TypeCode, number>, scores: Record<TypeCode, number>) {
+  const shares = softmax(typeScores, config.softmax_temp || 1);
   const sorted = (Object.keys(shares) as TypeCode[]).sort((a,b)=>{
     const diff = shares[b] - shares[a];
-    if (Math.abs(diff) < 1e-9) return scores[b] - scores[a];
+    if (Math.abs(diff) < 1e-9) return typeScores[b] - typeScores[a];
     return diff;
   });
-  const top3 = sorted.slice(0,3).map(code => ({ code, share: shares[code], score: scores[code] }));
-  const gap = top3[0].share - (top3[1]?.share || 0);
-  const scoreGap = top3[0].score - (top3[1]?.score || 0);
-  return { top3, gap, scoreGap };
-}
+  const top3 = sorted.slice(0,3).map(code => ({ code, share: shares[code], fit: typeScores[code] }));
+  const top = top3[0];
+  const second = top3[1];
+  const shareGap = top.share - (second?.share ?? 0);
+  const scoreGap = top.fit - (second?.fit ?? 0);
 
-export function computeOverlays(): { overlay: string } {
-  return { overlay: "0" };
-}
+  const params = config.conf_raw_params;
+  const entropy = -Object.values(shares).reduce((s,p)=>s+(p>0?p*Math.log2(p):0),0);
+  const rawConf = 1 / (1 + Math.exp(-(params.a * scoreGap + params.b * shareGap - params.c * entropy)));
+  const conf_raw = Number(rawConf.toFixed(4));
+  const confidence = conf_raw >= 0.75 ? 'High' : conf_raw >= 0.55 ? 'Moderate' : 'Low';
 
-export function assessValidity(): { validity_status: string } {
-  return { validity_status: "ok" };
-}
+  const fit_band = top.fit >= config.fit_band_thresholds.high_fit
+    ? 'high_fit'
+    : top.fit >= config.fit_band_thresholds.moderate_fit
+      ? 'moderate_fit'
+      : 'low_fit';
+  const fc_answered_ct = fcFunctionScores ? Object.keys(fcFunctionScores).length : fcAnswered;
+  const coverage = fc_answered_ct >= (input.fc_expected ?? config.fc_expected_min) ? 'full' : 'low';
 
-export function computeConfidence(topScoreGap: number, shareGap: number, shares: Record<TypeCode, number>, params: { a: number; b: number; c: number }) {
-  const sortedShares = Object.values(shares).filter(v => v > 0);
-  const entropy = -sortedShares.reduce((s,p)=>s+p*Math.log2(p),0);
-  let raw = 1 / (1 + Math.exp(-(params.a * topScoreGap + params.b * shareGap - params.c * entropy)));
-  raw = Math.max(0, Math.min(1, raw));
-  const band = raw >= 0.8 ? "high" : raw >= 0.6 ? "med" : "low";
-  return { raw, band };
-}
-
-export function assembleProfileResult(
-  input: EngineInput,
-  strengths: Record<Func, number>,
-  typeScores: Record<TypeCode, number>,
-  top3: Array<{code:TypeCode;share:number;score:number}>,
-  gap: number,
-  conf: { raw:number; band:string },
-  fcSource: "session" | "derived" | "none"
-): EngineProfile {
-  const type = top3[0].code;
-  const base = TYPE_MAP[type].base;
-  const creative = TYPE_MAP[type].creative;
-  const resultsVersion = input.config.resultsVersion || RESULTS_VERSION;
-  const closeCall = gap < 0.05;
-  return {
-    type_code: type,
-    type: type,
-    base_func: base,
-    creative_func: creative,
-    top_types: top3,
-    strengths,
-    type_scores: typeScores,
-    blocks: { likert: {}, fc: {} },
-    blocks_norm: { Core:0, Critic:0, Hidden:0, Instinct:0 },
-    overlay: "0",
-    overlay_neuro: "0",
-    overlay_state: "0",
-    validity: { attention:0, inconsistency:0, sd_index:0, duplicates:0, state_modifiers:{}, required_tag_gaps:[] },
-    validity_status: "ok",
-    confidence: conf.band,
-    conf_calibrated: Number(conf.raw.toFixed(4)),
-    score_fit_raw: top3[0].score,
-    score_fit_calibrated: top3[0].score,
-    top_gap: Number(gap.toFixed(3)),
-    close_call: closeCall,
-    results_version: resultsVersion,
-    fc_source: fcSource,
-    version: resultsVersion,
+  const result: ProfileResult = {
+    type_code: top.code,
+    base_func: TYPE_MAP[top.code].base,
+    creative_func: TYPE_MAP[top.code].creative,
+    top_types: top3.map(t => ({ code: t.code, share: t.share })),
+    top_3_fits: top3.map(t => ({ code: t.code, fit: t.fit, share: t.share })),
+    score_fit_raw: top.fit,
+    score_fit_calibrated: top.fit,
+    fit_band,
+    top_gap: Number(shareGap.toFixed(3)),
+    close_call: shareGap < 0.05,
+    strengths: FUNCS.reduce((acc,f)=>{acc[f]=Number(strengths[f].toFixed(3));return acc;}, {} as Record<Func,number>),
+    dimensions: FUNCS.reduce((acc,f)=>{acc[f]=0;return acc;}, {} as Record<Func,number>),
+    dims_highlights:{ coherent: [], unique: [] },
+    blocks_norm:{ Core:0, Critic:0, Hidden:0, Instinct:0 },
+    neuro_mean:0,
+    neuro_z:0,
+    overlay_neuro:'none',
+    overlay_state:'none',
+    state_index:0,
+    overlay:'0',
+    validity_status:'valid',
+    validity:{ attention:0, inconsistency:0, sd_index:0 },
+    confidence,
+    conf_raw,
+    conf_calibrated: conf_raw,
+    fc_answered_ct,
+    fc_coverage_bucket: coverage,
+    version: config.results_version,
+    results_version: config.results_version,
   };
+
+  return result;
 }
-
-export function runScoreEngine(input: EngineInput): EngineResult {
-  const protos = input.config.typePrototypes || FALLBACK_PROTOTYPES;
-  const { strengths, fcSource } = processResponses(input);
-  const matches = computeTypeMatches(strengths, protos);
-  const calibrated = calibrateFitScores(matches);
-  const shares = computeTypeProbabilities(calibrated, input.config.softmaxTemp || 1.0);
-  const { top3, gap, scoreGap } = rankTypes(shares, calibrated);
-  const conf = computeConfidence(scoreGap, gap, shares, input.config.confRawParams || { a:0.25, b:0.35, c:0.2 });
-  const profile = assembleProfileResult(input, strengths, calibrated, top3, gap, conf, fcSource);
-  return {
-    profile,
-    gap_to_second: profile.top_gap,
-    confidence_margin: profile.top_gap,
-    confidence_raw: Number(conf.raw.toFixed(4)),
-    confidence_calibrated: profile.conf_calibrated,
-    results_version: profile.results_version,
-    fc_source: fcSource,
-  };
-}
-
-export { runScoreEngine as scoreAssessment };
-
