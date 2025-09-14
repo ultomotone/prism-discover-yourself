@@ -6,8 +6,8 @@ export const Cal: React.FC<any> = (props) => (
 );
 
 export const CalProvider: React.FC<any> = ({ children }) => <>{children}</>;
-export const useCal = () => ({ open: () => {}, close: () => {} });
-export const getCalApi = async () => ({ ui: { open: () => {}, close: () => {} } });
-export const getCalApiCore = async () => ({ ui: { open: () => {}, close: () => {} } });
 
-export default {};
+// eslint-disable-next-line react-refresh/only-export-components -- re-export Cal utilities for tests
+export { useCal, getCalApi, getCalApiCore } from "./cal-mocks.utils";
+
+export default Cal;

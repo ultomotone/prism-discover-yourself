@@ -8,6 +8,16 @@ Unified scoring engine and **tokenized results access**.
 
 ---
 
+## Rotation Smoke
+
+Validate token rotation end-to-end:
+
+```sh
+SUPABASE_URL=... SUPABASE_ANON_KEY=... SESSION_ID=... USER_JWT=... SHARE_TOKEN=... npm run smoke:results:rotate
+```
+
+Required env vars: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SESSION_ID`, `USER_JWT`, `SHARE_TOKEN` (old token).
+
 # Welcome to your Lovable project
 
 ## Project info
@@ -37,3 +47,13 @@ npm i
 
 # Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
+
+## GitHub Actions smoke tests
+
+Set the following repository secrets to enable smoke tests in CI:
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SESSION_ID`
+- `SHARE_TOKEN`
+- `USER_JWT` (for owner path)

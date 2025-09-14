@@ -18,6 +18,10 @@
     "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.tsx --fix",
     "verify:functions": "node scripts/ci-guard.js && tsx scripts/functions-compile.ts || true",
     "verify:smoke": "tsx scripts/smoke.ts",
+    "smoke:results:token": "tsx scripts/smoke-results.ts --token",
+    "smoke:results:owner": "tsx scripts/smoke-results.ts --owner",
+    "smoke:results:all": "tsx scripts/smoke-results.ts --all",
+    "smoke:results:rotate": "tsx scripts/smoke-results.ts --rotate",
     "backfill:profiles": "tsx src/utils/backfillProfiles.ts",
     "check:merge-markers": "git grep -nE '^(<<<<<<<|=======|>>>>>>>)' && (echo 'merge markers found'; exit 1) || exit 0",
     "check:no-legacy": "git grep -nE \"get_results_by_session_legacy|VITE_ALLOW_LEGACY_RESULTS\" -- ':!package.json' && (echo 'legacy references found'; exit 1) || exit 0"

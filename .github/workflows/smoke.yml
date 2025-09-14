@@ -1,0 +1,35 @@
+name: Smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - name: Token smoke
+        if: ${{ secrets.SUPABASE_URL && secrets.SUPABASE_ANON_KEY && secrets.SESSION_ID && secrets.SHARE_TOKEN }}
+        run: npm run smoke:results:token
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SESSION_ID: ${{ secrets.SESSION_ID }}
+          SHARE_TOKEN: ${{ secrets.SHARE_TOKEN }}
+      - name: Owner smoke
+        if: ${{ secrets.SUPABASE_URL && secrets.SUPABASE_ANON_KEY && secrets.SESSION_ID && secrets.USER_JWT }}
+        run: npm run smoke:results:owner
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SESSION_ID: ${{ secrets.SESSION_ID }}
+          USER_JWT: ${{ secrets.USER_JWT }}
