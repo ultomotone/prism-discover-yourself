@@ -1,12 +1,16 @@
 import { createClient } from "@supabase/supabase-js";
-import { expect, test } from "vitest";
+import test from "node:test";
+import assert from "node:assert/strict";
 
-const url = process.env.SUPABASE_URL!;
-const anon = process.env.SUPABASE_ANON_KEY!;
-const service = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const url = process.env.SUPABASE_URL;
+const anon = process.env.SUPABASE_ANON_KEY;
+const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-test("token access succeeds and respects ttl", async () => {
-  const svc = createClient(url, service);
+if (!url || !anon || !service) {
+  test.skip("requires Supabase env", () => {});
+} else {
+  test("token access succeeds and respects ttl", async () => {
+    const svc = createClient(url, service);
   const { data: sess } = await svc.from("assessment_sessions").insert({}).select().single();
   const { data: prof } = await svc
     .from("profiles")
@@ -24,7 +28,7 @@ test("token access succeeds and respects ttl", async () => {
     session_id: sess.id,
     t: "tok",
   });
-  expect(data.profile.id).toEqual(prof.id);
+  assert.equal(data.profile.id, prof.id);
 
   await svc
     .from("assessment_sessions")
@@ -34,5 +38,6 @@ test("token access succeeds and respects ttl", async () => {
     session_id: sess.id,
     t: "tok",
   });
-  expect(expired).toBeNull();
-});
+  assert.equal(expired, null);
+  });
+}
