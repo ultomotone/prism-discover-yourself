@@ -691,7 +691,6 @@ export type Database = {
           session_id: string
           session_kind: string | null
           share_token: string
-          fc_source: string | null
           state_index: number | null
           strengths: Json | null
           submitted_at: string | null
@@ -750,7 +749,6 @@ export type Database = {
           session_id: string
           session_kind?: string | null
           share_token?: string
-          fc_source?: string | null
           state_index?: number | null
           strengths?: Json | null
           submitted_at?: string | null
@@ -809,7 +807,6 @@ export type Database = {
           session_id?: string
           session_kind?: string | null
           share_token?: string
-          fc_source?: string | null
           state_index?: number | null
           strengths?: Json | null
           submitted_at?: string | null
@@ -2209,13 +2206,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_session_id_fkey"
-            columns: ["session_id_1"]
-            isOneToOne: true
-            referencedRelation: "assessment_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_session_id_fkey"
             columns: ["session_id_2"]
             isOneToOne: true
             referencedRelation: "assessment_sessions"
@@ -2225,7 +2215,7 @@ export type Database = {
             foreignKeyName: "profiles_session_id_fkey"
             columns: ["session_id_1"]
             isOneToOne: true
-            referencedRelation: "v_incomplete_sessions"
+            referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -2238,13 +2228,20 @@ export type Database = {
           {
             foreignKeyName: "profiles_session_id_fkey"
             columns: ["session_id_1"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
             isOneToOne: true
             referencedRelation: "v_user_sessions_chrono"
             referencedColumns: ["session_id"]
           },
           {
             foreignKeyName: "profiles_session_id_fkey"
-            columns: ["session_id_2"]
+            columns: ["session_id_1"]
             isOneToOne: true
             referencedRelation: "v_user_sessions_chrono"
             referencedColumns: ["session_id"]
@@ -2272,13 +2269,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_session_id_fkey"
-            columns: ["session_id_1"]
-            isOneToOne: true
-            referencedRelation: "assessment_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_session_id_fkey"
             columns: ["session_id_2"]
             isOneToOne: true
             referencedRelation: "assessment_sessions"
@@ -2288,7 +2278,7 @@ export type Database = {
             foreignKeyName: "profiles_session_id_fkey"
             columns: ["session_id_1"]
             isOneToOne: true
-            referencedRelation: "v_incomplete_sessions"
+            referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -2301,13 +2291,20 @@ export type Database = {
           {
             foreignKeyName: "profiles_session_id_fkey"
             columns: ["session_id_1"]
+            isOneToOne: true
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
             isOneToOne: true
             referencedRelation: "v_user_sessions_chrono"
             referencedColumns: ["session_id"]
           },
           {
             foreignKeyName: "profiles_session_id_fkey"
-            columns: ["session_id_2"]
+            columns: ["session_id_1"]
             isOneToOne: true
             referencedRelation: "v_user_sessions_chrono"
             referencedColumns: ["session_id"]
@@ -2657,6 +2654,20 @@ export type Database = {
         Row: {
           d: string | null
           sessions: number | null
+        }
+        Relationships: []
+      }
+      v_token_access_last_24h: {
+        Row: {
+          hits: number | null
+          hour: string | null
+        }
+        Relationships: []
+      }
+      v_token_rotations_last_30d: {
+        Row: {
+          day: string | null
+          rotations: number | null
         }
         Relationships: []
       }
