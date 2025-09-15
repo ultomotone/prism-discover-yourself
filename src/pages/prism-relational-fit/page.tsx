@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight } from "lucide-react";
 import Header from "@/components/Header";
 import { CoreTypesCompatibilityMatrix } from "@/components/relational/CoreTypesCompatibilityMatrix";
-import { CORE_BASELINE_MATRIX, CORE_BASELINE } from "@/data/coreBaseline";
+import { CORE_BASELINE_MATRIX } from "@/data/coreBaseline";
 import ComprehensiveDriftDemo from "./components/ComprehensiveDriftDemo";
 import PairReportMini from "./components/PairReportMini";
 import MicroLessonsAccordion from "./components/learning/MicroLessonsAccordion";
@@ -42,20 +42,21 @@ export default function RelationalFitPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Helmet 
+      <Helmet
         title="PRISM Relational Fit"
         meta={[
           {
             name: "description",
-            content: "See how your natural style, current regulation, and what you supply vs. need add up to everyday chemistry."
-          }
+            content:
+              "See how your natural style, current regulation, and what you supply vs. need add up to everyday chemistry.",
+          },
         ]}
       />
       <Header />
 
       {/* Hero */}
       <section className="bg-background py-12 pt-24 text-center">
-        <h1 className="mb-4 text-4xl font-bold">Relational Fit = Need‑meeting in real life</h1>
+        <h1 className="mb-4 text-4xl font-bold">Relational Fit = Need-meeting in real life</h1>
         <p className="mx-auto mb-6 max-w-2xl text-lg text-muted-foreground">
           See how your natural style, current regulation, and what you supply vs. need add up to everyday chemistry.
         </p>
@@ -66,14 +67,9 @@ export default function RelationalFitPage() {
               <ArrowRight className="ml-2 h-5 w-5" />
             </a>
           </Button>
-          <Button asChild variant="outline" size="lg">
-            <a href="/relational-fit/heatmap" aria-label="View Detailed Heatmap">
-              View Detailed Heatmap
-            </a>
-          </Button>
         </div>
         <p className="mt-4 text-sm text-muted-foreground">
-          PRISM builds on classic type relations by weighting real‑world states and a simple supply↔demand balance.
+          PRISM builds on classic type relations by weighting real-world states and a simple supply↔demand balance.
         </p>
       </section>
 
@@ -122,12 +118,10 @@ export default function RelationalFitPage() {
               <ul className="ml-6 list-disc space-y-1">
                 <li>Core match: some pairs start easier than others.</li>
                 <li>Base regulation: more calm time → more patience and better listening.</li>
-                <li>
-                  Supply↔Demand (the big one): your strengths meeting their needs (and vice versa).
-                </li>
+                <li>Supply↔Demand (the big one): your strengths meeting their needs (and vice versa).</li>
               </ul>
               <p className="mt-2">
-                We highlight Supply↔Demand because it explains why non‑ideal type matches can feel great—or "textbook" pairs
+                We highlight Supply↔Demand because it explains why non-ideal type matches can feel great—or "textbook" pairs
                 can struggle.
               </p>
             </section>
@@ -135,21 +129,15 @@ export default function RelationalFitPage() {
             {/* Supply Demand */}
             <section id="supply-demand">
               <h2 className="mb-2 text-xl font-semibold">Supply ↔ Demand (front and center)</h2>
-              <p>
-                Think of your relationship as a tiny economy.
-              </p>
-              <p className="mt-2">
-                Supply = what you give easily and consistently (without draining yourself)
-              </p>
-              <p>
-                Demand = what you reliably value and ask for (explicitly or implicitly)
-              </p>
+              <p>Think of your relationship as a tiny economy.</p>
+              <p className="mt-2">Supply = what you give easily and consistently (without draining yourself)</p>
+              <p>Demand = what you reliably value and ask for (explicitly or implicitly)</p>
               <p>Good fit = your supply covers their demand, and their supply covers yours</p>
               <p className="mt-2">We map five role lanes:</p>
               <ul className="ml-6 list-disc space-y-1">
                 <li>Structure / Clarity — planning, decisions, expectations</li>
                 <li>Care / Boundaries — empathy, values, conflict limits</li>
-                <li>Energy / Initiation — momentum, push, follow‑through</li>
+                <li>Energy / Initiation — momentum, push, follow-through</li>
                 <li>Sensing / Timing — tempo, comfort, practicality</li>
                 <li>Insight / Meaning — patterns, why, shared narrative</li>
               </ul>
@@ -159,14 +147,10 @@ export default function RelationalFitPage() {
                 <Badge className="bg-rf-stretch text-white">🟨 partial</Badge>
                 <Badge className="bg-rf-friction text-white">🟥 unmet/misaligned</Badge>
               </div>
-              <Card className="mt-4 bg-muted/40 p-4 text-sm">
-                Supply↔Demand is heavily weighted in the overall score.
-              </Card>
+              <Card className="mt-4 bg-muted/40 p-4 text-sm">Supply↔Demand is heavily weighted in the overall score.</Card>
               <p className="mt-2 text-sm text-muted-foreground">
-                <span role="img" aria-label="hint">
-                  💡
-                </span>{" "}
-                <span className="ml-1">Green lanes are your relationship cash‑flow.</span>
+                <span role="img" aria-label="hint">💡</span>
+                <span className="ml-1">Green lanes are your relationship cash-flow.</span>
               </p>
             </section>
 
@@ -175,7 +159,7 @@ export default function RelationalFitPage() {
               <h2 className="mb-2 text-xl font-semibold">Base Regulation (Calm / Neutral / Stressed)</h2>
               <p>People oscillate between states. We track the mix you're usually in:</p>
               <ul className="ml-6 list-disc space-y-1">
-                <li>Calm (Reg+) — well‑regulated; more bandwidth and generosity</li>
+                <li>Calm (Reg+) — well-regulated; more bandwidth and generosity</li>
                 <li>Neutral (Reg0) — steady baseline</li>
                 <li>Stressed (Reg−) — reactive; supply shrinks, demand rises</li>
               </ul>
@@ -245,7 +229,7 @@ export default function RelationalFitPage() {
               <h2 className="mb-4 text-xl font-semibold">Visuals</h2>
               <div className="space-y-8">
                 <div>
-                  <CoreTypesCompatibilityMatrix matrix={CORE_BASELINE_MATRIX} map={CORE_BASELINE} />
+                  <CoreTypesCompatibilityMatrix matrix={CORE_BASELINE_MATRIX} />
                   <div className="mt-6 text-center">
                     <Button asChild variant="outline" size="lg">
                       <a href="/relational-fit/heatmap" aria-label="View Detailed Heatmap">
@@ -287,7 +271,7 @@ export default function RelationalFitPage() {
                   <p className="text-sm mb-2">Strong lane coverage (4 greens), Calm/Neutral dominant.</p>
                   <p className="text-sm"><strong>Tiny Habits:</strong> 15-min weekly pacing sync; use a "pause word" for values friction.</p>
                 </Card>
-                
+
                 <Card className="p-4 border-yellow-200 bg-yellow-50/50">
                   <p className="font-semibold text-yellow-800 mb-2">🟨 Stretch: Great Core, Weak Lane Coverage</p>
                   <p className="text-sm mb-2">Missing Care/Boundaries and Timing; Stressed overlap is common.</p>
