@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Clock, Brain, Shield, CheckCircle, Users, AlertTriangle, ChevronDown, Target, Zap, TrendingUp, BarChart3 } from "lucide-react";
+import { Clock, Brain, Shield, CheckCircle, Users, AlertTriangle, ChevronDown, Target, Zap, TrendingUp, BarChart3, Mail, ArrowRight, Loader2 } from "lucide-react";
 import { SystemStatusIndicator } from "@/components/SystemStatusIndicator";
+import { useEmailSessionManager } from "@/hooks/useEmailSessionManager";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from 'react-router-dom';
 
 interface AssessmentIntroProps {
   onStart: () => void;
@@ -12,6 +17,46 @@ interface AssessmentIntroProps {
 export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
   const [isDifferencesOpen, setIsDifferencesOpen] = useState(false);
   const [isFAQOpen, setIsFAQOpen] = useState(false);
+  const [showEmailContinue, setShowEmailContinue] = useState(false);
+  const [email, setEmail] = useState('');
+  const { startAssessmentSession, isLoading } = useEmailSessionManager();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleEmailContinue = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email.trim()) {
+      toast({
+        title: "Email required",
+        description: "Please enter your email address",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const sessionData = await startAssessmentSession(email);
+    if (sessionData) {
+      if (sessionData.existing_session) {
+        // Resume existing session
+        navigate(`/assessment?resume=${sessionData.session_id}`);
+      } else {
+        // Start new session with email
+        navigate(`/assessment?start=true&session=${sessionData.session_id}`);
+      }
+    }
+  };
   
   return (
     <div className="min-h-screen bg-background">
@@ -231,26 +276,93 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
             <CardContent className="p-8">
               <h2 className="text-2xl font-semibold text-primary mb-4">Ready to Begin?</h2>
               <p className="text-muted-foreground mb-6">
-                When you're ready to start your PRISM assessment, click the button below. The assessment will take you through multiple sections with a progress indicator.
+                When you're ready to start your PRISM assessment, you can either continue a saved assessment or start fresh.
               </p>
               
-              <div className="text-center">
-                <Button 
-                  variant="hero" 
-                  size="lg" 
-                  className="text-xl px-12 py-4 touch-manipulation cursor-pointer"
-                  onClick={(e) => {
-                    console.log('Start Assessment button clicked', e);
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onStart();
-                  }}
-                  onTouchStart={() => console.log('Touch start on button')}
-                  type="button"
-                >
-                  Start Assessment
-                </Button>
-              </div>
+              {!showEmailContinue ? (
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <Button 
+                      variant="hero" 
+                      size="lg" 
+                      className="text-xl px-12 py-4 touch-manipulation cursor-pointer mb-4"
+                      onClick={(e) => {
+                        console.log('Start Assessment button clicked', e);
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onStart();
+                      }}
+                      onTouchStart={() => console.log('Touch start on button')}
+                      type="button"
+                    >
+                      Start New Assessment
+                    </Button>
+                  </div>
+                  
+                  <div className="text-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowEmailContinue(true)}
+                      className="text-base px-8 py-3"
+                    >
+                      <Mail className="mr-2 h-4 w-4" />
+                      Continue Saved Assessment
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="text-center mb-4">
+                    <Mail className="h-12 w-12 text-primary mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-primary mb-2">Continue Your Assessment</h3>
+                    <p className="text-muted-foreground">Enter your email to resume a saved assessment or start a new one</p>
+                  </div>
+                  
+                  <form onSubmit={handleEmailContinue} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email Address</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="your@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={isLoading}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="flex gap-3">
+                      <Button 
+                        type="submit" 
+                        className="flex-1" 
+                        disabled={isLoading || !email.trim()}
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Searching...
+                          </>
+                        ) : (
+                          <>
+                            Continue Assessment
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </>
+                        )}
+                      </Button>
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowEmailContinue(false)}
+                        disabled={isLoading}
+                      >
+                        Back
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
