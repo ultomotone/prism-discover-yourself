@@ -95,11 +95,17 @@ async function postTikTokEvent(body) {
     return;
   }
   try {
-    await fetch('/functions/v1/tiktok-capi', {
+    const request = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-    });
+    };
+    const invoke = window.__supabaseFunctionFetch;
+    if (typeof invoke === 'function') {
+      await invoke('tiktok-capi', request);
+    } else {
+      await fetch('/functions/v1/tiktok-capi', request);
+    }
   } catch {
     /* swallow */
   }
