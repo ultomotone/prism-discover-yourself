@@ -3,6 +3,130 @@
   <head>
     <!-- Disable Attribution Reporting API to avoid third-party attestation errors (e.g., Facebook Pixel) -->
     <meta http-equiv="Permissions-Policy" content="attribution-reporting=()" />
+    <script>
+      (function configureSupabase() {
+        const existing = window.__APP_CONFIG__ || {};
+        const defaultConfig = {
+          SUPABASE_URL: "https://gnkuikentdtnatazeriu.supabase.co",
+          SUPABASE_ANON_KEY: "sb_publishable_Yu_Gv0Xfve27udk78CyT3w_qrbMR3Cn",
+        };
+        const config = Object.assign({}, defaultConfig, existing);
+
+        const normaliseUrl = (value) =>
+          typeof value === 'string' ? value.replace(/\/+$/, '') : undefined;
+
+        const supabaseUrl = normaliseUrl(config.SUPABASE_URL);
+        const configuredFunctionsUrl = normaliseUrl(config.SUPABASE_FUNCTION_URL);
+        const functionsUrl = configuredFunctionsUrl
+          || (supabaseUrl && supabaseUrl.includes('.supabase.co')
+            ? supabaseUrl.replace('.supabase.co', '.functions.supabase.co')
+            : undefined);
+
+        if (functionsUrl) {
+          config.SUPABASE_FUNCTION_URL = functionsUrl;
+        }
+
+        window.__APP_CONFIG__ = config;
+
+        const anonKey = config.SUPABASE_ANON_KEY;
+
+        function normaliseFunctionPath(path) {
+          const trimmed = path.replace(/^\/+/, '');
+          return trimmed.startsWith('functions/v1/')
+            ? trimmed.slice('functions/v1/'.length)
+            : trimmed;
+        }
+
+        window.__supabaseFunctionFetch = function(path, init) {
+          if (!functionsUrl) {
+            return Promise.reject(new Error('Supabase functions URL is not configured'));
+          }
+
+          const target = typeof path === 'string' && /^https?:/i.test(path)
+            ? path
+            : `${functionsUrl}/${normaliseFunctionPath(typeof path === 'string' ? path : '')}`;
+
+          const requestInit = Object.assign({}, init);
+          const headerBag = new Headers(requestInit.headers || {});
+
+          if (anonKey) {
+            if (!headerBag.has('apikey')) headerBag.set('apikey', anonKey);
+            if (!headerBag.has('Authorization')) headerBag.set('Authorization', `Bearer ${anonKey}`);
+          }
+
+          requestInit.headers = headerBag;
+          return fetch(target, requestInit);
+        };
+      })();
+    </script>
+    <script>
+      (function guardRudderIdentify() {
+        const REQUIRED_INTERVAL_MS = 500;
+
+        function toStringOrEmpty(value) {
+          return typeof value === 'string' ? value.trim() : '';
+        }
+
+        function hasRequiredTraits(traits) {
+          if (!traits || typeof traits !== 'object') return false;
+          const email = toStringOrEmpty(
+            traits.email || traits.Email || traits.userEmail || traits.user_email,
+          );
+          const phone = toStringOrEmpty(
+            traits.phone || traits.phone_number || traits.phoneNumber || traits.Phone,
+          );
+          const firstName = toStringOrEmpty(traits.firstName || traits.first_name || traits.FirstName);
+          const lastName = toStringOrEmpty(traits.lastName || traits.last_name || traits.LastName);
+          const postalCode = toStringOrEmpty(traits.postalCode || traits.postal_code || traits.zip);
+          const country = toStringOrEmpty(traits.country || traits.Country);
+          return Boolean(email && phone && (firstName || lastName || postalCode || country));
+        }
+
+        function wrapIdentify() {
+          const ra = window.rudderanalytics;
+          if (!ra || typeof ra.identify !== 'function' || ra.identify.__patched) {
+            return false;
+          }
+
+          const original = ra.identify.bind(ra);
+          ra.identify = function patchedIdentify() {
+            const args = Array.from(arguments);
+            const traitsCandidate = args.length > 1
+              ? args[1]
+              : (typeof args[0] === 'object' && args[0] !== null ? args[0] : undefined);
+
+            if (!hasRequiredTraits(traitsCandidate)) {
+              console.warn('rudderanalytics.identify skipped: missing required traits', traitsCandidate);
+              return Promise.resolve(null);
+            }
+
+            try {
+              const result = original.apply(this, args);
+              if (result && typeof result.then === 'function') {
+                return result.catch((err) => {
+                  console.warn('rudderanalytics.identify suppressed error', err);
+                  return null;
+                });
+              }
+              return result;
+            } catch (err) {
+              console.warn('rudderanalytics.identify suppressed error', err);
+              return Promise.resolve(null);
+            }
+          };
+          ra.identify.__patched = true;
+          return true;
+        }
+
+        if (!wrapIdentify()) {
+          const timer = setInterval(() => {
+            if (wrapIdentify()) {
+              clearInterval(timer);
+            }
+          }, REQUIRED_INTERVAL_MS);
+        }
+      })();
+    </script>
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -226,18 +350,24 @@
             props.email = window.redditNormalizeEmail(props.email);
           }
           if (window.rdt) rdt('track', eventName, props);
+          const requestInit = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event_name: eventName,
+              conversion_id: props.conversion_id,
+              click_id: props.click_id,
+              email: props.email,
+            }),
+            keepalive: true,
+          };
           try {
-            fetch('/functions/v1/reddit-capi', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                event_name: eventName,
-                conversion_id: props.conversion_id,
-                click_id: props.click_id,
-                email: props.email,
-              }),
-              keepalive: true,
-            }).catch(() => {});
+            const invoke = window.__supabaseFunctionFetch;
+            if (typeof invoke === 'function') {
+              invoke('reddit-capi', requestInit).catch(() => {});
+            } else {
+              fetch('/functions/v1/reddit-capi', requestInit).catch(() => {});
+            }
           } catch (e) {
             // no-op
           }
@@ -340,12 +470,6 @@
     </noscript>
     
     <div id="root"></div>
-    <script id="app-config">
-      window.__APP_CONFIG__ = {
-        SUPABASE_URL: "https://gnkuikentdtnatazeriu.supabase.co",
-        SUPABASE_ANON_KEY: "sb_publishable_Yu_Gv0Xfve27udk78CyT3w_qrbMR3Cn"
-      };
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
