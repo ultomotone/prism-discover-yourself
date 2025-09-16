@@ -157,14 +157,9 @@ export default function Results() {
     (async () => {
       try {
         // Single, authoritative RPC. Token path (t set) or owner path (t null).
-        const rpcArgs =
-          shareToken === null
-            ? { p_session_id: sessionId }
-            : { p_session_id: sessionId, t: shareToken };
-
         const { data: res, error } = await supabase.rpc(
           "get_results_by_session",
-          rpcArgs
+          { p_session_id: sessionId, t: shareToken ?? null }
         );
 
         if (error) throw error;
