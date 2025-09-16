@@ -3124,7 +3124,7 @@ export type Database = {
         Returns: Json[]
       }
       get_results_by_session: {
-        Args: { session_id: string; t?: string }
+        Args: { p_session_id: string; t?: string }
         Returns: Json
       }
       get_user_assessment_scores: {
