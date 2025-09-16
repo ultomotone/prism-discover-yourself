@@ -9,6 +9,44 @@ import { prismTypes } from "@/data/prismTypes";
 import { StateLegend } from "@/components/common/StateLegend";
 import { FUNCS, type Profile, type Func } from "@/features/results/types";
 
+export type Top3Item = { code: string; fit?: number };
+
+export function getTop3List(profile: any): Top3Item[] {
+  const fromTypes: Top3Item[] | undefined = profile?.top_types?.map(
+    (code: string) => ({
+      code,
+      fit:
+        profile?.type_scores?.[code]?.fit_abs ??
+        profile?.type_scores?.[code]?.fit,
+    })
+  );
+
+  const fromFits: Top3Item[] | undefined = profile?.top_3_fits?.map(
+    (x: any) => ({ code: x.code, fit: x.fit })
+  );
+
+  const primary: Top3Item[] = profile?.type_code
+    ? [
+        {
+          code: profile.type_code,
+          fit:
+            profile?.score_fit_calibrated ??
+            profile?.score_fit_raw,
+        },
+      ]
+    : [];
+
+  const source = fromTypes?.length
+    ? fromTypes
+    : fromFits?.length
+    ? fromFits
+    : primary;
+
+  return (source ?? [])
+    .filter((item) => typeof item.code === "string" && item.code.length > 0)
+    .slice(0, 3);
+}
+
 // thresholds for labels (tune later)
 const LABEL_THRESH = {
   dimHighlight: 3,          // ≥3D dims gets highlighted
@@ -437,13 +475,13 @@ function RetestBanner({ profile }: { profile: Profile }) {
   );
 }
 function Top3({ p }:{ p:Profile }){
-  const primary = p.top_types?.[0] || p.type_code;
-  const list = p.top_types?.length
-    ? p.top_types
-    : (p.top_3_fits?.map((x) => x.code) ?? [primary]);
-  // Calculate user's median strength for suppressed detection
-  const strengthValues = Object.values(p.strengths);
-  const medianStrength = strengthValues.sort((a, b) => a - b)[Math.floor(strengthValues.length / 2)];
+  const topItems = getTop3List(p);
+  const primary = topItems[0]?.code || p.top_types?.[0] || p.type_code || '';
+  const strengthValues = Object.values(p.strengths ?? {});
+  const sortedStrengths = [...strengthValues].sort((a, b) => a - b);
+  const medianStrength = sortedStrengths.length
+    ? sortedStrengths[Math.floor(sortedStrengths.length / 2)]
+    : 0;
   const suppressedThreshold = medianStrength - 1; // >1 SD below median (simplified)
 
   const overlay = p.overlay ?? '';
@@ -455,11 +493,19 @@ function Top3({ p }:{ p:Profile }){
         <span className="text-xs text-muted-foreground">Absolute fit = invariant (0–100). Share = relative among all types.</span>
       </div>
       <div className="grid md:grid-cols-3 gap-3">
-        {list.map(code => {
-          const t = p.type_scores?.[code];
-          const share = t?.share_pct ?? 0;
+        {topItems.map(({ code, fit }) => {
+          const typeScore = p.type_scores?.[code];
+          const share = typeScore?.share_pct ?? 0;
           const title = TYPE_KB[code]?.title || code;
           const isMain = code === primary;
+          const calibratedFit = typeof typeScore?.fit_abs === 'number' ? typeScore.fit_abs : undefined;
+          const fallbackFit =
+            typeof fit === 'number'
+              ? fit
+              : typeof typeScore?.fit === 'number'
+              ? typeScore.fit
+              : undefined;
+          const displayFit = calibratedFit ?? fallbackFit ?? 0;
           return (
             <div key={code} className={`p-4 border rounded-xl ${isMain ? 'bg-muted/50' : ''}`}>
               <div className="flex justify-between items-baseline">
@@ -469,15 +515,14 @@ function Top3({ p }:{ p:Profile }){
               <div className="text-sm text-muted-foreground">{title}</div>
               <div className="mt-2 text-sm">
                 <span className="font-semibold">
-                  Fit {/* Use individual type fit from type_scores */}
+                  Fit
                   <span
-                    className={`cursor-help ${p.type_scores?.[code]?.fit_abs ? 'text-foreground' : 'text-orange-600'}`}
-                    title={p.type_scores?.[code]?.fit_abs ?
-                      'Individual calibrated fit for this specific type' :
-                      'Using fallback fit value - check type_scores data'
-                    }
+                    className={`cursor-help ${calibratedFit !== undefined ? 'text-foreground' : 'text-orange-600'}`}
+                    title={calibratedFit !== undefined
+                      ? 'Individual calibrated fit for this specific type'
+                      : 'Using fallback fit value - check type_scores data'}
                   >
-                    {p.type_scores?.[code]?.fit_abs || t?.fit_abs || 0}
+                    {displayFit}
                   </span>
                 </span>
               </div>
@@ -509,12 +554,22 @@ function Top3({ p }:{ p:Profile }){
       <Top3FitChart
         primary={primary}
         profile={p}
-        data={list.map(code => ({
-          code,
-          // FIXED: Use per-type fit score from type_scores instead of global score_fit_calibrated
-          fit: p.type_scores?.[code]?.fit_abs || 0, // Individual type fit
-          share: p.type_scores?.[code]?.share_pct ?? 0,
-        }))}
+        data={topItems.map(({ code, fit }) => {
+          const typeScore = p.type_scores?.[code];
+          const chartFit =
+            typeof typeScore?.fit_abs === 'number'
+              ? typeScore.fit_abs
+              : typeof fit === 'number'
+              ? fit
+              : typeof typeScore?.fit === 'number'
+              ? typeScore.fit
+              : 0;
+          return {
+            code,
+            fit: chartFit,
+            share: typeScore?.share_pct ?? 0,
+          };
+        })}
       />
     </section>
   );
