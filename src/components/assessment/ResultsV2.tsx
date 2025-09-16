@@ -437,7 +437,10 @@ function RetestBanner({ profile }: { profile: Profile }) {
   );
 }
 function Top3({ p }:{ p:Profile }){
-  const primary = p.top_types?.[0];
+  const primary = p.top_types?.[0] || p.type_code;
+  const list = p.top_types?.length
+    ? p.top_types
+    : (p.top_3_fits?.map((x) => x.code) ?? [primary]);
   // Calculate user's median strength for suppressed detection
   const strengthValues = Object.values(p.strengths);
   const medianStrength = strengthValues.sort((a, b) => a - b)[Math.floor(strengthValues.length / 2)];
@@ -452,7 +455,7 @@ function Top3({ p }:{ p:Profile }){
         <span className="text-xs text-muted-foreground">Absolute fit = invariant (0–100). Share = relative among all types.</span>
       </div>
       <div className="grid md:grid-cols-3 gap-3">
-        {p.top_types.map(code => {
+        {list.map(code => {
           const t = p.type_scores?.[code];
           const share = t?.share_pct ?? 0;
           const title = TYPE_KB[code]?.title || code;
@@ -506,7 +509,7 @@ function Top3({ p }:{ p:Profile }){
       <Top3FitChart
         primary={primary}
         profile={p}
-        data={p.top_types.map(code => ({
+        data={list.map(code => ({
           code,
           // FIXED: Use per-type fit score from type_scores instead of global score_fit_calibrated
           fit: p.type_scores?.[code]?.fit_abs || 0, // Individual type fit
