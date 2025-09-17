@@ -1,0 +1,67 @@
+{
+  "backfill_plan": {
+    "version": "v1.0",
+    "timestamp": "2025-09-17T08:00:00Z",
+    "environment": "staging",
+    "engine_version": "v1.2.1",
+    "fc_version": "v1.2",
+    "throttle_per_minute": 20,
+    "batch_size": 5,
+    "total_candidates": 39,
+    "expected_runtime_minutes": 2
+  },
+  "batches": [
+    {
+      "batch_id": "priority",
+      "description": "Test sessions for verification", 
+      "sessions": [
+        "618c5ea6-aeda-4084-9156-0aac9643afd3",
+        "070d9bf2-516f-44ee-87fc-017c7db9d29c"
+      ],
+      "operations": [
+        {"function": "score_fc_session", "params": {"version": "v1.2", "basis": "functions"}},
+        {"function": "score_prism", "params": {"engine_version": "v1.2.1"}}
+      ]
+    },
+    {
+      "batch_id": "recent_september",
+      "description": "September 2025 sessions",
+      "sessions": [
+        "d5da8412-4178-4456-b3ee-c496122c840b",
+        "fd85871b-b8ef-491a-8274-c50932530457",
+        "8c1c68bd-0713-45b1-b328-e6b51ade9b3f",
+        "21762d3d-773f-4302-8fa5-d5d8ff88911c",
+        "97a75815-9779-431d-8443-bf2971f463e9"
+      ],
+      "operations": [
+        {"function": "score_fc_session", "params": {"version": "v1.2", "basis": "functions"}},
+        {"function": "score_prism", "params": {"engine_version": "v1.2.1"}}
+      ]
+    },
+    {
+      "batch_id": "august_backlog",
+      "description": "August 2025 backlog sessions",
+      "session_count": 32,
+      "operations": [
+        {"function": "score_fc_session", "params": {"version": "v1.2", "basis": "functions"}},
+        {"function": "score_prism", "params": {"engine_version": "v1.2.1", "if_missing": true}}
+      ]
+    }
+  ],
+  "expected_changes": {
+    "fc_scores": {
+      "new_rows": 39,
+      "version": "v1.2",
+      "fc_kind": "functions"
+    },
+    "profiles": {
+      "new_rows": 13,
+      "updated_rows": 0,
+      "results_version": "v1.2.1"
+    }
+  },
+  "rollback_strategy": {
+    "fc_scores": "DELETE FROM fc_scores WHERE version = 'v1.2' AND created_at >= '2025-09-17T08:00:00Z'",
+    "profiles": "DELETE FROM profiles WHERE results_version = 'v1.2.1' AND created_at >= '2025-09-17T08:00:00Z'"
+  }
+}

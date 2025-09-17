@@ -1,3 +1,3 @@
-session_id,created_at,status,has_profile,has_fc_scores,missing_components
-618c5ea6-aeda-4084-9156-0aac9643afd3,2025-09-16 19:54:24.308724+00,completed,false,false,"profile,fc_scores"
-070d9bf2-516f-44ee-87fc-017c7db9d29c,2025-09-15 03:21:01.808988+00,completed,false,false,"profile,fc_scores"
+session_id,created_at,status,has_profile,has_fc_scores,missing_components,responses_count,fc_responses_count
+618c5ea6-aeda-4084-9156-0aac9643afd3,2025-09-16 19:54:24.308724+00,completed,false,false,"profile,fc_scores",248,6
+070d9bf2-516f-44ee-87fc-017c7db9d29c,2025-09-15 03:21:01.808988+00,completed,false,false,"profile,fc_scores",248,6

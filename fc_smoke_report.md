@@ -178,4 +178,4 @@ npx tsx run_fc_smoke.ts
 
 **Expected Function Behavior**: score_fc_session should create fc_scores rows with version='v1.2' when invoked with correct parameters.
 
-**PROCEEDING TO IR-09B2**: E2E Finalize Flow Test
+**PROCEEDING TO EXEC-02**: E2E Finalize Flow Test
