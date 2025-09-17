@@ -118,4 +118,14 @@ ts-node run_evidence_gate_execution.ts
 # - Updated evidence_gate.md with results
 ```
 
-**Current Status**: 🟡 READY FOR MANUAL EXECUTION - Execute command above to proceed
+**Current Status**: 🟡 READY FOR EXECUTION
+
+## EXECUTION COMMAND
+
+```bash
+# Set your service role key and run the Evidence Gate
+export SUPABASE_SERVICE_ROLE_KEY="<your-service-role-key>"
+npm run ts-node run_evidence_gate_execution.ts
+```
+
+**Expected Output**: Evidence Gate execution with PASS/FAIL result and updated artifacts

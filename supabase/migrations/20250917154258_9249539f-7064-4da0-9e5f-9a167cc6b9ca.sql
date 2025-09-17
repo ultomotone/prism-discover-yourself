@@ -1,0 +1,1 @@
+SELECT supabase.functions.invoke('finalizeAssessment', '{"session_id": "618c5ea6-aeda-4084-9156-0aac9643afd3"}'::jsonb)

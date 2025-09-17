@@ -3121,7 +3121,14 @@ export type Database = {
         Args:
           | Record<PropertyKey, never>
           | { client_ip: string; user_id: string }
-        Returns: Json[]
+        Returns: {
+          country_display: string
+          created_at: string
+          fit_indicator: string
+          overlay: string
+          time_period: string
+          type_prefix: string
+        }[]
       }
       get_results_by_session: {
         Args: { session_id: string; t?: string }
