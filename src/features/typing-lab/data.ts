@@ -244,7 +244,7 @@ export const typingLabEntries: TypingLabEntry[] = [
         change: "Expanded dossier with states, reading guide, assessment map, and future research.",
       },
     ],
-    image: "https://upload.wikimedia.org/wikipedia/commons/5/57/Charlie_Kirk_by_Gage_Skidmore.jpg",
+    image: "/assets/charlie-kirk-profile.png",
     featured: false,
     debated: true,
     lastUpdated: "2025-09-16",
