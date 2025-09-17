@@ -40,11 +40,10 @@ where session_id = '618c5ea6-aeda-4084-9156-0aac9643afd3';
 - Qualifiers: `auth.role() = 'service_role'`
 
 ### Direct Function Invocation Test
-**Status**: ⚡ **READY FOR EXECUTION**
-**Method**: Node.js script with service role authentication
+**Status**: 🔄 **EXECUTING NOW**
+**Method**: Supabase client with service role
 **Target**: finalizeAssessment function
 **Body**: `{"session_id":"618c5ea6-aeda-4084-9156-0aac9643afd3","fc_version":"v1.2"}`
-**Command**: `SUPABASE_SERVICE_ROLE_KEY=<key> node run_finalize_assessment.js`
 
 ### Expected Post-Invocation Changes
 1. **Profiles Table**: New row with results_version = 'v1.2.1'

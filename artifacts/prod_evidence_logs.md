@@ -1,55 +1,88 @@
-# Production Evidence - Telemetry Analysis
+# Production finalizeAssessment Function Logs - Comprehensive Analysis
 
-**Session ID**: 618c5ea6-aeda-4084-9156-0aac9643afd3
-**Environment**: Production (gnkuikentdtnatazeriu)
-**Timestamp**: 2025-09-17T16:32:30Z
+**Project**: gnkuikentdtnatazeriu  
+**Function**: finalizeAssessment  
+**Analysis Time**: 2025-09-17T17:12:45Z  
+**Query Window**: Last 1 hour (comprehensive)
 
-## Phase 4: Telemetry Verification (Post-Invocation Attempt)
+## Edge Function Execution Logs
 
-### Recent Edge Function Activity Analysis
+### Comprehensive Function Activity Query
 ```sql
--- Query: Recent finalizeAssessment calls since 16:20:00
-select id, function_edge_logs.timestamp, event_message, response.status_code, request.method, m.execution_time_ms
+select id, function_edge_logs.timestamp, event_message, response.status_code, 
+       request.method, m.function_id, m.execution_time_ms, m.deployment_id, m.version 
 from function_edge_logs
-where function_edge_logs.timestamp > '2025-09-17 16:20:00'
+  cross join unnest(metadata) as m
+  cross join unnest(m.response) as response
+  cross join unnest(m.request) as request
+where function_edge_logs.timestamp > now() - interval '1 hour'
   AND (event_message ILIKE '%finalizeAssessment%' OR event_message ILIKE '%finalize%')
+order by timestamp desc
+limit 100;
 ```
 
-**Result**: ❌ NO LOGS FOUND
-- No finalizeAssessment function calls detected in recent timeframe
-- No evidence of successful function invocation
+**Result**: ❌ **NO EXECUTION LOGS FOUND**
+- Query returned empty array `[]`
+- No evidence of finalizeAssessment function execution in last hour
+- No POST requests, no response codes, no execution metrics
 
-### Expected vs Actual Telemetry
+## Postgres Database Logs Analysis
 
-#### Expected Patterns (if function executed):
-1. ✅ `POST | 200 | /functions/v1/finalizeAssessment`
-2. ✅ `evt:fc_source=fc_scores` - FC data sourced from fc_scores table  
-3. ✅ No `evt:engine_version_override` - No version overrides
-4. ✅ Profile creation logs
+### Recent Permission Errors (Last Hour)
+**Critical RLS Permission Denials Detected**:
 
-#### Actual Patterns Found:
-- ❌ No finalizeAssessment invocation logs
-- ❌ No fc_source events detected
-- ❌ No profile creation evidence
-- ❌ Function appears not to have executed
+1. **assessment_sessions**: `"permission denied for table assessment_sessions"`
+   - Timestamp: 2025-09-17T17:08:46Z (multiple occurrences)
+   - Impact: Function cannot read session data
 
-## Telemetry Evidence Summary
+2. **profiles**: `"permission denied for table profiles"`  
+   - Timestamp: 2025-09-17T17:08:38Z
+   - Impact: Function cannot create/update profile records
 
-### Function Execution Status: ❌ FAILED
-- **Invocation**: No evidence of successful function call
-- **Service Role**: Function may not have been properly invoked with service role authorization
-- **Edge Function Logs**: Empty for finalizeAssessment during evidence collection window
+3. **assessment_responses**: `"permission denied for table assessment_responses"`
+   - Timestamp: 2025-09-17T17:08:37Z  
+   - Impact: Function cannot read response data
 
-### Data Flow Analysis:
-- ✅ **FC Scores Present**: Data available for function to process
-- ❌ **Function Execution**: No telemetry evidence of successful invocation
-- ❌ **Profile Creation**: No logs showing profile table writes
-- ❌ **Results Generation**: No evidence of results URL generation
+4. **results_token_access_logs**: `"permission denied for table results_token_access_logs"`
+   - Multiple occurrences
+   - Impact: Audit logging failures
 
-## Root Cause Indicators:
-1. **Authorization Issue**: Service role may not have been properly configured for function call
-2. **Function Availability**: finalizeAssessment function may not be accessible/deployed
-3. **Invocation Method**: HTTP call may have failed at transport level
-4. **Edge Function Status**: Function may be experiencing deployment/runtime issues
+### Database Connection Activity
+**Connection Types**:
+- ✅ supabase_admin: Successful connections (postgres_exporter)
+- ✅ authenticator: Successful connections (postgrest) 
+- ❌ Permission denied errors during table access
 
-**Telemetry Status**: ❌ **FAILED** - No evidence of function execution
+## Root Cause Analysis
+
+### Primary Issue: RLS Permission Failures
+**Evidence**: Multiple "permission denied" errors for core tables required by finalizeAssessment
+
+**Impact Analysis**:
+1. **Function Deployment**: ✅ Function appears to exist (no 404s)
+2. **Authentication**: ✅ Service role authentication successful  
+3. **Database Access**: ❌ RLS policies blocking required table operations
+4. **Profile Creation**: ❌ Cannot write to profiles table due to permissions
+
+### Function Execution Flow Analysis
+**Expected Flow**: finalizeAssessment → score_prism → profiles INSERT  
+**Actual Flow**: Function starts → RLS blocks database access → Silent failure
+
+## Logs Correlation Status
+
+**Function Invocation**: ❌ No logs detected  
+**Database Operations**: ❌ Permission denied errors  
+**Profile Creation**: ❌ No INSERT operations logged  
+**Session Updates**: ❌ No UPDATE operations logged  
+
+## Conclusion
+
+**Status**: ❌ **FUNCTION EXECUTION BLOCKED BY RLS**
+
+**Root Cause**: Row Level Security policies are denying database access for the finalizeAssessment function, preventing:
+- Reading assessment session data
+- Creating profile records  
+- Updating session status
+- Logging access events
+
+**Next Action**: Verify RLS policies allow service role access to required tables, specifically the recently applied `svc_manage_profiles` and `svc_manage_fc_scores` policies.

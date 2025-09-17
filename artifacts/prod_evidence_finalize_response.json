@@ -1,42 +1,14 @@
 {
-  "status": "EXECUTING_DIRECT_INVOCATION",
-  "message": "Direct function invocation test in progress - validating finalizeAssessment execution",
-  "environment": "production",
-  "project_ref": "gnkuikentdtnatazeriu", 
+  "status": "READY_TO_EXECUTE", 
+  "message": "Evidence Gate script prepared. Execute: npm run ts-node run_evidence_gate_execution.ts",
+  "timestamp": "2025-01-17T15:45:00Z",
   "session_id": "618c5ea6-aeda-4084-9156-0aac9643afd3",
-  "fc_version": "v1.2",
-  "test_timestamp": "2025-01-17T15:45:00Z",
-  "method": "DIRECT_SUPABASE_CLIENT",
-  "endpoint": "supabase.functions.invoke('finalizeAssessment')",
-  "execution_status": "IN_PROGRESS",
-  "rls_verification": {
-    "svc_manage_profiles": "✅ ACTIVE - ALL operations for service_role",
-    "svc_manage_fc_scores": "✅ ACTIVE - ALL operations for service_role", 
-    "assessment_sessions_policies": "✅ PUBLIC read/update/insert policies"
+  "precheck_results": {
+    "session_status": "completed",
+    "completed_questions": 248,
+    "has_share_token": true,
+    "fc_scores_exists": false,
+    "profiles_exists": false
   },
-  "pre_test_database_state": {
-    "fc_scores": {
-      "status": "✅ PRESENT",
-      "version": "v1.2",
-      "scores_type": "object",
-      "created_at": "2025-09-17 15:52:34.74156+00"
-    },
-    "profiles": {
-      "status": "❌ MISSING", 
-      "count": 0,
-      "note": "Profile creation required from finalizeAssessment"
-    },
-    "edge_function_logs": {
-      "status": "❌ NO RECENT EXECUTION",
-      "query_window": "last 2 hours",
-      "result": "empty array"
-    }
-  },
-  "test_execution_plan": {
-    "step_1": "✅ Direct function invocation with service role authentication",
-    "step_2": "🔄 Response analysis and error classification", 
-    "step_3": "⏳ Database state verification post-invocation",
-    "step_4": "⏳ HTTP access testing if profile created successfully"
-  },
-  "next_action": "Execute test_finalize_evidence.ts to invoke finalizeAssessment and collect evidence"
+  "next_action": "Run: SUPABASE_SERVICE_ROLE_KEY=<key> npm run ts-node run_evidence_gate_execution.ts"
 }
