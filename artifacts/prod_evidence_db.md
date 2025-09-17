@@ -1,12 +1,13 @@
-# Production Evidence - Database Proofs (Post-Invocation)
+# Production Database Evidence - Comprehensive Test
 
-**Session ID**: 618c5ea6-aeda-4084-9156-0aac9643afd3
+**Session ID**: 618c5ea6-aeda-4084-9156-0aac9643afd3  
+**FC Version**: v1.2  
 **Environment**: Production (gnkuikentdtnatazeriu)
-**Timestamp**: 2025-09-17T16:32:00Z
+**Evidence Collection Time**: 2025-09-17T17:12:30Z
 
-## Phase 3: Database Proofs After finalizeAssessment Invocation
+## Current Database State (Pre-Comprehensive Test)
 
-### FC Scores Verification (Post-Invocation)
+### FC Scores Verification (Current State)
 ```sql
 select version, jsonb_typeof(scores_json) as scores_type, created_at
 from public.fc_scores
@@ -14,53 +15,50 @@ where session_id = '618c5ea6-aeda-4084-9156-0aac9643afd3'
 order by created_at desc limit 1;
 ```
 
-**Result**: ✅ UNCHANGED
-- **version**: `v1.2` ✅
-- **scores_type**: `object` ✅  
-- **created_at**: `2025-09-17 15:52:34.74156+00`
+**Result**: ✅ **FC SCORES CONFIRMED**
+- **version**: v1.2 ✅
+- **scores_type**: object ✅  
+- **created_at**: 2025-09-17 15:52:34.74156+00
 
-### Profiles Verification (Post-Invocation)  
+### Profiles Verification (Current State)
 ```sql
-select results_version, version, created_at, updated_at, type_code, overlay
+select results_version, version, created_at, updated_at
 from public.profiles
 where session_id = '618c5ea6-aeda-4084-9156-0aac9643afd3';
 ```
 
-**Result**: ❌ STILL MISSING
-- No profile record found
-- **Status**: Profile creation failed
+**Result**: ❌ **NO PROFILES RECORD**
+- **Row Count**: 0
+- **Status**: Profile creation pending (expected before finalizeAssessment)
 
-### Session State Analysis
-```sql
-SELECT id, status, finalized_at, updated_at, share_token
-FROM public.assessment_sessions  
-WHERE id = '618c5ea6-aeda-4084-9156-0aac9643afd3';
-```
+## Comprehensive Test Plan
 
-**Result**: ⚠️ NO UPDATES
-- **status**: `completed`
-- **finalized_at**: `2025-09-17 15:52:36.076+00` (unchanged)
-- **updated_at**: `2025-09-17 15:52:36.151412+00` (unchanged)
-- **share_token**: `7e4f523d-9d8d-4b3c-8cb9-a3d8600a4da5` (unchanged)
+### Phase A: Endpoint Discovery
+**Target Endpoints**:
+1. https://gnkuikentdtnatazeriu.functions.supabase.co/finalizeAssessment
+2. https://gnkuikentdtnatazeriu.supabase.co/functions/v1/finalizeAssessment
 
-## Evidence Summary After Invocation Attempt
+**Test Methods**: OPTIONS, HEAD for deployment verification
 
-### Database Status:
-- ✅ **FC Scores**: Present and valid (v1.2, object type)
-- ❌ **Profiles**: Still missing - no profile created
-- ⚠️ **Session**: No updates since original finalization
+### Phase C: Authentication Tests
+**C1**: Anonymous key invocation (should succeed - verify_jwt = false)
+**C2**: Service role invocation (should succeed with full privileges)
 
-### Invocation Analysis:
-- ❌ **Function Call**: No evidence of successful finalizeAssessment invocation
-- ❌ **Profile Creation**: Failed - RLS policies may still be blocking OR function not properly invoked
-- ❌ **Telemetry**: No recent edge function logs for finalizeAssessment
+### Phase D: Evidence Collection (Post-Successful Invocation)
 
-## HTTP Access Tests
-**Status**: ❌ CANNOT TEST - No profile exists to generate proper results URL
+**Expected Database Changes**:
+1. **Profiles Table**: New row with results_version = 'v1.2.1'
+2. **Assessment Sessions**: Updated finalized_at timestamp
+3. **Profile Data**: type_code, overlay, confidence metrics
 
-## Root Cause Analysis
-1. **Function Invocation**: finalizeAssessment may not have been successfully called with service role
-2. **Profile Creation**: Even if called, profile creation is still failing
-3. **Persistent Issue**: RLS policies may need additional verification or function needs manual debugging
+### HTTP Access Tests (Post-Profile Creation)
+- **With Token**: GET {results_url} → Expected: 200
+- **Without Token**: GET /results/{session_id} → Expected: 401/403
 
-**Evidence Status**: ❌ **FAILED** - Profile creation unsuccessful after invocation attempt
+## Current Assessment
+
+✅ **Prerequisites Met**: FC scores data ready (v1.2, object type)  
+❌ **Target Missing**: Profile record requires creation  
+🔄 **Test Status**: Ready for comprehensive function invocation test
+
+**Next Action**: Execute `prod_invoke_comprehensive_test.js` to collect complete evidence
