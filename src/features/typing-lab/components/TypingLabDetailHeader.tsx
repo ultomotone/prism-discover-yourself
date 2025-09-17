@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { TopTwoGapBar } from "./TopTwoGapBar";
 import { ConfidenceBadge } from "./ConfidenceBadge";
 import { FunctionMatrixIcon } from "./FunctionMatrixIcon";
+import { LikeButton } from "./LikeButton";
+import { TypingLabShareBar } from "./TypingLabShareBar";
 import type { TypingLabEntry } from "../types";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -81,6 +83,17 @@ export const TypingLabDetailHeader = ({ entry }: TypingLabDetailHeaderProps) => 
               )}
             </div>
           )}
+          <div className="flex flex-wrap items-center gap-4">
+            <LikeButton
+              targetKey={`typing-lab:${entry.slug}`}
+              label={`Give a thumbs up to the ${entry.name} typing dossier`}
+            />
+            <TypingLabShareBar
+              title={`${entry.name} — PRISM Typing Lab dossier`}
+              canonicalPath={`/typing-lab/${entry.slug}`}
+              alignment="start"
+            />
+          </div>
           <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
             <span className="rounded-full border border-border/60 bg-background/80 px-3 py-1">
               {entry.ethicsNote}
@@ -99,7 +112,7 @@ export const TypingLabDetailHeader = ({ entry }: TypingLabDetailHeaderProps) => 
       </div>
       <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-primary">
         <a
-          href="mailto:typinglab@prism.gg"
+          href="mailto:team@prismpersonality.com"
           className="inline-flex items-center gap-2 hover:text-primary/80"
         >
           Submit a source or correction

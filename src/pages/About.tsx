@@ -1,11 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Brain, BarChart3, Zap, Shield, ArrowRight, CheckCircle, HelpCircle } from "lucide-react";
+import { Brain, BarChart3, Zap, Shield, ArrowRight, CheckCircle, HelpCircle, ThumbsUp } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTypingLabLikes } from "@/features/typing-lab/hooks/useTypingLabLikes";
 const About = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const navigate = useNavigate();
+  const { totalLikes } = useTypingLabLikes();
 
   const elements = [
     { code: "Ti", name: "Internal logic", desc: "make it make sense" },
@@ -89,6 +91,12 @@ const About = () => {
 
             <div className="text-sm text-muted-foreground">
               Multi-method measurement • Confidence-based type calls • Trait vs. state separation
+            </div>
+            <div className="mt-4 flex justify-center">
+              <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/20 px-4 py-2 text-sm text-muted-foreground">
+                <ThumbsUp className="h-4 w-4 text-primary" />
+                {totalLikes} Typing Lab likes logged locally
+              </span>
             </div>
           </div>
 

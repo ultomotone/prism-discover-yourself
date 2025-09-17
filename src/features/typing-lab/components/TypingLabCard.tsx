@@ -6,6 +6,7 @@ import { CalendarDays, Clock, ExternalLink, MessageCircle } from "lucide-react";
 import { ConfidenceBadge } from "./ConfidenceBadge";
 import { FunctionMatrixIcon } from "./FunctionMatrixIcon";
 import { TopTwoGapBar } from "./TopTwoGapBar";
+import { LikeButton } from "./LikeButton";
 import type { TypingLabEntry } from "../types";
 
 interface TypingLabCardProps {
@@ -106,12 +107,18 @@ export const TypingLabCard = ({ entry }: TypingLabCardProps) => {
             </div>
           </div>
         </div>
-        <Button asChild variant="secondary" className="mt-auto">
-          <Link to={`/typing-lab/${entry.slug}`} className="flex items-center gap-2">
-            Open dossier
-            <ExternalLink className="h-4 w-4" />
-          </Link>
-        </Button>
+        <div className="mt-auto flex flex-col gap-3">
+          <LikeButton
+            targetKey={`typing-lab:${entry.slug}`}
+            label={`Give a thumbs up to the ${entry.name} typing dossier`}
+          />
+          <Button asChild variant="secondary">
+            <Link to={`/typing-lab/${entry.slug}`} className="flex items-center gap-2">
+              Open dossier
+              <ExternalLink className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
