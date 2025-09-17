@@ -95,6 +95,41 @@ npx tsx run_fc_smoke.ts
 
 ---  
 
-**STATUS**: ⏳ AWAITING EXECUTION  
-**READINESS**: ✅ ALL PRECONDITIONS MET  
+## IR-07B SMOKE TEST EXECUTION
+
+**Executed**: 2025-09-17T05:35:00Z  
+**Method**: Direct function invocation via Supabase client  
+**Sessions**: 618c5ea6-aeda-4084-9156-0aac9643afd3, 070d9bf2-516f-44ee-87fc-017c7db9d29c
+
+### Pre-Test Discovery ✅
+- fc_blocks: 6 total, 6 v1.2 active
+- fc_options: 24 total, 24 v1.2 active  
+- fc_responses: 6 per test session (all blocks covered)
+- fc_scores baseline: 0 rows
+
+### Function Invocation Results
+
+**TEST SESSION**: 618c5ea6-aeda-4084-9156-0aac9643afd3
+
+**ATTEMPT 1**: Direct supabase.functions.invoke('score_fc_session')
+- ❌ **ISSUE DETECTED**: Function exists but not being invoked properly
+- Pre-state: fc_scores count = 0
+- Post-state: fc_scores count = 0 (unchanged)
+
+### Analysis
+- ✅ FC infrastructure properly seeded (6 blocks, 24 options)  
+- ✅ Test sessions have required fc_responses (6 each)
+- ❌ **BLOCKER**: score_fc_session function not executing or failing silently
+- ❓ Need to investigate function deployment/configuration
+
+### Next Steps Required
+1. Verify function deployment status
+2. Check function logs for errors
+3. Test manual function execution
+4. Debug fc_scores table permissions
+
+---
+
+**STATUS**: 🚫 SMOKE TEST BLOCKED - FUNCTION INVOCATION ISSUE  
+**NEXT ACTION**: Debug score_fc_session function execution  
 **ROLLBACK**: ✅ PREPARED AND DOCUMENTED
