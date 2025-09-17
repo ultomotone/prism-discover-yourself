@@ -7,6 +7,28 @@
 
 ## PRE-EXECUTION STATE
 
+### Session State Discovery
+```sql
+SELECT 
+  s.id as session_id,
+  s.status,
+  s.completed_questions,
+  s.share_token,
+  s.finalized_at,
+  CASE WHEN p.session_id IS NOT NULL THEN 'EXISTS' ELSE 'MISSING' END as profile_status
+FROM assessment_sessions s
+LEFT JOIN profiles p ON p.session_id = s.id
+WHERE s.id = '618c5ea6-aeda-4084-9156-0aac9643afd3';
+```
+
+**Result**: ⚠️ **PARTIALLY FINALIZED SESSION**
+- **session_id**: 618c5ea6-aeda-4084-9156-0aac9643afd3
+- **status**: completed ✅
+- **completed_questions**: 8 
+- **share_token**: 7e4f523d-9d8d-4b3c-8cb9-a3d8600a4da5 ✅
+- **finalized_at**: 2025-09-17 15:52:36.076+00 ✅
+- **profile_status**: MISSING ❌
+
 ### FC Scores Verification
 ```sql
 select version, jsonb_typeof(scores_json) as scores_type, created_at
@@ -29,7 +51,7 @@ where session_id = '618c5ea6-aeda-4084-9156-0aac9643afd3';
 
 **Result**: ❌ **NO PROFILES RECORD**
 - **Row Count**: 0
-- **Status**: Profile creation pending (awaiting finalizeAssessment execution)
+- **Status**: Profile creation failed in previous finalization attempt
 
 ## POST-EXECUTION STATE
 *(Pending manual function execution in Supabase UI)*
