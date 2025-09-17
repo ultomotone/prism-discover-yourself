@@ -49,7 +49,7 @@ async function finalizeOne(sessionId: string) {
   const { data, error } = await admin.functions.invoke("finalizeAssessment", {
     body: { session_id: sessionId }
   });
-  if (error) throw error;
+  if (error) throw new Error(`finalizeAssessment failed: ${error.message || JSON.stringify(error)}`);
   return data;
 }
 
