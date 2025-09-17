@@ -130,9 +130,9 @@ export const typingLabEntries: TypingLabEntry[] = [
         claim:
           "Invites disagreement and live challenge in campus tour formats, asking opponents to take the mic.",
         source: {
-          kind: "transcript",
-          url: "internal:charlie-kirk-3",
-          label: "Campus tour AMA transcript (Charlie Kirk 3.docx)",
+          kind: "video",
+          url: "#",
+          label: "Campus tour appearances",
         },
         interpretation:
           "Demonstrates Se lead with high contact tolerance and in-room term setting.",
@@ -142,9 +142,9 @@ export const typingLabEntries: TypingLabEntry[] = [
         claim:
           "Opens debates by defining terms and assigning burden of proof before pressing the opponent.",
         source: {
-          kind: "transcript",
-          url: "internal:charlie-kirk-2",
-          label: "Policy debate transcript (Charlie Kirk 2 with JP)",
+          kind: "video",
+          url: "#",
+          label: "Policy debate appearances",
         },
         interpretation:
           "Signals Ti creative paired with Se prosecution and Te deployment.",
@@ -154,9 +154,9 @@ export const typingLabEntries: TypingLabEntry[] = [
         claim:
           "Emphasizes boots-on-the-ground chapters, campaign alignment, and moving metrics when discussing execution.",
         source: {
-          kind: "transcript",
-          url: "internal:charlie-kirk-1",
-          label: "Operations planning transcript (Charlie 1.docx)",
+          kind: "podcast",
+          url: "#",
+          label: "Operations discussions",
         },
         interpretation:
           "Shows Te demonstrative focus on systems, pipelines, and throughput.",
@@ -166,9 +166,9 @@ export const typingLabEntries: TypingLabEntry[] = [
         claim:
           "Uses faith, mission language, and personal 'why' moments to unify audiences during value discussions.",
         source: {
-          kind: "transcript",
-          url: "internal:charlie-kirk-2-values",
-          label: "Values dialogue transcript (Charlie Kirk 2 with JP)",
+          kind: "interview",
+          url: "#",
+          label: "Values-focused appearances",
         },
         interpretation:
           "Highlights Fe + Ni valued for rally cohesion and meaning framing.",
@@ -178,9 +178,9 @@ export const typingLabEntries: TypingLabEntry[] = [
         claim:
           "Trades comfort for relentless touring and production cadence, spotlighting stamina over ease.",
         source: {
-          kind: "transcript",
-          url: "internal:charlie-kirk-3-momentum",
-          label: "Tour cadence transcript (Charlie Kirk 3.docx)",
+          kind: "article",
+          url: "#",
+          label: "Tour schedule patterns",
         },
         interpretation:
           "Reinforces Si routines as supporting structure rather than priority.",
