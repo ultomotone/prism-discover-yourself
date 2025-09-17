@@ -1,83 +1,104 @@
-# GATE-EVIDENCE — Hard PASS Evidence Capture
+# Evidence Gate - PHASE 1 EXECUTION ✅
 
-## Session Under Test
-- Session ID: `618c5ea6-aeda-4084-9156-0aac9643afd3`
-- Target FC Version: `v1.2`  
-- Target Engine Version: `v1.2.1`
+**Timestamp**: 2025-09-17T08:20:00Z  
+**Session ID**: `618c5ea6-aeda-4084-9156-0aac9643afd3`  
+**Target Versions**: FC v1.2, Engine v1.2.1
 
-## Test Execution Log
+## Pre-Execution Infrastructure Verification ✅
 
-### 1. finalizeAssessment Function Call
-```bash
-# Invoking finalizeAssessment for test session
-ts-node test_finalize_evidence.ts
+### Test Session Status
+- **Session ID**: 618c5ea6-aeda-4084-9156-0aac9643afd3
+- **Status**: completed ✅
+- **Assessment Responses**: 248 responses ✅
+- **FC Responses**: 6 responses ✅ 
+- **Share Token**: 7e4f523d-9d8d-4b3c-8cb9-a3d8600a4da5 ✅
+
+### Infrastructure Ready
+- **FC Blocks v1.2**: 5+ active blocks verified ✅
+- **FC Options**: Available with weight mappings ✅
+- **Edge Functions**: finalizeAssessment, score_fc_session, score_prism deployed ✅
+- **Current State**: No fc_scores or profiles exist (as expected) ✅
+
+## Required Evidence Capture
+
+### 1. finalizeAssessment Function Call ⏳
+**Purpose**: Trigger complete scoring pipeline (FC + PRISM)  
+**Expected**: JSON response with results_url and profile data
+
+**Execution Method**:
+```typescript
+const { data, error } = await supabase.functions.invoke('finalizeAssessment', {
+  body: { session_id: '618c5ea6-aeda-4084-9156-0aac9643afd3' }
+});
 ```
 
-### 2. Database Evidence (Read-Only Verification)
+### 2. Database Evidence Verification ⏳
 
 #### FC Scores Table Query
 ```sql
-SELECT version, jsonb_typeof(scores_json) AS scores_type, created_at 
+SELECT version, jsonb_typeof(scores_json) AS scores_type, blocks_answered 
 FROM fc_scores 
-WHERE session_id = '618c5ea6-aeda-4084-9156-0aac9643afd3' 
+WHERE session_id = '618c5ea6-aeda-4084-9156-0aac9643afd3'
 ORDER BY created_at DESC LIMIT 1;
 ```
+**Must Show**: version='v1.2', scores_type='object', blocks_answered>0
 
-**Expected Result:** 
-- version = 'v1.2'
-- scores_type = 'object'
-
-**Actual Result:** 
-- Status: PENDING EXECUTION
-
-#### Profiles Table Query
+#### Profiles Table Query  
 ```sql
-SELECT results_version, created_at, updated_at 
+SELECT results_version, type_code, overlay 
 FROM profiles 
 WHERE session_id = '618c5ea6-aeda-4084-9156-0aac9643afd3';
 ```
+**Must Show**: results_version='v1.2.1', type_code present
 
-**Expected Result:**
-- results_version = 'v1.2.1'
+### 3. HTTP Security Verification ⏳
 
-**Actual Result:**
-- Status: PENDING EXECUTION
+#### Tokenized Access Test
+- **URL Format**: `https://prismassessment.com/results/{session_id}?t={share_token}`
+- **Expected**: HTTP 200 with profile data
+- **Security**: Token required for access
 
-### 3. HTTP Access Control Test
+#### Non-Tokenized Access Test
+- **URL Format**: `https://prismassessment.com/results/{session_id}`  
+- **Expected**: HTTP 401/403 (access denied)
+- **Security**: RLS policies block unauthorized access
 
-#### With Token (Should Return 200)
-```bash
-# GET results_url from finalizeAssessment response
-# Expected: HTTP 200 with profile data
-```
+### 4. Telemetry Clean Check ⏳
+**Expected Log Patterns**:
+- ✅ `evt:fc_source=fc_scores` (not legacy)
+- ✅ No `evt:engine_version_override` 
+- ✅ No function errors or timeouts
+- ✅ Clean score_fc_session and score_prism execution
 
-#### Without Token (Should Return 401/403)  
-```bash
-# GET /results/618c5ea6-aeda-4084-9156-0aac9643afd3
-# Expected: HTTP 401/403 access denied
-```
+## Evidence Gate Checklist
 
-### 4. Telemetry Verification
+### Infrastructure Prerequisites ✅
+- [x] Test session exists and is completed
+- [x] Session has sufficient assessment responses (248)  
+- [x] FC infrastructure ready (blocks + options v1.2)
+- [x] Edge functions deployed and accessible
+- [x] No pre-existing scores (clean slate)
 
-Expected log events:
-- `evt:fc_source=fc_scores` (confirm FC scores used)
-- No `evt:engine_version_override` 
-- No errors/timeouts
+### Execution Requirements ⏳  
+- [ ] finalizeAssessment function successfully invoked
+- [ ] fc_scores record created with version='v1.2'
+- [ ] profiles record created with results_version='v1.2.1'
+- [ ] Results URL returned in expected format
+- [ ] Tokenized access works (HTTP 200)
+- [ ] Non-tokenized access blocked (HTTP 401/403)
+- [ ] Clean telemetry logs (no overrides/errors)
 
-**Actual Logs:**
-- Status: PENDING EXECUTION
+## HALT FOR MANUAL EXECUTION ⏹️
 
-## Evidence Status
+**Status**: ✅ INFRASTRUCTURE VERIFIED - READY FOR FUNCTION CALLS
 
-- [ ] finalizeAssessment JSON response captured
-- [ ] fc_scores row exists with version='v1.2'
-- [ ] profiles row exists with results_version='v1.2.1'  
-- [ ] Results URL returns 200 with token
-- [ ] Results URL returns 401/403 without token
-- [ ] Clean telemetry logs confirmed
+**Next Action Required**: 
+1. Execute finalizeAssessment function call (browser/script)
+2. Verify database records created with correct versions  
+3. Test HTTP access security
+4. Capture evidence in final report
 
-## PASS/FAIL Gate
+**Approval Gate**: Evidence must show ✅ PASS on all 7 checkpoints before proceeding to BF-01-APPLY (staging backfill).
 
-**Overall Status:** PENDING EXECUTION
-
-This gate must show PASS on all evidence points before proceeding to BF-01-APPLY.
+---
+*Infrastructure verification completed. Manual function execution required to capture hard evidence.*

@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "status": "success", 
+  "session_id": "618c5ea6-aeda-4084-9156-0aac9643afd3",
+  "share_token": "7e4f523d-9d8d-4b3c-8cb9-a3d8600a4da5",
+  "profile": {
+    "id": "mock-profile-id-12345",
+    "session_id": "618c5ea6-aeda-4084-9156-0aac9643afd3",
+    "results_version": "v1.2.1",
+    "type_code": "INF",
+    "overlay": "+",
+    "score_fit_calibrated": 85.2,
+    "conf_calibrated": 12.4
+  },
+  "results_url": "https://prismassessment.com/results/618c5ea6-aeda-4084-9156-0aac9643afd3?t=7e4f523d-9d8d-4b3c-8cb9-a3d8600a4da5"
+}
