@@ -1,104 +1,121 @@
-# Evidence Gate - PHASE 1 EXECUTION ✅
+# Evidence Gate - Final Execution Results
 
-**Timestamp**: 2025-09-17T08:20:00Z  
-**Session ID**: `618c5ea6-aeda-4084-9156-0aac9643afd3`  
-**Target Versions**: FC v1.2, Engine v1.2.1
+## EXEC-EVIDENCE: finalizeAssessment Execution & Proof Capture
 
-## Pre-Execution Infrastructure Verification ✅
-
-### Test Session Status
-- **Session ID**: 618c5ea6-aeda-4084-9156-0aac9643afd3
-- **Status**: completed ✅
-- **Assessment Responses**: 248 responses ✅
-- **FC Responses**: 6 responses ✅ 
-- **Share Token**: 7e4f523d-9d8d-4b3c-8cb9-a3d8600a4da5 ✅
-
-### Infrastructure Ready
-- **FC Blocks v1.2**: 5+ active blocks verified ✅
-- **FC Options**: Available with weight mappings ✅
-- **Edge Functions**: finalizeAssessment, score_fc_session, score_prism deployed ✅
-- **Current State**: No fc_scores or profiles exist (as expected) ✅
-
-## Required Evidence Capture
-
-### 1. finalizeAssessment Function Call ⏳
-**Purpose**: Trigger complete scoring pipeline (FC + PRISM)  
-**Expected**: JSON response with results_url and profile data
-
-**Execution Method**:
-```typescript
-const { data, error } = await supabase.functions.invoke('finalizeAssessment', {
-  body: { session_id: '618c5ea6-aeda-4084-9156-0aac9643afd3' }
-});
-```
-
-### 2. Database Evidence Verification ⏳
-
-#### FC Scores Table Query
-```sql
-SELECT version, jsonb_typeof(scores_json) AS scores_type, blocks_answered 
-FROM fc_scores 
-WHERE session_id = '618c5ea6-aeda-4084-9156-0aac9643afd3'
-ORDER BY created_at DESC LIMIT 1;
-```
-**Must Show**: version='v1.2', scores_type='object', blocks_answered>0
-
-#### Profiles Table Query  
-```sql
-SELECT results_version, type_code, overlay 
-FROM profiles 
-WHERE session_id = '618c5ea6-aeda-4084-9156-0aac9643afd3';
-```
-**Must Show**: results_version='v1.2.1', type_code present
-
-### 3. HTTP Security Verification ⏳
-
-#### Tokenized Access Test
-- **URL Format**: `https://prismassessment.com/results/{session_id}?t={share_token}`
-- **Expected**: HTTP 200 with profile data
-- **Security**: Token required for access
-
-#### Non-Tokenized Access Test
-- **URL Format**: `https://prismassessment.com/results/{session_id}`  
-- **Expected**: HTTP 401/403 (access denied)
-- **Security**: RLS policies block unauthorized access
-
-### 4. Telemetry Clean Check ⏳
-**Expected Log Patterns**:
-- ✅ `evt:fc_source=fc_scores` (not legacy)
-- ✅ No `evt:engine_version_override` 
-- ✅ No function errors or timeouts
-- ✅ Clean score_fc_session and score_prism execution
-
-## Evidence Gate Checklist
-
-### Infrastructure Prerequisites ✅
-- [x] Test session exists and is completed
-- [x] Session has sufficient assessment responses (248)  
-- [x] FC infrastructure ready (blocks + options v1.2)
-- [x] Edge functions deployed and accessible
-- [x] No pre-existing scores (clean slate)
-
-### Execution Requirements ⏳  
-- [ ] finalizeAssessment function successfully invoked
-- [ ] fc_scores record created with version='v1.2'
-- [ ] profiles record created with results_version='v1.2.1'
-- [ ] Results URL returned in expected format
-- [ ] Tokenized access works (HTTP 200)
-- [ ] Non-tokenized access blocked (HTTP 401/403)
-- [ ] Clean telemetry logs (no overrides/errors)
-
-## HALT FOR MANUAL EXECUTION ⏹️
-
-**Status**: ✅ INFRASTRUCTURE VERIFIED - READY FOR FUNCTION CALLS
-
-**Next Action Required**: 
-1. Execute finalizeAssessment function call (browser/script)
-2. Verify database records created with correct versions  
-3. Test HTTP access security
-4. Capture evidence in final report
-
-**Approval Gate**: Evidence must show ✅ PASS on all 7 checkpoints before proceeding to BF-01-APPLY (staging backfill).
+### Session: 618c5ea6-aeda-4084-9156-0aac9643afd3
+### Target Versions: FC v1.2, Engine v1.2.1  
+### Execution Status: 🟡 READY FOR EXECUTION
 
 ---
-*Infrastructure verification completed. Manual function execution required to capture hard evidence.*
+
+## PRECHECK RESULTS ✅
+
+| Check | Status | Details |
+|-------|--------|---------|
+| Session Status | ✅ PASS | Status: completed |
+| Response Count | ✅ PASS | 248 responses confirmed |
+| Share Token | ✅ PASS | Present in session |
+| Build Status | ✅ PASS | TypeScript errors resolved |
+| Edge Functions | ✅ PASS | finalizeAssessment, score_prism, score_fc_session deployed |
+
+---
+
+## EXECUTION EVIDENCE
+
+### 1. finalizeAssessment Response
+**Status**: 🟡 PENDING EXECUTION  
+**Command**: `ts-node run_evidence_gate_execution.ts`
+**Expected Output**: `artifacts/evidence_finalize_response.json`
+
+### 2. Database Proof Requirements
+
+#### FC Scores Verification
+```sql
+-- Expected Result
+fc_scores.version = 'v1.2'
+fc_scores.scores_json IS NOT NULL (valid JSON object)
+fc_scores.fc_kind = 'functions' 
+fc_scores.blocks_answered > 0
+```
+**Status**: ⏳ Pending execution
+
+#### Profiles Verification  
+```sql
+-- Expected Result
+profiles.results_version = 'v1.2.1'
+profiles.type_code IS NOT NULL
+profiles.share_token IS NOT NULL
+```
+**Status**: ⏳ Pending execution
+
+### 3. HTTP Access Proof
+
+| Test | Expected | Status |
+|------|----------|--------|
+| With Token | GET /results/{session_id}?t={token} → 200 OK | ⏳ Pending |
+| Without Token | GET /results/{session_id} → 401/403 Forbidden | ⏳ Pending |
+
+### 4. Telemetry Proof
+
+**Expected Log Patterns**:
+- ✅ `evt:fc_source=fc_scores` present
+- ✅ No `evt:engine_version_override` 
+- ✅ No legacy FC fallback patterns
+- ✅ Clean execution logs
+
+**Status**: ⏳ Check Edge Function logs post-execution
+
+---
+
+## PASS/FAIL CRITERIA
+
+### ✅ PASS Requirements (All Must Be True)
+- [ ] `fc_scores.version == 'v1.2'` AND `scores_json` is valid object
+- [ ] `profiles.results_version == 'v1.2.1'`  
+- [ ] Results URL returns 200 with `?t=`, 401/403 without
+- [ ] Telemetry shows `fc_source=fc_scores`, no engine overrides
+
+### ❌ FAIL Handling
+If any check fails, execute triage prompts:
+1. **IR-07B-INPUTS-VERIFY** (verify data inputs/IDs/versions)
+2. **IR-07B-RLS-FC** (confirm fc_scores RLS/grants)  
+3. **IR-07B-UNBLOCK-TRACE** (arguments & early-return trace)
+
+---
+
+## NEXT PHASES (Ready on PASS)
+
+### 🎯 BF-01-APPLY — Backfill (Staging)
+- **Target**: ~39 sessions 
+- **Throttle**: 20/min
+- **Output**: `backfill_logs/*` + `backfill_summary.md`
+- **Rollback**: `jobs/backfill_rollback.<date>.sql`
+
+### 🔍 STAGE-SOAK-RUN — Observability Gate  
+- **Window**: 6 hours monitoring
+- **Metrics**: Override counts, conversion rates
+- **Output**: `staging_observability.md`
+
+### 🚀 PROD-ORCH-APPLY — Production Promotion
+- **Mode**: Guard-railed with approval gates
+- **Verification**: Same evidence pattern as staging
+
+### 📊 PROD-SOAK-RUN — Production Monitoring
+- **Window**: 2 hours post-deployment
+- **Output**: Final PASS/FAIL assessment
+
+---
+
+## EXECUTION COMMAND
+
+```bash
+# Execute Evidence Gate (requires SUPABASE_SERVICE_ROLE_KEY)
+ts-node run_evidence_gate_execution.ts
+
+# Expected artifacts generated:
+# - artifacts/evidence_finalize_response.json (updated)
+# - artifacts/evidence_db.md (created) 
+# - Updated evidence_gate.md with results
+```
+
+**Current Status**: 🟡 READY FOR MANUAL EXECUTION - Execute command above to proceed
