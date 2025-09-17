@@ -47,7 +47,7 @@ export async function loadFCBlocks(): Promise<{
   const { data: blocksData, error: blocksError } = await supabase
     .from('fc_blocks')
     .select('*')
-    .eq('version', 'v1.1')
+    .eq('version', 'v1.2')
     .eq('is_active', true)
     .order('order_index', { ascending: true });
 
@@ -160,7 +160,7 @@ export async function scoreFCSession(sessionId: string): Promise<any> {
     body: {
       session_id: sessionId,
       basis: 'functions',
-      version: 'v1.1'
+      version: 'v1.2'
     }
   });
 

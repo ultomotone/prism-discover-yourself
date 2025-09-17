@@ -19,6 +19,11 @@ serve(async (req) => {
       });
     }
 
+    // Version validation warning
+    if (!version || version === 'v1.1') {
+      console.warn(`evt:fc_version_mismatch,session_id:${session_id},version:${version || 'undefined'},expected:v1.2`);
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!, 
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!  // service role so RLS never blocks scoring
