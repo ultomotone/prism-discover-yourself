@@ -1,60 +1,55 @@
-# Production Evidence - Telemetry Logs
+# Production Evidence - Telemetry Analysis
 
 **Session ID**: 618c5ea6-aeda-4084-9156-0aac9643afd3
 **Environment**: Production (gnkuikentdtnatazeriu)
-**Timestamp**: 2025-09-17T16:31:00Z
+**Timestamp**: 2025-09-17T16:32:30Z
 
-## Current Edge Function Activity
+## Phase 4: Telemetry Verification (Post-Invocation Attempt)
 
-### Recent Function Calls (Last 50)
-Recent activity shows:
-- Multiple `save_response` function calls (200 status)
-- Some `reddit-capi` errors (500 status) - unrelated
-- **No recent `finalizeAssessment` calls found**
+### Recent Edge Function Activity Analysis
+```sql
+-- Query: Recent finalizeAssessment calls since 16:20:00
+select id, function_edge_logs.timestamp, event_message, response.status_code, request.method, m.execution_time_ms
+from function_edge_logs
+where function_edge_logs.timestamp > '2025-09-17 16:20:00'
+  AND (event_message ILIKE '%finalizeAssessment%' OR event_message ILIKE '%finalize%')
+```
 
-### Function Call Gap Analysis
-- Session finalized at: `2025-09-17 15:52:36.076Z`
-- FC scores created at: `2025-09-17 15:52:34.74156Z`
-- **Gap**: No edge function logs for finalizeAssessment around finalization time
-- **Inference**: Profile creation failed silently during finalization
+**Result**: ❌ NO LOGS FOUND
+- No finalizeAssessment function calls detected in recent timeframe
+- No evidence of successful function invocation
 
-## Expected Telemetry After Function Re-invocation
+### Expected vs Actual Telemetry
 
-### Required Log Patterns:
-1. **Function Call**: `finalizeAssessment` invocation with 200 status
-2. **FC Source**: `evt:fc_source=fc_scores` - Confirms FC data sourced from fc_scores table
-3. **No Override**: Absence of `evt:engine_version_override` - Confirms no version overrides
-4. **Profile Creation**: Evidence of successful profile insert
+#### Expected Patterns (if function executed):
+1. ✅ `POST | 200 | /functions/v1/finalizeAssessment`
+2. ✅ `evt:fc_source=fc_scores` - FC data sourced from fc_scores table  
+3. ✅ No `evt:engine_version_override` - No version overrides
+4. ✅ Profile creation logs
 
-### Current Telemetry Status:
-- ❌ No finalizeAssessment calls in recent logs
-- ❌ No `evt:fc_source=fc_scores` events
-- ❌ No profile creation evidence in logs
-- ⚠️ Session marked finalized without proper function execution
+#### Actual Patterns Found:
+- ❌ No finalizeAssessment invocation logs
+- ❌ No fc_source events detected
+- ❌ No profile creation evidence
+- ❌ Function appears not to have executed
 
-## Post-Invocation Evidence Collection
+## Telemetry Evidence Summary
 
-After running `finalizeAssessment`, collect:
+### Function Execution Status: ❌ FAILED
+- **Invocation**: No evidence of successful function call
+- **Service Role**: Function may not have been properly invoked with service role authorization
+- **Edge Function Logs**: Empty for finalizeAssessment during evidence collection window
 
-1. **Function execution logs** showing:
-   ```
-   POST | 200 | /functions/v1/finalizeAssessment
-   ```
+### Data Flow Analysis:
+- ✅ **FC Scores Present**: Data available for function to process
+- ❌ **Function Execution**: No telemetry evidence of successful invocation
+- ❌ **Profile Creation**: No logs showing profile table writes
+- ❌ **Results Generation**: No evidence of results URL generation
 
-2. **Event telemetry** showing:
-   ```
-   evt:fc_source=fc_scores
-   ```
+## Root Cause Indicators:
+1. **Authorization Issue**: Service role may not have been properly configured for function call
+2. **Function Availability**: finalizeAssessment function may not be accessible/deployed
+3. **Invocation Method**: HTTP call may have failed at transport level
+4. **Edge Function Status**: Function may be experiencing deployment/runtime issues
 
-3. **Profile creation confirmation** via database queries
-
-4. **No legacy fallbacks** (absence of version overrides)
-
----
-
-## Current Status: **AWAITING FUNCTION INVOCATION**
-
-The RLS policies have been applied successfully. The finalizeAssessment function must now be invoked to:
-- Create the missing profile record
-- Generate telemetry evidence
-- Complete the evidence collection process
+**Telemetry Status**: ❌ **FAILED** - No evidence of function execution

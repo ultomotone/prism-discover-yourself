@@ -1,63 +1,70 @@
-# Production Evidence Gate - Status Update
+# Production Evidence Gate - Final Results
 
-**Session ID**: 618c5ea6-aeda-4084-9156-0aac9643afd3
-**Environment**: Production (gnkuikentdtnatazeriu)  
-**Timestamp**: 2025-09-17T16:31:00Z
+**Session ID**: 618c5ea6-aeda-4084-9156-0aac9643afd3  
+**Environment**: Production (gnkuikentdtnatazeriu)
+**Timestamp**: 2025-09-17T16:32:45Z  
+**Process**: Guarded finalizeAssessment Evidence Collection
 
-## PHASE C - RLS Apply Results ✅
+## PHASE EXECUTION RESULTS
 
-### ✅ SUCCESS - RLS Policies Applied
-- **profiles table**: Service role policy `svc_manage_profiles` created ✅
-- **fc_scores table**: Service role policy `svc_manage_fc_scores` created ✅
-- **Migration**: Completed successfully with no errors ✅
-- **Rollback**: Available via `migrations/prod_rls_rollback.sql` ✅
+### ✅ Phase 1: Prechecks - PASS
+- **Environment**: Production confirmed ✅
+- **FC Scores**: Present, v1.2, valid JSON object ✅  
+- **Profiles**: Missing (as expected pre-invocation) ✅
+- **Ready State**: Confirmed for function invocation ✅
 
-## PHASE D - Evidence Collection Status ⚠️
+### ❌ Phase 2: Function Invocation - FAIL  
+- **Target**: finalizeAssessment with service role
+- **Method**: HTTP POST to /functions/v1/finalizeAssessment
+- **Body**: `{"session_id":"618c5ea6-aeda-4084-9156-0aac9643afd3","fc_version":"v1.2"}`
+- **Result**: No evidence of successful execution ❌
+- **Issue**: Function may not have been properly invoked
 
-### Database Evidence - Current State
-- **fc_scores**: ✅ PASS
-  - version = `v1.2` ✅
-  - scores_json type = `object` ✅
-  - Valid data present from 2025-09-17 15:52:34
+### ❌ Phase 3: Database Proofs - FAIL
+- **FC Scores**: ✅ v1.2, object type (unchanged)
+- **Profiles**: ❌ Still missing - no profile created  
+- **Session State**: ❌ No updates to session timestamps
+- **Profile Creation**: ❌ Failed
 
-- **profiles**: ❌ MISSING
-  - No profile record found
-  - Session shows as finalized (2025-09-17 15:52:36.076Z)
-  - **Root Cause**: Profile creation failed during initial finalization (pre-RLS fix)
+### ❌ Phase 4: HTTP & Telemetry - FAIL
+- **HTTP Access**: ❌ Cannot test - no profile/results URL
+- **Edge Function Logs**: ❌ No finalizeAssessment invocation detected  
+- **FC Source Events**: ❌ No `evt:fc_source=fc_scores` found
+- **Version Override**: ❌ Cannot verify - no function execution
 
-### RLS Fix Impact Analysis
-- ✅ Service role policies successfully applied
-- ✅ Edge functions can now write to both tables
-- ⚠️ **Issue**: Session was finalized BEFORE RLS fix, so profile creation failed
-- 🔄 **Solution**: Re-invoke finalizeAssessment to complete profile creation
+## EVIDENCE GATE CHECKLIST
 
-## Evidence Collection Status: **NEEDS FUNCTION RE-INVOCATION**
+| Evidence Item | Expected | Actual | Status |
+|---------------|----------|---------|---------|
+| fc_scores: version='v1.2', scores_json type = object | ✅ | ✅ v1.2, object | ✅ PASS |
+| profiles: results_version='v1.2.1' present | ✅ | ❌ Missing | ❌ FAIL |
+| HTTP: 200 with token, 401/403 without | ✅ | ❌ Cannot test | ❌ FAIL |
+| Telemetry: fc_scores path, no overrides | ✅ | ❌ No execution | ❌ FAIL |
 
-### Current Status Summary
-| Component | Status | Details |
-|-----------|---------|---------|
-| RLS Policies | ✅ APPLIED | Both tables now have service role access |
-| FC Scores | ✅ PRESENT | v1.2, valid JSON object |
-| Profile Creation | ❌ FAILED | Blocked by old RLS, needs re-invocation |
-| HTTP Access | ⚠️ PENDING | Cannot test without profile |
-| Telemetry | ⚠️ PENDING | Need function call logs |
+## FINAL RESULT: ❌ **FAIL**
 
-## Next Action Required: **MANUAL FUNCTION INVOCATION**
+### Primary Failure: Profile Creation Unsuccessful
 
-The finalizeAssessment function must be invoked with service role to:
-1. Create the missing profile record with results_version='v1.2.1'
-2. Generate proper results URL with working access
-3. Complete evidence collection process
+**Root Cause Analysis:**
+1. **Function Invocation Issue**: finalizeAssessment appears not to have executed successfully
+2. **Service Role Authorization**: Possible authentication/authorization failure
+3. **Edge Function Availability**: Function may not be deployed or accessible
+4. **RLS Policy Effectiveness**: Even with applied policies, profile creation still failing
 
-**Command**: Execute `run_finalize_assessment.js` with service role key
+### Evidence Summary:
+- ✅ **RLS Policies Applied**: Service role management policies in place
+- ✅ **FC Scores Available**: Source data ready for processing (v1.2)
+- ❌ **Function Execution**: No telemetry evidence of successful invocation
+- ❌ **Profile Creation**: No database evidence of profile record
+- ❌ **Results Generation**: Cannot verify HTTP access without profile
 
-## Expected Post-Invocation Results
-- ✅ Profile created with `results_version = 'v1.2.1'`
-- ✅ Results URL accessible with token (200 response)  
-- ✅ Results URL blocked without token (401/403 response)
-- ✅ Telemetry shows `fc_source=fc_scores` path
+### Next Steps Required:
+1. **Verify Function Deployment**: Confirm finalizeAssessment is deployed and accessible
+2. **Test Service Role Access**: Validate service role can invoke edge functions
+3. **Manual Function Debugging**: Direct investigation of function execution logs
+4. **RLS Policy Verification**: Ensure policies are correctly configured for profile writes
 
 ---
 
-**GATE STATUS**: 🔄 **FUNCTION INVOCATION REQUIRED**  
-**ACTION**: Run finalizeAssessment to complete evidence collection
+**STATUS**: ❌ **EVIDENCE GATE FAILED**  
+**ACTION**: Stop process. Investigate function invocation issues before proceeding.
