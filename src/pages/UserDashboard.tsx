@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { fetchDashboardResults, DashboardResult } from "@/lib/dashboardResults";
 
 interface UserSession {
   id: string;
@@ -30,21 +31,31 @@ const UserDashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [userSessions, setUserSessions] = useState<UserSession[]>([]);
+  const [dashboardResults, setDashboardResults] = useState<DashboardResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      fetchUserSessions();
+    if (user?.email) {
+      fetchUserData();
     }
   }, [user]);
 
-  const fetchUserSessions = async () => {
-    if (!user) return;
+  const fetchUserData = async () => {
+    if (!user?.email) return;
 
     try {
       setIsLoading(true);
 
-      // Fetch user's assessment sessions
+      // Fetch dashboard results (248+ question sessions with results URLs)
+      try {
+        const results = await fetchDashboardResults(user.email);
+        setDashboardResults(results);
+      } catch (resultsError) {
+        console.error('Error fetching dashboard results:', resultsError);
+        setDashboardResults([]);
+      }
+
+      // Also fetch user's regular assessment sessions for progress tracking
       const { data: sessions, error: sessionsError } = await supabase
         .from('assessment_sessions')
         .select(`
@@ -82,7 +93,7 @@ const UserDashboard = () => {
 
       setUserSessions(sessionsWithProfiles);
     } catch (error) {
-      console.error('Error fetching user sessions:', error);
+      console.error('Error fetching user data:', error);
     } finally {
       setIsLoading(false);
     }
@@ -117,19 +128,85 @@ const UserDashboard = () => {
 
           {/* Main Dashboard Content */}
           <div className="prism-container py-8">
+            {/* PRISM Results Section */}
+            {dashboardResults.length > 0 && (
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-2xl font-bold mb-2">Your PRISM Results</h2>
+                    <p className="text-muted-foreground">
+                      Complete personality profiles from your 248-question assessments
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Target className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {dashboardResults.length} complete result{dashboardResults.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {dashboardResults.map((result) => (
+                    <Card key={result.session_id} className="hover:shadow-md transition-shadow border-l-4 border-l-primary">
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="default" className="bg-primary">
+                                Complete Profile
+                              </Badge>
+                              <span className="text-sm text-muted-foreground">
+                                {format(new Date(result.submitted_at), 'MMM dd, yyyy HH:mm')}
+                              </span>
+                            </div>
+                            
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-xl text-primary">
+                                  {result.type_code}
+                                </span>
+                                <Badge variant="outline" className="text-xs">
+                                  Session: {result.session_id.slice(0, 8)}...
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span>Confidence: {result.conf_band}</span>
+                                <span>Fit Score: {result.score_fit_calibrated?.toFixed(1)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => window.open(result.results_url, '_blank')}
+                              className="bg-primary hover:bg-primary/90"
+                            >
+                              View Results
+                              <ExternalLink className="h-4 w-4 ml-2" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* User Assessment History */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold mb-2">Your Assessment History</h2>
+                  <h2 className="text-2xl font-bold mb-2">Assessment History</h2>
                   <p className="text-muted-foreground">
-                    Track your personality profile results and assessment progress
+                    Track your assessment progress and session details
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <User className="h-5 w-5 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">
-                    {userSessions.length} assessment{userSessions.length !== 1 ? 's' : ''}
+                    {userSessions.length} session{userSessions.length !== 1 ? 's' : ''}
                   </span>
                 </div>
               </div>
@@ -148,7 +225,7 @@ const UserDashboard = () => {
                     </Card>
                   ))}
                 </div>
-              ) : userSessions.length === 0 ? (
+              ) : userSessions.length === 0 && dashboardResults.length === 0 ? (
                 <Card>
                   <CardContent className="p-12 text-center">
                     <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

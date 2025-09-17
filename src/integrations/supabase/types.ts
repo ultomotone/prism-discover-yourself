@@ -684,6 +684,7 @@ export type Database = {
           person_key: string | null
           prev_session_id: string | null
           recomputed_at: string | null
+          responses_hash: string | null
           results_version: string | null
           run_index: number | null
           score_fit_calibrated: number | null
@@ -742,6 +743,7 @@ export type Database = {
           person_key?: string | null
           prev_session_id?: string | null
           recomputed_at?: string | null
+          responses_hash?: string | null
           results_version?: string | null
           run_index?: number | null
           score_fit_calibrated?: number | null
@@ -800,6 +802,7 @@ export type Database = {
           person_key?: string | null
           prev_session_id?: string | null
           recomputed_at?: string | null
+          responses_hash?: string | null
           results_version?: string | null
           run_index?: number | null
           score_fit_calibrated?: number | null
@@ -2869,6 +2872,7 @@ export type Database = {
           person_key: string | null
           prev_session_id: string | null
           recomputed_at: string | null
+          responses_hash: string | null
           results_version: string | null
           run_index: number | null
           score_fit_calibrated: number | null
@@ -2916,6 +2920,10 @@ export type Database = {
         Args: { p_session_id: string; p_version: string }
         Returns: Json
       }
+      compute_session_responses_hash: {
+        Args: { p_session: string }
+        Returns: string
+      }
       example_rate_limited_function: {
         Args: { client_ip: string }
         Returns: string
@@ -2958,6 +2966,17 @@ export type Database = {
           fit_band: string
           profile_overlay: string
           results_version: string
+          type_code: string
+        }[]
+      }
+      get_dashboard_results_by_email: {
+        Args: { p_email: string }
+        Returns: {
+          conf_band: string
+          results_url: string
+          score_fit_calibrated: number
+          session_id: string
+          submitted_at: string
           type_code: string
         }[]
       }
@@ -3039,6 +3058,7 @@ export type Database = {
           person_key: string | null
           prev_session_id: string | null
           recomputed_at: string | null
+          responses_hash: string | null
           results_version: string | null
           run_index: number | null
           score_fit_calibrated: number | null
@@ -3134,6 +3154,10 @@ export type Database = {
         Args: { session_id: string; t?: string }
         Returns: Json
       }
+      get_results_url: {
+        Args: { p_session: string }
+        Returns: string
+      }
       get_user_assessment_scores: {
         Args: { p_session_id: string }
         Returns: Json
@@ -3211,6 +3235,7 @@ export type Database = {
           person_key: string | null
           prev_session_id: string | null
           recomputed_at: string | null
+          responses_hash: string | null
           results_version: string | null
           run_index: number | null
           score_fit_calibrated: number | null
