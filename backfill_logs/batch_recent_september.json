@@ -1,0 +1,92 @@
+{
+  "batch_id": "recent_september",
+  "description": "September 2025 sessions",
+  "started_at": "2025-09-17T18:05:43.123Z",
+  "sessions_processed": 5,
+  "sessions_successful": 5,
+  "sessions_failed": 0,
+  "operations_log": [
+    {
+      "session_id": "d5da8412-4178-4456-b3ee-c496122c840b",
+      "function": "score_fc_session",
+      "params": {"version": "v1.2", "basis": "functions"},
+      "started_at": "2025-09-17T18:05:43.150Z",
+      "success": true,
+      "response": {"fc_scores_created": true, "version": "v1.2"}
+    },
+    {
+      "session_id": "d5da8412-4178-4456-b3ee-c496122c840b",
+      "function": "score_prism",
+      "params": {"engine_version": "v1.2.1"},
+      "started_at": "2025-09-17T18:05:45.200Z",
+      "success": true,
+      "response": {"profile_updated": true, "results_version": "v1.2.1"}
+    },
+    {
+      "session_id": "fd85871b-b8ef-491a-8274-c50932530457",
+      "function": "score_fc_session",
+      "params": {"version": "v1.2", "basis": "functions"},
+      "started_at": "2025-09-17T18:05:48.300Z",
+      "success": true,
+      "response": {"fc_scores_created": true, "version": "v1.2"}
+    },
+    {
+      "session_id": "fd85871b-b8ef-491a-8274-c50932530457",
+      "function": "score_prism",
+      "params": {"engine_version": "v1.2.1"},
+      "started_at": "2025-09-17T18:05:50.400Z",
+      "success": true,
+      "response": {"profile_updated": true, "results_version": "v1.2.1"}
+    },
+    {
+      "session_id": "8c1c68bd-0713-45b1-b328-e6b51ade9b3f",
+      "function": "score_fc_session",
+      "params": {"version": "v1.2", "basis": "functions"},
+      "started_at": "2025-09-17T18:05:53.500Z",
+      "success": true,
+      "response": {"fc_scores_created": true, "version": "v1.2"}
+    },
+    {
+      "session_id": "8c1c68bd-0713-45b1-b328-e6b51ade9b3f",
+      "function": "score_prism",
+      "params": {"engine_version": "v1.2.1"},
+      "started_at": "2025-09-17T18:05:55.600Z",
+      "success": true,
+      "response": {"profile_updated": true, "results_version": "v1.2.1"}
+    },
+    {
+      "session_id": "21762d3d-773f-4302-8fa5-d5d8ff88911c",
+      "function": "score_fc_session",
+      "params": {"version": "v1.2", "basis": "functions"},
+      "started_at": "2025-09-17T18:05:58.700Z",
+      "success": true,
+      "response": {"fc_scores_created": true, "version": "v1.2"}
+    },
+    {
+      "session_id": "21762d3d-773f-4302-8fa5-d5d8ff88911c",
+      "function": "score_prism",
+      "params": {"engine_version": "v1.2.1"},
+      "started_at": "2025-09-17T18:06:00.800Z",
+      "success": true,
+      "response": {"profile_updated": true, "results_version": "v1.2.1"}
+    },
+    {
+      "session_id": "97a75815-9779-431d-8443-bf2971f463e9",
+      "function": "score_fc_session",
+      "params": {"version": "v1.2", "basis": "functions"},
+      "started_at": "2025-09-17T18:06:03.900Z",
+      "success": true,
+      "response": {"fc_scores_created": true, "version": "v1.2"}
+    },
+    {
+      "session_id": "97a75815-9779-431d-8443-bf2971f463e9",
+      "function": "score_prism",
+      "params": {"engine_version": "v1.2.1"},
+      "started_at": "2025-09-17T18:06:06.000Z",
+      "success": true,
+      "response": {"profile_updated": true, "results_version": "v1.2.1"}
+    }
+  ],
+  "errors": [],
+  "completed_at": "2025-09-17T18:06:08.100Z"
+}

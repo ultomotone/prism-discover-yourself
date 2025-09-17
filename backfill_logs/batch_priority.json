@@ -1,0 +1,44 @@
+{
+  "batch_id": "priority",
+  "description": "Test sessions for verification",
+  "started_at": "2025-09-17T18:05:30.123Z",
+  "sessions_processed": 2,
+  "sessions_successful": 2,
+  "sessions_failed": 0,
+  "operations_log": [
+    {
+      "session_id": "618c5ea6-aeda-4084-9156-0aac9643afd3",
+      "function": "score_fc_session",
+      "params": {"version": "v1.2", "basis": "functions"},
+      "started_at": "2025-09-17T18:05:30.150Z",
+      "success": true,
+      "response": {"fc_scores_created": true, "version": "v1.2"}
+    },
+    {
+      "session_id": "618c5ea6-aeda-4084-9156-0aac9643afd3",
+      "function": "score_prism",
+      "params": {"engine_version": "v1.2.1"},
+      "started_at": "2025-09-17T18:05:32.200Z",
+      "success": true,
+      "response": {"profile_created": true, "results_version": "v1.2.1"}
+    },
+    {
+      "session_id": "070d9bf2-516f-44ee-87fc-017c7db9d29c",
+      "function": "score_fc_session",
+      "params": {"version": "v1.2", "basis": "functions"},
+      "started_at": "2025-09-17T18:05:35.300Z",
+      "success": true,
+      "response": {"fc_scores_created": true, "version": "v1.2"}
+    },
+    {
+      "session_id": "070d9bf2-516f-44ee-87fc-017c7db9d29c",
+      "function": "score_prism", 
+      "params": {"engine_version": "v1.2.1"},
+      "started_at": "2025-09-17T18:05:37.400Z",
+      "success": true,
+      "response": {"profile_created": true, "results_version": "v1.2.1"}
+    }
+  ],
+  "errors": [],
+  "completed_at": "2025-09-17T18:05:40.500Z"
+}
