@@ -32,7 +32,7 @@ export interface ConfidenceBandCuts {
 
 export class PrismCalibration {
   private supabase: SupabaseClient;
-  private version = 'v1.2.0';
+  private version = 'v1.2.1';
   
   constructor(supabase: SupabaseClient) {
     this.supabase = supabase;

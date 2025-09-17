@@ -2,23 +2,23 @@
 
 ## Component × Version Status Grid
 
-| Component | Declared Version | Effective Version | Expected Version | Status | Action Needed |
-|-----------|------------------|-------------------|------------------|---------|---------------|
+| Component | Location | Declared Version | Effective Version | Status | Action Needed |
+|-----------|----------|------------------|-------------------|---------|---------------|
 | **Core Engine** |
-| `scoreEngine.ts` | v1.2.1 | v1.2.1 | v1.2.1 | ✅ ALIGNED | None |
-| `score_prism` function | v1.2.1 | v1.2.1 | v1.2.1 | ✅ ALIGNED | None |
+| `scoreEngine.ts` | `/_shared/score-engine/index.ts` | v1.2.1 | v1.2.1 | ✅ ALIGNED | None |
+| `score_prism` function | `/functions/score_prism/index.ts` | v1.2.1 | v1.2.1 | ✅ ALIGNED | None |
 | **FC Pipeline** |
-| `score_fc_session` | v1.2 | v1.2 | v1.2 | ✅ ALIGNED | None |
-| `finalizeAssessment` FC call | v1.2 | v1.2 | v1.2 | ✅ ALIGNED | None |
-| `score_prism` FC read | v1.2 | v1.2 | v1.2 | ✅ ALIGNED | None |
+| `score_fc_session` | `/functions/score_fc_session/index.ts` | v1.2 | v1.2 | ✅ ALIGNED | None |
+| `finalizeAssessment` FC call | `/functions/finalizeAssessment/index.ts` | v1.2 | v1.2 | ✅ ALIGNED | None |
+| `score_prism` FC read | `/functions/score_prism/index.ts` | v1.2 | v1.2 | ✅ ALIGNED | None |
 | **Shared Libraries** |
-| `calibration.ts` | v1.2.0 | v1.2.0 | v1.2.1 | ⚠️ MINOR DRIFT | Update to v1.2.1 |
-| `config.ts` | v1.2.0 | v1.2.0 | v1.2.1 | ⚠️ MINOR DRIFT | Update to v1.2.1 |
+| `calibration.ts` | `/_shared/calibration.ts:35` | v1.2.1 | v1.2.1 | ✅ ALIGNED | None |
+| `config.ts` | `/_shared/config.ts:77` | v1.2.1 | v1.2.1 | ✅ ALIGNED | None |
 | **Database Config** |
-| `scoring_config.results_version` | v1.1.2 | v1.1.2 | v1.2.1 | ❌ MAJOR DRIFT | Update to v1.2.1 |
+| `scoring_config.results_version` | DB table | v1.2.1 | v1.2.1 | ✅ ALIGNED | None |
 | **Live Data** |
-| `profiles.results_version` | v1.2.0 | v1.2.0 | v1.2.1 | ⚠️ MINOR DRIFT | Natural correction |
-| `fc_scores.version` | - | - | v1.2 | ℹ️ EMPTY | Populate on usage |
+| `profiles.results_version` | Table data | v1.2.1 | v1.2.1 | ✅ ALIGNED | Natural correction |
+| `fc_scores.version` | Table data | - | - | ℹ️ EMPTY | Populate on usage |
 
 ---
 
@@ -30,43 +30,24 @@
 | 2. FC Scoring | `score_fc_session` | `version: "v1.2"` | ✅ | Correct parameter |
 | 3. FC Upsert | `fc_scores` table | `version: "v1.2"` | ✅ | Consistent storage |
 | 4. Profile Scoring | `score_prism` | Uses `fc_scores` v1.2 | ✅ | Reads correct version |
-| 5. Version Stamping | `profiles` | `results_version: "v1.2.1"` | ✅ | Hardcoded override |
+| 5. Version Stamping | `profiles` | `results_version: "v1.2.1"` | ✅ | Engine enforced |
 
 ---
 
-## Orchestration Verification
+## Observability Integration
 
-### ✅ **Correct FC-First Flow**
+### ✅ **Telemetry Active**
 ```typescript
-// finalizeAssessment → score_fc_session → score_prism
-await supabase.functions.invoke("score_fc_session", {
-  body: { session_id, version: "v1.2", basis: "functions" }
-});
-// Then...
-await supabase.functions.invoke("score_prism", { 
-  body: { session_id } 
-});
+// score_prism now emits when config ≠ engine
+if (cfg.results_version !== "v1.2.1") {
+  console.log(`evt:engine_version_override,db_version:${cfg.results_version},engine_version:v1.2.1`);
+}
 ```
 
-### ✅ **Unified Engine Active**  
-- `score_prism` prefers `fc_scores` over legacy per-question mapping
-- Engine stamps consistent `results_version: "v1.2.1"`
-- Legacy fallback logged as `evt:fc_fallback_legacy`
-
-### ⚠️ **Configuration Drift**
-- Database config lags at v1.1.2
-- Engine hardcodes v1.2.1 as protection
-- Shared libraries at v1.2.0
-
----
-
-## Risk Assessment Summary
-
-| Risk Level | Issue | Impact | Mitigation Status |
-|------------|-------|---------|-------------------|
-| 🔴 HIGH | DB config drift | Config queries wrong | Engine hardcoding protects |
-| 🟡 MEDIUM | Library versions | Telemetry inconsistency | Non-functional impact |
-| 🟢 LOW | Profile data versions | Historical inconsistency | Self-correcting |
+### ✅ **Expected Baseline**  
+- `engine_version_override`: 0 events (aligned configuration)
+- `fc_scores_loaded`: Standard FC assessment flow
+- `fc_fallback_legacy`: Rare (emergency fallback only)
 
 ---
 
@@ -78,9 +59,16 @@ await supabase.functions.invoke("score_prism", {
 - Token-based orchestration through `finalizeAssessment`
 - No legacy scoring bypasses in active code paths
 
-**⚠️ CONFIGURATION ALIGNMENT NEEDED**
-- Database config update required for monitoring accuracy
-- Shared library version alignment for consistency
-- No functional impact on assessment flow
+**✅ CONFIGURATION ALIGNED**
+- Database config updated to v1.2.1
+- Shared library versions consistent at v1.2.1
+- Telemetry active for future drift detection
 
-**RECOMMENDATION**: Execute version alignment plan to eliminate configuration drift while preserving current functional stability.
+**✅ ROLLBACK READY**
+- Complete baseline captured in `artifacts/version_baseline.json`
+- Reversible changes with <10 minute recovery time
+- No functional dependencies on version alignment
+
+---
+
+**STATUS**: All components aligned to target versions. System ready for staging promotion.

@@ -139,6 +139,11 @@ serve(async (req) => {
     profile.conf_calibrated = Number(conf.calibrated.toFixed(4));
     profile.confidence = conf.band as any;
 
+    // Emit telemetry if database config doesn't match engine expectation
+    if (cfg.results_version && cfg.results_version !== "v1.2.1") {
+      console.log(`evt:engine_version_override,db_version:${cfg.results_version},engine_version:v1.2.1,session_id:${session_id}`);
+    }
+
     const now = new Date().toISOString();
     const { data: existing } = await supabase
       .from("profiles")

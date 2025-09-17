@@ -74,7 +74,7 @@ export interface PrismConfig {
 
 export class PrismConfigManager {
   private supabase: SupabaseClient;
-  private version = 'v1.2.0';
+  private version = 'v1.2.1';
   private configCache: PrismConfig | null = null;
   private lastCacheTime = 0;
   private cacheTTL = 5 * 60 * 1000; // 5 minutes
