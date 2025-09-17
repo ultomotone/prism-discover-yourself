@@ -1,0 +1,30 @@
+{
+  "timestamp": "2025-01-17T03:11:00Z",
+  "environment": "current",
+  "database_config": {
+    "results_version": "v1.1.2",
+    "last_updated": "2025-08-24 04:24:58.763784+00"
+  },
+  "shared_libraries": {
+    "supabase/functions/_shared/calibration.ts": {
+      "current_version": "v1.2.0",
+      "line": 35
+    },
+    "supabase/functions/_shared/config.ts": {
+      "current_version": "v1.2.0", 
+      "line": 77
+    }
+  },
+  "engine_overrides": {
+    "supabase/functions/score_prism/index.ts": {
+      "hardcoded_version": "v1.2.1",
+      "fallback_version": "v1.2.1",
+      "lines": [106, 156]
+    }
+  },
+  "golden_tests": {
+    "status": "already_aligned",
+    "version": "v1.2.1",
+    "note": "Test fixtures already use target version"
+  }
+}
