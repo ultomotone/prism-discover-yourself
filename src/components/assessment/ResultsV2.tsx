@@ -7,7 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { TYPE_CORE_DESCRIPTIONS } from "@/data/typeCoreDescriptions";
 import { prismTypes } from "@/data/prismTypes";
 import { StateLegend } from "@/components/common/StateLegend";
-import { FUNCS, type Profile, type Func } from "@/features/results/types";
+import { FUNCS, safeGet, safeArray, normalizeProfileData, type Profile, type Func } from "@/features/results/types";
 
 export type Top3Item = { code: string; fit?: number };
 

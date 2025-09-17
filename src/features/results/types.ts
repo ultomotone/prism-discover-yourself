@@ -1,3 +1,60 @@
+// Results view model normalization utilities
+// Prevents crashes from undefined properties and provides safe defaults
+
+/**
+ * Safe accessor for nested properties with fallback
+ */
+export function safeGet<T>(obj: any, path: string, defaultValue: T): T {
+  const keys = path.split('.');
+  let current = obj;
+  
+  for (const key of keys) {
+    if (current == null || typeof current !== 'object') {
+      return defaultValue;
+    }
+    current = current[key];
+  }
+  
+  return current != null ? current : defaultValue;
+}
+
+/**
+ * Safe array accessor with default empty array
+ */
+export function safeArray<T>(value: any, defaultValue: T[] = []): T[] {
+  return Array.isArray(value) ? value : defaultValue;
+}
+
+/**
+ * Safe object accessor with default empty object
+ */
+export function safeObject<T extends Record<string, any>>(value: any, defaultValue: T = {} as T): T {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : defaultValue;
+}
+
+/**
+ * Normalizes a profile to prevent undefined property crashes
+ */
+export function normalizeProfileData(p: any): any {
+  if (!p) return p;
+  
+  return {
+    ...p,
+    // Ensure critical nested properties exist
+    dims_highlights: {
+      coherent: safeArray(p?.dims_highlights?.coherent),
+      unique: safeArray(p?.dims_highlights?.unique),
+      ...safeObject(p?.dims_highlights)
+    },
+    validity: safeObject(p?.validity, {}),
+    meta: safeObject(p?.meta, {}),
+    strengths: safeObject(p?.strengths, {}),
+    dimensions: safeObject(p?.dimensions, {}),
+    blocks_norm: safeObject(p?.blocks_norm, { Core: 0, Critic: 0, Hidden: 0, Instinct: 0 }),
+    top_types: safeArray(p?.top_types),
+  };
+}
+
 export const FUNCS = ['Ti', 'Te', 'Fi', 'Fe', 'Ni', 'Ne', 'Si', 'Se'] as const;
 export type Func = typeof FUNCS[number];
 
@@ -31,6 +88,12 @@ export interface Profile {
     invalid_combo_attempts: number;
     top_gap: number;
     considered: Array<{ type: string; fit: number }>;
+  };
+  meta?: {
+    diagnostics?: {
+      considered: Array<{ type: string; fit: number }>;
+    };
+    [key: string]: any;
   };
   type_scores: Record<string, { fit_abs: number; share_pct: number }>;
   top_types: string[];
