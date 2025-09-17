@@ -62,24 +62,35 @@ Deno.serve(async (req) => {
   try {
     console.log("Starting cron-force-finalize-248 execution");
     
-    // Fetch ALL candidate sessions: completed >= 248 (regardless of email)
-    const { data: sessions, error } = await admin
+    // Fetch ALL candidate sessions with actual response count (not relying on completed_questions)
+    const { data: allSessions, error } = await admin
       .from('assessment_sessions')
-      .select('id, email, share_token')
+      .select('id, email, share_token, completed_questions, total_questions')
       .eq('status', 'completed')
-      .gte('completed_questions', 248)
       .order('updated_at', { ascending: false })
       .limit(500);
-    
+      
     if (error) {
       console.error("Error fetching sessions:", error);
       throw error;
     }
 
+    // Filter sessions with >= 248 actual responses
+    const sessions: SessionRow[] = [];
+    for (const session of allSessions || []) {
+      const { count: answerCount } = await admin
+        .from("assessment_responses")
+        .select("id", { count: "exact", head: true })
+        .eq("session_id", session.id);
+      
+      if (answerCount && answerCount >= 248) {
+        sessions.push(session as SessionRow);
+      }
+    }
     console.log(`Found ${sessions?.length || 0} candidate sessions`);
     
     const results: any[] = [];
-    for (const s of (sessions ?? []) as SessionRow[]) {
+    for (const s of sessions) {
       try {
         // guard by response hash
         const hash = await computeResponsesHash(s.id);
