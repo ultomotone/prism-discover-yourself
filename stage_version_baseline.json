@@ -1,0 +1,56 @@
+{
+  "timestamp": "2025-09-17T03:30:00Z",
+  "environment": "staging",
+  "database_config": {
+    "results_version": "v1.2.1",
+    "results_version_updated_at": "2025-09-17T03:19:15.920784Z"
+  },
+  "data_state": {
+    "total_sessions": 475,
+    "recent_sessions_7d": 40,
+    "total_profiles": 131,
+    "recent_profiles_7d": 0,
+    "latest_profile_date": "2025-08-27T18:41:25.569Z",
+    "profiles_version_distribution": [
+      {
+        "version": "v1.2.0",
+        "count": 131,
+        "results_version": "v1.2.0"
+      }
+    ],
+    "fc_scores_total": 0,
+    "share_token_status": {
+      "total_sessions": 475,
+      "null_tokens": 0,
+      "valid_tokens": 475
+    }
+  },
+  "recent_completed_session": {
+    "id": "618c5ea6-aeda-4084-9156-0aac9643afd3",
+    "completed_at": "2025-09-16T22:32:24.089Z",
+    "finalized_at": "2025-09-16T22:32:24.089Z",
+    "completed_questions": 248,
+    "response_count": 248,
+    "has_profile": false,
+    "note": "Session completed but no profile generated - indicates scoring pipeline issue"
+  },
+  "security_functions": {
+    "get_profile_by_session": {
+      "exists": true,
+      "security_type": "SECURITY DEFINER",
+      "arguments": "p_session_id uuid, p_share_token text"
+    }
+  },
+  "issues_identified": [
+    "No FC scores exist in database (0 total)",
+    "Recent completed session (618c5ea6-aeda-4084-9156-0aac9643afd3) has no corresponding profile",
+    "Scoring pipeline appears broken - sessions completing but not generating profiles",
+    "All existing profiles are v1.2.0, none are v1.2.1 despite DB config"
+  ],
+  "next_steps": [
+    "Test finalizeAssessment function with completed session",
+    "Investigate FC scoring pipeline",
+    "Check edge function logs for scoring errors",
+    "Verify scoring engine is properly handling v1.2.1 configuration"
+  ]
+}
