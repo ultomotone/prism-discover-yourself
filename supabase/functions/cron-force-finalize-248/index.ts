@@ -62,11 +62,14 @@ Deno.serve(async (req) => {
   try {
     console.log("Starting cron-force-finalize-248 execution");
     
-    // Fetch candidate sessions: completed >= 248; email present (either in session or responses)
-    const { data: sessions, error } = await admin.rpc('get_sessions_with_emails_for_finalize', {
-      min_questions: 248,
-      limit_count: 500
-    });
+    // Fetch ALL candidate sessions: completed >= 248 (regardless of email)
+    const { data: sessions, error } = await admin
+      .from('assessment_sessions')
+      .select('id, email, share_token')
+      .eq('status', 'completed')
+      .gte('completed_questions', 248)
+      .order('updated_at', { ascending: false })
+      .limit(500);
     
     if (error) {
       console.error("Error fetching sessions:", error);
