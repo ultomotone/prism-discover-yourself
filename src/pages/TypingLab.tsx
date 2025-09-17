@@ -135,29 +135,51 @@ const TypingLab = () => {
   return (
     <div className="bg-background text-foreground">
       <TypingLabHero />
-      <div className="prism-container hidden xl:block">
-        <div className="sticky top-28 flex justify-end">
-          <a
-            href="#method"
-            className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-4 py-2 text-sm font-medium text-primary shadow-sm hover:text-primary/80"
-          >
-            How typings are made
-          </a>
+      
+      {/* Table of Contents */}
+      <div className="prism-container py-8">
+        <div className="mx-auto max-w-4xl">
+          <nav className="flex flex-wrap items-center justify-center gap-6 text-sm">
+            <a href="#browse" className="text-primary hover:text-primary/80 font-medium">
+              Browse Profiles
+            </a>
+            <a href="#legend" className="text-muted-foreground hover:text-foreground">
+              Legend
+            </a>
+            <a href="#method" className="text-muted-foreground hover:text-foreground">
+              Methodology
+            </a>
+            <a href="#governance" className="text-muted-foreground hover:text-foreground">
+              Governance
+            </a>
+          </nav>
         </div>
       </div>
-      <TypingLabFilters
-        entries={typingLabEntries}
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-        sort={sort}
-        onSortChange={handleSortChange}
-        visibleCount={filteredEntries.length}
-      />
+
+      <div id="browse">
+        <TypingLabFilters
+          entries={typingLabEntries}
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          sort={sort}
+          onSortChange={handleSortChange}
+          visibleCount={filteredEntries.length}
+        />
+        
+        {/* Search Results directly under filters */}
+        <TypingLabGrid entries={filteredEntries} />
+      </div>
+      
       <TypingLabFeatured entries={featuredEntries} />
-      <TypingLabLegend />
-      <TypingLabMethodology />
-      <TypingLabGrid entries={filteredEntries} />
-      <TypingLabGovernance />
+      <div id="legend">
+        <TypingLabLegend />
+      </div>
+      <div id="method">
+        <TypingLabMethodology />
+      </div>
+      <div id="governance">
+        <TypingLabGovernance />
+      </div>
     </div>
   );
 };
