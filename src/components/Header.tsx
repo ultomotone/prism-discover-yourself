@@ -12,6 +12,7 @@ const Header = () => {
   const { user, loading, signOut } = useAuth();
 
   const navigation = [
+    { name: "Typing Lab", href: "/typing-lab" },
     { name: "About", href: "/about" },
   ];
 

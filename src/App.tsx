@@ -38,6 +38,8 @@ import Organizations from "./pages/Organizations";
 import Consultants from "./pages/Consultants";
 import Education from "./pages/Education";
 import Book from "./pages/Book";
+import TypingLab from "./pages/TypingLab";
+import TypingLabEntryPage from "./pages/TypingLabEntry";
 import PersonalDiscovery from "./pages/solutions/individuals/PersonalDiscovery";
 import PersonalityMapping from "./pages/solutions/individuals/PersonalityMapping";
 import CompatibilityDebrief from "./pages/solutions/individuals/CompatibilityDebrief";
@@ -232,6 +234,8 @@ const App = () => (
                   <Route path="/organizations" element={<Organizations />} />
                   <Route path="/consultants" element={<Consultants />} />
                   <Route path="/education" element={<Education />} />
+                  <Route path="/typing-lab" element={<TypingLab />} />
+                  <Route path="/typing-lab/:slug" element={<TypingLabEntryPage />} />
 
                   {/* Booking + Solutions */}
                   <Route path="/book" element={<Book />} />
