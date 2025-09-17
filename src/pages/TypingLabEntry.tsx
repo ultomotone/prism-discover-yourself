@@ -8,6 +8,11 @@ import { DifferentialDiagnosis } from "@/features/typing-lab/components/Differen
 import { ContextNotes } from "@/features/typing-lab/components/ContextNotes";
 import { CoachingSnapshot } from "@/features/typing-lab/components/CoachingSnapshot";
 import { Appendix } from "@/features/typing-lab/components/Appendix";
+import { StateProfiles } from "@/features/typing-lab/components/StateProfiles";
+import { ReadingGuide } from "@/features/typing-lab/components/ReadingGuide";
+import { AssessmentMap } from "@/features/typing-lab/components/AssessmentMap";
+import { ResearchAgenda } from "@/features/typing-lab/components/ResearchAgenda";
+import { FaqList } from "@/features/typing-lab/components/FaqList";
 
 const TypingLabEntryPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -54,10 +59,15 @@ const TypingLabEntryPage = () => {
             <FunctionExpressionTable entry={entry} />
             <EvidenceLedger entry={entry} />
             <DifferentialDiagnosis entry={entry} />
+            <StateProfiles entry={entry} />
             <CoachingSnapshot entry={entry} />
+            <ResearchAgenda entry={entry} />
           </div>
           <div className="space-y-8 lg:sticky lg:top-28">
             <ContextNotes entry={entry} />
+            <ReadingGuide entry={entry} />
+            <AssessmentMap entry={entry} />
+            <FaqList entry={entry} />
           </div>
         </div>
         <Appendix entry={entry} />
