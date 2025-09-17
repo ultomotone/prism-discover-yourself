@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ComponentType,
+} from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase/client";
 import { ResultsV2 } from "@/components/assessment/ResultsV2";
@@ -18,7 +24,16 @@ type ResultsPayload = {
 
 type RotateResponse = { share_token: string };
 
-export default function Results() {
+type ResultsComponents = {
+  ResultsView?: ComponentType<{ profile: any }>;
+};
+
+type ResultsProps = {
+  components?: ResultsComponents;
+};
+
+export default function Results({ components }: ResultsProps = {}) {
+  const ResultsView = components?.ResultsView ?? ResultsV2;
   const { sessionId: paramId } = useParams<{ sessionId: string }>();
   const location = useLocation();
   const query = useMemo(
@@ -253,7 +268,7 @@ export default function Results() {
 
       <div className="py-8 px-4 space-y-6">
         <div id="results-content">
-          <ResultsV2 profile={data.profile} />
+          <ResultsView profile={data.profile} />
         </div>
 
         <Card className="max-w-4xl mx-auto">
