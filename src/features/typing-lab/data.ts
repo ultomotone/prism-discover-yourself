@@ -407,4 +407,159 @@ export const typingLabEntries: TypingLabEntry[] = [
     lastUpdated: "2025-01-22",
     dataCoverage: 4,
   },
+  {
+    slug: "charlie-kirk-2010s-activist",
+    name: "Charlie Kirk",
+    role: "Founder & Activist",
+    domain: "Founder / Activist",
+    era: "2010s–2025",
+    nationality: "American",
+    proposedType: "SLE",
+    overlay: "+",
+    confidenceBand: "Medium",
+    top2Gap: 0.22,
+    altTypes: [
+      { type: "LIE", weight: 0.24 },
+      { type: "EIE", weight: 0.18 },
+    ],
+    summary:
+      "Contact-dominant operator who sets terms in live rooms (Se), prosecutes via definitions (Ti), rallies as needed (Fe), and sustains a field machine (Te); one long-arc narrative (Ni) frames the message.",
+    rationale:
+      "Campus debates, long-form podcasts, and tour stops consistently open with definition control before moving into pressure moves, matching an SLE lead with creative Ti and demonstrative Te.",
+    differentiator:
+      "Compared to Te-first operators he foregrounds room leverage and live prosecution; compared to EIE presenters he keeps affect tight, using Fe as a momentum dial rather than broad-band steering.",
+    functionMap: {
+      Ti: {
+        dim: 3,
+        str: "H",
+        note: "Leads exchanges by locking burden-of-proof moves before escalating pressure.",
+      },
+      Te: {
+        dim: 4,
+        str: "H",
+        note: "Builds organizations, funnels, and throughput pipelines; facts surface as tactical levers.",
+      },
+      Fi: {
+        dim: 1,
+        str: "L",
+        note: "Prioritizes public principle over one-to-one tact when discussions heat up.",
+      },
+      Fe: {
+        dim: 2,
+        str: "M",
+        note: "Times applause lines and crowd surges but keeps modulation narrow and utilitarian.",
+      },
+      Ni: {
+        dim: 1,
+        str: "M",
+        note: "Runs a singular campus/youth narrative spine; offers limited deep forecasting on-mic.",
+      },
+      Ne: {
+        dim: 2,
+        str: "L",
+        note: "Tests alternative angles to corner opponents yet avoids open-ended ideation.",
+      },
+      Si: {
+        dim: 3,
+        str: "M",
+        note: "Maintains touring and production routines, trading comfort for sustained momentum.",
+      },
+      Se: {
+        dim: 4,
+        str: "H",
+        note: "Controls rooms with rapid redirects and decisive pressure in live Q&A exchanges.",
+      },
+    },
+    contexts: {
+      flow: "Long-form, friendly settings show cooler Se with Ti/Te cadence steady and narrative spine intact.",
+      performative: "Rallies and campus tours lean into Se pressure with Fe spikes while repeating the Ni frame for cohesion.",
+      stress: "Hostile Q&A prompts Se overdrive and binary pushes; Fe volume rises and the time horizon compresses.",
+    },
+    contextBalance: {
+      flow: 0.41,
+      performative: 0.34,
+      stress: 0.25,
+    },
+    evidence: [
+      {
+        claim: "Invites disagreement and live challenge in campus tour formats, asking opponents to take the mic.",
+        source: {
+          kind: "transcript",
+          url: "internal:charlie-kirk-3",
+          label: "Campus tour AMA transcript (Charlie Kirk 3.docx)",
+        },
+        interpretation: "Demonstrates Se lead with high contact tolerance and in-room term setting.",
+        weight: "Strong",
+      },
+      {
+        claim: "Opens debates by defining terms and assigning burden of proof before pressing the opponent.",
+        source: {
+          kind: "transcript",
+          url: "internal:charlie-kirk-2",
+          label: "Policy debate transcript (Charlie Kirk 2 with JP)",
+        },
+        interpretation: "Signals Ti creative paired with Se prosecution and Te deployment.",
+        weight: "Strong",
+      },
+      {
+        claim: "Emphasizes boots-on-the-ground chapters, campaign alignment, and moving metrics when discussing execution.",
+        source: {
+          kind: "transcript",
+          url: "internal:charlie-kirk-1",
+          label: "Operations planning transcript (Charlie 1.docx)",
+        },
+        interpretation: "Shows Te demonstrative focus on systems, pipelines, and throughput.",
+        weight: "Moderate",
+      },
+      {
+        claim: "Uses faith, mission language, and personal 'why' moments to unify audiences during value discussions.",
+        source: {
+          kind: "transcript",
+          url: "internal:charlie-kirk-2-values",
+          label: "Values dialogue transcript (Charlie Kirk 2 with JP)",
+        },
+        interpretation: "Highlights Fe + Ni valued for rally cohesion and meaning framing.",
+        weight: "Moderate",
+      },
+      {
+        claim: "Trades comfort for relentless touring and production cadence, spotlighting stamina over ease.",
+        source: {
+          kind: "transcript",
+          url: "internal:charlie-kirk-3-momentum",
+          label: "Tour cadence transcript (Charlie Kirk 3.docx)",
+        },
+        interpretation: "Reinforces Si routines as supporting structure rather than priority.",
+        weight: "Light",
+      },
+    ],
+    differentials: [
+      {
+        type: "LIE",
+        whyNot: "A Te-lead would prioritize systems framing before entering contact; here Se prosecution opens most exchanges.",
+      },
+      {
+        type: "EIE",
+        whyNot: "EIE profiles show broad-band affect steering, whereas he uses Fe as a narrow momentum dial.",
+      },
+    ],
+    falsification: [
+      "If hostile debates start with Te systems talk before any contact pressure, revisit the LIE alternative.",
+      "Documented wide-band Fe modulation across varied emotional registers would strengthen the EIE hypothesis.",
+      "Sustained enjoyment of open-ended Ne ideation beyond tactical traps would challenge the SLE lead call.",
+    ],
+    coachingSnapshot: [
+      "Pre-plan off-ramps to prevent Se over-press and keep debate wins clean.",
+      "Maintain one-page definition trees per recurring issue so Ti stays anchored under novelty.",
+      "Pair with a Te partner who closes loops on cadence, booking, and conversion to convert live momentum into durable outcomes.",
+    ],
+    ethicsNote: "Educational; non-clinical; public-persona hypothesis only.",
+    versionLog: [
+      { date: "2025-09-16", change: "Initial publish." },
+    ],
+    image: "https://upload.wikimedia.org/wikipedia/commons/5/57/Charlie_Kirk_by_Gage_Skidmore.jpg",
+    featured: false,
+    debated: true,
+    lastUpdated: "2025-09-16",
+    dataCoverage: 3,
+  },
 ];

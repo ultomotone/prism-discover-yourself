@@ -11,7 +11,8 @@ export type SourceKind =
   | "interview"
   | "speech"
   | "analysis"
-  | "letter";
+  | "letter"
+  | "transcript";
 
 export type InformationElement =
   | "Ti"
