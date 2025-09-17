@@ -61,8 +61,30 @@ export const TypingLabDetailHeader = ({ entry }: TypingLabDetailHeaderProps) => 
               <FunctionMatrixIcon entry={entry} />
             </div>
           </div>
+          {(entry.confidenceExplanation || entry.overlayExplanation) && (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {entry.confidenceExplanation && (
+                <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Confidence call</p>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    {entry.confidenceExplanation}
+                  </p>
+                </div>
+              )}
+              {entry.overlayExplanation && (
+                <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Overlay note</p>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    {entry.overlayExplanation}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-            <span className="rounded-full border border-border/60 bg-background/80 px-3 py-1">Educational; non-clinical</span>
+            <span className="rounded-full border border-border/60 bg-background/80 px-3 py-1">
+              {entry.ethicsNote}
+            </span>
             <span className="rounded-full border border-border/60 bg-background/80 px-3 py-1">Updated {entry.lastUpdated}</span>
             <span className="rounded-full border border-border/60 bg-background/80 px-3 py-1">
               {entry.evidence.length} sources logged

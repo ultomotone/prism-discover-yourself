@@ -72,6 +72,32 @@ export interface TypingLabVersionLogEntry {
   change: string;
 }
 
+export interface TypingLabStateProfile {
+  name: string;
+  triggers: string;
+  behaviors: string;
+  strengths: string;
+  risks: string;
+  reset: string;
+}
+
+export interface TypingLabReadingGuide {
+  dimensionality: string;
+  strength: string;
+  overlay: string;
+}
+
+export interface TypingLabAssessmentMap {
+  strengthItems: string;
+  dimensionalItems: string;
+  ipsatives: string;
+}
+
+export interface TypingLabFaqItem {
+  question: string;
+  answer: string;
+}
+
 export interface TypingLabEntry {
   slug: string;
   name: string;
@@ -87,13 +113,21 @@ export interface TypingLabEntry {
   summary: string;
   rationale: string;
   differentiator: string;
+  confidenceExplanation?: string;
+  overlayExplanation?: string;
   functionMap: Record<InformationElement, TypingLabFunctionDetail>;
   contexts: TypingLabContextsCopy;
   contextBalance: TypingLabContextBalance;
+  states?: TypingLabStateProfile[];
+  readingGuide?: TypingLabReadingGuide;
+  assessmentMap?: TypingLabAssessmentMap;
   evidence: TypingLabEvidenceItem[];
   differentials: TypingLabDifferential[];
   falsification: string[];
   coachingSnapshot: string[];
+  futureResearch?: string[];
+  counterevidenceLog?: string[];
+  faq?: TypingLabFaqItem[];
   ethicsNote: string;
   versionLog: TypingLabVersionLogEntry[];
   image?: string;
