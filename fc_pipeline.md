@@ -39,9 +39,9 @@ All 24 options contain balanced weights for 8 cognitive functions:
 
 ## IR-07B-VERIFY: Score_FC_Session Smoke Tests
 
-### Test Sessions Available
-- **Primary**: `618c5ea6-aeda-4084-9156-0aac9643afd3` (completed 2025-09-16)
-- **Secondary**: `070d9bf2-516f-44ee-87fc-017c7db9d29c` (completed 2025-09-15)
+### Test Sessions Available  
+- **Primary**: `618c5ea6-aeda-4084-9156-0aac9643afd3` (completed 2025-09-16, 248 responses)
+- **Secondary**: `070d9bf2-516f-44ee-87fc-017c7db9d29c` (completed 2025-09-15, 248 responses)
 
 ### Expected Results After Testing
 - ✅ Non-empty fc_scores with version='v1.2'
