@@ -502,8 +502,8 @@ function Top3({ p }:{ p:Profile }){
           const fallbackFit =
             typeof fit === 'number'
               ? fit
-              : typeof typeScore?.fit === 'number'
-              ? typeScore.fit
+              : typeof typeScore?.fit_abs === 'number'
+              ? typeScore.fit_abs
               : undefined;
           const displayFit = calibratedFit ?? fallbackFit ?? 0;
           return (
@@ -561,8 +561,8 @@ function Top3({ p }:{ p:Profile }){
               ? typeScore.fit_abs
               : typeof fit === 'number'
               ? fit
-              : typeof typeScore?.fit === 'number'
-              ? typeScore.fit
+              : typeof typeScore?.fit_abs === 'number'
+              ? typeScore.fit_abs
               : 0;
           return {
             code,
