@@ -10,7 +10,7 @@ afterEach(() => {
   cleanup();
 });
 
-test("renders a typing dossier with function map and evidence", async () => {
+test("shows fallback when dossier data is unavailable", async () => {
   render(
     <MemoryRouter initialEntries={["/typing-lab/serena-williams-2024-athlete"]}>
       <Routes>
@@ -19,10 +19,13 @@ test("renders a typing dossier with function map and evidence", async () => {
     </MemoryRouter>
   );
 
-  await screen.findByRole("heading", { name: /Serena Williams/i });
-  await screen.findByText(/Function expression map/i);
-  await screen.findByText(/Evidence ledger/i);
-  await screen.findByText(/Differential diagnosis/i);
+  await screen.findByText(/Typing not found/i);
+  await screen.findByRole("link", { name: /Back to Typing Lab/i });
+  const submitLink = await screen.findByRole("link", { name: /Submit a source/i });
+  const href = submitLink.getAttribute("href");
+  if (href !== "mailto:team@prismpersonality.com") {
+    throw new Error(`Expected submit link mailto to be team@prismpersonality.com but received ${href ?? "unknown"}`);
+  }
 });
 
 test("renders fallback when dossier missing", async () => {

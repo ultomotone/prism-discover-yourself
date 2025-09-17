@@ -1,4 +1,5 @@
 import { JSDOM } from "jsdom";
+import React from "react";
 
 // Minimal DOM
 const dom = new JSDOM("<!doctype html><html><body></body></html>", {
@@ -11,8 +12,13 @@ Object.assign(globalThis, {
   document: dom.window.document,
   navigator: dom.window.navigator,
   HTMLElement: dom.window.HTMLElement,
+  Element: dom.window.Element,
   Node: dom.window.Node,
+  DocumentFragment: dom.window.DocumentFragment,
+  Event: dom.window.Event,
 });
+
+(globalThis as any).React = React;
 
 process.env.NODE_ENV = "test";
 
@@ -41,6 +47,10 @@ if (!globalThis.ResizeObserver) {
     disconnect() {}
   }
   (globalThis as any).ResizeObserver = ResizeObserver;
+}
+
+if (!globalThis.MutationObserver) {
+  (globalThis as any).MutationObserver = dom.window.MutationObserver;
 }
 
 if (!globalThis.requestAnimationFrame) {

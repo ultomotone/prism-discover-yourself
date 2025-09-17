@@ -56,7 +56,7 @@ export const TypingLabGovernance = () => {
             ))}
           </div>
           <div className="rounded-2xl border border-border/60 bg-muted/20 p-6 text-sm text-muted-foreground">
-            Want to contribute evidence? Email <a className="text-primary" href="mailto:typinglab@prism.gg">typinglab@prism.gg</a> or
+            Want to contribute evidence? Email <a className="text-primary" href="mailto:team@prismpersonality.com">team@prismpersonality.com</a> or
             submit a pull request with a timestamped source. Every update triggers a re-run of the scoring engine.
           </div>
         </div>

@@ -34,7 +34,7 @@ const TypingLabEntryPage = () => {
               Back to Typing Lab
             </Link>
             <a
-              href="mailto:typinglab@prism.gg"
+              href="mailto:team@prismpersonality.com"
               className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-4 py-2 text-sm font-medium text-secondary hover:text-secondary/80"
             >
               Submit a source

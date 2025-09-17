@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TypingLabShareButtons } from "./TypingLabShareButtons";
 
 export const TypingLabHero = () => {
   return (
@@ -33,6 +34,14 @@ export const TypingLabHero = () => {
             <span className="rounded-full border border-border/60 bg-background/80 px-3 py-1">
               Human-reviewed revisions
             </span>
+          </div>
+          <div className="mt-10 flex justify-center">
+            <TypingLabShareButtons
+              path="/typing-lab"
+              title="Typing Lab"
+              message="Explore evidence-based hypotheses of famous figures scored by PRISM."
+              align="center"
+            />
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { TopTwoGapBar } from "./TopTwoGapBar";
 import { ConfidenceBadge } from "./ConfidenceBadge";
 import { FunctionMatrixIcon } from "./FunctionMatrixIcon";
+import { TypingLabShareButtons } from "./TypingLabShareButtons";
 import type { TypingLabEntry } from "../types";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -77,7 +78,7 @@ export const TypingLabDetailHeader = ({ entry }: TypingLabDetailHeaderProps) => 
       </div>
       <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-primary">
         <a
-          href="mailto:typinglab@prism.gg"
+          href="mailto:team@prismpersonality.com"
           className="inline-flex items-center gap-2 hover:text-primary/80"
         >
           Submit a source or correction
@@ -91,6 +92,12 @@ export const TypingLabDetailHeader = ({ entry }: TypingLabDetailHeaderProps) => 
           <ExternalLink className="h-4 w-4" />
         </a>
       </div>
+      <TypingLabShareButtons
+        className="mt-6"
+        path={`/typing-lab/${entry.slug}`}
+        title={`Typing Lab profile: ${entry.name}`}
+        message={entry.summary}
+      />
     </header>
   );
 };

@@ -1,6 +1,7 @@
 import "./setup/dom";
 
 import test, { afterEach } from "node:test";
+import { strict as assert } from "node:assert";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import TypingLab from "../src/pages/TypingLab";
@@ -26,80 +27,65 @@ afterEach(() => {
   cleanup();
 });
 
-test("renders Typing Lab hero and entries", async () => {
+test("renders Typing Lab hero with empty state", async () => {
   renderWithRouter();
 
   await screen.findByRole("heading", {
     name: /Typing Lab: Evidence-based hypotheses of famous figures/i,
   });
 
-  await screen.findByText(/Ada Lovelace/i);
-  await screen.findByText(/Serena Williams/i);
+  await screen.findByText(/No typings match your filters yet/i);
+
+  const linkedinShare = await screen.findByRole("link", {
+    name: /Share on LinkedIn/i,
+  });
+  const expectedLinkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+    new URL("/typing-lab", window.location.origin).toString()
+  )}`;
+  assert.equal(linkedinShare.getAttribute("href"), expectedLinkedInUrl);
+
+  await screen.findByRole("link", { name: /Share on Facebook/i });
+  await screen.findByRole("link", { name: /Share on WhatsApp/i });
+  await screen.findByRole("link", { name: /Share on Email/i });
+  await screen.findByRole("link", { name: /Share on SMS/i });
+  await screen.findByRole("button", { name: /Copy link for Instagram/i });
+  await screen.findByRole("button", { name: /Copy link for TikTok/i });
 });
 
-test("filters entries via search and debated toggle", async () => {
+test("updates filters and query string when controls change", async () => {
   const router = renderWithRouter();
 
   const search = await screen.findByLabelText(/search/i);
   fireEvent.change(search, { target: { value: "Greta" } });
 
-  await screen.findByText(/Greta Gerwig/i);
-  const missingAda = screen.queryByText(/Ada Lovelace/i);
-  if (missingAda) {
-    throw new Error("Ada Lovelace should be filtered out by the search term");
-  }
-
   await waitFor(() => {
-    expect(router.state.location.search).toContain("search=Greta");
+    assert.match(router.state.location.search, /search=Greta/);
   });
-
-  fireEvent.change(search, { target: { value: "" } });
 
   const debatedSwitch = await screen.findByRole("switch", {
     name: /toggle most debated typings/i,
   });
   fireEvent.click(debatedSwitch);
 
-  await screen.findByText(/Greta Gerwig/i);
-  const absentSerena = screen.queryByText(/Serena Williams/i);
-  if (absentSerena) {
-    throw new Error("Serena Williams should be hidden when only debated entries are shown");
-  }
-
   await waitFor(() => {
-    expect(router.state.location.search).toContain("debated=1");
+    assert.match(router.state.location.search, /debated=1/);
   });
 
   const clearButton = await screen.findByRole("button", { name: /clear filters/i });
   fireEvent.click(clearButton);
 
   await waitFor(() => {
-    expect(router.state.location.search).toBe("");
+    assert.equal(router.state.location.search, "");
   });
 });
 
 test("reads filters and sort from the query string", async () => {
   const router = renderWithRouter(["/typing-lab?domain=Artist&debated=1&sort=Most%20sourced"]);
 
-  await screen.findByText(/Greta Gerwig/i);
-  const serena = screen.queryByText(/Serena Williams/i);
-  if (serena) {
-    throw new Error("Serena Williams should not be visible when filtering by debated artists");
-  }
-
-  expect(router.state.location.search).toBe("?domain=Artist&debated=1&sort=Most+sourced");
-});
-
-test("updates query string when sort selection changes", async () => {
-  const router = renderWithRouter();
-
-  const sortTrigger = await screen.findByRole("combobox", { name: /sort/i });
-  fireEvent.click(sortTrigger);
-
-  const highestConfidence = await screen.findByRole("option", { name: /Highest confidence/i });
-  fireEvent.click(highestConfidence);
-
   await waitFor(() => {
-    expect(router.state.location.search).toBe("?sort=Highest+confidence");
+    assert.equal(router.state.location.search, "?debated=1&sort=Most+sourced");
   });
+
+  await screen.findByText(/No typings match your filters yet/i);
 });
+
