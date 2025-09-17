@@ -53,20 +53,41 @@ where session_id = '618c5ea6-aeda-4084-9156-0aac9643afd3';
 - **Row Count**: 0
 - **Status**: Profile creation failed in previous finalization attempt
 
-## POST-EXECUTION STATE
-*(Pending manual function execution in Supabase UI)*
+## PHASE 4 - Evidence Collection (DB + HTTP + Telemetry)
 
-### Expected Changes After Function Execution:
-1. **Profiles Table**: New row with results_version = 'v1.2.1'
-2. **Assessment Sessions**: Updated finalized_at timestamp  
-3. **Profile Data**: Complete profile with type_code, overlay, confidence metrics
+### FC Scores Final Proof
+```sql
+-- Expect v1.2 + JSON object (should remain unchanged)
+select version, jsonb_typeof(scores_json) as scores_type, created_at
+from public.fc_scores
+where session_id = '618c5ea6-aeda-4084-9156-0aac9643afd3'
+order by created_at desc limit 1;
+```
 
-### HTTP Access Tests
-*(Pending function execution to obtain results_url)*
+**Status**: ⏳ **AWAITING POST-INVOCATION VERIFICATION**
 
-**Expected Results**:
-- **With Token**: GET results_url → 200
-- **Without Token**: GET /results/{session_id} → 401/403
+### Profiles Final Proof  
+```sql
+-- Expect row stamped v1.2.1 (should be created after re-invoke)
+select results_version, version, created_at, updated_at
+from public.profiles
+where session_id = '618c5ea6-aeda-4084-9156-0aac9643afd3';
+```
+
+**Status**: ⏳ **AWAITING PROFILE CREATION**
+
+### HTTP Security Tests
+**Test 1 - Authenticated Access**:
+- **URL**: `{results_url}` (from function response)
+- **Method**: GET  
+- **Expected**: 200 OK
+- **Status**: ⏳ Pending results_url
+
+**Test 2 - Unauthorized Access**:
+- **URL**: `/results/618c5ea6-aeda-4084-9156-0aac9643afd3` (no token)
+- **Method**: GET
+- **Expected**: 401 Unauthorized or 403 Forbidden  
+- **Status**: ⏳ Pending test execution
 
 ## Execution Instructions
 
