@@ -55,43 +55,21 @@ const UserDashboard = () => {
         setDashboardResults([]);
       }
 
-      // Also fetch user's regular assessment sessions for progress tracking
-      const { data: sessions, error: sessionsError } = await supabase
-        .from('assessment_sessions')
-        .select(`
-          id,
-          status,
-          started_at,
-          completed_at,
-          completed_questions,
-          total_questions
-        `)
-        .eq('user_id', user.id)
-        .order('started_at', { ascending: false });
+      // Fetch user's regular assessment sessions with profiles using secure RPC
+      const { data: sessionsResult, error: sessionsError } = await supabase
+        .rpc('get_user_sessions_with_profiles', { p_user_id: user.id });
 
-      if (sessionsError) throw sessionsError;
-
-      // Fetch profiles for completed sessions
-      const sessionIds = sessions?.map(s => s.id) || [];
-      
-      let profiles: any[] = [];
-      if (sessionIds.length > 0) {
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('session_id, type_code, confidence, fit_band, overlay')
-          .in('session_id', sessionIds);
-
-        if (profilesError) throw profilesError;
-        profiles = profilesData || [];
+      if (sessionsError) {
+        console.error('Error fetching user sessions:', sessionsError);
+        setUserSessions([]);
+      } else if (sessionsResult?.error) {
+        console.error('RPC error:', sessionsResult.error);
+        setUserSessions([]);
+      } else {
+        const sessionsWithProfiles = sessionsResult?.sessions || [];
+        setUserSessions(sessionsWithProfiles);
       }
 
-      // Combine sessions with profiles
-      const sessionsWithProfiles = sessions?.map(session => ({
-        ...session,
-        profile: profiles.find(p => p.session_id === session.id)
-      })) || [];
-
-      setUserSessions(sessionsWithProfiles);
     } catch (error) {
       console.error('Error fetching user data:', error);
     } finally {
