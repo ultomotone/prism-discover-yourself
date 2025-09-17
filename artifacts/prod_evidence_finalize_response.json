@@ -1,14 +1,24 @@
 {
-  "status": "READY_TO_EXECUTE", 
-  "message": "Evidence Gate script prepared. Execute: npm run ts-node run_evidence_gate_execution.ts",
-  "timestamp": "2025-01-17T15:45:00Z",
+  "status": "PENDING_EXECUTION",
+  "message": "Function invocation pending - awaiting manual execution in Supabase UI",
+  "timestamp": "2025-09-17T17:30:00Z",
   "session_id": "618c5ea6-aeda-4084-9156-0aac9643afd3",
-  "precheck_results": {
-    "session_status": "completed",
-    "completed_questions": 248,
-    "has_share_token": true,
-    "fc_scores_exists": false,
-    "profiles_exists": false
+  "fc_version": "v1.2",
+  "current_state": {
+    "fc_scores": {
+      "version": "v1.2",
+      "scores_type": "object", 
+      "created_at": "2025-09-17 15:52:34.74156+00",
+      "status": "✅ READY"
+    },
+    "profiles": {
+      "rows_found": 0,
+      "status": "❌ MISSING - Awaiting function execution"
+    },
+    "function_logs": {
+      "recent_executions": 0,
+      "status": "❌ NO RECENT CALLS"
+    }
   },
-  "next_action": "Run: SUPABASE_SERVICE_ROLE_KEY=<key> npm run ts-node run_evidence_gate_execution.ts"
+  "next_action": "Execute finalizeAssessment in Supabase UI with service role and provided body"
 }

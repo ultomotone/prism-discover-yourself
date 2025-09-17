@@ -6,34 +6,19 @@
 **Environment**: Production  
 **Gate Time**: 2025-09-17T17:12:45Z
 
-## Evidence Collection Status: 🔄 **IN PROGRESS**
+## Evidence Checklist - PRE-EXECUTION
 
-### ✅ Phase 1: Prerequisites (COMPLETE)
-- [x] **Environment**: Production confirmed
+### ✅ Prerequisites (VERIFIED)
 - [x] **FC Scores**: v1.2, object type, ready for processing
-- [x] **RLS Policies**: Service role policies verified and active
-- [x] **Function Config**: verify_jwt = false, properly configured
-- [x] **Dependencies**: _shared/results-link.ts available
+- [x] **Environment**: Production environment confirmed
+- [x] **Session**: Valid session ID with completed responses (248 questions)
+- [x] **RLS Policies**: Service role policies active and verified
 
-### 🔄 Phase 2: Comprehensive Test (EXECUTING)
-- [x] **RLS Verification**: Policies confirmed active
-  - `svc_manage_profiles`: ALL operations for service_role
-  - `svc_manage_fc_scores`: ALL operations for service_role  
-  - `assessment_sessions`: Public policies active
-- [ ] **Direct Invocation**: Testing function execution
-- [ ] **Response Analysis**: Capturing function output
-- [ ] **Error Classification**: Identifying any failure points
-
-### ⏳ Phase 3: Evidence Collection (PENDING)
-- [ ] **Database Verification**: Post-invocation state check
-- [ ] **Profile Creation**: Confirm results_version = 'v1.2.1'
-- [ ] **Session Updates**: Verify finalized_at timestamp
-- [ ] **Telemetry Logs**: Function execution evidence
-
-### ⏳ Phase 4: HTTP Access Testing (PENDING)
-- [ ] **Token Access**: GET results_url → 200
-- [ ] **No Token Access**: GET /results/{session_id} → 401/403
-- [ ] **Security Validation**: Confirm proper access control
+### ❌ Execution Evidence (PENDING)
+- [ ] **Function Response**: JSON with ok:true, session_id, share_token, results_url
+- [ ] **Profile Creation**: New row with results_version = 'v1.2.1'
+- [ ] **HTTP Security**: 200 with token, 401/403 without token
+- [ ] **Telemetry Logs**: Function execution with evt:fc_source=fc_scores
 
 ## Current Test Status
 
