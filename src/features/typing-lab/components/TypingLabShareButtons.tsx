@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Share2 } from "lucide-react";
 import type { IconType } from "react-icons";
-import { FaFacebookF, FaInstagram, FaLinkedinIn, FaSms, FaTiktok, FaWhatsapp } from "react-icons/fa";
+import {
+  FaFacebookF,
+  FaInstagram,
+  FaLinkedinIn,
+  FaRedditAlien,
+  FaSms,
+  FaTiktok,
+  FaWhatsapp,
+} from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 
 import { cn } from "@/lib/utils";
@@ -66,6 +74,10 @@ export const TypingLabShareButtons = ({
   const shareMessage = message?.trim().length ? message : title;
 
   const [copyFeedback, setCopyFeedback] = useState<CopyFeedbackState>(null);
+
+  useEffect(() => {
+    setCopyFeedback(null);
+  }, [shareMessage, shareUrl]);
 
   useEffect(() => {
     if (!copyFeedback) {
@@ -154,6 +166,15 @@ export const TypingLabShareButtons = ({
         icon: FaFacebookF,
         type: "link",
         getHref: (url) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+        target: "_blank",
+      },
+      {
+        key: "reddit",
+        label: "Reddit",
+        icon: FaRedditAlien,
+        type: "link",
+        getHref: (url, text) =>
+          `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`,
         target: "_blank",
       },
       {

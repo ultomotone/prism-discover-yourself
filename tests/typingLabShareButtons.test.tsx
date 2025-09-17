@@ -36,6 +36,14 @@ test("renders share controls with expected URLs", async () => {
     `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(expectedShareUrl)}`
   );
 
+  const reddit = await screen.findByRole("link", { name: /Share on Reddit/i });
+  assert.equal(
+    reddit.getAttribute("href"),
+    `https://www.reddit.com/submit?url=${encodeURIComponent(expectedShareUrl)}&title=${encodeURIComponent(
+      "Explore evidence-based hypotheses"
+    )}`
+  );
+
   const whatsapp = await screen.findByRole("link", { name: /Share on WhatsApp/i });
   assert.equal(
     whatsapp.getAttribute("href"),

@@ -45,6 +45,7 @@ test("renders Typing Lab hero with empty state", async () => {
   assert.equal(linkedinShare.getAttribute("href"), expectedLinkedInUrl);
 
   await screen.findByRole("link", { name: /Share on Facebook/i });
+  await screen.findByRole("link", { name: /Share on Reddit/i });
   await screen.findByRole("link", { name: /Share on WhatsApp/i });
   await screen.findByRole("link", { name: /Share on Email/i });
   await screen.findByRole("link", { name: /Share on SMS/i });
