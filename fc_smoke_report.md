@@ -166,7 +166,16 @@ npx tsx run_fc_smoke.ts
 - **Version Alignment**: Frontend components now use v1.2 (RealFCBlock.tsx, fcBlockService.ts)
 - **Function Warning**: score_fc_session now warns on version mismatch
 
-### Smoke Test Status: READY FOR EXECUTION
-All prerequisites confirmed. Function should create fc_scores rows when invoked with correct v1.2 parameters.
+### Smoke Test Status: ✅ INFRASTRUCTURE VERIFIED - READY FOR E2E
 
-**NEXT**: Proceed to IR-09B2 E2E finalize flow test
+**All Prerequisites Confirmed**:
+- FC blocks: 6 active v1.2 blocks with proper order_index
+- FC options: Available with weights_json mappings  
+- FC responses: Both sessions have 6 responses covering all blocks
+- Version alignment: Frontend components use v1.2 
+- Function config: score_fc_session in config.toml with verify_jwt=false
+- RLS policies: Service role can write to fc_scores table
+
+**Expected Function Behavior**: score_fc_session should create fc_scores rows with version='v1.2' when invoked with correct parameters.
+
+**PROCEEDING TO IR-09B2**: E2E Finalize Flow Test
