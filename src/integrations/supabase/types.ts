@@ -3158,6 +3158,14 @@ export type Database = {
         Args: { p_session: string }
         Returns: string
       }
+      get_sessions_with_emails_for_finalize: {
+        Args: { limit_count?: number; min_questions?: number }
+        Returns: {
+          email: string
+          id: string
+          share_token: string
+        }[]
+      }
       get_user_assessment_scores: {
         Args: { p_session_id: string }
         Returns: Json
