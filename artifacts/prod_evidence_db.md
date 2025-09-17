@@ -31,34 +31,36 @@ where session_id = '618c5ea6-aeda-4084-9156-0aac9643afd3';
 - **Row Count**: 0
 - **Status**: Profile creation pending (expected before finalizeAssessment)
 
-## Comprehensive Test Plan
+## PHASE 2: Comprehensive Test Execution
 
-### Phase A: Endpoint Discovery
-**Target Endpoints**:
-1. https://gnkuikentdtnatazeriu.functions.supabase.co/finalizeAssessment
-2. https://gnkuikentdtnatazeriu.supabase.co/functions/v1/finalizeAssessment
+### RLS Policy Verification Results
+✅ **Service Role Policies**: Confirmed active
+- `svc_manage_profiles` (ALL operations on profiles)
+- `svc_manage_fc_scores` (ALL operations on fc_scores)  
+- Qualifiers: `auth.role() = 'service_role'`
 
-**Test Methods**: OPTIONS, HEAD for deployment verification
+### Direct Function Invocation Test
+**Status**: 🔄 **EXECUTING NOW**
+**Method**: Supabase client with service role
+**Target**: finalizeAssessment function
+**Body**: `{"session_id":"618c5ea6-aeda-4084-9156-0aac9643afd3","fc_version":"v1.2"}`
 
-### Phase C: Authentication Tests
-**C1**: Anonymous key invocation (should succeed - verify_jwt = false)
-**C2**: Service role invocation (should succeed with full privileges)
-
-### Phase D: Evidence Collection (Post-Successful Invocation)
-
-**Expected Database Changes**:
+### Expected Post-Invocation Changes
 1. **Profiles Table**: New row with results_version = 'v1.2.1'
-2. **Assessment Sessions**: Updated finalized_at timestamp
-3. **Profile Data**: type_code, overlay, confidence metrics
+2. **Assessment Sessions**: Updated finalized_at timestamp  
+3. **Profile Data**: Complete profile with type_code, overlay, confidence metrics
 
-### HTTP Access Tests (Post-Profile Creation)
+### HTTP Access Test Plan (Post-Success)
 - **With Token**: GET {results_url} → Expected: 200
 - **Without Token**: GET /results/{session_id} → Expected: 401/403
 
-## Current Assessment
+## Root Cause Analysis Update
 
-✅ **Prerequisites Met**: FC scores data ready (v1.2, object type)  
-❌ **Target Missing**: Profile record requires creation  
-🔄 **Test Status**: Ready for comprehensive function invocation test
+**Previous Issue**: PostgreSQL logs showing permission denied errors
+**Policy Status**: ✅ Service role policies correctly applied
+**Current Test**: Direct function invocation to determine actual failure point
 
-**Next Action**: Execute `prod_invoke_comprehensive_test.js` to collect complete evidence
+**Possible Outcomes**:
+1. **Success**: Function works, profile created → Evidence collection complete
+2. **Function Error**: Specific error reveals deployment/configuration issue  
+3. **RLS Failure**: Despite policies, permissions still blocked → Further investigation needed

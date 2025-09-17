@@ -1,62 +1,91 @@
-# Production Evidence Gate - Comprehensive Test Ready
+# Production Evidence Gate - Comprehensive Test Execution  
 
 **Session ID**: 618c5ea6-aeda-4084-9156-0aac9643afd3  
 **Function**: finalizeAssessment  
 **Project**: gnkuikentdtnatazeriu  
-**Environment**: Production
-**Gate Time**: 2025-09-17T17:12:30Z
+**Environment**: Production  
+**Gate Time**: 2025-09-17T17:12:45Z
 
-## Evidence Checklist - Current Status
+## Evidence Collection Status: 🔄 **IN PROGRESS**
 
-### ✅ Prerequisites (PASS)
-- [x] **FC Scores**: version='v1.2', scores_json type = object
-- [x] **Session Exists**: Assessment session found and ready
-- [x] **Function Code**: finalizeAssessment exists in codebase
-- [x] **RLS Policies**: Applied successfully (svc_manage_profiles, svc_manage_fc_scores)
-- [x] **Function Config**: verify_jwt = false (accepts anon + service role)
+### ✅ Phase 1: Prerequisites (COMPLETE)
+- [x] **Environment**: Production confirmed
+- [x] **FC Scores**: v1.2, object type, ready for processing
+- [x] **RLS Policies**: Service role policies verified and active
+- [x] **Function Config**: verify_jwt = false, properly configured
+- [x] **Dependencies**: _shared/results-link.ts available
 
-### 🔄 Comprehensive Test Phases (READY)
-- [ ] **Phase A**: Endpoint discovery (OPTIONS/HEAD both canonical URLs)
-- [ ] **Phase C1**: Anonymous key test (should succeed)
-- [ ] **Phase C2**: Service role test (should succeed with full execution)
-- [ ] **Phase D**: Database evidence collection post-invocation
+### 🔄 Phase 2: Comprehensive Test (EXECUTING)
+- [x] **RLS Verification**: Policies confirmed active
+  - `svc_manage_profiles`: ALL operations for service_role
+  - `svc_manage_fc_scores`: ALL operations for service_role  
+  - `assessment_sessions`: Public policies active
+- [ ] **Direct Invocation**: Testing function execution
+- [ ] **Response Analysis**: Capturing function output
+- [ ] **Error Classification**: Identifying any failure points
 
-### ⏳ Expected Post-Invocation Results
-- [ ] **Profiles Created**: results_version='v1.2.1' present
-- [ ] **Session Updated**: finalized_at timestamp updated
-- [ ] **HTTP Access**: 200 with token, 401/403 without token
-- [ ] **Telemetry**: evt:fc_source=fc_scores present, no overrides
+### ⏳ Phase 3: Evidence Collection (PENDING)
+- [ ] **Database Verification**: Post-invocation state check
+- [ ] **Profile Creation**: Confirm results_version = 'v1.2.1'
+- [ ] **Session Updates**: Verify finalized_at timestamp
+- [ ] **Telemetry Logs**: Function execution evidence
 
-## Current Status: 🟡 **READY FOR COMPREHENSIVE TEST**
+### ⏳ Phase 4: HTTP Access Testing (PENDING)
+- [ ] **Token Access**: GET results_url → 200
+- [ ] **No Token Access**: GET /results/{session_id} → 401/403
+- [ ] **Security Validation**: Confirm proper access control
 
-### Test Environment Verified:
-✅ **Function Configuration**: Optimal (verify_jwt = false, CORS configured)  
-✅ **Database Prerequisites**: FC scores ready (v1.2, object type)  
-✅ **RLS Security**: Service role policies applied  
-✅ **Code Deployment**: Function exists in codebase with dependencies  
+## Current Test Status
 
-### Comprehensive Test Plan:
-1. **Endpoint Discovery**: Test both canonical URLs with OPTIONS/HEAD
-2. **Authentication Testing**: Verify anon and service role access
-3. **Function Execution**: Full finalizeAssessment invocation with evidence collection
-4. **Database Verification**: Confirm profile creation and session updates
-5. **HTTP Access Testing**: Validate results URL access patterns
-6. **Telemetry Analysis**: Verify function execution logs and data flow
+### Function Invocation Test
+**Method**: Direct Supabase client invocation  
+**Authentication**: Service role key  
+**Payload**: `{"session_id":"618c5ea6-aeda-4084-9156-0aac9643afd3","fc_version":"v1.2"}`  
+**Status**: 🔄 **EXECUTING**
 
-### Risk Assessment: 🟢 **LOW RISK**
-- **Rollback Available**: Can revert to previous state
-- **Data Safety**: FC scores preserved, no destructive operations
-- **Policy Security**: RLS protects against unauthorized access
-- **Function Safety**: Error handling implemented
+### Root Cause Analysis Progress
+**Previous Findings**:
+- ❌ No function execution logs detected
+- ❌ PostgreSQL permission denied errors
+- ✅ RLS policies correctly applied
 
-### Execution Command:
-```bash
-SUPABASE_SERVICE_ROLE_KEY=<key> node prod_invoke_comprehensive_test.js
-```
+**Current Investigation**:
+- Testing if function is actually accessible
+- Determining exact failure point in execution chain
+- Verifying service role authentication in function context
 
-**Recommendation**: **EXECUTE COMPREHENSIVE TEST** to collect complete evidence and determine final PASS/FAIL status.
+## Test Outcomes Matrix
+
+| Outcome | Indication | Next Action |
+|---------|------------|-------------|
+| **SUCCESS** | Function works, profile created | Complete evidence collection |
+| **404/405** | Function not deployed | Redeploy function |
+| **401/403** | Authentication failure | Verify service role configuration |
+| **422/500** | Function error | Debug specific error message |
+| **RLS Error** | Permission denied despite policies | Advanced RLS debugging |
+
+## Evidence Gate Criteria
+
+**For PASS Status**:
+- ✅ Function executes successfully (200 response)
+- ✅ Profile created with results_version = 'v1.2.1'  
+- ✅ Results URL generated and accessible
+- ✅ HTTP security properly enforced
+- ✅ Telemetry logs show function execution
+
+## Risk Assessment: 🟡 **MODERATE**
+
+**Known Issues**:
+- Recent PostgreSQL permission denied errors
+- No function execution logs in recent timeframe
+- Profile creation has been failing
+
+**Mitigation**:
+- RLS policies verified and correctly applied
+- Direct testing approach to isolate issues
+- Comprehensive error analysis planned
 
 ---
 
-**STATUS**: 🟡 **READY FOR EXECUTION**  
-**ACTION**: Run comprehensive test to complete evidence collection
+**STATUS**: 🔄 **COMPREHENSIVE TEST IN PROGRESS**  
+**ACTION**: Awaiting direct function invocation results to determine final PASS/FAIL status

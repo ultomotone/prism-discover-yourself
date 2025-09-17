@@ -1,13 +1,40 @@
 {
-  "status": "INVOKED_MANUALLY",
-  "message": "finalizeAssessment function invoked via service role for evidence collection",
+  "status": "COMPREHENSIVE_TEST_READY",
+  "message": "RLS policies verified - executing direct function invocation test",
   "environment": "production",
   "project_ref": "gnkuikentdtnatazeriu", 
   "session_id": "618c5ea6-aeda-4084-9156-0aac9643afd3",
   "fc_version": "v1.2",
-  "invocation_timestamp": "2025-09-17T16:32:00Z",
-  "method": "HTTP_POST_SERVICE_ROLE",
-  "endpoint": "/functions/v1/finalizeAssessment",
-  "expected_outcome": "Profile creation with results_version v1.2.1",
-  "next_phase": "Database verification proofs"
+  "test_timestamp": "2025-09-17T17:12:45Z",
+  "method": "DIRECT_SUPABASE_CLIENT",
+  "endpoint": "supabase.functions.invoke('finalizeAssessment')",
+  "rls_verification": {
+    "svc_manage_profiles": "✅ ACTIVE - ALL operations for service_role",
+    "svc_manage_fc_scores": "✅ ACTIVE - ALL operations for service_role", 
+    "assessment_sessions_policies": "✅ PUBLIC read/update/insert policies"
+  },
+  "pre_test_database_state": {
+    "fc_scores": {
+      "status": "✅ PRESENT",
+      "version": "v1.2",
+      "scores_type": "object",
+      "created_at": "2025-09-17 15:52:34.74156+00"
+    },
+    "profiles": {
+      "status": "❌ MISSING", 
+      "count": 0,
+      "note": "Profile creation required from finalizeAssessment"
+    },
+    "edge_function_logs": {
+      "status": "❌ NO RECENT EXECUTION",
+      "query_window": "last 1 hour",
+      "result": "empty array"
+    }
+  },
+  "test_execution_plan": {
+    "step_1": "Direct function invocation with service role authentication",
+    "step_2": "Response analysis and error classification", 
+    "step_3": "Database state verification post-invocation",
+    "step_4": "HTTP access testing if profile created successfully"
+  }
 }
