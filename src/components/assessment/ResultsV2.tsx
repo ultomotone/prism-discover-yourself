@@ -583,7 +583,7 @@ function Strengths({ p }:{ p:Profile }){
   
   // Prepare FC support data if available
   const fcSupport: Record<string, number> = {};
-  if (p.diagnostics?.considered) {
+  if (p.diagnostics?.considered && FUNCS) {
     // This would come from the edge function FC support data - placeholder for now
     FUNCS.forEach(f => {
       fcSupport[f] = Math.random() * 0.5; // Placeholder - should come from actual FC data
@@ -913,12 +913,12 @@ function FunctionsAnalysis({ p }: { p: Profile }) {
   const suppressedThreshold = medianStrength - 1;
   
   // Categorize functions based on type and performance
-  const functionsData = FUNCS.map(func => {
-    const strength = p.strengths[func] || 0;
-    const dimension = p.dimensions[func] || 0;
+  const functionsData = (FUNCS || []).map(func => {
+    const strength = p.strengths?.[func] || 0;
+    const dimension = p.dimensions?.[func] || 0;
     const isSuppressed = strength <= suppressedThreshold;
-    const isCoherent = p.dims_highlights.coherent.includes(func);
-    const isUnique = p.dims_highlights.unique.includes(func);
+    const isCoherent = p.dims_highlights?.coherent?.includes(func) || false;
+    const isUnique = p.dims_highlights?.unique?.includes(func) || false;
     
     let category = 'Typical';
     if (isSuppressed) category = 'Suppressed';
