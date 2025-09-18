@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LogOut, User, Target, ExternalLink, ChevronRight } from "lucide-react";
+import { LogOut, User, Target, ExternalLink, ChevronRight, RefreshCw, Zap } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { fetchDashboardResults, DashboardResult } from "@/lib/dashboardResults";
+import { useRealtimeScoring } from "@/hooks/useRealtimeScoring";
 
 interface UserSession {
   id: string;
@@ -33,6 +34,13 @@ const UserDashboard = () => {
   const [userSessions, setUserSessions] = useState<UserSession[]>([]);
   const [dashboardResults, setDashboardResults] = useState<DashboardResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Real-time scoring hook
+  const { 
+    scoringResults, 
+    isRecomputing, 
+    recomputeScoring 
+  } = useRealtimeScoring();
 
   useEffect(() => {
     if (user?.email) {
@@ -169,6 +177,92 @@ const UserDashboard = () => {
                     </Card>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Real-time Scoring Results */}
+            {scoringResults.length > 0 && (
+              <div className="mb-8">
+                <Card className="bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Zap className="h-5 w-5 text-purple-600" />
+                      Latest Assessment Results
+                      <Badge variant="secondary" className="ml-auto">
+                        Live Updates
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {scoringResults.slice(0, 3).map((result) => (
+                      <div key={result.id} className="flex items-center justify-between p-4 bg-white rounded-lg border">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="outline" className="text-sm">
+                              {result.type_code}
+                            </Badge>
+                            <Badge 
+                              variant={result.confidence === 'High' ? 'default' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {result.confidence} Confidence
+                            </Badge>
+                            <Badge 
+                              variant={result.fit_band === 'High' ? 'default' : 'outline'}
+                              className="text-xs"
+                            >
+                              {result.fit_band} Fit
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            Score: {result.score_fit_calibrated?.toFixed(1)} • 
+                            Updated: {format(new Date(result.computed_at), 'MMM dd, yyyy HH:mm')}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => recomputeScoring(result.session_id)}
+                          disabled={isRecomputing}
+                          className="ml-4"
+                        >
+                          {isRecomputing ? (
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    ))}
+                    
+                    {scoringResults.length > 3 && (
+                      <div className="text-center text-sm text-gray-500 pt-2">
+                        Showing 3 of {scoringResults.length} results
+                      </div>
+                    )}
+
+                    <div className="flex justify-center pt-4">
+                      <Button
+                        onClick={() => recomputeScoring()}
+                        disabled={isRecomputing}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        {isRecomputing ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                            Recomputing...
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="h-4 w-4" />
+                            Recompute All Scores
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
 

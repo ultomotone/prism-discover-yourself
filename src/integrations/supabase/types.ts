@@ -969,6 +969,82 @@ export type Database = {
         }
         Relationships: []
       }
+      scoring_results: {
+        Row: {
+          computed_at: string | null
+          confidence: string | null
+          created_at: string | null
+          dimensions: Json | null
+          fit_band: string | null
+          id: string
+          overlay: string | null
+          results_version: string | null
+          score_fit_calibrated: number | null
+          session_id: string
+          top_types: Json | null
+          type_code: string | null
+          updated_at: string | null
+          user_id: string | null
+          validity_status: string | null
+        }
+        Insert: {
+          computed_at?: string | null
+          confidence?: string | null
+          created_at?: string | null
+          dimensions?: Json | null
+          fit_band?: string | null
+          id?: string
+          overlay?: string | null
+          results_version?: string | null
+          score_fit_calibrated?: number | null
+          session_id: string
+          top_types?: Json | null
+          type_code?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          validity_status?: string | null
+        }
+        Update: {
+          computed_at?: string | null
+          confidence?: string | null
+          created_at?: string | null
+          dimensions?: Json | null
+          fit_band?: string | null
+          id?: string
+          overlay?: string | null
+          results_version?: string | null
+          score_fit_calibrated?: number | null
+          session_id?: string
+          top_types?: Json | null
+          type_code?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          validity_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scoring_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scoring_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scoring_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
       session_method_metrics: {
         Row: {
           created_at: string | null

@@ -1,5 +1,8 @@
 project_id = "gnkuikentdtnatazeriu"
 
+[functions.recompute-scoring]
+verify_jwt = false
+
 [functions.finalizeAssessment]
 verify_jwt = false
 
