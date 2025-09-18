@@ -55,16 +55,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
       : null;
 
     // Build target list
+    console.log(`Looking for session: ${sessionId ? sessionId : 'all recent sessions'}`);
+    
     const targetsQuery = admin
       .from("assessment_sessions")
-      .select("id")
+      .select("id, status")
       .in("status", ["completed"])
       .order("created_at", { ascending: false })
       .limit(2000);
 
     const { data: targetData, error: targetError } = sessionId
-      ? { data: [{ id: sessionId }], error: null }
+      ? await admin.from("assessment_sessions").select("id, status").eq("id", sessionId)
       : await targetsQuery;
+
+    console.log('Target query result:', { targetData, targetError, sessionId });
 
     if (targetError) {
       console.error("Target query error:", targetError);
@@ -75,6 +79,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     const targets: Array<{ id: string }> = targetData ?? [];
+    console.log(`Found ${targets.length} target sessions:`, targets.map(t => ({ id: t.id, status: (t as any).status })));
 
     const processTarget = async (t: { id: string }): Promise<ProcessResult | null> => {
       if (!t?.id) return null;
