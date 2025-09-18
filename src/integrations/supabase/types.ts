@@ -315,6 +315,42 @@ export type Database = {
         }
         Relationships: []
       }
+      change_requests: {
+        Row: {
+          action: string
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          execution_time_ms: number | null
+          id: string
+          params: Json
+          result: Json | null
+          status: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          params: Json
+          result?: Json | null
+          status?: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          params?: Json
+          result?: Json | null
+          status?: string
+        }
+        Relationships: []
+      }
       country_mapping: {
         Row: {
           country_name: string
@@ -653,6 +689,7 @@ export type Database = {
           baseline_session_id: string | null
           blocks: Json | null
           blocks_norm: Json | null
+          calibration_version: string | null
           close_call: boolean | null
           conf_band: string | null
           conf_calibrated: number | null
@@ -712,6 +749,7 @@ export type Database = {
           baseline_session_id?: string | null
           blocks?: Json | null
           blocks_norm?: Json | null
+          calibration_version?: string | null
           close_call?: boolean | null
           conf_band?: string | null
           conf_calibrated?: number | null
@@ -771,6 +809,7 @@ export type Database = {
           baseline_session_id?: string | null
           blocks?: Json | null
           blocks_norm?: Json | null
+          calibration_version?: string | null
           close_call?: boolean | null
           conf_band?: string | null
           conf_calibrated?: number | null
@@ -971,8 +1010,9 @@ export type Database = {
       }
       scoring_results: {
         Row: {
+          calibration_version: string | null
           computed_at: string | null
-          confidence: string | null
+          confidence: number | null
           created_at: string | null
           dimensions: Json | null
           fit_band: string | null
@@ -988,8 +1028,9 @@ export type Database = {
           validity_status: string | null
         }
         Insert: {
+          calibration_version?: string | null
           computed_at?: string | null
-          confidence?: string | null
+          confidence?: number | null
           created_at?: string | null
           dimensions?: Json | null
           fit_band?: string | null
@@ -1005,8 +1046,9 @@ export type Database = {
           validity_status?: string | null
         }
         Update: {
+          calibration_version?: string | null
           computed_at?: string | null
-          confidence?: string | null
+          confidence?: number | null
           created_at?: string | null
           dimensions?: Json | null
           fit_band?: string | null
@@ -1038,6 +1080,192 @@ export type Database = {
           },
           {
             foreignKeyName: "scoring_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      scoring_results_functions: {
+        Row: {
+          created_at: string
+          d_index_z: number | null
+          dimension: number
+          func: string
+          results_version: string
+          session_id: string
+          strength_z: number
+        }
+        Insert: {
+          created_at?: string
+          d_index_z?: number | null
+          dimension: number
+          func: string
+          results_version?: string
+          session_id: string
+          strength_z: number
+        }
+        Update: {
+          created_at?: string
+          d_index_z?: number | null
+          dimension?: number
+          func?: string
+          results_version?: string
+          session_id?: string
+          strength_z?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scoring_results_functions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scoring_results_functions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scoring_results_functions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      scoring_results_state: {
+        Row: {
+          block_context: string
+          block_core: number | null
+          block_critic: number | null
+          block_hidden: number | null
+          block_instinct: number | null
+          created_at: string
+          effect_conf: number | null
+          effect_fit: number | null
+          overlay_band: string
+          overlay_z: number | null
+          results_version: string
+          session_id: string
+        }
+        Insert: {
+          block_context?: string
+          block_core?: number | null
+          block_critic?: number | null
+          block_hidden?: number | null
+          block_instinct?: number | null
+          created_at?: string
+          effect_conf?: number | null
+          effect_fit?: number | null
+          overlay_band: string
+          overlay_z?: number | null
+          results_version?: string
+          session_id: string
+        }
+        Update: {
+          block_context?: string
+          block_core?: number | null
+          block_critic?: number | null
+          block_hidden?: number | null
+          block_instinct?: number | null
+          created_at?: string
+          effect_conf?: number | null
+          effect_fit?: number | null
+          overlay_band?: string
+          overlay_z?: number | null
+          results_version?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scoring_results_state_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scoring_results_state_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scoring_results_state_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      scoring_results_types: {
+        Row: {
+          calibration_version: string | null
+          coherent_dims: number | null
+          created_at: string
+          distance: number
+          fit: number
+          fit_parts: Json
+          results_version: string
+          seat_coherence: number | null
+          session_id: string
+          share: number
+          type_code: string
+          unique_dims: number | null
+        }
+        Insert: {
+          calibration_version?: string | null
+          coherent_dims?: number | null
+          created_at?: string
+          distance: number
+          fit: number
+          fit_parts?: Json
+          results_version?: string
+          seat_coherence?: number | null
+          session_id: string
+          share: number
+          type_code: string
+          unique_dims?: number | null
+        }
+        Update: {
+          calibration_version?: string | null
+          coherent_dims?: number | null
+          created_at?: string
+          distance?: number
+          fit?: number
+          fit_parts?: Json
+          results_version?: string
+          seat_coherence?: number | null
+          session_id?: string
+          share?: number
+          type_code?: string
+          unique_dims?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scoring_results_types_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scoring_results_types_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scoring_results_types_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "v_user_sessions_chrono"
@@ -1413,13 +1641,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_session_id_fkey"
-            columns: ["session_id_1"]
-            isOneToOne: false
-            referencedRelation: "assessment_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_session_id_fkey"
             columns: ["session_id_2"]
             isOneToOne: false
             referencedRelation: "assessment_sessions"
@@ -1429,7 +1650,7 @@ export type Database = {
             foreignKeyName: "profiles_session_id_fkey"
             columns: ["session_id_1"]
             isOneToOne: false
-            referencedRelation: "v_incomplete_sessions"
+            referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -1442,13 +1663,20 @@ export type Database = {
           {
             foreignKeyName: "profiles_session_id_fkey"
             columns: ["session_id_1"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
             isOneToOne: false
             referencedRelation: "v_user_sessions_chrono"
             referencedColumns: ["session_id"]
           },
           {
             foreignKeyName: "profiles_session_id_fkey"
-            columns: ["session_id_2"]
+            columns: ["session_id_1"]
             isOneToOne: false
             referencedRelation: "v_user_sessions_chrono"
             referencedColumns: ["session_id"]
@@ -2270,6 +2498,192 @@ export type Database = {
         }
         Relationships: []
       }
+      v_results_functions: {
+        Row: {
+          created_at: string | null
+          d_index_z: number | null
+          dimension: number | null
+          func: string | null
+          results_version: string | null
+          session_id: string | null
+          strength_z: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          d_index_z?: number | null
+          dimension?: number | null
+          func?: string | null
+          results_version?: string | null
+          session_id?: string | null
+          strength_z?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          d_index_z?: number | null
+          dimension?: number | null
+          func?: string | null
+          results_version?: string | null
+          session_id?: string | null
+          strength_z?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scoring_results_functions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scoring_results_functions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scoring_results_functions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      v_results_state: {
+        Row: {
+          block_context: string | null
+          block_core: number | null
+          block_critic: number | null
+          block_hidden: number | null
+          block_instinct: number | null
+          created_at: string | null
+          effect_conf: number | null
+          effect_fit: number | null
+          overlay_band: string | null
+          overlay_z: number | null
+          results_version: string | null
+          session_id: string | null
+        }
+        Insert: {
+          block_context?: string | null
+          block_core?: number | null
+          block_critic?: number | null
+          block_hidden?: number | null
+          block_instinct?: number | null
+          created_at?: string | null
+          effect_conf?: number | null
+          effect_fit?: number | null
+          overlay_band?: string | null
+          overlay_z?: number | null
+          results_version?: string | null
+          session_id?: string | null
+        }
+        Update: {
+          block_context?: string | null
+          block_core?: number | null
+          block_critic?: number | null
+          block_hidden?: number | null
+          block_instinct?: number | null
+          created_at?: string | null
+          effect_conf?: number | null
+          effect_fit?: number | null
+          overlay_band?: string | null
+          overlay_z?: number | null
+          results_version?: string | null
+          session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scoring_results_state_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scoring_results_state_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scoring_results_state_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      v_results_types: {
+        Row: {
+          calibration_version: string | null
+          coherent_dims: number | null
+          created_at: string | null
+          distance: number | null
+          fit: number | null
+          fit_parts: Json | null
+          results_version: string | null
+          seat_coherence: number | null
+          session_id: string | null
+          share: number | null
+          type_code: string | null
+          unique_dims: number | null
+        }
+        Insert: {
+          calibration_version?: string | null
+          coherent_dims?: number | null
+          created_at?: string | null
+          distance?: number | null
+          fit?: number | null
+          fit_parts?: Json | null
+          results_version?: string | null
+          seat_coherence?: number | null
+          session_id?: string | null
+          share?: number | null
+          type_code?: string | null
+          unique_dims?: number | null
+        }
+        Update: {
+          calibration_version?: string | null
+          coherent_dims?: number | null
+          created_at?: string | null
+          distance?: number | null
+          fit?: number | null
+          fit_parts?: Json | null
+          results_version?: string | null
+          seat_coherence?: number | null
+          session_id?: string | null
+          share?: number | null
+          type_code?: string | null
+          unique_dims?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scoring_results_types_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scoring_results_types_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scoring_results_types_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_sessions_chrono"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
       v_retest_deltas: {
         Row: {
           days_between: number | null
@@ -2285,13 +2699,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_session_id_fkey"
-            columns: ["session_id_2"]
-            isOneToOne: false
-            referencedRelation: "assessment_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_session_id_fkey"
             columns: ["session_id_1"]
             isOneToOne: false
             referencedRelation: "assessment_sessions"
@@ -2301,7 +2708,7 @@ export type Database = {
             foreignKeyName: "profiles_session_id_fkey"
             columns: ["session_id_2"]
             isOneToOne: false
-            referencedRelation: "v_incomplete_sessions"
+            referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -2314,13 +2721,20 @@ export type Database = {
           {
             foreignKeyName: "profiles_session_id_fkey"
             columns: ["session_id_2"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_1"]
             isOneToOne: false
             referencedRelation: "v_user_sessions_chrono"
             referencedColumns: ["session_id"]
           },
           {
             foreignKeyName: "profiles_session_id_fkey"
-            columns: ["session_id_1"]
+            columns: ["session_id_2"]
             isOneToOne: false
             referencedRelation: "v_user_sessions_chrono"
             referencedColumns: ["session_id"]
@@ -2687,13 +3101,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_session_id_fkey"
-            columns: ["session_id_1"]
-            isOneToOne: false
-            referencedRelation: "assessment_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_session_id_fkey"
             columns: ["session_id_2"]
             isOneToOne: false
             referencedRelation: "assessment_sessions"
@@ -2703,7 +3110,7 @@ export type Database = {
             foreignKeyName: "profiles_session_id_fkey"
             columns: ["session_id_1"]
             isOneToOne: false
-            referencedRelation: "v_incomplete_sessions"
+            referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -2716,13 +3123,20 @@ export type Database = {
           {
             foreignKeyName: "profiles_session_id_fkey"
             columns: ["session_id_1"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
             isOneToOne: false
             referencedRelation: "v_user_sessions_chrono"
             referencedColumns: ["session_id"]
           },
           {
             foreignKeyName: "profiles_session_id_fkey"
-            columns: ["session_id_2"]
+            columns: ["session_id_1"]
             isOneToOne: false
             referencedRelation: "v_user_sessions_chrono"
             referencedColumns: ["session_id"]
@@ -2921,6 +3335,7 @@ export type Database = {
           baseline_session_id: string | null
           blocks: Json | null
           blocks_norm: Json | null
+          calibration_version: string | null
           close_call: boolean | null
           conf_band: string | null
           conf_calibrated: number | null
@@ -2995,6 +3410,10 @@ export type Database = {
           has_recent_completion: boolean
           last_completion_date: string
         }[]
+      }
+      check_scoring_qa: {
+        Args: { p_results_version?: string; p_session_id: string }
+        Returns: Json
       }
       compute_profile_from_responses: {
         Args: { p_session_id: string; p_version: string }
@@ -3107,6 +3526,7 @@ export type Database = {
           baseline_session_id: string | null
           blocks: Json | null
           blocks_norm: Json | null
+          calibration_version: string | null
           close_call: boolean | null
           conf_band: string | null
           conf_calibrated: number | null
@@ -3296,6 +3716,7 @@ export type Database = {
           baseline_session_id: string | null
           blocks: Json | null
           blocks_norm: Json | null
+          calibration_version: string | null
           close_call: boolean | null
           conf_band: string | null
           conf_calibrated: number | null
