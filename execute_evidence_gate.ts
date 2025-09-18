@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import * as fs from 'fs';
 
 const url = "https://gnkuikentdtnatazeriu.supabase.co";
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -46,7 +47,7 @@ async function executeEvidenceGate() {
   }
   
   const fcValid = fcScores?.[0]?.version === 'v1.2' && fcScores?.[0]?.scores_json;
-  console.log(`FC Scores: version=${fcScores?.[0]?.version}, has_scores=${!!fcScores?.[0]?.scores_json} ${fcValid ? '✅' : '❌'}`);
+  console.log(`FC Scores: version=${fcScores?.[0]?.version}, has_scores=${Boolean(fcScores?.[0]?.scores_json)} ${fcValid ? '✅' : '❌'}`);
   
   // Step 3: Verify profiles exists with correct version
   console.log('\n🔍 Step 3: Verifying profiles...');
@@ -127,7 +128,7 @@ async function executeEvidenceGate() {
 
 ### FC Scores
 - **Version**: ${fcScores?.[0]?.version}
-- **Scores Present**: ${!!fcScores?.[0]?.scores_json ? 'Yes' : 'No'}
+- **Scores Present**: ${fcScores?.[0]?.scores_json ? 'Yes' : 'No'}
 - **Blocks Answered**: ${fcScores?.[0]?.blocks_answered || 0}
 - **Status**: ${fcValid ? '✅ PASS' : '❌ FAIL'}
 
@@ -151,7 +152,6 @@ async function executeEvidenceGate() {
 ${overallPass ? 'Hard evidence captured: fc_scores v1.2 + profiles v1.2.1 + tokenized security enforced. Ready for backfill phase.' : 'Evidence validation failed. Do not proceed to backfill until issues are resolved.'}
 `;
 
-  const fs = require('fs');
   fs.writeFileSync('evidence_gate.md', evidenceReport);
   
   console.log('\n📄 Evidence report written to evidence_gate.md');
