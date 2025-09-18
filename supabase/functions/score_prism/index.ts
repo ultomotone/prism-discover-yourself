@@ -19,6 +19,8 @@ serve(async (req) => {
       });
     }
 
+    console.log(JSON.stringify({ evt: "prism_start", session_id }));
+
     const url = Deno.env.get("SUPABASE_URL");
     const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!url || !key) {
@@ -92,9 +94,9 @@ serve(async (req) => {
       .maybeSingle();
     if (fcRow?.scores_json) {
       fcScores = fcRow.scores_json as Record<string, number>;
-      console.log(`evt:fc_scores_loaded,session_id:${session_id}`);
+      console.log(JSON.stringify({ evt: "fc_scores_loaded", session_id }));
     } else {
-      console.log(`evt:fc_fallback_legacy,session_id:${session_id}`);
+      console.log(JSON.stringify({ evt: "fc_fallback_legacy", session_id }));
     }
 
     const profile = scoreAssessment({
@@ -164,7 +166,13 @@ serve(async (req) => {
 
     await supabase.from("profiles").upsert(profileRow, { onConflict: "session_id" });
 
-    console.log(`evt:scoring_complete,session_id:${session_id},type:${profileRow.type_code},confidence:${profileRow.conf_calibrated}`);
+    console.log(JSON.stringify({ 
+      evt: "prism_complete", 
+      session_id, 
+      type_code: profileRow.type_code, 
+      confidence: profileRow.conf_calibrated,
+      results_version: "v1.2.1"
+    }));
 
     return new Response(
       JSON.stringify({
@@ -176,6 +184,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e: any) {
+    console.log(JSON.stringify({ evt: "prism_error", session_id, error: e?.message || String(e) }));
     return new Response(JSON.stringify({ status: "error", error: e?.message || String(e) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -25,13 +25,15 @@ Deno.serve(async (req) => {
     const { session_id, responses } = await req.json();
     if (!session_id) return json({ status: "error", error: "session_id required" }, 400);
 
+    console.log(JSON.stringify({ evt: "scoring_start", session_id }));
+
     // FC scoring (best-effort)
     try {
       await supabase.functions.invoke("score_fc_session", {
         body: { session_id, version: "v1.2", basis: "functions" },
       });
-    } catch {
-      /* ignore */
+    } catch (fcError: any) {
+      console.log(JSON.stringify({ evt: "fc_no_responses", session_id, error: fcError?.message }));
     }
 
     // Profile scoring
@@ -72,11 +74,15 @@ Deno.serve(async (req) => {
       "https://prismassessment.com";
 
     const resultsUrl = buildResultsLink(siteUrl, session_id, share_token);
+    
+    console.log(JSON.stringify({ evt: "scoring_complete", session_id, type_code: data.profile.type_code, share_token }));
+    
     return json(
       { ok: true, status: "success", session_id, share_token, profile: data.profile, results_url: resultsUrl },
       200,
     );
   } catch (e: any) {
+    console.log(JSON.stringify({ evt: "scoring_error", session_id, error: e?.message || String(e) }));
     return json({ status: "error", error: e?.message || "Internal server error" }, 500);
   }
 });

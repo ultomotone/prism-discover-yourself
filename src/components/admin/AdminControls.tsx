@@ -6,7 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 function AdminControls() {
   const { toast } = useToast();
-  const [busy, setBusy] = useState<null | "refresh" | "backfill" | "recompute" | "session" | "bulk248">(null);
+  const [busy, setBusy] = useState<null | "refresh" | "backfill" | "recompute" | "session" | "bulk248" | "profileBackfill">(null);
   const [sessionId, setSessionId] = useState("");
 
   async function invokeEdge<T = any>(name: string, body: Record<string, any> = {}) {
@@ -98,6 +98,42 @@ function AdminControls() {
     }
   };
 
+  const onProfileBackfill = async () => {
+    setBusy("profileBackfill");
+    try {
+      // First do a dry run
+      const dryRun = await invokeEdge("backfill-profiles", { dryRun: true, sinceDays: 30 });
+      
+      if (dryRun.count > 0) {
+        const confirmed = window.confirm(
+          `Found ${dryRun.count} sessions needing profile backfill. Proceed with actual backfill?`
+        );
+        
+        if (confirmed) {
+          const res = await invokeEdge("backfill-profiles", { dryRun: false, sinceDays: 30 });
+          toast({
+            title: "Profile backfill complete",
+            description: `Processed ${res?.processed ?? 0} of ${res?.count ?? 0} sessions`,
+          });
+        } else {
+          toast({
+            title: "Backfill cancelled",
+            description: `Would have processed ${dryRun.count} sessions`,
+          });
+        }
+      } else {
+        toast({
+          title: "No backfill needed",
+          description: "All completed sessions already have profiles",
+        });
+      }
+    } catch (e: any) {
+      toast({ title: "Profile backfill failed", description: e.message, variant: "destructive" });
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <div className="flex flex-wrap gap-2 items-center">
       <Button onClick={onRefresh} disabled={!!busy}>
@@ -120,6 +156,9 @@ function AdminControls() {
       </Button>
       <Button variant="outline" onClick={onBulkRecompute248} disabled={!!busy}>
         {busy === "bulk248" ? "Processing…" : "Recompute All 248+ Sessions"}
+      </Button>
+      <Button variant="secondary" onClick={onProfileBackfill} disabled={!!busy}>
+        {busy === "profileBackfill" ? "Backfilling…" : "Backfill Missing Profiles"}
       </Button>
     </div>
   );
