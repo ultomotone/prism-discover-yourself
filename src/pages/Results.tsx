@@ -6,7 +6,7 @@ import React, {
   type ComponentType,
 } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { supabase } from "@/lib/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { ResultsV2 } from "@/components/assessment/ResultsV2";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

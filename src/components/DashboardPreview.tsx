@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 // No auto-rescoring - server-side only
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

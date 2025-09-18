@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
 const DateRangeSchema = z.object({
@@ -154,7 +154,7 @@ export const useAdvancedAdminAnalytics = () => {
     useState<LatestAssessments>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = useMemo(() => createClient(), []);
+  // Use singleton supabase client to avoid multiple GoTrueClient instances
 
   const fetchAll = async () => {
     setLoading(true);

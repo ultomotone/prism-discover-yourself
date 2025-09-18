@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Treemap, ResponsiveContainer, Cell, Tooltip } from 'recharts';
-import { supabase } from "@/lib/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CountryData {
   country: string;
