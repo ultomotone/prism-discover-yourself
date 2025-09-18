@@ -73,6 +73,13 @@ export async function trackRedditS2S(
   try {
     const ctx = getAttributionContext();
     
+    // Check if Reddit tracking is properly configured
+    const redditAppId = localStorage.getItem('reddit_app_id');
+    if (!redditAppId) {
+      console.log('Reddit tracking disabled - no app ID configured');
+      return;
+    }
+    
     await fetch('/functions/v1/reddit-conversions', {
       method: 'POST',
       headers: { 
@@ -87,8 +94,8 @@ export async function trackRedditS2S(
       keepalive: true
     });
   } catch (error) {
-    // Never break UX - just log and continue
-    console.warn('Reddit S2S tracking failed:', error);
+    // Never break UX - just log and continue silently
+    console.log('Reddit S2S tracking skipped:', error?.message || 'endpoint not available');
   }
 }
 
