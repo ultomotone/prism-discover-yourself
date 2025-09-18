@@ -103,14 +103,14 @@ export const useEvidenceAnalytics = (filters: EvidenceFilters) => {
 
       if (data && data.length > 0) {
         // Calculate stability metrics from test-retest data
-        const stableTypes = data.filter(d => d.type_same === 1);
-        const overallR = stableTypes.length / data.length; // Stability rate as correlation proxy
+        const stableTypes = (data as any[]).filter((d: any) => d.type_same === 1);
+        const overallR = stableTypes.length / (data as any[]).length; // Stability rate as correlation proxy
         
-        const medianDaysApart = data.map(d => d.days_between || 0)
-          .sort((a, b) => a - b)[Math.floor(data.length / 2)];
+        const medianDaysApart = (data as any[]).map((d: any) => d.days_between || 0)
+          .sort((a: number, b: number) => a - b)[Math.floor((data as any[]).length / 2)];
         
         // Create sparkline data grouped by days between assessments
-        const sparklineGroups = data.reduce((acc, d) => {
+        const sparklineGroups = (data as any[]).reduce((acc: any, d: any) => {
           const dayBucket = Math.floor((d.days_between || 0) / 7) * 7; // Weekly buckets
           if (!acc[dayBucket]) acc[dayBucket] = [];
           acc[dayBucket].push(d.type_same);
@@ -125,9 +125,9 @@ export const useEvidenceAnalytics = (filters: EvidenceFilters) => {
           .sort((a, b) => a.days - b.days)
           .slice(0, 10); // Limit to 10 data points
 
-        setTestRetestReliability({
-          overallR: overallR,
-          medianDaysApart: medianDaysApart || 0,
+          setTestRetestReliability({
+            overallR: overallR,
+            medianDaysApart: medianDaysApart || 0,
           sparklineData,
           n: data.length
         });
@@ -140,7 +140,7 @@ export const useEvidenceAnalytics = (filters: EvidenceFilters) => {
 
         if (qualityData) {
           setTestRetestReliability({
-            overallR: (100 - (qualityData.close_calls_share || 0)) / 100, // Inverse of close calls
+            overallR: (100 - ((qualityData as any).close_calls_share || 0)) / 100, // Inverse of close calls
             medianDaysApart: 21,
             sparklineData: [
               { days: 0, r: 0.89 },
@@ -149,7 +149,7 @@ export const useEvidenceAnalytics = (filters: EvidenceFilters) => {
               { days: 21, r: 0.83 },
               { days: 28, r: 0.82 }
             ],
-            n: qualityData.n || 0
+            n: (qualityData as any).n || 0
           });
         } else {
           // Final fallback to demo data
@@ -218,11 +218,11 @@ export const useEvidenceAnalytics = (filters: EvidenceFilters) => {
 
         if (qualityData) {
           // Derive stability from quality metrics
-          const stabilityPercent = Math.max(0, 100 - (qualityData.close_calls_share || 0) * 2);
+          const stabilityPercent = Math.max(0, 100 - ((qualityData as any).close_calls_share || 0) * 2);
           setTypeStability({
             stabilityPercent: stabilityPercent,
-            adjacentFlipPercent: Math.min(20, (qualityData.close_calls_share || 0)),
-            n: qualityData.n || 0
+            adjacentFlipPercent: Math.min(20, ((qualityData as any).close_calls_share || 0)),
+            n: (qualityData as any).n || 0
           });
         } else {
           // Final fallback to demo data
@@ -257,21 +257,21 @@ export const useEvidenceAnalytics = (filters: EvidenceFilters) => {
         const confDist = confDistResult.data;
         
         // Calculate hit rates based on confidence distribution and overall metrics
-        const totalAssessments = confDist.reduce((sum: number, row: any) => sum + (row.n || 0), 0);
-        const highConfPct = overview.hi_mod_conf_pct || 0;
+        const totalAssessments = (confDist as any[]).reduce((sum: number, row: any) => sum + (row.n || 0), 0);
+        const highConfPct = (overview as any).hi_mod_conf_pct || 0;
         
         // Estimate hit rates based on fit score and confidence distribution
         const calibrationData: ConfidenceCalibrationData = {
           high: { 
-            hitRate: Math.min(95, 70 + (overview.avg_fit_score || 0) / 2), 
+            hitRate: Math.min(95, 70 + ((overview as any).avg_fit_score || 0) / 2), 
             n: Math.floor(totalAssessments * (highConfPct / 100) * 0.6) || 89
           },
           moderate: { 
-            hitRate: Math.min(85, 50 + (overview.avg_fit_score || 0) / 3), 
+            hitRate: Math.min(85, 50 + ((overview as any).avg_fit_score || 0) / 3), 
             n: Math.floor(totalAssessments * (highConfPct / 100) * 0.4) || 134
           },
           low: { 
-            hitRate: Math.max(20, 40 - (100 - (overview.avg_fit_score || 0)) / 4), 
+            hitRate: Math.max(20, 40 - (100 - ((overview as any).avg_fit_score || 0)) / 4), 
             n: Math.floor(totalAssessments * (100 - highConfPct) / 100) || 67
           }
         };
@@ -313,12 +313,12 @@ export const useEvidenceAnalytics = (filters: EvidenceFilters) => {
         const functions: Record<string, number> = {};
         
         functionGroups.forEach(func => {
-          const correlations = methodData
-            .map(day => day[`r_${func.toLowerCase()}`])
-            .filter(r => r !== null && r !== undefined);
+          const correlations = (methodData as any[])
+            .map((day: any) => day[`r_${func.toLowerCase()}`])
+            .filter((r: any) => r !== null && r !== undefined);
           
           if (correlations.length > 0) {
-            functions[func] = correlations.reduce((sum, r) => sum + r, 0) / correlations.length;
+            functions[func] = correlations.reduce((sum: number, r: number) => sum + r, 0) / correlations.length;
           } else {
             // Fallback estimate based on function type
             const isJudging = ['Ti', 'Te', 'Fi', 'Fe'].includes(func);
@@ -342,7 +342,7 @@ export const useEvidenceAnalytics = (filters: EvidenceFilters) => {
 
         if (qualityData) {
           // Derive MAI from quality metrics
-          const baseMAI = Math.max(0.65, 0.85 - (qualityData.incons_ge_1_5 || 0) / 100);
+          const baseMAI = Math.max(0.65, 0.85 - ((qualityData as any).incons_ge_1_5 || 0) / 100);
           const functionGroups = ['Ti', 'Te', 'Fi', 'Fe', 'Ni', 'Ne', 'Si', 'Se'];
           const functions: Record<string, number> = {};
           

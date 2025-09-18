@@ -58,7 +58,7 @@ export const useRealtimeScoring = () => {
         return;
       }
 
-      setScoringResults(data || []);
+      setScoringResults((data as any[]) || []);
     } catch (error) {
       console.error('Error in fetchScoringResults:', error);
     } finally {

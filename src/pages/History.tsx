@@ -178,12 +178,12 @@ const History = () => {
       if (error) throw error;
 
       // Type cast the data to match our interface
-      const typedData = (data || []).map(item => ({
+      const typedData = ((data as any[]) || []).map((item: any) => ({
         ...item,
         deltas: item.deltas as HistoryRecord['deltas']
       }));
 
-      setHistory(typedData);
+      setHistory(typedData as any);
     } catch (error: any) {
       toast({
         title: "Error",

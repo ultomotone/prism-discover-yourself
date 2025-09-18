@@ -300,7 +300,7 @@ export async function loadSessionResponses(sessionId: string): Promise<Array<{
       throw directError;
     }
 
-    return (responses || []).map(r => ({
+    return ((responses as any[]) || []).map((r: any) => ({
       questionId: r.question_id,
       answer: r.answer_array || r.answer_numeric || r.answer_value || ''
     }));

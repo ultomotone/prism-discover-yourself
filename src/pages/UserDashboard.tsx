@@ -70,11 +70,11 @@ const UserDashboard = () => {
       if (sessionsError) {
         console.error('Error fetching user sessions:', sessionsError);
         setUserSessions([]);
-      } else if (sessionsResult?.error) {
-        console.error('RPC error:', sessionsResult.error);
+      } else if ((sessionsResult as any)?.error) {
+        console.error('RPC error:', (sessionsResult as any).error);
         setUserSessions([]);
       } else {
-        const sessionsWithProfiles = sessionsResult?.sessions || [];
+        const sessionsWithProfiles = (sessionsResult as any)?.sessions || [];
         setUserSessions(sessionsWithProfiles);
       }
 

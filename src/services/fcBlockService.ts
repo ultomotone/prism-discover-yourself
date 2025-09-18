@@ -69,15 +69,15 @@ export async function loadFCBlocks(): Promise<{
 
   // Group options by block_id
   const optionsByBlock: Record<string, FCOption[]> = {};
-  optionsData?.forEach(option => {
+  (optionsData as any[])?.forEach((option: any) => {
     if (!optionsByBlock[option.block_id]) {
       optionsByBlock[option.block_id] = [];
     }
-    optionsByBlock[option.block_id].push(option);
+    optionsByBlock[option.block_id].push(option as FCOption);
   });
 
   return {
-    blocks: blocksData || [],
+    blocks: (blocksData as any[]) || [],
     options: optionsByBlock
   };
 }
@@ -121,7 +121,7 @@ export async function loadFCResponses(sessionId: string): Promise<FCResponse[]> 
     throw error;
   }
 
-  return data || [];
+  return (data as any[]) || [];
 }
 
 /**

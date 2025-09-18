@@ -57,7 +57,7 @@ export default function Roadmap() {
           .not('confidence', 'is', null);
 
         // Remove duplicates by session_id, keeping the most recent entry
-        const uniqueConfidenceData = confidenceData?.reduce((acc, item) => {
+        const uniqueConfidenceData = (confidenceData as any[])?.reduce((acc: any, item: any) => {
           if (!acc[item.session_id] && item.confidence) {
             acc[item.session_id] = item.confidence;
           }
