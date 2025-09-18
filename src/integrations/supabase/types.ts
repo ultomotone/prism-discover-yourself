@@ -2619,7 +2619,6 @@ export type Database = {
       }
       v_results_types: {
         Row: {
-          calibration_version: string | null
           coherent_dims: number | null
           created_at: string | null
           distance: number | null
@@ -2633,7 +2632,6 @@ export type Database = {
           unique_dims: number | null
         }
         Insert: {
-          calibration_version?: string | null
           coherent_dims?: number | null
           created_at?: string | null
           distance?: number | null
@@ -2647,7 +2645,6 @@ export type Database = {
           unique_dims?: number | null
         }
         Update: {
-          calibration_version?: string | null
           coherent_dims?: number | null
           created_at?: string | null
           distance?: number | null
