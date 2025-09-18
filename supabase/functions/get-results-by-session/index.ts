@@ -4,116 +4,134 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Content-Type": "application/json"
 };
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), { 
+    status, 
+    headers: corsHeaders 
+  });
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   
   try {
     const { session_id, share_token } = await req.json();
-    if (!session_id) {
-      return new Response(JSON.stringify({ status: "error", error: "session_id required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    if (!share_token) {
-      console.log(`evt:tokenless_access,session_id:${session_id}`);
-      return new Response(JSON.stringify({ status: "error", error: "share token required" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const url = Deno.env.get("SUPABASE_URL")!;
-    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(url, key);
-
-    // Try RPC with correct parameter names
-    const { data, error } = await supabase.rpc("get_profile_by_session", {
-      p_session_id: session_id,
-      p_share_token: share_token,
-    });
     
-    if (error) {
-      console.log(`rpc_error:${error.message},session:${session_id}`);
-      // Fallback: direct query with token validation
-      const { data: sessionData, error: sessionError } = await supabase
+    if (!session_id) {
+      return jsonResponse({ ok: false, error: "session_id required" }, 400);
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    
+    const serviceClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false }
+    });
+
+    console.log(`Fetching results for session ${session_id}, token: ${share_token ? 'present' : 'missing'}`);
+
+    // 1) If share token is present, validate against session row
+    if (share_token) {
+      const { data: session, error: sessionError } = await serviceClient
         .from("assessment_sessions")
         .select("id, share_token, share_token_expires_at, status")
         .eq("id", session_id)
-        .maybeSingle();
+        .single();
 
-      if (sessionError || !sessionData) {
-        return new Response(JSON.stringify({ status: "error", error: "session not found" }), {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      if (sessionError || !session) {
+        console.error("Session lookup error:", sessionError);
+        return jsonResponse({ ok: false, error: "session not found" }, 404);
       }
 
-      if (sessionData.share_token !== share_token) {
-        return new Response(JSON.stringify({ status: "error", error: "invalid token" }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      if (session.share_token !== share_token) {
+        console.error("Invalid share token provided");
+        return jsonResponse({ ok: false, error: "invalid token" }, 401);
       }
 
-      // Check token expiration
-      if (sessionData.share_token_expires_at && new Date(sessionData.share_token_expires_at) < new Date()) {
-        return new Response(JSON.stringify({ status: "error", error: "token expired" }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      // Check token expiration if set
+      if (session.share_token_expires_at && new Date(session.share_token_expires_at) < new Date()) {
+        console.error("Share token expired");
+        return jsonResponse({ ok: false, error: "token expired" }, 401);
       }
 
-      // Get profile
-      const { data: profileData, error: profileError } = await supabase
+      // Get profile for this session
+      const { data: profile, error: profileError } = await serviceClient
         .from("profiles")
         .select("*")
         .eq("session_id", session_id)
-        .maybeSingle();
+        .single();
 
-      if (profileError) {
-        return new Response(JSON.stringify({ status: "error", error: profileError.message }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      if (profileError || !profile) {
+        console.error("Profile lookup error:", profileError);
+        return jsonResponse({ ok: false, error: "profile not found" }, 404);
       }
 
-      if (!profileData) {
-        return new Response(JSON.stringify({ status: "error", error: "profile not found" }), {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+      console.log(`Profile found for session ${session_id} via share token`);
+      return jsonResponse({ ok: true, profile, session });
+    }
 
-      const profile = { ...profileData };
-      delete (profile as any).share_token;
-      
-      return new Response(
-        JSON.stringify({ status: "success", profile, session: sessionData }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+    // 2) No token → allow only if caller is the owner (Authorization header)
+    const authHeader = req.headers.get("Authorization") || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return jsonResponse({ ok: false, error: "share token required" }, 401);
     }
-    
-    if (!data?.profile) {
-      return new Response(JSON.stringify({ status: "error", error: "not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    
-    const profile = data.profile;
-    delete (profile as any).share_token;
-    return new Response(
-      JSON.stringify({ status: "success", profile, session: data.session }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  } catch (e: any) {
-    console.log(`general_error:${e.message}`);
-    return new Response(JSON.stringify({ status: "error", error: e.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+
+    const jwt = authHeader.slice(7);
+    const authedClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: `Bearer ${jwt}` } },
+      auth: { persistSession: false }
     });
+
+    const { data: userResponse } = await authedClient.auth.getUser();
+    const user = userResponse?.user;
+    
+    if (!user) {
+      console.error("No authenticated user found");
+      return jsonResponse({ ok: false, error: "unauthorized" }, 401);
+    }
+
+    // Check if user owns this session
+    const { data: sessionData, error: sessionError } = await serviceClient
+      .from("assessment_sessions")
+      .select("id, user_id, status")
+      .eq("id", session_id)
+      .single();
+
+    if (sessionError || !sessionData) {
+      console.error("Session lookup error for owner:", sessionError);
+      return jsonResponse({ ok: false, error: "session not found" }, 404);
+    }
+
+    if (sessionData.user_id !== user.id) {
+      console.error(`Session ${session_id} belongs to ${sessionData.user_id}, not ${user.id}`);
+      return jsonResponse({ ok: false, error: "forbidden" }, 403);
+    }
+
+    // Get profile for owned session
+    const { data: profile, error: profileError } = await serviceClient
+      .from("profiles")
+      .select("*")
+      .eq("session_id", session_id)
+      .single();
+
+    if (profileError || !profile) {
+      console.error("Profile lookup error for owner:", profileError);
+      return jsonResponse({ ok: false, error: "profile not found" }, 404);
+    }
+
+    console.log(`Profile found for session ${session_id} via owner auth`);
+    return jsonResponse({ ok: true, profile, session: sessionData });
+
+  } catch (error: any) {
+    console.error("Error in get-results-by-session:", error);
+    return jsonResponse({ 
+      ok: false, 
+      error: error.message || "Internal server error" 
+    }, 500);
   }
 });

@@ -200,23 +200,63 @@ export default function Results({ components }: ResultsProps = {}) {
     setErr(null);
     setErrKind(null);
 
-    // Debug logging
     console.log('🔍 Results useEffect triggered');
     console.log('SessionID:', sessionId);
     console.log('ShareToken:', shareToken);
     console.log('Current URL:', window.location.href);
 
+    const ensureShareTokenAndReload = async (sessionId: string) => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.log('No user found, cannot get share token');
+          setErr('Sign in or open the link with a share token to view results.');
+          setErrKind('not_authorized');
+          return;
+        }
+
+        console.log('Attempting to get share token for owned session...');
+        const { data, error } = await supabase.functions.invoke("get-or-create-share-token", {
+          body: { session_id: sessionId },
+        });
+        
+        if (!error && data?.ok && data?.share_token) {
+          console.log('Got share token, redirecting...');
+          const url = new URL(window.location.href);
+          url.searchParams.set("t", data.share_token);
+          window.location.replace(url.toString());
+        } else {
+          console.error('Failed to get share token:', error || data);
+          setErr('Unable to access results. Please check if you own this session or have a valid share link.');
+          setErrKind('not_authorized');
+        }
+      } catch (err) {
+        console.error('Error getting share token:', err);
+        setErr('Failed to authenticate access to results.');
+        setErrKind('not_authorized');
+      }
+    };
+
     (async () => {
       try {
         console.log('🔍 Calling get-results-by-session Edge Function...');
         
-        // Call Edge Function exclusively - no direct REST calls
+        // Call Edge Function with share token (or null)
         const { data: result, error } = await supabase.functions.invoke('get-results-by-session', {
           body: { session_id: sessionId, share_token: shareToken }
         });
 
-        if (error) throw error;
-        if (result?.status === 'error') throw new Error(result.error);
+        if (error) {
+          // If no share token and we got 401, try owner auth
+          if (!shareToken && (error.message?.includes('401') || error.message?.includes('share token required'))) {
+            console.log('No share token provided, attempting owner auth...');
+            await ensureShareTokenAndReload(sessionId);
+            return;
+          }
+          throw error;
+        }
+        
+        if (result?.ok === false) throw new Error(result.error);
         if (!result?.profile) throw new Error("Profile not found");
 
         console.log('✅ Edge Function success:', result);
@@ -239,7 +279,6 @@ export default function Results({ components }: ResultsProps = {}) {
           if (kind === "expired_or_invalid_token" || kind === "not_authorized") {
             setErrKind(kind);
           } else {
-            // Handle specific "profile not found" case
             if (e?.message?.includes('Profile not found') || e?.code === 'PROFILE_NOT_FOUND') {
               setErr("This assessment needs to be scored. Profile data is missing.");
             } else {
