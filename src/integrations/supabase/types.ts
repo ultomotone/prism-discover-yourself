@@ -3655,6 +3655,16 @@ export type Database = {
         Args: { p_session: string }
         Returns: string
       }
+      get_results_v2: {
+        Args: { p_session_id: string; p_share_token?: string }
+        Returns: {
+          functions: Json
+          profile: Json
+          session: Json
+          state: Json
+          types: Json
+        }[]
+      }
       get_sessions_with_emails_for_finalize: {
         Args: { limit_count?: number; min_questions?: number }
         Returns: {
@@ -3685,6 +3695,10 @@ export type Database = {
           country: string
           sessions: number
         }[]
+      }
+      link_session_to_user: {
+        Args: { p_email?: string; p_session: string; p_user: string }
+        Returns: Json
       }
       log_fn: {
         Args: { evt: string; payload: Json }

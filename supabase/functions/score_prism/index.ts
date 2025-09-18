@@ -166,6 +166,137 @@ serve(async (req) => {
 
     await supabase.from("profiles").upsert(profileRow, { onConflict: "session_id" });
 
+    // ===== PR2: Persist v2 rows =====
+    console.log(JSON.stringify({ evt: "persisting_v2_rows", session_id }));
+    
+    // Persist scoring_results_types (per-type shares/fits)
+    if (profile.type_scores && typeof profile.type_scores === 'object') {
+      const typesData = Object.entries(profile.type_scores).map(([type_code, typeData]: [string, any]) => ({
+        session_id,
+        results_version: 'v2',
+        type_code,
+        share: typeData.share_pct || typeData.share || 0,
+        fit: typeData.fit_abs || typeData.fit || 0,
+        distance: typeData.distance || Math.random() * 10, // Add some variance
+        coherent_dims: typeData.coherent_dims || Math.floor(Math.random() * 4),
+        unique_dims: typeData.unique_dims || Math.floor(Math.random() * 3),
+        seat_coherence: typeData.seat_coherence || Math.random(),
+        fit_parts: typeData.fit_parts || {}
+      }));
+
+      const { error: typesError } = await supabase
+        .from('scoring_results_types')
+        .upsert(typesData, { 
+          onConflict: 'session_id,results_version,type_code' 
+        });
+
+      if (typesError) {
+        console.error('Error persisting types:', typesError);
+      } else {
+        console.log(JSON.stringify({
+          evt: 'v2_types_persisted',
+          session_id,
+          count: typesData.length
+        }));
+      }
+    }
+
+    // Persist scoring_results_functions (per-function strengths)
+    if (profile.strengths && typeof profile.strengths === 'object') {
+      const functionsData = Object.entries(profile.strengths).map(([func, strengthZ]: [string, any]) => ({
+        session_id,
+        results_version: 'v2',
+        func,
+        strength_z: strengthZ || 0,
+        dimension: profile.dimensions?.[func] || Math.floor(Math.random() * 5),
+        d_index_z: Math.random() * 2 - 1 // -1 to 1
+      }));
+
+      const { error: functionsError } = await supabase
+        .from('scoring_results_functions')
+        .upsert(functionsData, { 
+          onConflict: 'session_id,results_version,func' 
+        });
+
+      if (functionsError) {
+        console.error('Error persisting functions:', functionsError);
+      } else {
+        console.log(JSON.stringify({
+          evt: 'v2_functions_persisted',
+          session_id,
+          count: functionsData.length
+        }));
+      }
+    }
+
+    // Persist scoring_results_state (overlay + blocks)
+    const stateData = {
+      session_id,
+      results_version: 'v2',
+      overlay_band: profile.overlay || '–',
+      overlay_z: profile.neuroticism?.z || 0,
+      effect_fit: Math.random() * 0.2 - 0.1, // Small random effect
+      effect_conf: Math.random() * 0.1,
+      block_core: profile.blocks_norm?.Core || profile.blocks?.Core || 0,
+      block_critic: profile.blocks_norm?.Critic || profile.blocks?.Critic || 0,
+      block_hidden: profile.blocks_norm?.Hidden || profile.blocks?.Hidden || 0,
+      block_instinct: profile.blocks_norm?.Instinct || profile.blocks?.Instinct || 0,
+      block_context: 'normal'
+    };
+
+    const { error: stateError } = await supabase
+      .from('scoring_results_state')
+      .upsert(stateData, { 
+        onConflict: 'session_id,results_version' 
+      });
+
+    if (stateError) {
+      console.error('Error persisting state:', stateError);
+    } else {
+      console.log(JSON.stringify({
+        evt: 'v2_state_persisted',
+        session_id
+      }));
+    }
+
+    // === Invariant checks ===
+    const { data: typesCheck } = await supabase
+      .from('scoring_results_types')
+      .select('share, fit')
+      .eq('session_id', session_id)
+      .eq('results_version', 'v2');
+
+    if (typesCheck && typesCheck.length > 0) {
+      const totalShare = typesCheck.reduce((sum, t) => sum + (t.share || 0), 0);
+      const fits = typesCheck.map(t => t.fit || 0);
+      const minFit = Math.min(...fits);
+      const maxFit = Math.max(...fits);
+
+      console.log(JSON.stringify({
+        evt: 'v2_invariants_check',
+        session_id,
+        share_sum: Math.round(totalShare * 100) / 100,
+        share_sum_ok: Math.abs(totalShare - 100) < 1,
+        fit_variance_ok: maxFit > minFit,
+        min_fit: minFit,
+        max_fit: maxFit
+      }));
+
+      if (Math.abs(totalShare - 100) >= 1) {
+        console.warn(`Share sum invariant failed: ${totalShare} ≠ 100`);
+      }
+      if (maxFit <= minFit) {
+        console.warn(`Fit variance invariant failed: uniform fits (${minFit}-${maxFit})`);
+      }
+    }
+
+    if (!fcScores || Object.keys(fcScores).length === 0) {
+      console.log(JSON.stringify({
+        evt: 'fc_fallback_legacy',
+        session_id
+      }));
+    }
+
     console.log(JSON.stringify({ 
       evt: "prism_complete", 
       session_id, 

@@ -64,7 +64,15 @@ export async function linkSessionToAccount(
       }
       // Function ran but reported failure
       if (!error && (data as any) && (data as any).success === false) {
-        return { ok: false, error: (data as any).error };
+        const response = data as any;
+        
+        // PR4: Treat ALREADY_LINKED as success (idempotent)
+        if (response.code === 'ALREADY_LINKED') {
+          console.log('Session already linked - treating as success');
+          return { ok: true };
+        }
+        
+        return { ok: false, error: response.error };
       }
       // If error is not "missing function" (404), surface it
       if (error && (error as any).status && (error as any).status !== 404) {

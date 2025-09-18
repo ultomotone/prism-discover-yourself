@@ -106,7 +106,14 @@ export interface ResultsSession {
 }
 
 export interface FetchResultsResponse {
-  profile: Profile;
-  session: ResultsSession;
+  ok: boolean;
+  session?: any;
+  profile?: any;
+  types?: any[];
+  functions?: any[];
+  state?: any[];
+  results_version?: string;
+  code?: string;
+  error?: string;
 }
 

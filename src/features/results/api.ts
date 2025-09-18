@@ -79,7 +79,12 @@ async function rpcCall(
     const status = (error as any)?.code;
     throw mapStatus(status, (error as any).message);
   }
-  if (data?.profile && data.session) return data;
+  // Handle v2 contract or legacy response
+  if (data?.ok === false && data?.code === 'SCORING_ROWS_MISSING') {
+    throw new FetchResultsError('transient', 'Scoring data not ready');
+  }
+  if (data?.profile && data?.session) return data;
+  if (data?.ok && data?.results_version === 'v2') return data;
   throw new FetchResultsError('unknown', 'invalid response');
 }
 

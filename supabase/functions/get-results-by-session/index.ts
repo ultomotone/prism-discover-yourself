@@ -21,6 +21,13 @@ serve(async (req) => {
   try {
     const { session_id, share_token } = await req.json();
     
+    console.log(JSON.stringify({
+      evt: 'results_v2_start',
+      session_id,
+      has_token: !!share_token,
+      timestamp: new Date().toISOString()
+    }));
+    
     if (!session_id) {
       return jsonResponse({ ok: false, error: "session_id required" }, 400);
     }
@@ -33,99 +40,106 @@ serve(async (req) => {
       auth: { persistSession: false }
     });
 
-    console.log(`Fetching results for session ${session_id}, token: ${share_token ? 'present' : 'missing'}`);
-
-    // 1) If share token is present, validate against session row
-    if (share_token) {
-      const { data: session, error: sessionError } = await serviceClient
-        .from("assessment_sessions")
-        .select("id, share_token, share_token_expires_at, status")
-        .eq("id", session_id)
-        .single();
-
-      if (sessionError || !session) {
-        console.error("Session lookup error:", sessionError);
-        return jsonResponse({ ok: false, error: "session not found" }, 404);
-      }
-
-      if (session.share_token !== share_token) {
-        console.error("Invalid share token provided");
-        return jsonResponse({ ok: false, error: "invalid token" }, 401);
-      }
-
-      // Check token expiration if set
-      if (session.share_token_expires_at && new Date(session.share_token_expires_at) < new Date()) {
-        console.error("Share token expired");
-        return jsonResponse({ ok: false, error: "token expired" }, 401);
-      }
-
-      // Get profile for this session
-      const { data: profile, error: profileError } = await serviceClient
-        .from("profiles")
-        .select("*")
-        .eq("session_id", session_id)
-        .single();
-
-      if (profileError || !profile) {
-        console.error("Profile lookup error:", profileError);
-        return jsonResponse({ ok: false, error: "profile not found" }, 404);
-      }
-
-      console.log(`Profile found for session ${session_id} via share token`);
-      return jsonResponse({ ok: true, profile, session });
-    }
-
-    // 2) No token → allow only if caller is the owner (Authorization header)
-    const authHeader = req.headers.get("Authorization") || "";
-    if (!authHeader.startsWith("Bearer ")) {
-      return jsonResponse({ ok: false, error: "share token required" }, 401);
-    }
-
-    const jwt = authHeader.slice(7);
-    const authedClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: `Bearer ${jwt}` } },
-      auth: { persistSession: false }
-    });
-
-    const { data: userResponse } = await authedClient.auth.getUser();
-    const user = userResponse?.user;
+    // Handle authentication
+    let authContext: 'token' | 'owner' = 'token';
     
-    if (!user) {
-      console.error("No authenticated user found");
-      return jsonResponse({ ok: false, error: "unauthorized" }, 401);
+    if (!share_token) {
+      // No token → require owner authentication
+      const authHeader = req.headers.get("Authorization") || "";
+      if (!authHeader.startsWith("Bearer ")) {
+        return jsonResponse({ ok: false, error: "share token required" }, 401);
+      }
+
+      const jwt = authHeader.slice(7);
+      const authedClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: `Bearer ${jwt}` } },
+        auth: { persistSession: false }
+      });
+
+      const { data: userResponse } = await authedClient.auth.getUser();
+      const user = userResponse?.user;
+      
+      if (!user) {
+        console.error("No authenticated user found");
+        return jsonResponse({ ok: false, error: "unauthorized" }, 401);
+      }
+      
+      authContext = 'owner';
     }
 
-    // Check if user owns this session
-    const { data: sessionData, error: sessionError } = await serviceClient
-      .from("assessment_sessions")
-      .select("id, user_id, status")
-      .eq("id", session_id)
-      .single();
+    // Call the v2 RPC function
+    try {
+      const { data, error } = await serviceClient.rpc('get_results_v2', {
+        p_session_id: session_id,
+        p_share_token: share_token || null
+      });
 
-    if (sessionError || !sessionData) {
-      console.error("Session lookup error for owner:", sessionError);
-      return jsonResponse({ ok: false, error: "session not found" }, 404);
+      if (error) {
+        console.error("RPC error:", error);
+        if (error.message?.includes('session_not_found')) {
+          return jsonResponse({ ok: false, error: "session not found" }, 404);
+        }
+        if (error.message?.includes('invalid_share_token')) {
+          return jsonResponse({ ok: false, error: "invalid token" }, 401);
+        }
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        return jsonResponse({ ok: false, error: "no results found" }, 404);
+      }
+
+      const result = data[0];
+      const { session, profile, types, functions, state } = result;
+
+      // Check if we have v2 scoring data
+      if (!types || types.length === 0) {
+        console.log(JSON.stringify({
+          evt: 'results_v2_missing_scoring',
+          session_id,
+          timestamp: new Date().toISOString()
+        }));
+        return jsonResponse({ 
+          ok: false, 
+          code: 'SCORING_ROWS_MISSING',
+          error: "Scoring data not available" 
+        }, 503);
+      }
+
+      console.log(JSON.stringify({
+        evt: 'results_v2_complete',
+        session_id,
+        auth_context: authContext,
+        types_count: types.length,
+        functions_count: functions.length,
+        state_count: state.length,
+        timestamp: new Date().toISOString()
+      }));
+
+      // Return v2 contract
+      return jsonResponse({ 
+        ok: true, 
+        session,
+        profile,
+        types,
+        functions,
+        state,
+        results_version: 'v2'
+      });
+
+    } catch (rpcError: any) {
+      console.log(JSON.stringify({
+        evt: 'results_v2_error',
+        session_id,
+        error: rpcError.message,
+        timestamp: new Date().toISOString()
+      }));
+      
+      return jsonResponse({ 
+        ok: false, 
+        error: rpcError.message || "Internal server error" 
+      }, 500);
     }
-
-    if (sessionData.user_id !== user.id) {
-      console.error(`Session ${session_id} belongs to ${sessionData.user_id}, not ${user.id}`);
-      return jsonResponse({ ok: false, error: "forbidden" }, 403);
-    }
-
-    // Get profile for owned session
-    const { data: profile, error: profileError } = await serviceClient
-      .from("profiles")
-      .select("*")
-      .eq("session_id", session_id)
-      .single();
-
-    if (profileError || !profile) {
-      console.error("Profile lookup error for owner:", profileError);
-      return jsonResponse({ ok: false, error: "profile not found" }, 404);
-    }
-
-    console.log(`Profile found for session ${session_id} via owner auth`);
-    return jsonResponse({ ok: true, profile, session: sessionData });
 
   } catch (error: any) {
     console.error("Error in get-results-by-session:", error);

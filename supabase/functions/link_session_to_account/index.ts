@@ -31,28 +31,47 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { error } = await supabase
-      .from('assessment_sessions')
-      .update({
-        user_id,
-        email: email ?? null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', session_id)
-      .is('user_id', null);
+    // Use the new RPC function with conflict handling
+    const { data, error } = await supabase.rpc('link_session_to_user', {
+      p_session: session_id,
+      p_user: user_id,
+      p_email: email || null
+    });
 
     if (error) {
+      console.error('RPC link_session_to_user error:', error);
       return new Response(
         JSON.stringify({ success: false, error: error.message }),
         { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-    );
+    // Map RPC response to HTTP status codes
+    switch (data.status) {
+      case 'linked':
+        return new Response(
+          JSON.stringify({ success: true }),
+          { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      case 'conflict':
+        return new Response(
+          JSON.stringify({ success: false, code: 'ALREADY_LINKED', error: 'Session already linked to different user' }),
+          { status: 409, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      case 'not_found':
+        return new Response(
+          JSON.stringify({ success: false, error: 'Session not found' }),
+          { status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      default:
+        return new Response(
+          JSON.stringify({ success: false, error: 'Unexpected response' }),
+          { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+    }
+
   } catch (e) {
+    console.error('Error in link_session_to_account:', e);
     return new Response(
       JSON.stringify({ success: false, error: e.message }),
       { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
