@@ -47,6 +47,37 @@ export default function Results({ components }: ResultsProps = {}) {
     [paramId, query]
   );
 
+  // Debug logging - add this to see what's happening
+  console.log('🔍 Results component state:', {
+    paramId,
+    sessionId,
+    pathname: location.pathname,
+    search: location.search,
+    href: window.location.href
+  });
+
+  // Early return if sessionId is missing or invalid
+  if (!sessionId || sessionId === ":sessionId") {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 space-y-4 text-center">
+            <h2 className="text-lg font-semibold">Invalid Session ID</h2>
+            <p className="text-muted-foreground">
+              The session ID is missing or invalid. Please check your URL.
+            </p>
+            <div className="text-xs text-muted-foreground">
+              Debug: sessionId = "{sessionId}", paramId = "{paramId}"
+            </div>
+            <Button onClick={() => navigate("/assessment?start=true")}>
+              Take Assessment
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const [shareToken, setShareToken] = useState<string | null>(
     query.get("t") ?? null
   );
@@ -169,11 +200,44 @@ export default function Results({ components }: ResultsProps = {}) {
     setErr(null);
     setErrKind(null);
 
+    // Debug logging
+    console.log('🔍 Results useEffect triggered');
+    console.log('SessionID:', sessionId);
+    console.log('ShareToken:', shareToken);
+    console.log('Current URL:', window.location.href);
+
     (async () => {
       try {
-        // Single, authoritative RPC. Token path (t set) or owner path (t null).
+        // Try direct profile access first (with RLS disabled, this should work)
+        console.log('🔍 Trying direct profile access...');
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('session_id', sessionId)
+          .single();
+
+        if (profileData && !profileError) {
+          console.log('✅ Direct profile access successful:', profileData);
+          // Get session data too
+          const { data: sessionData } = await supabase
+            .from('assessment_sessions')
+            .select('*')
+            .eq('id', sessionId)
+            .single();
+
+          if (!cancel) setData({
+            profile: profileData,
+            session: sessionData || { id: sessionId, status: 'completed' }
+          });
+          return;
+        }
+
+        console.log('❌ Direct profile access failed:', profileError);
+
+        // Fallback: Try RPC (but this is currently failing)
+        console.log('🔍 Trying RPC function...');
         const { data: res, error } = await supabase.rpc(
-          "get_results_by_session",
+          "get_results_by_session",  
           { session_id: sessionId, t: shareToken ?? null }
         );
 
@@ -182,6 +246,14 @@ export default function Results({ components }: ResultsProps = {}) {
 
         if (!cancel) setData(res);
       } catch (e: any) {
+        console.error('❌ Results loading failed:', e);
+        console.error('Error details:', {
+          message: e?.message,
+          code: e?.code,
+          status: e?.status,
+          details: e?.details
+        });
+        
         const kind = classifyRpcError(e);
         if (kind === "transient" && tries < 2) {
           setTimeout(() => !cancel && setTries((t) => t + 1), 400 * (tries + 1));
@@ -191,11 +263,16 @@ export default function Results({ components }: ResultsProps = {}) {
           if (kind === "expired_or_invalid_token" || kind === "not_authorized") {
             setErrKind(kind);
           } else {
-            setErr(
-              e?.message && typeof e.message === "string"
-                ? e.message
-                : "Failed to load results"
-            );
+            // Handle specific "profile not found" case
+            if (e?.message?.includes('Profile not found') || e?.code === 'PROFILE_NOT_FOUND') {
+              setErr("This assessment needs to be scored. Profile data is missing.");
+            } else {
+              setErr(
+                e?.message && typeof e.message === "string"
+                  ? e.message
+                  : "Failed to load results"
+              );
+            }
             setErrKind(null);
           }
         }
