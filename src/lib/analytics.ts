@@ -44,12 +44,19 @@ export const trackLead = (email?: string, metadata: Record<string, any> = {}) =>
 export const trackAssessmentStart = (sessionId: string) => {
   trackEvent('assessment_started', 'assessment', sessionId);
   
-  // Track Reddit Lead event for assessment start
+  // Track Reddit Lead event for assessment start (legacy pixel method)
   if (typeof window !== 'undefined' && window.rdtTrack) {
     window.rdtTrack('Lead', { 
       content_name: 'PRISM Assessment',
       session_id: sessionId
     });
+  }
+  
+  // Fire custom event for Reddit S2S tracking
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('app:assessment:start', { 
+      detail: { sessionId }
+    }));
   }
 };
 
@@ -108,13 +115,20 @@ export const trackAccountCreation = (email: string, sessionId?: string) => {
 export const trackResultsViewed = (sessionId: string, typeCode?: string) => {
   trackEvent('results_viewed', 'assessment', typeCode || 'unknown');
   
-  // Track Reddit ViewContent for results page
+  // Track Reddit ViewContent for results page (legacy pixel method)
   if (typeof window !== 'undefined' && window.rdtTrack) {
     window.rdtTrack('ViewContent', {
       content_name: 'PRISM Results',
       session_id: sessionId,
       type_code: typeCode
     });
+  }
+  
+  // Fire custom event for Reddit S2S tracking
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('app:results:viewed', { 
+      detail: { sessionId, typeCode }
+    }));
   }
 };
 
