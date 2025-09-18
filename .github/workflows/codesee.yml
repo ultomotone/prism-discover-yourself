@@ -1,0 +1,21 @@
+name: CodeSee Map
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  codesee:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate CodeSee Map
+        uses: Codesee-io/codesee-map-action@v1
+        with:
+          codesee-token: ${{ secrets.CODESEE_TOKEN }}   # see next step
