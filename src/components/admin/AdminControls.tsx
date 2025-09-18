@@ -6,7 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 function AdminControls() {
   const { toast } = useToast();
-  const [busy, setBusy] = useState<null | "refresh" | "backfill" | "recompute" | "session">(null);
+  const [busy, setBusy] = useState<null | "refresh" | "backfill" | "recompute" | "session" | "bulk248">(null);
   const [sessionId, setSessionId] = useState("");
 
   async function invokeEdge<T = any>(name: string, body: Record<string, any> = {}) {
@@ -83,6 +83,21 @@ function AdminControls() {
     }
   };
 
+  const onBulkRecompute248 = async () => {
+    setBusy("bulk248");
+    try {
+      const res = await invokeEdge("cron-force-finalize-248");
+      toast({
+        title: "Bulk recompute complete",
+        description: `Processed ${res?.count ?? 0} sessions with 248+ questions`,
+      });
+    } catch (e: any) {
+      toast({ title: "Bulk recompute failed", description: e.message, variant: "destructive" });
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <div className="flex flex-wrap gap-2 items-center">
       <Button onClick={onRefresh} disabled={!!busy}>
@@ -102,6 +117,9 @@ function AdminControls() {
       />
       <Button variant="secondary" onClick={onRecomputeSession} disabled={!!busy || !sessionId}>
         {busy === "session" ? "Recomputing…" : "Recompute Session"}
+      </Button>
+      <Button variant="outline" onClick={onBulkRecompute248} disabled={!!busy}>
+        {busy === "bulk248" ? "Processing…" : "Recompute All 248+ Sessions"}
       </Button>
     </div>
   );
