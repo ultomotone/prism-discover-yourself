@@ -160,68 +160,139 @@ export const useAdvancedAdminAnalytics = () => {
     try {
       console.log('🔍 Admin Analytics: Starting data fetch...');
       
-      // Use new comprehensive admin summary function first
-      const { data: summary, error: summaryError } = await supabase.rpc("admin_get_summary", { last_n_days: 30 });
-      
-      if (!summaryError && summary) {
-        console.log('✅ Admin Analytics: Summary data loaded', summary);
-        // Use new summary data to populate KPI row
-        const kpiData = {
-          completions: summary.total_completed || 0,
-          completion_rate_pct: summary.completion_rate || 0,
-          median_duration_min: summary.median_duration_min || 0,
-          speeders_pct: summary.speeders_pct || 0,
-          stallers_pct: summary.stallers_pct || 0,
-          duplicates_pct: summary.duplicates_pct || 0,
-          validity_pass_rate_pct: summary.validity_pass_rate || 0,
-          top1_fit_median: 0, // Not in summary yet
-          top_gap_median: summary.top_gap_median || 0,
-          close_calls_pct: summary.close_calls_pct || 0,
-          inconsistency_mean: 0, // Not in summary yet
-          sd_index_mean: 0, // Not in summary yet
-          confidence_margin_median: summary.confidence_margin_median || 0,
-        };
-        setKpiRow(kpiData);
-      } else {
-        console.warn("admin_get_summary failed, falling back to individual calls:", summaryError);
+      // First try the new comprehensive admin-get-metrics Edge Function
+      try {
+        const { data: metricsData, error: metricsError } = await supabase.functions.invoke('admin-get-metrics', {
+          body: { lookbackDays: 30 }
+        });
         
-        // Fallback to old method if new function fails
-        const { data: kpisRes, error: kpiErr } = await supabase.rpc("admin_get_kpis_last_30d");
-        if (kpiErr) throw kpiErr;
-
-        const kpiParsed = KpiRowSchema.safeParse(kpisRes?.[0]);
-        setKpiRow(kpiParsed.success ? kpiParsed.data : null);
+        if (!metricsError && metricsData?.ok) {
+          console.log('✅ Admin Analytics: Edge Function metrics loaded', metricsData);
+          
+          // Convert Edge Function response to KPI row format
+          const kpiData = {
+            completions: metricsData.totals?.total_completed || 0,
+            completion_rate_pct: metricsData.totals?.completion_rate || 0,
+            median_duration_min: metricsData.durations?.median_duration_min || 0,
+            speeders_pct: metricsData.durations?.speeders_pct || 0,
+            stallers_pct: metricsData.durations?.stallers_pct || 0,
+            duplicates_pct: metricsData.duplicates?.duplicates_pct || 0,
+            validity_pass_rate_pct: metricsData.validity?.validity_pass_rate || 0,
+            top1_fit_median: metricsData.fit?.top1_fit_median || 0,
+            top_gap_median: metricsData.fit?.top_gap_median || 0,
+            close_calls_pct: metricsData.fit?.close_calls_pct || 0,
+            inconsistency_mean: 0, // Not available in new function yet
+            sd_index_mean: 0, // Not available in new function yet
+            confidence_margin_median: metricsData.fit?.confidence_margin_median || 0,
+          };
+          setKpiRow(kpiData);
+          
+          // Convert distributions from Edge Function
+          if (metricsData.distributions?.overlay) {
+            const overlayData = metricsData.distributions.overlay.map((item: any) => ({
+              overlay: item.overlay,
+              n: item.count
+            }));
+            setOverlayDist(overlayData);
+          }
+          
+          if (metricsData.distributions?.types) {
+            const typeData = metricsData.distributions.types.map((item: any) => ({
+              primary_type: item.type_code,
+              n: item.count
+            }));
+            setTypeDist(typeData);
+          }
+          
+          // Convert daily trend
+          if (metricsData.trends?.daily) {
+            const trendData = metricsData.trends.daily.map((item: any) => ({
+              day: item.day,
+              completions: item.count
+            }));
+            setThroughputData(trendData);
+          }
+          
+          // Convert confidence histogram to distribution
+          if (metricsData.distributions?.confidence_bins) {
+            const confData = metricsData.distributions.confidence_bins.map((count: number, index: number) => ({
+              bucket: `${index * 10}-${(index + 1) * 10}%`,
+              n: count
+            })).filter((item: any) => item.n > 0);
+            setConfDist(confData);
+          }
+          
+          console.log('✅ Admin Analytics: Edge Function data processed successfully');
+          
+        } else {
+          throw new Error(metricsError?.message || 'Edge Function failed');
+        }
+      } catch (edgeFunctionError) {
+        console.warn("admin-get-metrics Edge Function failed, falling back to RPC calls:", edgeFunctionError);
+        
+        // Fallback to existing RPC functions
+        const { data: summary, error: summaryError } = await supabase.rpc("admin_get_summary", { last_n_days: 30 });
+        
+        if (!summaryError && summary) {
+          console.log('✅ Admin Analytics: RPC summary data loaded', summary);
+          const kpiData = {
+            completions: summary.total_completed || 0,
+            completion_rate_pct: summary.completion_rate || 0,
+            median_duration_min: summary.median_duration_min || 0,
+            speeders_pct: summary.speeders_pct || 0,
+            stallers_pct: summary.stallers_pct || 0,
+            duplicates_pct: summary.duplicates_pct || 0,
+            validity_pass_rate_pct: summary.validity_pass_rate || 0,
+            top1_fit_median: 0,
+            top_gap_median: summary.top_gap_median || 0,
+            close_calls_pct: summary.close_calls_pct || 0,
+            inconsistency_mean: 0,
+            sd_index_mean: 0,
+            confidence_margin_median: summary.confidence_margin_median || 0,
+          };
+          setKpiRow(kpiData);
+        } else {
+          throw summaryError || new Error('Both Edge Function and RPC failed');
+        }
       }
 
-      // Continue with distribution data calls in parallel
-      const [confRes, overlayRes, trendRes, latestRes, typeRes] = await Promise.all([
-        supabase.rpc("admin_get_confidence_dist_last_30d"),
-        supabase.rpc("admin_get_overlay_dist_last_30d"), 
-        supabase.rpc("admin_get_throughput_last_14d"),
-        supabase.rpc("admin_get_latest_assessments"),
-        supabase.rpc("admin_get_type_dist_last_30d")
-      ]);
+      // Always fetch latest assessments as it's not in Edge Function yet
+      const { data: latestRes, error: latestError } = await supabase.rpc("admin_get_latest_assessments");
+      if (!latestError) {
+        const latestParsed = LatestAssessmentsSchema.safeParse(latestRes ?? []);
+        if (latestParsed.success) setLatestAssessments(latestParsed.data);
+      }
 
-      if (confRes.error) throw confRes.error;
-      if (overlayRes.error) throw overlayRes.error;
-      if (trendRes.error) throw trendRes.error;
-      if (latestRes.error) throw latestRes.error;
-      if (typeRes.error) throw typeRes.error;
+      // Continue with additional distribution data calls only if needed (RPC fallback)
+      const needsDistributions = confDist.length === 0 || overlayDist.length === 0 || typeDist.length === 0 || throughputData.length === 0;
+      if (needsDistributions) {
+        const [confRes, overlayRes, trendRes, typeRes] = await Promise.all([
+          supabase.rpc("admin_get_confidence_dist_last_30d"),
+          supabase.rpc("admin_get_overlay_dist_last_30d"), 
+          supabase.rpc("admin_get_throughput_last_14d"),
+          supabase.rpc("admin_get_type_dist_last_30d")
+        ]);
 
-      const confParsed = ConfidenceDistSchema.safeParse(confRes.data ?? []);
-      setConfDist(confParsed.success ? confParsed.data : []);
+        if (!confRes.error && confDist.length === 0) {
+          const confParsed = ConfidenceDistSchema.safeParse(confRes.data ?? []);
+          if (confParsed.success) setConfDist(confParsed.data);
+        }
 
-      const overlayParsed = OverlayDistSchema.safeParse(overlayRes.data ?? []);
-      setOverlayDist(overlayParsed.success ? overlayParsed.data : []);
+        if (!overlayRes.error && overlayDist.length === 0) {
+          const overlayParsed = OverlayDistSchema.safeParse(overlayRes.data ?? []);
+          if (overlayParsed.success) setOverlayDist(overlayParsed.data);
+        }
 
-      const trendParsed = ThroughputSchema.safeParse(trendRes.data ?? []);
-      setThroughputData(trendParsed.success ? trendParsed.data : []);
+        if (!trendRes.error && throughputData.length === 0) {
+          const trendParsed = ThroughputSchema.safeParse(trendRes.data ?? []);
+          if (trendParsed.success) setThroughputData(trendParsed.data);
+        }
 
-      const latestParsed = LatestAssessmentsSchema.safeParse(latestRes.data ?? []);
-      setLatestAssessments(latestParsed.success ? latestParsed.data : []);
-
-      const typeParsed = TypeDistSchema.safeParse(typeRes.data ?? []);
-      setTypeDist(typeParsed.success ? typeParsed.data : []);
+        if (!typeRes.error && typeDist.length === 0) {
+          const typeParsed = TypeDistSchema.safeParse(typeRes.data ?? []);
+          if (typeParsed.success) setTypeDist(typeParsed.data);
+        }
+      }
       
       console.log('✅ Admin Analytics: All data loaded successfully');
     } catch (e: any) {

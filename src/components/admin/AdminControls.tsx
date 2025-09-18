@@ -27,6 +27,8 @@ function AdminControls() {
     try {
       await supabase.rpc("update_dashboard_statistics");
       toast({ title: "Dashboard updated", description: "Statistics recalculated for today." });
+      // Trigger a page reload to refresh all analytics
+      setTimeout(() => window.location.reload(), 1000);
     } catch (e: any) {
       toast({ title: "Refresh failed", description: e.message, variant: "destructive" });
     } finally {
@@ -70,7 +72,7 @@ function AdminControls() {
   return (
     <div className="flex flex-wrap gap-2 items-center max-w-full">
       <Button onClick={onRefresh} disabled={!!busy}>
-        {busy === "refresh" ? "Refreshing…" : "Refresh"}
+        {busy === "refresh" ? "Refreshing…" : "Refresh Metrics"}
       </Button>
       
       <div className="flex gap-2 items-center">
