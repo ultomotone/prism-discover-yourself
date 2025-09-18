@@ -1205,9 +1205,27 @@ export const ResultsV2: React.FC<{
     resultsVersion 
   });
   
-  // Check if we have v2 data
-  const hasV2Data = resultsVersion === 'v2' && types && functions && state;
-  const isV2Missing = resultsVersion !== 'v2' || !types?.length || !functions?.length || !state?.length;
+  // Strict V2 data presence check
+  const hasV2 = 
+    resultsVersion === "v2" &&
+    Array.isArray(types) && types.length === 16 &&
+    Array.isArray(functions) && functions.length === 8 &&
+    Array.isArray(state) && state.length > 0;
+
+  // If we're missing complete V2 data but expected it, show recompute prompt
+  if (resultsVersion === "v2" && !hasV2) {
+    return (
+      <div className="mx-auto max-w-3xl p-8 text-center space-y-2">
+        <h2 className="text-2xl font-semibold">Preparing enhanced results</h2>
+        <p className="text-muted-foreground">
+          We're recomputing your enhanced profile. If this persists, tap "Recompute" in Admin.
+        </p>
+      </div>
+    );
+  }
+
+  const hasV2Data = hasV2;
+  const isV2Missing = !hasV2;
   
   // Early return for missing profile
   if (!p) {

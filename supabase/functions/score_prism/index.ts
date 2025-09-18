@@ -1,5 +1,7 @@
+// supabase/functions/score_prism/index.ts
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { persistResultsV2, type TypeResultInput, type FunctionResultInput, type StateResultInput } from "../_shared/persistResultsV2.ts";
 import { scoreAssessment, FALLBACK_PROTOTYPES, Func, TypeCode, Block } from "../_shared/scoreEngine.ts";
 import { PrismCalibration } from "../_shared/calibration.ts";
 
@@ -8,97 +10,64 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const ALL_TYPES: string[] = ["LIE","ILI","ESE","SEI","LII","ILE","ESI","SEE","LSE","SLI","EIE","IEI","LSI","SLE","EII","IEE"];
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
   try {
     const { session_id } = await req.json();
-    if (!session_id || typeof session_id !== "string") {
-      return new Response(JSON.stringify({ status: "error", error: "session_id required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!session_id) return new Response(JSON.stringify({ status: "error", error: "session_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type":"application/json" } });
 
-    console.log(JSON.stringify({ evt: "prism_start", session_id }));
+    const url = Deno.env.get("SUPABASE_URL")!, key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const db = createClient(url, key);
 
-    const url = Deno.env.get("SUPABASE_URL");
-    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!url || !key) {
-      return new Response(JSON.stringify({ status: "error", error: "Server not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const supabase = createClient(url, key);
-
-    const { data: rawResponses, error: respErr } = await supabase
+    // Pull responses (latest per question)
+    const { data: rows, error: respErr } = await db
       .from("assessment_responses")
       .select("id, question_id, answer_value, created_at")
       .eq("session_id", session_id);
     if (respErr) throw respErr;
-    if (!rawResponses || rawResponses.length === 0) {
-      return new Response(JSON.stringify({ status: "error", error: "no responses" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!rows?.length) return new Response(JSON.stringify({ status: "error", error: "no responses" }), { status: 400, headers: { ...corsHeaders, "Content-Type":"application/json" } });
+    const last = new Map<number, any>();
+    for (const r of rows) {
+      const k = r.question_id;
+      const prev = last.get(k);
+      if (!prev || new Date(r.created_at).getTime() >= new Date(prev.created_at).getTime()) last.set(k, r);
     }
+    const responses = Array.from(last.values()).map(r => ({ question_id: r.question_id, answer_value: r.answer_value }));
 
-    // dedupe latest answer per question
-    const lastByQ = new Map<string, any>();
-    for (const r of rawResponses) {
-      const k = String(r.question_id);
-      const prev = lastByQ.get(k);
-      const tPrev = prev ? new Date(prev.created_at || 0).getTime() : -Infinity;
-      const tCurr = new Date(r.created_at || 0).getTime();
-      const newer = Number.isFinite(tCurr) && Number.isFinite(tPrev) ? tCurr >= tPrev : (r.id ?? 0) >= (prev?.id ?? 0);
-      if (!prev || newer) lastByQ.set(k, r);
-    }
-    const responses = Array.from(lastByQ.values()).map((r) => ({ question_id: r.question_id, answer_value: r.answer_value }));
-
-    const { data: keyRows, error: keyErr } = await supabase.from("assessment_scoring_key").select("*");
-    if (keyErr) throw keyErr;
+    // Scoring key & config
+    const { data: keyRows } = await db.from("assessment_scoring_key").select("*");
     const scoringKey: Record<string, any> = {};
-    keyRows?.forEach((r) => {
-      scoringKey[String(r.question_id)] = r;
-    });
+    keyRows?.forEach(r => { scoringKey[String(r.question_id)] = r; });
 
-    const { data: cfgRows } = await supabase
-      .from("scoring_config")
-      .select("key, value")
-      .in("key", [
-        "results_version",
-        "softmax_temp",
-        "conf_raw_params",
-        "fit_band_thresholds",
-        "fc_expected_min",
-      ]);
-    const cfg = Object.fromEntries(cfgRows?.map((r) => [r.key, r.value]) || []);
+    const { data: cfgRows } = await db.from("scoring_config").select("key,value").in("key", [
+      "results_version", "softmax_temp", "conf_raw_params", "fit_band_thresholds", "fc_expected_min"
+    ]);
+    const cfg = Object.fromEntries((cfgRows ?? []).map(r => [r.key, r.value]));
 
+    // Prototypes
     let typePrototypes = FALLBACK_PROTOTYPES;
-    const { data: protoData } = await supabase.from("type_prototypes").select("type_code, func, block");
-    if (protoData && protoData.length === 16 * 8) {
-      const dbProtos: Record<TypeCode, Record<Func, Block>> = {} as any;
-      for (const row of protoData) {
-        (dbProtos[row.type_code as TypeCode] ||= {} as any)[row.func as Func] = row.block as Block;
+    const { data: protoRows } = await db.from("type_prototypes").select("type_code, func, block");
+    if (protoRows?.length === 16*8) {
+      const p: any = {};
+      for (const row of protoRows) {
+        (p[row.type_code] ||= {})[row.func] = row.block;
       }
-      typePrototypes = dbProtos;
+      typePrototypes = p;
     }
 
+    // Optional FC
     let fcScores: Record<string, number> | undefined;
-    const { data: fcRow } = await supabase
-      .from("fc_scores")
-      .select("scores_json")
-      .eq("session_id", session_id)
-      .eq("version", "v1.2")
-      .eq("fc_kind", "functions")
-      .maybeSingle();
-    if (fcRow?.scores_json) {
-      fcScores = fcRow.scores_json as Record<string, number>;
-      console.log(JSON.stringify({ evt: "fc_scores_loaded", session_id }));
-    } else {
-      console.log(JSON.stringify({ evt: "fc_fallback_legacy", session_id }));
-    }
+    const { data: fc } = await db.from("fc_scores")
+      .select("scores_json").eq("session_id", session_id)
+      .eq("version", "v1.2").eq("fc_kind","functions").maybeSingle();
+    if (fc?.scores_json) fcScores = fc.scores_json;
 
+    console.log(JSON.stringify({ evt: "prism_start", session_id }));
+
+    // ---- Run legacy engine (deterministic) ----
     const profile = scoreAssessment({
       sessionId: session_id,
       responses,
@@ -112,47 +81,29 @@ serve(async (req) => {
         overlay_state_weights: { stress: 0, time: 0, sleep: 0, focus: 0 },
         softmax_temp: cfg.softmax_temp || 1,
         conf_raw_params: cfg.conf_raw_params || { a: 0.25, b: 0.35, c: 0.2 },
-        fit_band_thresholds: cfg.fit_band_thresholds || {
-          high_fit: 10,
-          moderate_fit: 5,
-          high_gap: 0.2,
-          moderate_gap: 0.1,
-        },
+        fit_band_thresholds: cfg.fit_band_thresholds || { high_fit: 10, moderate_fit: 5, high_gap: 0.2, moderate_gap: 0.1 },
         fc_expected_min: cfg.fc_expected_min || 0,
         typePrototypes,
       },
     });
 
     // Confidence calibration
-    const sharesMap = Object.fromEntries(profile.top_types.map((t) => [t.code, t.share]));
-    const entropy = -Object.values(sharesMap).reduce((s: number, p: number) => s + (p > 0 ? p * Math.log2(p) : 0), 0);
+    const sharesMap = Object.fromEntries(profile.top_types.map((t: any) => [t.code, t.share]));
+    const entropy = -Object.values(sharesMap).reduce((s: number, p: number) => s + (p>0 ? p * Math.log2(p) : 0), 0);
     const topGap = profile.top_3_fits[0].fit - (profile.top_3_fits[1]?.fit || 0);
     const shareMargin = (profile.top_types[0].share - (profile.top_types[1]?.share || 0)) * 100;
-    const calibrator = new PrismCalibration(supabase);
+    const calibrator = new PrismCalibration(db);
     const conf = await calibrator.calculateConfidence({
-      topGap,
-      shareMargin,
-      shareEntropy: entropy,
-      dimBand: profile.fit_band,
-      overlay: profile.overlay,
-      sessionId: session_id,
+      topGap, shareMargin, shareEntropy: entropy,
+      dimBand: profile.fit_band, overlay: profile.overlay, sessionId: session_id,
     });
     profile.conf_raw = Number(conf.raw.toFixed(4));
     profile.conf_calibrated = Number(conf.calibrated.toFixed(4));
     profile.confidence = conf.band as any;
 
-    // Emit telemetry if database config doesn't match engine expectation
-    if (cfg.results_version && cfg.results_version !== "v1.2.1") {
-      console.log(`evt:engine_version_override,db_version:${cfg.results_version},engine_version:v1.2.1,session_id:${session_id}`);
-    }
-
+    // Upsert stable v1 profile (so UI always has good fallback)
     const now = new Date().toISOString();
-    const { data: existing } = await supabase
-      .from("profiles")
-      .select("id, submitted_at")
-      .eq("session_id", session_id)
-      .maybeSingle();
-
+    const { data: existing } = await db.from("profiles").select("id, submitted_at").eq("session_id", session_id).maybeSingle();
     const profileRow = {
       ...profile,
       session_id,
@@ -163,158 +114,49 @@ serve(async (req) => {
       results_version: "v1.2.1",
       version: "v1.2.1",
     };
+    await db.from("profiles").upsert(profileRow, { onConflict: "session_id" });
 
-    await supabase.from("profiles").upsert(profileRow, { onConflict: "session_id" });
-
-    // ===== PR2: Persist v2 rows =====
     console.log(JSON.stringify({ evt: "persisting_v2_rows", session_id }));
-    console.log('Profile structure:', JSON.stringify({
-      top_types_count: profile.top_types?.length || 0,
-      strengths_keys: Object.keys(profile.strengths || {}),
-      has_blocks_norm: !!profile.blocks_norm,
-      overlay: profile.overlay
-    }, null, 2));
-    
-    // Persist scoring_results_types (per-type shares/fits)
-    if (profile.top_types && profile.top_types.length > 0) {
-      const typesData = profile.top_types.map((typeEntry: any) => ({
-        session_id,
-        results_version: 'v2',
-        type_code: typeEntry.code,
-        share: (typeEntry.share * 100) || 0, // Convert to percentage
-        fit: typeEntry.fit || 0,
-        distance: Math.random() * 10, // Add some variance
-        coherent_dims: Math.floor(Math.random() * 4),
-        unique_dims: Math.floor(Math.random() * 3),
-        seat_coherence: Math.random(),
-        fit_parts: {}
-      }));
 
-      const { error: typesError } = await supabase
-        .from('scoring_results_types')
-        .upsert(typesData, { 
-          onConflict: 'session_id,results_version,type_code' 
-        });
+    // Build deterministic V2 payloads from the same computed profile
+    const typeScores: Record<string, any> = profile.type_scores ?? {};
+    const seatCoherence = profile.meta?.seat_metrics?.coherence ?? null;
 
-      if (typesError) {
-        console.error('Error persisting types:', typesError);
-      } else {
-        console.log(JSON.stringify({
-          evt: 'v2_types_persisted',
-          session_id,
-          count: typesData.length
-        }));
-      }
-    }
+    const types: TypeResultInput[] = ALL_TYPES.map((code) => {
+      const m = typeScores[code] ?? {};
+      return {
+        type_code: code,
+        share_pct: (typeof m.share_pct === "number" ? m.share_pct : 0),
+        fit: (typeof m.fit_abs === "number" ? m.fit_abs : 0),
+        distance: m.distance ?? null,
+        coherent_dims: code === profile.type_code ? profile.dims_highlights?.coherent?.length ?? null : null,
+        unique_dims: code === profile.type_code ? profile.dims_highlights?.unique?.length ?? null : null,
+        seat_coherence: code === profile.type_code ? seatCoherence : null,
+        fit_parts: m.fit_parts ?? null,
+      };
+    });
 
-    // Persist scoring_results_functions (per-function strengths)
-    if (profile.strengths && typeof profile.strengths === 'object') {
-      const functionsData = Object.entries(profile.strengths).map(([func, strengthZ]: [string, any]) => ({
-        session_id,
-        results_version: 'v2',
-        func,
-        strength_z: strengthZ || 0,
-        dimension: Math.max(1, Math.min(4, Math.floor((profile.dimensions?.[func] || 0) * 4) + 1)), // Ensure 1-4 range
-        d_index_z: Math.random() * 2 - 1 // -1 to 1
-      }));
+    const functions: FunctionResultInput[] = (["Ti","Te","Fi","Fe","Ni","Ne","Si","Se"] as Func[]).map((fn) => ({
+      func: fn,
+      strength_z: Number(profile.strengths?.[fn] ?? 0),
+      dimension: Number(profile.dimensions?.[fn] ?? 0) || null,
+      d_index_z: profile.meta?.diagnostics?.dim_index?.[fn] ?? null,
+    }));
 
-      const { error: functionsError } = await supabase
-        .from('scoring_results_functions')
-        .upsert(functionsData, { 
-          onConflict: 'session_id,results_version,func' 
-        });
-
-      if (functionsError) {
-        console.error('Error persisting functions:', functionsError);
-      } else {
-        console.log(JSON.stringify({
-          evt: 'v2_functions_persisted',
-          session_id,
-          count: functionsData.length
-        }));
-      }
-    }
-
-    // Persist scoring_results_state (overlay + blocks)
-    // Map overlay symbols to valid overlay bands
-    const overlayBandMap: Record<string, string> = {
-      '+': 'Reg+',
-      '–': 'Reg-', 
-      '-': 'Reg-', // Handle both – and - 
-      '0': 'Reg0'
-    };
-    const overlayBand = overlayBandMap[profile.overlay || '0'] || 'Reg0';
-    
-    // Map context to valid values
-    const validContexts = ['calm', 'stress', 'flow'];
-    const blockContext = validContexts[Math.floor(Math.random() * validContexts.length)];
-    
-    const stateData = {
-      session_id,
-      results_version: 'v2',
+    const overlayBand = ({ "+":"Reg+","0":"Reg0","-":"Reg-","–":"Reg-" } as any)[profile.overlay ?? "0"] ?? "Reg0";
+    const state: StateResultInput = {
       overlay_band: overlayBand,
-      overlay_z: profile.neuroticism?.z || 0,
-      effect_fit: Math.random() * 0.2 - 0.1, // Small random effect
-      effect_conf: Math.random() * 0.1,
-      block_core: profile.blocks_norm?.Core || profile.blocks?.Core || 0,
-      block_critic: profile.blocks_norm?.Critic || profile.blocks?.Critic || 0,
-      block_hidden: profile.blocks_norm?.Hidden || profile.blocks?.Hidden || 0,
-      block_instinct: profile.blocks_norm?.Instinct || profile.blocks?.Instinct || 0,
-      block_context: blockContext
+      overlay_z: profile.neuroticism?.z ?? profile.neuro_z ?? 0,
+      effect_fit: profile.meta?.state_effects?.fit ?? null,
+      effect_conf: profile.meta?.state_effects?.confidence ?? null,
+      block_core: profile.blocks_norm?.Core ?? profile.blocks?.Core ?? null,
+      block_critic: profile.blocks_norm?.Critic ?? profile.blocks?.Critic ?? null,
+      block_hidden: profile.blocks_norm?.Hidden ?? profile.blocks?.Hidden ?? null,
+      block_instinct: profile.blocks_norm?.Instinct ?? profile.blocks?.Instinct ?? null,
+      block_context: "calm",
     };
 
-    const { error: stateError } = await supabase
-      .from('scoring_results_state')
-      .upsert(stateData, { 
-        onConflict: 'session_id,results_version' 
-      });
-
-    if (stateError) {
-      console.error('Error persisting state:', stateError);
-    } else {
-      console.log(JSON.stringify({
-        evt: 'v2_state_persisted',
-        session_id
-      }));
-    }
-
-    // === Invariant checks ===
-    const { data: typesCheck } = await supabase
-      .from('scoring_results_types')
-      .select('share, fit')
-      .eq('session_id', session_id)
-      .eq('results_version', 'v2');
-
-    if (typesCheck && typesCheck.length > 0) {
-      const totalShare = typesCheck.reduce((sum, t) => sum + (t.share || 0), 0);
-      const fits = typesCheck.map(t => t.fit || 0);
-      const minFit = Math.min(...fits);
-      const maxFit = Math.max(...fits);
-
-      console.log(JSON.stringify({
-        evt: 'v2_invariants_check',
-        session_id,
-        share_sum: Math.round(totalShare * 100) / 100,
-        share_sum_ok: Math.abs(totalShare - 100) < 1,
-        fit_variance_ok: maxFit > minFit,
-        min_fit: minFit,
-        max_fit: maxFit
-      }));
-
-      if (Math.abs(totalShare - 100) >= 1) {
-        console.warn(`Share sum invariant failed: ${totalShare} ≠ 100`);
-      }
-      if (maxFit <= minFit) {
-        console.warn(`Fit variance invariant failed: uniform fits (${minFit}-${maxFit})`);
-      }
-    }
-
-    if (!fcScores || Object.keys(fcScores).length === 0) {
-      console.log(JSON.stringify({
-        evt: 'fc_fallback_legacy',
-        session_id
-      }));
-    }
+    await persistResultsV2(db, session_id, { types, functions, state });
 
     console.log(JSON.stringify({ 
       evt: "prism_complete", 
@@ -324,20 +166,9 @@ serve(async (req) => {
       results_version: "v1.2.1"
     }));
 
-    return new Response(
-      JSON.stringify({
-        status: "success",
-        profile: profileRow,
-        gap_to_second: profileRow.top_gap,
-        confidence_numeric: Number((profileRow.conf_calibrated * 100).toFixed(1)),
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-    } catch (e: any) {
-      console.log(JSON.stringify({ evt: "prism_error", session_id, error: e?.message || String(e) }));
-      return new Response(JSON.stringify({ status: "error", error: e?.message || String(e) }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    return new Response(JSON.stringify({ status: "success", profile: profileRow, type_code: profileRow.type_code, confidence: profileRow.conf_calibrated }), { headers: { ...corsHeaders, "Content-Type":"application/json" } });
+  } catch (e: any) {
+    console.log(JSON.stringify({ evt: "prism_error", session_id: e?.session_id, error: e?.message || String(e) }));
+    return new Response(JSON.stringify({ status:"error", error: e?.message || "internal" }), { status: 500, headers: { ...corsHeaders, "Content-Type":"application/json" } });
+  }
 });
