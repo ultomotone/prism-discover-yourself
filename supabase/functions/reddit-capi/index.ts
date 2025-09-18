@@ -21,9 +21,11 @@ Deno.serve(async (req) => {
   } catch (err: any) {
     console.error("reddit-capi error:", err);
     
-    // If missing env secrets, return success with disabled flag instead of 500
-    if (err?.message?.includes("Missing env REDDIT_")) {
-      console.log("Reddit CAPI disabled due to missing environment variables");
+    // If missing env secrets OR auth failures, return success with disabled flag instead of 500
+    if (err?.message?.includes("Missing env REDDIT_") || 
+        err?.message?.includes("Failed to fetch access token") ||
+        err?.message?.includes("401")) {
+      console.log("Reddit CAPI disabled due to missing/invalid credentials");
       return new Response(JSON.stringify({ ok: true, disabled: true }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });

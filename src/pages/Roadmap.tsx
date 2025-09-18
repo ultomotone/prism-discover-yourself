@@ -58,16 +58,18 @@ export default function Roadmap() {
 
         // Remove duplicates by session_id, keeping the most recent entry
         const uniqueConfidenceData = confidenceData?.reduce((acc, item) => {
-          if (!acc[item.session_id] || !acc[item.session_id]) {
+          if (!acc[item.session_id] && item.confidence) {
             acc[item.session_id] = item.confidence;
           }
           return acc;
         }, {} as { [sessionId: string]: string }) || {};
 
-        const confidenceDistribution = Object.values(uniqueConfidenceData).reduce((acc, confidence) => {
-          acc[confidence] = (acc[confidence] || 0) + 1;
+        const confidenceDistribution = Object.values(uniqueConfidenceData).reduce<{ [key: string]: number }>((acc, confidence) => {
+          if (typeof confidence === 'string') {
+            acc[confidence] = (acc[confidence] || 0) + 1;
+          }
           return acc;
-        }, {} as { [key: string]: number });
+        }, {});
 
         // Calculate completion rate and ensure it doesn't exceed 100%
         const rawCompletionRate = totalStartedCount ? 
