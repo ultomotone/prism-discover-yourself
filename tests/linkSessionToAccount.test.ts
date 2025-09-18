@@ -1,99 +1,67 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { linkSessionToAccount } from '../src/services/sessionLinking';
+import { ensureSessionLinked, linkSessionToAccount } from '../src/services/sessionLinking';
 
-type ClientOpts = {
-  invokeData?: any;
-  invokeError?: any;
-  updateError?: any;
-};
+const originalFetch = globalThis.fetch;
 
-function createClient(opts: ClientOpts = {}) {
-  const state: any = {
-    invoked: false,
-    invokedName: '',
-    invokedBody: null,
-    updated: false,
-    updatePayload: null,
-    updateSessionId: '',
-    isUserNull: undefined,
-  };
-  const client: any = {
-    functions: {
-      invoke(name: string, { body }: { body: any }) {
-        state.invoked = true;
-        state.invokedName = name;
-        state.invokedBody = body;
-        return Promise.resolve({
-          data: opts.invokeData,
-          error: opts.invokeError ?? null,
-        });
-      },
-    },
-    from() {
-      return {
-        update(payload: any) {
-          state.updated = true;
-          state.updatePayload = payload;
-          return {
-            eq(_: string, id: string) {
-              state.updateSessionId = id;
-              return {
-                is(__: string, val: any) {
-                  state.isUserNull = val;
-                  if (opts.updateError) return { error: opts.updateError };
-                  return { error: null };
-                },
-              };
-            },
-          };
-        },
-      };
-    },
-    _state: state,
-  };
-  return client;
-}
+test('ensureSessionLinked sends POST with payload and returns true on 200', async () => {
+  const calls: Array<{ url: string; body: any }> = [];
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const body = init?.body ? JSON.parse(String(init.body)) : null;
+    calls.push({ url: String(input), body });
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
+  }) as typeof fetch;
 
-test('prefers Edge Function when available (success)', async () => {
-  const client = createClient({ invokeData: { success: true } });
-  const res = await linkSessionToAccount(client as any, 's1', 'u1', 'a@b.com');
+  const result = await ensureSessionLinked({ sessionId: 's1', userId: 'u1', email: 'a@b.com' });
+
+  assert.equal(result, true);
+  assert.equal(calls.length, 1);
+  assert.ok(calls[0].url.endsWith('/link_session_to_account'));
+  assert.deepEqual(calls[0].body, {
+    session_id: 's1',
+    user_id: 'u1',
+    email: 'a@b.com',
+  });
+});
+
+test('ensureSessionLinked treats 409 as success', async () => {
+  globalThis.fetch = (async () => new Response('{}', { status: 409 })) as typeof fetch;
+  const result = await ensureSessionLinked({ sessionId: 's2', userId: 'u2' });
+  assert.equal(result, true);
+});
+
+test('ensureSessionLinked returns false on server error', async () => {
+  globalThis.fetch = (async () => new Response('{}', { status: 500 })) as typeof fetch;
+  const result = await ensureSessionLinked({ sessionId: 's3', userId: 'u3' });
+  assert.equal(result, false);
+});
+
+test('ensureSessionLinked returns false on network error', async () => {
+  globalThis.fetch = (async () => {
+    throw new Error('network');
+  }) as typeof fetch;
+  const result = await ensureSessionLinked({ sessionId: 's4', userId: 'u4' });
+  assert.equal(result, false);
+});
+
+test('linkSessionToAccount wraps ensureSessionLinked', async () => {
+  let called = 0;
+  globalThis.fetch = (async () => {
+    called++;
+    return new Response('{}', { status: 200 });
+  }) as typeof fetch;
+  const res = await linkSessionToAccount({} as any, 's5', 'u5', 'c@d.com');
   assert.deepEqual(res, { ok: true });
-  assert.equal(client._state.invoked, true);
-  assert.equal(client._state.invokedName, 'link_session_to_account');
-  assert.deepEqual(client._state.invokedBody, { session_id: 's1', user_id: 'u1', email: 'a@b.com' });
-  assert.equal(client._state.updated, false); // no fallback
+  assert.equal(called, 1);
 });
 
-test('propagates Edge Function error (non-404)', async () => {
-  const err: any = new Error('fail');
-  err.status = 500;
-  const client = createClient({ invokeError: err });
-  const res = await linkSessionToAccount(client as any, 's1', 'u1', 'a@b.com');
+test('linkSessionToAccount returns error payload on failure', async () => {
+  globalThis.fetch = (async () => new Response('{}', { status: 500 })) as typeof fetch;
+  const res = await linkSessionToAccount({} as any, 's6', 'u6');
   assert.equal(res.ok, false);
-  assert.equal((res as any).error, err);
-  assert.equal(client._state.updated, false);
+  assert.ok(res instanceof Object && 'error' in res);
 });
 
-test('falls back to direct update when function missing (404)', async () => {
-  const err: any = new Error('not found');
-  err.status = 404;
-  const client = createClient({ invokeError: err });
-  const res = await linkSessionToAccount(client as any, 's1', 'u1', 'a@b.com');
-  assert.equal(res.ok, true);
-  assert.equal(client._state.updated, true);
-  assert.equal(client._state.updateSessionId, 's1');
-  assert.equal(client._state.updatePayload.user_id, 'u1');
-  assert.equal(client._state.updatePayload.email, 'a@b.com');
-  assert.equal(client._state.isUserNull, null);
-});
-
-test('fallback path propagates update errors', async () => {
-  const notFound: any = new Error('not found');
-  notFound.status = 404;
-  const updateErr = new Error('update fail');
-  const client = createClient({ invokeError: notFound, updateError: updateErr });
-  const res = await linkSessionToAccount(client as any, 's1', 'u1', 'a@b.com');
-  assert.equal(res.ok, false);
-  assert.equal((res as any).error, updateErr);
+test.after(() => {
+  globalThis.fetch = originalFetch;
 });

@@ -1,104 +1,61 @@
-import { SupabaseClient } from '@supabase/supabase-js';
+let cachedFunctionsBase: string | null = null;
 
-export type LinkSessionsResult =
-  | { ok: true; linked: number }
-  | { ok: false; error: unknown };
+function resolveFunctionsBase(): string {
+  if (cachedFunctionsBase) return cachedFunctionsBase;
 
-export async function linkSessionsToUser(
-  client: SupabaseClient,
-  email: string,
-  userId: string,
-): Promise<LinkSessionsResult> {
+  const envUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL ??
+    (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_SUPABASE_URL
+      ? `${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1`
+      : undefined);
+
+  const resolved = envUrl ?? 'https://gnkuikentdtnatazeriu.supabase.co/functions/v1';
+
+  cachedFunctionsBase = resolved;
+  return cachedFunctionsBase;
+}
+
+export type EnsureSessionLinkedArgs = {
+  supabase?: unknown; // retained for backwards compatibility with callers passing the client
+  sessionId: string;
+  userId: string;
+  email?: string;
+};
+
+export async function ensureSessionLinked({
+  sessionId,
+  userId,
+  email,
+}: EnsureSessionLinkedArgs): Promise<boolean> {
+  if (!sessionId || !userId) return false;
+
   try {
-    const { data: sessions, error: fetchError } = await client
-      .from('assessment_sessions')
-      .select('id')
-      .eq('email', email)
-      .is('user_id', null);
+    const response = await fetch(`${resolveFunctionsBase()}/link_session_to_account`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session_id: sessionId,
+        user_id: userId,
+        email: email ?? null,
+      }),
+    });
 
-    if (fetchError) {
-      return { ok: false, error: fetchError };
+    if (response.status === 200 || response.status === 409) {
+      return true;
     }
 
-    if (!sessions || sessions.length === 0) {
-      return { ok: true, linked: 0 };
-    }
-
-    const ids = sessions.map((s: { id: string }) => s.id);
-    const { error: updateError } = await client
-      .from('assessment_sessions')
-      .update({ user_id: userId, updated_at: new Date().toISOString() })
-      .in('id', ids);
-
-    if (updateError) {
-      return { ok: false, error: updateError };
-    }
-
-    return { ok: true, linked: ids.length };
+    return false;
   } catch (error) {
-    return { ok: false, error };
+    return false;
   }
 }
 
-export type LinkSessionResult =
-  | { ok: true }
-  | { ok: false; error: unknown };
-
 export async function linkSessionToAccount(
-  client: SupabaseClient,
+  _client: unknown,
   sessionId: string,
   userId: string,
   email?: string,
-): Promise<LinkSessionResult> {
-  try {
-    // 1) Prefer Edge Function (handles RLS/validation server-side)
-    try {
-      const { data, error } = await client.functions.invoke(
-        'link_session_to_account',
-        { body: { session_id: sessionId, user_id: userId, email } },
-      );
-
-      // Success
-      if (!error && (data as any)?.success) {
-        return { ok: true };
-      }
-      // Function ran but reported failure
-      if (!error && (data as any) && (data as any).success === false) {
-        const response = data as any;
-        
-        // PR4: Treat ALREADY_LINKED as success (idempotent)
-        if (response.code === 'ALREADY_LINKED') {
-          console.log('Session already linked - treating as success');
-          return { ok: true };
-        }
-        
-        return { ok: false, error: response.error };
-      }
-      // If error is not "missing function" (404), surface it
-      if (error && (error as any).status && (error as any).status !== 404) {
-        return { ok: false, error };
-      }
-      // Otherwise fall through to DB update
-    } catch {
-      // SDK/network exception → try fallback
-    }
-
-    // 2) Fallback: direct update (works in dev or when RLS permits)
-    const { error: updateError } = await client
-      .from('assessment_sessions')
-      .update({
-        user_id: userId,
-        email: email ?? null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', sessionId)
-      .is('user_id', null);
-
-    if (updateError) {
-      return { ok: false, error: updateError };
-    }
-    return { ok: true };
-  } catch (error) {
-    return { ok: false, error };
-  }
+): Promise<{ ok: true } | { ok: false; error: unknown }> {
+  const success = await ensureSessionLinked({ sessionId, userId, email });
+  return success ? { ok: true } : { ok: false, error: new Error("link_session_to_account failed") };
 }

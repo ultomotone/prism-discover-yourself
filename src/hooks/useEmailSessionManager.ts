@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { trackLead } from '@/lib/analytics';
-import { linkSessionToAccount as linkSessionToAccountService } from '@/services/sessionLinking';
+import { ensureSessionLinked } from '@/services/sessionLinking';
 
 export interface SessionData {
   session_id: string;
@@ -109,16 +109,14 @@ export function useEmailSessionManager() {
     try {
       console.log('Linking session to account:', { sessionId, userId, email });
 
-      const res = await linkSessionToAccountService(
-        supabase,
+      const linked = await ensureSessionLinked({
         sessionId,
         userId,
-        email
-      );
+        email,
+      });
 
-      if (!res.ok) {
-        const err = 'error' in res ? (res as any).error : undefined;
-        console.error('Error linking session to account:', err);
+      if (!linked) {
+        console.error('Error linking session to account');
         toast({
           title: "Link Error",
           description: "Failed to link session to your account.",
