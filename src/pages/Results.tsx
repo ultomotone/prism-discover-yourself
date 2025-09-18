@@ -257,6 +257,24 @@ export default function Results({ components }: ResultsProps = {}) {
         });
 
         if (error) {
+          console.log('🔍 Error object structure:', error);
+          console.log('🔍 Error context:', (error as any)?.context);
+          console.log('🔍 Error details:', (error as any)?.details);
+          
+          // Try multiple ways to extract the SCORING_ROWS_MISSING code
+          const errorData = (error as any)?.context?.body || 
+                           (error as any)?.details || 
+                           (error as any)?.body ||
+                           error;
+          
+          if (errorData?.code === 'SCORING_ROWS_MISSING' || 
+              error.message?.includes('SCORING_ROWS_MISSING')) {
+            console.log('V2 scoring data missing, need recompute');
+            setErr("Results updating—recompute required.");
+            setErrKind(null);
+            return;
+          }
+          
           // If no share token and we got 401, try owner auth
           if (!shareToken && (error.message?.includes('401') || error.message?.includes('share token required'))) {
             console.log('No share token provided, attempting owner auth...');
