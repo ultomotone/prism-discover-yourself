@@ -516,8 +516,16 @@ function RetestBanner({ profile }: { profile: Profile }) {
     </div>
   );
 }
-function Top3({ p }:{ p:Profile }){
-  const topItems = getTop3List(p);
+function Top3({ p, types }:{ p:Profile; types?: any[] }){
+  // Use v2 types data if available, otherwise fallback to legacy profile data
+  const topItems = types && types.length > 0 
+    ? types.slice(0, 3).map(t => ({ 
+        code: t.type_code, 
+        fit: t.fit,
+        share: t.share 
+      }))
+    : getTop3List(p);
+    
   const primary = topItems[0]?.code || p.top_types?.[0] || p.type_code || '';
   const strengthValues = Object.values(p.strengths ?? {});
   const sortedStrengths = [...strengthValues].sort((a, b) => a - b);
@@ -535,49 +543,42 @@ function Top3({ p }:{ p:Profile }){
         <span className="text-xs text-muted-foreground">Absolute fit = invariant (0–100). Share = relative among all types.</span>
       </div>
       <div className="grid md:grid-cols-3 gap-3">
-        {topItems.map(({ code, fit }) => {
+        {topItems.map(({ code, fit, share }) => {
+          // For v2 data, we already have fit and share from types array
+          // For legacy data, fallback to type_scores
           const typeScore = p.type_scores?.[code];
-          const share = typeScore?.share_pct ?? 0;
+          const displayFit = types && types.length > 0 
+            ? fit || 0 
+            : (typeScore?.fit_abs ?? fit ?? 0);
+          const displayShare = types && types.length > 0 
+            ? share || 0 
+            : (typeScore?.share_pct ?? 0);
+            
           const title = TYPE_KB[code]?.title || code;
           const isMain = code === primary;
-          const calibratedFit = typeof typeScore?.fit_abs === 'number' ? typeScore.fit_abs : undefined;
-          const fallbackFit =
-            typeof fit === 'number'
-              ? fit
-              : typeof typeScore?.fit_abs === 'number'
-              ? typeScore.fit_abs
-              : undefined;
-          const displayFit = calibratedFit ?? fallbackFit ?? 0;
+          
           return (
             <div key={code} className={`p-4 border rounded-xl ${isMain ? 'bg-muted/50' : ''}`}>
               <div className="flex justify-between items-baseline">
                 <div className="font-semibold">{code}{isMain ? overlay : ''}</div>
-                <div className="text-xs text-muted-foreground">Share {share}%</div>
+                <div className="text-xs text-muted-foreground">Share {displayShare.toFixed(1)}%</div>
               </div>
               <div className="text-sm text-muted-foreground">{title}</div>
               <div className="mt-2 text-sm">
                 <span className="font-semibold">
-                  Fit
-                  <span
-                    className={`cursor-help ${calibratedFit !== undefined ? 'text-foreground' : 'text-orange-600'}`}
-                    title={calibratedFit !== undefined
-                      ? 'Individual calibrated fit for this specific type'
-                      : 'Using fallback fit value - check type_scores data'}
-                  >
-                    {displayFit}
-                  </span>
+                  Fit {displayFit.toFixed(0)}
                 </span>
               </div>
               {isMain && (
                 <div className="mt-2 text-xs">
                   <div className="mb-1 flex items-center gap-1">
-                    <b>Coherent dims</b>: {p.dims_highlights.coherent.join(', ') || '—'}
+                    <b>Coherent dims</b>: {p.dims_highlights?.coherent?.join(', ') || '—'}
                     <InfoTip title="Coherent Functions">
                       <div>{GLOSSARY.coherent.text}</div>
                     </InfoTip>
                   </div>
                   <div className="flex items-center gap-1">
-                    <b>Unique dims</b>: <span className="text-primary">{p.dims_highlights.unique.join(', ') || '—'}</span>
+                    <b>Unique dims</b>: <span className="text-primary">{p.dims_highlights?.unique?.join(', ') || '—'}</span>
                     <InfoTip title="Unique Functions">
                       <div>{GLOSSARY.unique.text}</div>
                     </InfoTip>
@@ -596,28 +597,17 @@ function Top3({ p }:{ p:Profile }){
       <Top3FitChart
         primary={primary}
         profile={p}
-        data={topItems.map(({ code, fit }) => {
-          const typeScore = p.type_scores?.[code];
-          const chartFit =
-            typeof typeScore?.fit_abs === 'number'
-              ? typeScore.fit_abs
-              : typeof fit === 'number'
-              ? fit
-              : typeof typeScore?.fit_abs === 'number'
-              ? typeScore.fit_abs
-              : 0;
-          return {
-            code,
-            fit: chartFit,
-            share: typeScore?.share_pct ?? 0,
-          };
-        })}
+        data={topItems.map(({ code, fit, share }) => ({
+          code,
+          fit: types && types.length > 0 ? (fit || 0) : (p.type_scores?.[code]?.fit_abs ?? fit ?? 0),
+          share: types && types.length > 0 ? (share || 0) : (p.type_scores?.[code]?.share_pct ?? 0),
+        }))}
       />
     </section>
   );
 }
 
-function Strengths({ p }:{ p:Profile }){
+function Strengths({ p, functions }:{ p:Profile; functions?: any[] }){
   // Calculate user's median strength for suppressed detection
   const strengthValues = Object.values(p.strengths);
   const medianStrength = strengthValues.sort((a, b) => a - b)[Math.floor(strengthValues.length / 2)];
@@ -660,20 +650,26 @@ function Strengths({ p }:{ p:Profile }){
   );
 }
 
-function Dimensions({ p }:{ p:Profile }){
+function Dimensions({ p, functions }:{ p:Profile; functions?: any[] }){
   console.log('🔵 Dimensions component called with profile dimensions data:', {
     hasDimensions: !!p.dimensions,
     dimensions: p.dimensions,
-    dimensionsKeys: p.dimensions ? Object.keys(p.dimensions) : 'No dimensions'
+    dimensionsKeys: p.dimensions ? Object.keys(p.dimensions) : 'No dimensions',
+    functionsV2: functions?.length || 0
   });
 
-  // Check if dimensions exists and has non-zero values
-  const hasValidDimensionsData = p.dimensions && 
-    typeof p.dimensions === 'object' && 
-    Object.values(p.dimensions).some(val => val && val > 0);
+  // Use v2 functions data if available, otherwise fallback to legacy profile dimensions
+  const dimensionData = functions && functions.length > 0
+    ? functions.reduce((acc, f) => ({ ...acc, [f.func]: f.dimension || 0 }), {} as Record<string, number>)
+    : p.dimensions;
+
+  // Check if dimensionData exists and has non-zero values
+  const hasValidDimensionsData = dimensionData && 
+    typeof dimensionData === 'object' && 
+    Object.values(dimensionData).some(val => typeof val === 'number' && val > 0);
 
   if (!hasValidDimensionsData) {
-    console.warn('🔴 Missing or zero dimensions data in profile:', p.dimensions);
+    console.warn('🔴 Missing or zero dimensions data:', { profile: p.dimensions, v2: functions });
     return (
       <section className="p-5 border rounded-2xl bg-card">
         <div className="flex items-center gap-2 mb-3">
@@ -684,7 +680,7 @@ function Dimensions({ p }:{ p:Profile }){
         </div>
         <div className="text-center text-muted-foreground py-8">
           <div className="mb-2">Dimensionality analysis not available</div>
-          <div className="text-sm">This assessment may be incomplete or using test data</div>
+          <div className="text-sm">Awaiting v2 scoring data</div>
         </div>
       </section>
     );
@@ -701,32 +697,43 @@ function Dimensions({ p }:{ p:Profile }){
       <div className="grid md:grid-cols-2 gap-3">
         <div>
           <div className="text-sm text-muted-foreground mb-2">Judging (J)</div>
-          {(['Ti','Te','Fi','Fe'] as const).map(f=><div key={f} className="flex justify-between items-center mb-1"><span className="text-sm font-medium">{f}</span><Chip n={p.dimensions[f]||0}/></div>)}
+          {(['Ti','Te','Fi','Fe'] as const).map(f=><div key={f} className="flex justify-between items-center mb-1"><span className="text-sm font-medium">{f}</span><Chip n={dimensionData[f]||0}/></div>)}
         </div>
         <div>
           <div className="text-sm text-muted-foreground mb-2">Perceiving (P)</div>
-          {(['Ni','Ne','Si','Se'] as const).map(f=><div key={f} className="flex justify-between items-center mb-1"><span className="text-sm font-medium">{f}</span><Chip n={p.dimensions[f]||0}/></div>)}
+          {(['Ni','Ne','Si','Se'] as const).map(f=><div key={f} className="flex justify-between items-center mb-1"><span className="text-sm font-medium">{f}</span><Chip n={dimensionData[f]||0}/></div>)}
         </div>
       </div>
     </section>
   );
 }
 
-function Blocks({ p }:{ p:Profile }){
+function Blocks({ p, state }:{ p:Profile; state?: any[] }){
   console.log('🔵 Blocks component called with profile blocks data:', {
     hasBlocks: !!p.blocks,
     hasBlocksNorm: !!p.blocks_norm,
     blocks: p.blocks,
-    blocks_norm: p.blocks_norm
+    blocks_norm: p.blocks_norm,
+    stateV2: state?.length || 0
   });
 
-  // Check if blocks_norm exists and has non-zero values
-  const hasValidBlocksData = p.blocks_norm && 
-    typeof p.blocks_norm === 'object' && 
-    Object.values(p.blocks_norm).some(val => val && val > 0);
+  // Use v2 state data if available, otherwise fallback to legacy profile blocks_norm
+  const blocksData = state && state.length > 0 && state[0]
+    ? {
+        Core: state[0].block_core || 0,
+        Critic: state[0].block_critic || 0, 
+        Hidden: state[0].block_hidden || 0,
+        Instinct: state[0].block_instinct || 0
+      }
+    : p.blocks_norm;
+
+  // Check if blocks exists and has non-zero values
+  const hasValidBlocksData = blocksData && 
+    typeof blocksData === 'object' && 
+    Object.values(blocksData).some(val => val && val > 0);
 
   if (!hasValidBlocksData) {
-    console.warn('🔴 Missing or zero blocks_norm data in profile:', p.blocks_norm);
+    console.warn('🔴 Missing or zero blocks data:', { profile: p.blocks_norm, v2: state });
     return (
       <section className="p-5 border rounded-2xl bg-card">
         <div className="flex items-center gap-2 mb-3">
@@ -742,8 +749,8 @@ function Blocks({ p }:{ p:Profile }){
           </InfoTip>
         </div>
         <div className="text-center text-muted-foreground py-8">
-          <div className="mb-2">Block analysis data not available</div>
-          <div className="text-sm">This assessment may be incomplete or using test data</div>
+          <div className="mb-2">Block analysis not available</div>
+          <div className="text-sm">Awaiting v2 scoring data</div>
         </div>
       </section>
     );
@@ -775,8 +782,8 @@ function Blocks({ p }:{ p:Profile }){
         {(['Core','Hidden','Critic','Instinct'] as const).map(b=>(
           <div key={b} className="text-center p-3 border rounded-lg">
             <div className="font-medium">{blockLabels[b]}</div>
-            <div className="text-2xl font-bold">{p.blocks_norm[b]?.toFixed(1)||'0.0'}%</div>
-            <div className={`h-2 rounded mt-2 ${colorMap[b]}`} style={{width:`${p.blocks_norm[b]||0}%`}}/>
+            <div className="text-2xl font-bold">{(blocksData[b] || 0).toFixed(1)}%</div>
+            <div className={`h-2 rounded mt-2 ${colorMap[b]}`} style={{width:`${blocksData[b]||0}%`}}/>
           </div>
         ))}
       </div>
@@ -822,7 +829,7 @@ function TypeCoreSection({ typeCode }: { typeCode: string }) {
 }
 
 // State Overlay Section with description
-function StateOverlaySection({ overlay }: { overlay: string }) {
+function StateOverlaySection({ overlay, state }: { overlay: string; state?: any[] }) {
   const overlayData = {
     '+': {
       label: 'Elevated Reactivity',
@@ -948,7 +955,7 @@ function CoreAlignmentSection({ typeCode }: { typeCode: string }) {
 }
 
 // Enhanced Functions Analysis Section
-function FunctionsAnalysis({ p }: { p: Profile }) {
+function FunctionsAnalysis({ p, functions }: { p: Profile; functions?: any[] }) {
   // Calculate user's median strength for suppressed detection
   const strengthValues = Object.values(p.strengths);
   const medianStrength = strengthValues.sort((a, b) => a - b)[Math.floor(strengthValues.length / 2)];
@@ -1182,9 +1189,25 @@ function SafeComponent<T extends Record<string, any>>({
 }
 
 // ---------- Main export -----------------------------------------------------
-export const ResultsV2: React.FC<{ profile: Profile }> = ({ profile: p }) => {
+export const ResultsV2: React.FC<{ 
+  profile: Profile; 
+  types?: any[];
+  functions?: any[];
+  state?: any[];
+  resultsVersion?: string;
+}> = ({ profile: p, types, functions, state, resultsVersion }) => {
   console.log('🟢 ResultsV2 component rendering with profile:', p);
   console.log('🟢 Profile keys:', p ? Object.keys(p) : 'No profile');
+  console.log('🟢 V2 data:', { 
+    types: types?.length, 
+    functions: functions?.length, 
+    state: state?.length,
+    resultsVersion 
+  });
+  
+  // Check if we have v2 data
+  const hasV2Data = resultsVersion === 'v2' && types && functions && state;
+  const isV2Missing = resultsVersion !== 'v2' || !types?.length || !functions?.length || !state?.length;
   
   // Early return for missing profile
   if (!p) {
@@ -1198,6 +1221,9 @@ export const ResultsV2: React.FC<{ profile: Profile }> = ({ profile: p }) => {
       </div>
     );
   }
+  
+  // Show banner if not v2 or missing v2 data
+  const showV2Banner = !hasV2Data;
   
   const primary = p.top_types?.[0] || p.type_code;
   const overlay = p.overlay ?? '';
@@ -1240,16 +1266,51 @@ export const ResultsV2: React.FC<{ profile: Profile }> = ({ profile: p }) => {
 
     return (
       <div className="max-w-4xl mx-auto space-y-6">
-        <SafeComponent component={Top3} props={{ p }} fallbackName="Top3" />
-        <SafeComponent component={StateOverlaySection} props={{ overlay }} fallbackName="StateOverlaySection" />
+        {showV2Banner && (
+          <div className="p-4 border rounded-lg bg-blue-50 border-blue-200">
+            <div className="text-sm font-medium text-blue-800 mb-1">
+              ℹ️ Results updating—recompute required
+            </div>
+            <div className="text-xs text-blue-700">
+              This assessment uses legacy data. Re-running the scoring engine will provide enhanced insights with accurate shares and detailed analysis.
+            </div>
+          </div>
+        )}
+        
+        <SafeComponent 
+          component={Top3} 
+          props={{ p, types: hasV2Data ? types : null }} 
+          fallbackName="Top3" 
+        />
+        <SafeComponent 
+          component={StateOverlaySection} 
+          props={{ overlay, state: hasV2Data ? state : null }} 
+          fallbackName="StateOverlaySection" 
+        />
         <SafeComponent component={TypeCoreSection} props={{ typeCode: primary }} fallbackName="TypeCoreSection" />
         <SafeComponent component={TypeNarrative} props={{ typeCode: primary }} fallbackName="TypeNarrative" />
-        <SafeComponent component={FunctionsAnalysis} props={{ p }} fallbackName="FunctionsAnalysis" />
+        <SafeComponent 
+          component={FunctionsAnalysis} 
+          props={{ p, functions: hasV2Data ? functions : null }} 
+          fallbackName="FunctionsAnalysis" 
+        />
         <div className="grid md:grid-cols-2 gap-6">
-          <SafeComponent component={Strengths} props={{ p }} fallbackName="Strengths" />
-          <SafeComponent component={Dimensions} props={{ p }} fallbackName="Dimensions" />
+          <SafeComponent 
+            component={Strengths} 
+            props={{ p, functions: hasV2Data ? functions : null }} 
+            fallbackName="Strengths" 
+          />
+          <SafeComponent 
+            component={Dimensions} 
+            props={{ p, functions: hasV2Data ? functions : null }} 
+            fallbackName="Dimensions" 
+          />
         </div>
-        <SafeComponent component={Blocks} props={{ p }} fallbackName="Blocks" />
+        <SafeComponent 
+          component={Blocks} 
+          props={{ p, state: hasV2Data ? state : null }} 
+          fallbackName="Blocks" 
+        />
         <SafeComponent component={CoreAlignmentSection} props={{ typeCode: primary }} fallbackName="CoreAlignmentSection" />
         <SafeComponent component={MetaInfo} props={{ p }} fallbackName="MetaInfo" />
       </div>

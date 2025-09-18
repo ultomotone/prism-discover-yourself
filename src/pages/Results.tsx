@@ -20,12 +20,22 @@ import { classifyRpcError, type RpcErrorCategory } from "@/features/results/erro
 type ResultsPayload = {
   session: { id: string; status: string };
   profile: any;
+  types?: any[];
+  functions?: any[];
+  state?: any[];
+  results_version?: string;
 };
 
 type RotateResponse = { share_token: string };
 
 type ResultsComponents = {
-  ResultsView?: ComponentType<{ profile: any }>;
+  ResultsView?: ComponentType<{ 
+    profile: any; 
+    types?: any[];
+    functions?: any[];
+    state?: any[];
+    resultsVersion?: string;
+  }>;
 };
 
 type ResultsProps = {
@@ -256,7 +266,16 @@ export default function Results({ components }: ResultsProps = {}) {
           throw error;
         }
         
-        if (result?.ok === false) throw new Error(result.error);
+        if (result?.ok === false) {
+          if (result.code === 'SCORING_ROWS_MISSING') {
+            // V2 scoring data missing - return 503 
+            console.log('V2 scoring data missing, need recompute');
+            setErr("Results updating—recompute required.");
+            setErrKind(null);
+            return;
+          }
+          throw new Error(result.error);
+        }
         if (!result?.profile) throw new Error("Profile not found");
 
         console.log('✅ Edge Function success:', result);
@@ -360,7 +379,13 @@ export default function Results({ components }: ResultsProps = {}) {
 
       <div className="py-8 px-4 space-y-6">
         <div id="results-content">
-          <ResultsView profile={data.profile} />
+          <ResultsView 
+            profile={data.profile} 
+            types={data.types}
+            functions={data.functions}
+            state={data.state}
+            resultsVersion={data.results_version}
+          />
         </div>
 
         <Card className="max-w-4xl mx-auto">
