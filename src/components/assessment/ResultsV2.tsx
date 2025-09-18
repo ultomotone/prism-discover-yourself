@@ -101,9 +101,48 @@ function Top3FitChart({ data, primary, profile }:{
   primary: string;
   profile: Profile;
 }) {
-  // emphasize primary bar
+  // QA Guards - prevent the exact failure modes we diagnosed
+  const validData = data.filter(d => d.fit != null && d.share != null);
+  if (validData.length === 0) {
+    return (
+      <div className="mt-3 p-3 border rounded-xl bg-gray-50">
+        <div className="text-sm text-gray-600">No valid fit data available</div>
+      </div>
+    );
+  }
+  
+  // Check for uniform shares (6.3% bug)
+  const shareValues = validData.map(d => d.share);
+  const shareVariance = shareValues.length > 1 ? 
+    shareValues.reduce((acc, val) => acc + Math.pow(val - shareValues[0], 2), 0) / shareValues.length : 0;
+  const uniformShares = shareVariance < 0.01; // Nearly identical shares
+  
+  // Check for flat fits (85 bug)  
+  const fitValues = validData.map(d => d.fit);
+  const fitVariance = fitValues.length > 1 ?
+    fitValues.reduce((acc, val) => acc + Math.pow(val - fitValues[0], 2), 0) / fitValues.length : 0;
+  const flatFits = fitVariance < 1; // Nearly identical fits
+  
   const BAR = (code:string) => (code === primary ? "#111111" : "#bdbdbd");
   const closeCall = profile.close_call || (profile.top_gap || 0) < 5;
+  
+  // Show warning if we detect the bugs
+  if (uniformShares || flatFits) {
+    return (
+      <div className="mt-3 p-3 border rounded-xl bg-yellow-50 border-yellow-200">
+        <div className="text-sm font-medium text-yellow-800 mb-2">
+          ⚠️ Scoring Issue Detected
+        </div>
+        <div className="text-xs text-yellow-700 space-y-1">
+          {uniformShares && <div>• Uniform shares detected (~6.3% each) - scoring engine needs attention</div>}
+          {flatFits && <div>• Flat fit scores detected - distance calculation may have failed</div>}
+          <div className="mt-2 text-yellow-600">
+            These results should be re-computed with the enhanced scoring engine.
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="mt-3 p-3 border rounded-xl bg-white">
@@ -116,15 +155,17 @@ function Top3FitChart({ data, primary, profile }:{
             </Badge>
           )}
         </div>
-        <div className="text-[11px] text-gray-500">Darker bar = selected type</div>
+        <div className="text-[11px] text-gray-500">
+          Gap: {((validData[0]?.share || 0) - (validData[1]?.share || 0)).toFixed(1)}%
+        </div>
       </div>
       <div style={{ width: "100%", height: 160 }}>
         <ResponsiveContainer>
-          <BarChart data={data} margin={{ top: 6, right: 12, left: 12, bottom: 0 }}>
+          <BarChart data={validData} margin={{ top: 6, right: 12, left: 12, bottom: 0 }}>
             <XAxis dataKey="code" tickLine={false} axisLine={false}/>
-            <YAxis domain={[0,100]} width={28} tickLine={false} axisLine={false}/>
+            <YAxis domain={[Math.min(...fitValues) - 5, Math.max(...fitValues) + 5]} width={28} tickLine={false} axisLine={false}/>
             <Tooltip
-              formatter={(v:any, n:any, p:any)=> n === "fit" ? [`${v}`, "Fit"] : [`${v}%`, "Share"]}
+              formatter={(v:any, n:any, p:any)=> n === "fit" ? [`${v}`, "Fit"] : [`${v.toFixed(2)}%`, "Share"]}
               labelFormatter={(code)=> `Type ${code}`}
               wrapperStyle={{ fontSize: 12 }}
             />
@@ -132,19 +173,20 @@ function Top3FitChart({ data, primary, profile }:{
             <ReferenceLine y={35} stroke="#e5e7eb" strokeDasharray="3 3" />
             <ReferenceLine y={55} stroke="#e5e7eb" strokeDasharray="3 3" />
             <ReferenceLine y={75} stroke="#e5e7eb" strokeDasharray="3 3" />
-            {data.map((d) => (
+            {validData.map((d) => (
               <RechartsBar key={d.code} dataKey="fit" fill={BAR(d.code)} radius={[6,6,0,0]} />
             ))}
           </BarChart>
         </ResponsiveContainer>
       </div>
-      {/* NEW: Enhanced legend with fit interpretation */}
+      {/* Enhanced legend with actual variance stats */}
       <div className="mt-2 space-y-1">
         <div className="text-[11px] text-gray-600">
           <strong>Fit legend:</strong> 0–34 weak • 35–54 moderate • 55–74 strong • 75–100 very strong
         </div>
         <div className="text-[10px] text-gray-500">
-          Hover bars for exact Fit and Share values
+          Share variance: {shareVariance.toFixed(3)} • Fit variance: {fitVariance.toFixed(1)} • 
+          Valid data points: {validData.length}
         </div>
       </div>
     </div>

@@ -6,6 +6,12 @@ verify_jwt = false
 [functions.db_diagnostics]
 verify_jwt = false
 
+[functions.enhanced-score-engine]
+verify_jwt = false
+
+[functions.validate-scoring-fix]
+verify_jwt = false
+
 [functions.recompute-scoring]
 verify_jwt = false
 
