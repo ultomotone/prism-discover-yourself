@@ -1,5 +1,11 @@
 project_id = "gnkuikentdtnatazeriu"
 
+[functions.db_admin]
+verify_jwt = false
+
+[functions.db_diagnostics]
+verify_jwt = false
+
 [functions.recompute-scoring]
 verify_jwt = false
 
