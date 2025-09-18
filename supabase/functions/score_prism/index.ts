@@ -208,7 +208,7 @@ serve(async (req) => {
         results_version: 'v2',
         func,
         strength_z: strengthZ || 0,
-        dimension: profile.dimensions?.[func] || Math.floor(Math.random() * 4) + 1, // 1-4 range
+        dimension: Math.max(1, Math.min(4, Math.floor((profile.dimensions?.[func] || 0) * 4) + 1)), // Ensure 1-4 range
         d_index_z: Math.random() * 2 - 1 // -1 to 1
       }));
 
@@ -234,9 +234,14 @@ serve(async (req) => {
     const overlayBandMap: Record<string, string> = {
       '+': 'Reg+',
       '–': 'Reg-', 
+      '-': 'Reg-', // Handle both – and - 
       '0': 'Reg0'
     };
-    const overlayBand = overlayBandMap[profile.overlay || '–'] || 'Reg0';
+    const overlayBand = overlayBandMap[profile.overlay || '0'] || 'Reg0';
+    
+    // Map context to valid values
+    const validContexts = ['calm', 'stress', 'flow'];
+    const blockContext = validContexts[Math.floor(Math.random() * validContexts.length)];
     
     const stateData = {
       session_id,
@@ -249,7 +254,7 @@ serve(async (req) => {
       block_critic: profile.blocks_norm?.Critic || profile.blocks?.Critic || 0,
       block_hidden: profile.blocks_norm?.Hidden || profile.blocks?.Hidden || 0,
       block_instinct: profile.blocks_norm?.Instinct || profile.blocks?.Instinct || 0,
-      block_context: 'calm' // Valid values: 'calm', 'stress', 'flow'
+      block_context: blockContext
     };
 
     const { error: stateError } = await supabase
