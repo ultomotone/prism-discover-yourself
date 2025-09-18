@@ -147,7 +147,7 @@ export default function Results({ components }: ResultsProps = {}) {
         return;
       }
 
-      const newToken = data?.share_token;
+      const newToken = (data as any)?.share_token;
       if (!newToken) {
         toast({ title: "Could not rotate link. Please try again." });
         return;

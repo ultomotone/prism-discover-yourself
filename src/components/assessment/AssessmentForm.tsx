@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { safeString, safeObject } from "@/lib/typeGuards";
 import {
   validateAssessmentStructure,
   validateQuestionResponse,
@@ -497,8 +498,8 @@ export function AssessmentForm({
         if (fcBlocks && fcOptions) {
           const matchingBlock = fcBlocks.find(
             (b) =>
-              currentQuestion.tag?.includes(b.code) ||
-              currentQuestion.text?.includes(b.code),
+              safeString(currentQuestion.tag).includes(safeString(b.code)) ||
+              safeString(currentQuestion.text).includes(safeString(b.code)),
           );
 
           if (matchingBlock) {
@@ -507,8 +508,8 @@ export function AssessmentForm({
             );
             const selectedOption = blockOptions.find(
               (o) =>
-                response.answer.toString().includes(o.option_code) ||
-                response.answer.toString().includes(o.prompt.substring(0, 20)),
+                response.answer.toString().includes(safeString(o.option_code)) ||
+                response.answer.toString().includes(safeString(o.prompt).substring(0, 20)),
             );
 
             if (selectedOption) {

@@ -68,15 +68,15 @@ export function RealFCBlock({ sessionId, onComplete, onAnswer }: RealFCBlockProp
         throw new Error('No FC blocks found');
       }
 
-      setBlocks(blocksData);
+      setBlocks((blocksData as unknown) as FCBlock[]);
 
       // Group options by block_id
       const optionsByBlock: Record<string, FCOption[]> = {};
-      optionsData?.forEach(option => {
+      (optionsData as any[])?.forEach((option: any) => {
         if (!optionsByBlock[option.block_id]) {
           optionsByBlock[option.block_id] = [];
         }
-        optionsByBlock[option.block_id].push(option);
+        optionsByBlock[option.block_id].push(option as FCOption);
       });
 
       setOptions(optionsByBlock);
@@ -89,7 +89,7 @@ export function RealFCBlock({ sessionId, onComplete, onAnswer }: RealFCBlockProp
 
       if (existingResponses) {
         const responseMap: Record<string, string> = {};
-        existingResponses.forEach(resp => {
+        (existingResponses as any[]).forEach((resp: any) => {
           responseMap[resp.block_id] = resp.option_id;
         });
         setResponses(responseMap);

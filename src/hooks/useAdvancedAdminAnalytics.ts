@@ -235,20 +235,21 @@ export const useAdvancedAdminAnalytics = () => {
         
         if (!summaryError && summary) {
           console.log('✅ Admin Analytics: RPC summary data loaded', summary);
+          const summaryData = summary as any;
           const kpiData = {
-            completions: summary.total_completed || 0,
-            completion_rate_pct: summary.completion_rate || 0,
-            median_duration_min: summary.median_duration_min || 0,
-            speeders_pct: summary.speeders_pct || 0,
-            stallers_pct: summary.stallers_pct || 0,
-            duplicates_pct: summary.duplicates_pct || 0,
-            validity_pass_rate_pct: summary.validity_pass_rate || 0,
+            completions: Number(summaryData.total_completed) || 0,
+            completion_rate_pct: Number(summaryData.completion_rate) || 0,
+            median_duration_min: Number(summaryData.median_duration_min) || 0,
+            speeders_pct: Number(summaryData.speeders_pct) || 0,
+            stallers_pct: Number(summaryData.stallers_pct) || 0,
+            duplicates_pct: Number(summaryData.duplicates_pct) || 0,
+            validity_pass_rate_pct: Number(summaryData.validity_pass_rate) || 0,
             top1_fit_median: 0,
-            top_gap_median: summary.top_gap_median || 0,
-            close_calls_pct: summary.close_calls_pct || 0,
+            top_gap_median: Number(summaryData.top_gap_median) || 0,
+            close_calls_pct: Number(summaryData.close_calls_pct) || 0,
             inconsistency_mean: 0,
             sd_index_mean: 0,
-            confidence_margin_median: summary.confidence_margin_median || 0,
+            confidence_margin_median: Number(summaryData.confidence_margin_median) || 0,
           };
           setKpiRow(kpiData);
         } else {

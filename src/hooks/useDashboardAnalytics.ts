@@ -42,11 +42,11 @@ export const useDashboardAnalytics = () => {
           const { data: dashboardData, error: dashboardError } = await supabase
             .rpc('get_dashboard_profile_stats');
 
-          console.log('🔍 Dashboard: All profile stats result:', { data: dashboardData?.length, error: dashboardError });
+          console.log('🔍 Dashboard: All profile stats result:', { data: (dashboardData as any[])?.length, error: dashboardError });
 
           if (!dashboardError && dashboardData) {
             // Transform the dashboard data into our expected format
-            profiles = dashboardData.map((item: any) => ({
+            profiles = (dashboardData as any[]).map((item: any) => ({
               type_code: item.type_code,
               overlay: item.profile_overlay,
               created_at: item.created_at,
@@ -64,10 +64,10 @@ export const useDashboardAnalytics = () => {
             const { data: recentData, error: recentError } = await supabase
               .rpc('get_recent_assessments_safe');
 
-            console.log('🔍 Dashboard: Recent assessments safe fallback:', { data: recentData?.length, error: recentError });
+            console.log('🔍 Dashboard: Recent assessments safe fallback:', { data: (recentData as any[])?.length, error: recentError });
 
             if (!recentError && recentData) {
-              profiles = recentData.map((item: any) => ({
+              profiles = (recentData as any[]).map((item: any) => ({
                 type_code: item.type_display?.substring(0, 3) || 'Unknown',
                 overlay: item.type_display?.includes('+') ? '+' : item.type_display?.includes('–') ? '–' : null,
                 created_at: item.created_at,

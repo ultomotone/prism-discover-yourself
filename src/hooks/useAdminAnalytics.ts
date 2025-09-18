@@ -151,12 +151,12 @@ const [alerts, setAlerts] = useState<string[]>([]);
       if (kpiOverview) {
         // Only use avg_fit_score which is based on score_fit_calibrated
         setKpiData({
-          completions: kpiOverview.completed_count || 0,
+          completions: Number(kpiOverview.completed_count) || 0,
           completionRate: 0, // Removed - don't fetch
           medianDuration: 25.5, // Static fallback
           speedersPercent: 0,
           stallersPercent: 0,
-          fitMedian: kpiOverview.avg_fit_score || 0, // v1.1 calibrated only
+          fitMedian: Number(kpiOverview.avg_fit_score) || 0, // v1.1 calibrated only
           gapMedian: 0,
           closeCallsPercent: 0,
           inconsistencyMean: 0,
@@ -248,7 +248,7 @@ const [alerts, setAlerts] = useState<string[]>([]);
         totalSessions: 1234,
         avgDuration: 28.5,
         completionRate: 85.2,
-        slowSections: sectionsData || []
+        slowSections: (sectionsData as any[]) || []
       });
     } catch (error) {
       console.error('Error fetching session data:', error);

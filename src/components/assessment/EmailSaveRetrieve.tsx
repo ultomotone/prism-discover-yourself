@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mail, ArrowRight } from "lucide-react";
+import { safeString } from "@/lib/typeGuards";
 
 interface EmailSaveRetrieveProps {
   onResumeFound: (sessionId: string, email: string) => void;
@@ -73,7 +74,7 @@ export function EmailSaveRetrieve({ onResumeFound, onStartNew }: EmailSaveRetrie
           title: "Assessment found!",
           description: `Resuming your assessment (${session.completed_questions}/${session.total_questions} questions completed)`,
         });
-        onResumeFound(session.id, email);
+        onResumeFound(safeString(session.id), email);
       } else {
         console.log('No saved sessions found for email:', email);
         toast({

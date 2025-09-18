@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { TOTAL_PRISM_QUESTIONS } from "@/services/prismConfig";
+import { safeArray } from "@/lib/typeGuards";
 
 interface SavedSession {
   id: string;
@@ -52,7 +53,7 @@ export function SavedAssessments({ onStartNew }: SavedAssessmentsProps) {
         return;
       }
 
-      setSavedSessions(sessions || []);
+      setSavedSessions(safeArray(sessions));
     } catch (error) {
       console.error('Error loading saved sessions:', error);
     } finally {

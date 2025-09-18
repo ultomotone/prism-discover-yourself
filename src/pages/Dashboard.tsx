@@ -76,22 +76,25 @@ const Dashboard = () => {
         const { data: countryStats } = await supabase
           .rpc('get_dashboard_country_stats', { days_back: 30 });
 
-        const countryDistribution = (countryStats || []).map(stat => ({
-          country: stat.country_name,
-          count: stat.session_count
+        const countryDistribution = (countryStats as any[] || []).map((stat: any) => ({
+          country: String(stat.country_name || ''),
+          count: Number(stat.session_count || 0)
         }));
 
         // Process overlay stats from aggregated data
         const overlayStats = [];
         if (stats) {
-          if (stats.overlay_positive > 0) overlayStats.push({ overlay: 'N+', count: stats.overlay_positive });
-          if (stats.overlay_negative > 0) overlayStats.push({ overlay: 'N–', count: stats.overlay_negative });
+          if (Number(stats.overlay_positive || 0) > 0) overlayStats.push({ overlay: 'N+', count: Number(stats.overlay_positive) });
+          if (Number(stats.overlay_negative || 0) > 0) overlayStats.push({ overlay: 'N–', count: Number(stats.overlay_negative) });
         }
 
         setData({
-          totalAssessments: stats?.total_assessments || 0,
-          todayCount: stats?.daily_assessments || 0,
-          weeklyTrend,
+          totalAssessments: Number(stats?.total_assessments || 0),
+          todayCount: Number(stats?.daily_assessments || 0),
+          weeklyTrend: weeklyTrend.map((item: any) => ({
+            day: String(item.day || ''),
+            count: Number(item.count || 0)
+          })),
           overlayStats,
           countryDistribution,
         });
