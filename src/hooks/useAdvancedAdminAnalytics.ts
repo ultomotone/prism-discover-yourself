@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseClient";
 import { z } from "zod";
 
 const DateRangeSchema = z.object({
@@ -51,7 +51,7 @@ const TypeDistSchema = z.array(
 type TypeDist = z.infer<typeof TypeDistSchema>;
 
 const ThroughputSchema = z.array(
-  z.object({ day_label: z.string(), completions: z.number() })
+  z.object({ day: z.string(), completions: z.number() })
 );
 type Throughput = z.infer<typeof ThroughputSchema>;
 
@@ -154,60 +154,78 @@ export const useAdvancedAdminAnalytics = () => {
     useState<LatestAssessments>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Use singleton supabase client to avoid multiple GoTrueClient instances
-
   const fetchAll = async () => {
     setLoading(true);
     setError(null);
     try {
-      const { data: kpisRes, error: kpiErr } = await supabase.rpc(
-        "admin_get_kpis_last_30d"
-      );
-      if (kpiErr) throw kpiErr;
+      console.log('🔍 Admin Analytics: Starting data fetch...');
+      
+      // Use new comprehensive admin summary function first
+      const { data: summary, error: summaryError } = await supabase.rpc("admin_get_summary", { last_n_days: 30 });
+      
+      if (!summaryError && summary) {
+        console.log('✅ Admin Analytics: Summary data loaded', summary);
+        // Use new summary data to populate KPI row
+        const kpiData = {
+          completions: summary.total_completed || 0,
+          completion_rate_pct: summary.completion_rate || 0,
+          median_duration_min: summary.median_duration_min || 0,
+          speeders_pct: summary.speeders_pct || 0,
+          stallers_pct: summary.stallers_pct || 0,
+          duplicates_pct: summary.duplicates_pct || 0,
+          validity_pass_rate_pct: summary.validity_pass_rate || 0,
+          top1_fit_median: 0, // Not in summary yet
+          top_gap_median: summary.top_gap_median || 0,
+          close_calls_pct: summary.close_calls_pct || 0,
+          inconsistency_mean: 0, // Not in summary yet
+          sd_index_mean: 0, // Not in summary yet
+          confidence_margin_median: summary.confidence_margin_median || 0,
+        };
+        setKpiRow(kpiData);
+      } else {
+        console.warn("admin_get_summary failed, falling back to individual calls:", summaryError);
+        
+        // Fallback to old method if new function fails
+        const { data: kpisRes, error: kpiErr } = await supabase.rpc("admin_get_kpis_last_30d");
+        if (kpiErr) throw kpiErr;
 
-      const { data: confRes, error: confErr } = await supabase.rpc(
-        "admin_get_confidence_dist_last_30d"
-      );
-      if (confErr) throw confErr;
+        const kpiParsed = KpiRowSchema.safeParse(kpisRes?.[0]);
+        setKpiRow(kpiParsed.success ? kpiParsed.data : null);
+      }
 
-      const { data: overlayRes, error: overlayErr } = await supabase.rpc(
-        "admin_get_overlay_dist_last_30d"
-      );
-      if (overlayErr) throw overlayErr;
+      // Continue with distribution data calls in parallel
+      const [confRes, overlayRes, trendRes, latestRes, typeRes] = await Promise.all([
+        supabase.rpc("admin_get_confidence_dist_last_30d"),
+        supabase.rpc("admin_get_overlay_dist_last_30d"), 
+        supabase.rpc("admin_get_throughput_last_14d"),
+        supabase.rpc("admin_get_latest_assessments"),
+        supabase.rpc("admin_get_type_dist_last_30d")
+      ]);
 
-      const { data: trendRes, error: trendErr } = await supabase.rpc(
-        "admin_get_throughput_last_14d"
-      );
-      if (trendErr) throw trendErr;
+      if (confRes.error) throw confRes.error;
+      if (overlayRes.error) throw overlayRes.error;
+      if (trendRes.error) throw trendRes.error;
+      if (latestRes.error) throw latestRes.error;
+      if (typeRes.error) throw typeRes.error;
 
-      const { data: latestRes, error: latestErr } = await supabase.rpc(
-        "admin_get_latest_assessments"
-      );
-      if (latestErr) throw latestErr;
-
-      const { data: typeRes, error: typeErr } = await supabase.rpc(
-        "admin_get_type_dist_last_30d"
-      );
-      if (typeErr) throw typeErr;
-
-      const kpiParsed = KpiRowSchema.safeParse(kpisRes?.[0]);
-      setKpiRow(kpiParsed.success ? kpiParsed.data : null);
-
-      const confParsed = ConfidenceDistSchema.safeParse(confRes ?? []);
+      const confParsed = ConfidenceDistSchema.safeParse(confRes.data ?? []);
       setConfDist(confParsed.success ? confParsed.data : []);
 
-      const overlayParsed = OverlayDistSchema.safeParse(overlayRes ?? []);
+      const overlayParsed = OverlayDistSchema.safeParse(overlayRes.data ?? []);
       setOverlayDist(overlayParsed.success ? overlayParsed.data : []);
 
-      const trendParsed = ThroughputSchema.safeParse(trendRes ?? []);
+      const trendParsed = ThroughputSchema.safeParse(trendRes.data ?? []);
       setThroughputData(trendParsed.success ? trendParsed.data : []);
 
-      const latestParsed = LatestAssessmentsSchema.safeParse(latestRes ?? []);
+      const latestParsed = LatestAssessmentsSchema.safeParse(latestRes.data ?? []);
       setLatestAssessments(latestParsed.success ? latestParsed.data : []);
 
-      const typeParsed = TypeDistSchema.safeParse(typeRes ?? []);
+      const typeParsed = TypeDistSchema.safeParse(typeRes.data ?? []);
       setTypeDist(typeParsed.success ? typeParsed.data : []);
+      
+      console.log('✅ Admin Analytics: All data loaded successfully');
     } catch (e: any) {
+      console.error('❌ Admin Analytics: Data fetch failed:', e);
       setKpiRow(null);
       setConfDist([]);
       setOverlayDist([]);
@@ -258,7 +276,7 @@ export const useAdvancedAdminAnalytics = () => {
       count: item.n,
     })),
     throughputTrend: throughputData.map((item) => ({
-      date: item.day_label,
+      date: item.day,
       sessions: item.completions,
     })),
   }), [confDist, overlayDist, typeDist, throughputData]);

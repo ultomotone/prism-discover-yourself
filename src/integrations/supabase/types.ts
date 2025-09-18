@@ -2896,6 +2896,10 @@ export type Database = {
           overlay_name: string
         }[]
       }
+      admin_get_summary: {
+        Args: { last_n_days?: number }
+        Returns: Json
+      }
       admin_get_throughput_last_14d: {
         Args: Record<PropertyKey, never>
         Returns: {

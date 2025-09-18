@@ -6,7 +6,7 @@ import React, {
   type ComponentType,
 } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseClient";
 import { ResultsV2 } from "@/components/assessment/ResultsV2";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -208,43 +208,19 @@ export default function Results({ components }: ResultsProps = {}) {
 
     (async () => {
       try {
-        // Try direct profile access first (with RLS disabled, this should work)
-        console.log('🔍 Trying direct profile access...');
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('session_id', sessionId)
-          .single();
-
-        if (profileData && !profileError) {
-          console.log('✅ Direct profile access successful:', profileData);
-          // Get session data too
-          const { data: sessionData } = await supabase
-            .from('assessment_sessions')
-            .select('*')
-            .eq('id', sessionId)
-            .single();
-
-          if (!cancel) setData({
-            profile: profileData,
-            session: sessionData || { id: sessionId, status: 'completed' }
-          });
-          return;
-        }
-
-        console.log('❌ Direct profile access failed:', profileError);
-
-        // Fallback: Try RPC (but this is currently failing)
-        console.log('🔍 Trying RPC function...');
-        const { data: res, error } = await supabase.rpc(
-          "get_results_by_session",  
-          { session_id: sessionId, t: shareToken ?? null }
-        );
+        console.log('🔍 Calling get-results-by-session Edge Function...');
+        
+        // Call Edge Function exclusively - no direct REST calls
+        const { data: result, error } = await supabase.functions.invoke('get-results-by-session', {
+          body: { session_id: sessionId, share_token: shareToken }
+        });
 
         if (error) throw error;
-        if (!res?.profile) throw new Error("Results not found");
+        if (result?.status === 'error') throw new Error(result.error);
+        if (!result?.profile) throw new Error("Profile not found");
 
-        if (!cancel) setData(res);
+        console.log('✅ Edge Function success:', result);
+        if (!cancel) setData(result);
       } catch (e: any) {
         console.error('❌ Results loading failed:', e);
         console.error('Error details:', {

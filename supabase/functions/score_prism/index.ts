@@ -183,11 +183,11 @@ serve(async (req) => {
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-  } catch (e: any) {
-    console.log(JSON.stringify({ evt: "prism_error", session_id, error: e?.message || String(e) }));
-    return new Response(JSON.stringify({ status: "error", error: e?.message || String(e) }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+    } catch (e: any) {
+      console.log(JSON.stringify({ evt: "prism_error", session_id, error: e?.message || String(e) }));
+      return new Response(JSON.stringify({ status: "error", error: e?.message || String(e) }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 });
