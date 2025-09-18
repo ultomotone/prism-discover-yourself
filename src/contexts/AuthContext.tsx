@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { linkSessionsToUser, linkSessionToAccount } from '@/services/sessionLinking';
+import { ensureSessionLinked } from '@/services/sessionLinking';
 
 interface AuthContextType {
   user: User | null;
@@ -40,33 +40,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!user) return;
 
-    if (user.email) {
-      linkSessionsToUser(supabase, user.email, user.id).catch((err) => {
-        console.error('Failed to link sessions to account', err);
-      });
-    }
+    let cancelled = false;
 
-    try {
-      const cached = localStorage.getItem('prism_last_session');
-      if (cached) {
+    (async () => {
+      try {
+        const cached = localStorage.getItem('prism_last_session');
+        if (!cached) return;
+
         const { id, email } = JSON.parse(cached) as {
           id?: string;
           email?: string;
         };
-        if (id) {
-          linkSessionToAccount(
-            supabase,
-            id,
-            user.id,
-            user.email ?? email ?? ''
-          ).catch((err) => {
-            console.error('Failed to link cached session', err);
-          });
+
+        if (!id || cancelled) return;
+
+        const linked = await ensureSessionLinked({
+          sessionId: id,
+          userId: user.id,
+          email: user.email ?? email ?? undefined,
+        });
+
+        if (linked && !cancelled) {
+          localStorage.removeItem('prism_last_session');
         }
+      } catch (err) {
+        console.warn('Failed to link cached session', err);
       }
-    } catch (err) {
-      console.warn('Failed to parse cached session', err);
-    }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   const signOut = async () => {

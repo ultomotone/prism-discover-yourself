@@ -1,7 +1,7 @@
 // IMPORTANT: DOM setup before component imports
 import "./setup/dom";
 
-import test, { after, afterEach, beforeEach, mock } from "node:test";
+import test, { after, afterEach, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import React from "react";
 import { render, screen, waitFor, cleanup } from "@testing-library/react";
@@ -16,41 +16,50 @@ const StubResultsView = ({ profile }: any) => (
   SUPABASE_ANON_KEY: "anon",
 };
 
-const { supabase } = await import("@/lib/supabase/client");
-const rpcMock = mock.method(supabase, "rpc", () =>
-  Promise.resolve({ data: null, error: null })
-);
+const originalFetch = globalThis.fetch;
+
+function createFetchStub(responseFactory: (url: string, body: any) => Response | Promise<Response>) {
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    const payload = init?.body ? JSON.parse(String(init.body)) : null;
+    return responseFactory(url, payload);
+  }) as typeof fetch;
+}
+
+function successPayload(sessionId: string, typeCode = "LII") {
+  return {
+    profile: { type_code: typeCode, top_3_fits: [{ code: typeCode, fit: 72.1 }] },
+    session: { id: sessionId, status: "completed" },
+    results_version: "v1",
+  };
+}
 
 const { default: Results } = await import("@/pages/Results");
 
-const mkOk = (profile: any) => ({
-  data: { profile, session: { id: "sess-123", status: "completed" } },
-  error: null,
-});
-
 beforeEach(() => {
-  rpcMock.mock.resetCalls();
-  rpcMock.mock.mockImplementation(() => {
-    throw new Error("rpcMock not configured for this test");
-  });
+  globalThis.fetch = originalFetch;
 });
 
 afterEach(() => {
   cleanup();
+  globalThis.fetch = originalFetch;
 });
 
 after(() => {
-  rpcMock.mock.restore();
+  globalThis.fetch = originalFetch;
 });
 
 test(
-  "Results page → RPC contract + render: calls RPC with { p_session_id, t } and renders with token present",
+  "Results page → RPC contract + render: calls function with session + token and renders",
   async () => {
-    rpcMock.mock.mockImplementation(() =>
-      Promise.resolve(
-        mkOk({ type_code: "LII", top_3_fits: [{ code: "LII", fit: 72.1 }] })
-      )
-    );
+    const calls: Array<{ url: string; body: any }> = [];
+    createFetchStub((url, body) => {
+      calls.push({ url, body });
+      if (url.endsWith("/link_session_to_account")) {
+        return new Response("{}", { status: 200 });
+      }
+      return new Response(JSON.stringify(successPayload(body.session_id)), { status: 200 });
+    });
 
     render(
       <MemoryRouter initialEntries={["/results/sess-123?t=tok-abc"]}>
@@ -67,20 +76,23 @@ test(
       assert.ok(screen.getByTestId("results-loaded"));
     });
 
-    assert.equal(rpcMock.mock.callCount(), 1);
-    const [firstCall] = rpcMock.mock.calls;
-    const [fnName, payload] = firstCall.arguments;
-    assert.equal(fnName, "get_results_by_session");
-    assert.deepEqual(payload, { p_session_id: "sess-123", t: "tok-abc" });
+    const getResultsCall = calls.find((c) => c.url.endsWith("/get-results-by-session"));
+    assert.ok(getResultsCall);
+    assert.deepEqual(getResultsCall!.body, { session_id: "sess-123", share_token: "tok-abc" });
   }
 );
 
 test(
-  "Results page → RPC contract + render: passes t:null when no token param is present",
+  "Results page → RPC contract + render: passes undefined token when query lacks t",
   async () => {
-    rpcMock.mock.mockImplementation(() =>
-      Promise.resolve(mkOk({ type_code: "IEI" }))
-    );
+    const calls: Array<{ url: string; body: any }> = [];
+    createFetchStub((url, body) => {
+      calls.push({ url, body });
+      if (url.endsWith("/link_session_to_account")) {
+        return new Response("{}", { status: 200 });
+      }
+      return new Response(JSON.stringify(successPayload(body.session_id, "IEI")), { status: 200 });
+    });
 
     render(
       <MemoryRouter initialEntries={["/results/sess-xyz"]}>
@@ -97,18 +109,21 @@ test(
       assert.ok(screen.getByTestId("results-loaded"));
     });
 
-    const [firstCall] = rpcMock.mock.calls;
-    const [, payload] = firstCall.arguments;
-    assert.deepEqual(payload, { p_session_id: "sess-xyz", t: null });
+    const getResultsCall = calls.find((c) => c.url.endsWith("/get-results-by-session"));
+    assert.ok(getResultsCall);
+    assert.deepEqual(getResultsCall!.body, { session_id: "sess-xyz" });
   }
 );
 
 test(
-  "Results page → RPC contract + render: shows error state when backend returns null profile",
+  "Results page → RPC contract + render: surfaces error state when backend throws",
   async () => {
-    rpcMock.mock.mockImplementation(() =>
-      Promise.resolve({ data: { profile: null }, error: null })
-    );
+    createFetchStub((url) => {
+      if (url.endsWith("/link_session_to_account")) {
+        return new Response("{}", { status: 200 });
+      }
+      return new Response("{\"error\":\"failure\"}", { status: 500 });
+    });
 
     render(
       <MemoryRouter initialEntries={["/results/sess-bad?t=tok"]}>
@@ -121,7 +136,7 @@ test(
       </MemoryRouter>
     );
 
-    const error = await screen.findByText(/Results not found/i);
+    const error = await screen.findByText(/Unable to load results/i);
     assert.ok(error);
   }
 );

@@ -2,6 +2,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ComponentType,
 } from "react";
@@ -16,6 +17,8 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { trackResultsViewed } from "@/lib/analytics";
 import { classifyRpcError, type RpcErrorCategory } from "@/features/results/errorClassifier";
+import { fetchResultsBySession } from "@/services/resultsApi";
+import { ensureSessionLinked } from "@/services/sessionLinking";
 
 type ResultsPayload = {
   session: { id: string; status: string };
@@ -57,15 +60,6 @@ export default function Results({ components }: ResultsProps = {}) {
     [paramId, query]
   );
 
-  // Debug logging - add this to see what's happening
-  console.log('🔍 Results component state:', {
-    paramId,
-    sessionId,
-    pathname: location.pathname,
-    search: location.search,
-    href: window.location.href
-  });
-
   // Early return if sessionId is missing or invalid
   if (!sessionId || sessionId === ":sessionId") {
     return (
@@ -98,8 +92,9 @@ export default function Results({ components }: ResultsProps = {}) {
   const [data, setData] = useState<ResultsPayload | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [errKind, setErrKind] = useState<RpcErrorCategory | null>(null);
-  const [tries, setTries] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [rotating, setRotating] = useState(false);
+  const linkAttemptedRef = useRef(false);
 
   const resultsUrl = useMemo(
     () =>
@@ -206,125 +201,96 @@ export default function Results({ components }: ResultsProps = {}) {
 
   useEffect(() => {
     if (!sessionId) return;
-    let cancel = false;
-    setErr(null);
-    setErrKind(null);
 
-    console.log('🔍 Results useEffect triggered');
-    console.log('SessionID:', sessionId);
-    console.log('ShareToken:', shareToken);
-    console.log('Current URL:', window.location.href);
-
-    const ensureShareTokenAndReload = async (sessionId: string) => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          console.log('No user found, cannot get share token');
-          setErr('Sign in or open the link with a share token to view results.');
-          setErrKind('not_authorized');
-          return;
-        }
-
-        console.log('Attempting to get share token for owned session...');
-        const { data, error } = await supabase.functions.invoke("get-or-create-share-token", {
-          body: { session_id: sessionId },
-        });
-        
-        if (!error && data?.ok && data?.share_token) {
-          console.log('Got share token, redirecting...');
-          const url = new URL(window.location.href);
-          url.searchParams.set("t", data.share_token);
-          window.location.replace(url.toString());
-        } else {
-          console.error('Failed to get share token:', error || data);
-          setErr('Unable to access results. Please check if you own this session or have a valid share link.');
-          setErrKind('not_authorized');
-        }
-      } catch (err) {
-        console.error('Error getting share token:', err);
-        setErr('Failed to authenticate access to results.');
-        setErrKind('not_authorized');
-      }
-    };
+    let cancelled = false;
 
     (async () => {
+      setLoading(true);
+      setErr(null);
+      setErrKind(null);
+
       try {
-        console.log('🔍 Calling get-results-by-session Edge Function...');
-        
-        // Call Edge Function with share token (or null)
-        const { data: result, error } = await supabase.functions.invoke('get-results-by-session', {
-          body: { session_id: sessionId, share_token: shareToken }
-        });
+        const result = await fetchResultsBySession(sessionId, shareToken);
 
-        if (error) {
-          console.log('🔍 Error object structure:', error);
-          
-          // If no share token and we got 401, try owner auth
-          if (!shareToken && (error.message?.includes('401') || error.message?.includes('share token required'))) {
-            console.log('No share token provided, attempting owner auth...');
-            await ensureShareTokenAndReload(sessionId);
-            return;
-          }
-          throw error;
-        }
-        
+        if (cancelled) return;
+
         if (result?.ok === false) {
-          if (result.code === 'SCORING_ROWS_MISSING') {
-            // V2 scoring data missing - show recompute message
-            console.log('V2 scoring data missing, need recompute');
-            setErr("Results updating—recompute required.");
-            setErrKind(null);
+          if (result.code === 'SCORING_ROWS_MISSING' && result.profile) {
+            setData(result);
             return;
           }
-          throw new Error(result.error);
-        }
-        if (!result?.profile) throw new Error("Profile not found");
-
-        console.log('✅ Edge Function success:', result);
-        if (!cancel) setData(result);
-      } catch (e: any) {
-        console.error('❌ Results loading failed:', e);
-        console.error('Error details:', {
-          message: e?.message,
-          code: e?.code,
-          status: e?.status,
-          details: e?.details
-        });
-        
-        const kind = classifyRpcError(e);
-        if (kind === "transient" && tries < 2) {
-          setTimeout(() => !cancel && setTries((t) => t + 1), 400 * (tries + 1));
-          return;
-        }
-        if (!cancel) {
-          if (kind === "expired_or_invalid_token" || kind === "not_authorized") {
-            setErrKind(kind);
-          } else {
-            if (e?.message?.includes('Profile not found') || e?.code === 'PROFILE_NOT_FOUND') {
-              setErr("This assessment needs to be scored. Profile data is missing.");
-            } else {
-              setErr(
-                e?.message && typeof e.message === "string"
-                  ? e.message
-                  : "Failed to load results"
-              );
-            }
-            setErrKind(null);
+          if (result.code === 'SCORING_ROWS_MISSING') {
+            setErr('Results updating—recompute required.');
+            return;
           }
+          throw new Error(result?.error ?? 'Failed to load results');
+        }
+
+        if (!result?.profile) {
+          throw new Error('Profile not found');
+        }
+
+        setData(result);
+      } catch (e: any) {
+        if (cancelled) return;
+        const kind = classifyRpcError(e);
+        if (kind === 'expired_or_invalid_token' || kind === 'not_authorized') {
+          setErrKind(kind);
+          setErr(null);
+        } else {
+          setErr(
+            e?.message && typeof e.message === 'string'
+              ? e.message
+              : 'Failed to load results'
+          );
+          setErrKind(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
         }
       }
     })();
 
     return () => {
-      cancel = true;
+      cancelled = true;
     };
-  }, [sessionId, shareToken, tries]);
+  }, [sessionId, shareToken]);
 
   useEffect(() => {
     if (data?.profile) {
       trackResultsViewed(sessionId, (data.profile as any)?.type_code);
     }
   }, [data?.profile, sessionId]);
+
+  useEffect(() => {
+    linkAttemptedRef.current = false;
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (shareToken) return;
+    if (!data) return;
+    if (linkAttemptedRef.current) return;
+
+    let cancelled = false;
+
+    (async () => {
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
+      if (!user || cancelled) return;
+
+      linkAttemptedRef.current = true;
+      await ensureSessionLinked({
+        sessionId,
+        userId: user.id,
+        email: user.email ?? undefined,
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [data, sessionId, shareToken]);
 
   if (errKind) {
     const content =
@@ -361,8 +327,27 @@ export default function Results({ components }: ResultsProps = {}) {
       </div>
     );
   }
-  if (err) return <div className="p-8">Error: {err}</div>;
-  if (!data) return <div className="p-8">Loading…</div>;
+  if (err) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 space-y-4 text-center">
+            <h2 className="text-lg font-semibold">Unable to load results</h2>
+            <p className="text-muted-foreground">{err}</p>
+            <Button onClick={() => window.location.reload()}>Retry</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loading && !data) {
+    return <div className="p-8">Loading…</div>;
+  }
+
+  if (!data) {
+    return <div className="p-8">No results available.</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background">

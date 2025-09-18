@@ -518,14 +518,14 @@ function RetestBanner({ profile }: { profile: Profile }) {
 }
 function Top3({ p, types }:{ p:Profile; types?: any[] }){
   // Use v2 types data if available, otherwise fallback to legacy profile data
-  const topItems = types && types.length > 0 
-    ? types.slice(0, 3).map(t => ({ 
-        code: t.type_code, 
+  const topItems = types && types.length > 0
+    ? types.slice(0, 3).map(t => ({
+        code: t.type_code,
         fit: t.fit,
-        share: t.share 
+        share: t.share
       }))
     : getTop3List(p);
-    
+
   const primary = topItems[0]?.code || p.top_types?.[0] || p.type_code || '';
   const strengthValues = Object.values(p.strengths ?? {});
   const sortedStrengths = [...strengthValues].sort((a, b) => a - b);
@@ -535,6 +535,26 @@ function Top3({ p, types }:{ p:Profile; types?: any[] }){
   const suppressedThreshold = medianStrength - 1; // >1 SD below median (simplified)
 
   const overlay = p.overlay ?? '';
+
+  const fallbackShares = new Map<string, number>();
+  if (Array.isArray(p.top_types)) {
+    for (const entry of p.top_types as any[]) {
+      if (!entry?.code) continue;
+      const rawShare = typeof entry.share === 'number'
+        ? entry.share
+        : typeof entry.share === 'string'
+        ? parseFloat(entry.share)
+        : undefined;
+      if (rawShare == null || Number.isNaN(rawShare)) continue;
+      const normalized = rawShare > 1 ? rawShare : rawShare * 100;
+      fallbackShares.set(entry.code, normalized);
+    }
+  }
+
+  const toPercent = (value: number | undefined | null) => {
+    if (typeof value !== 'number' || Number.isNaN(value)) return 0;
+    return value > 1 ? value : value * 100;
+  };
 
   return (
     <section className="p-5 border rounded-2xl bg-card">
@@ -547,16 +567,21 @@ function Top3({ p, types }:{ p:Profile; types?: any[] }){
           // For v2 data, we already have fit and share from types array
           // For legacy data, fallback to type_scores
           const typeScore = p.type_scores?.[code];
-          const displayFit = types && types.length > 0 
-            ? fit || 0 
-            : (typeScore?.fit_abs ?? fit ?? 0);
-          const displayShare = types && types.length > 0 
-            ? share || 0 
-            : (typeScore?.share_pct ?? 0);
-            
+          const displayFit = types && types.length > 0
+            ? typeof fit === 'number' ? fit : 0
+            : (typeScore?.fit_abs ?? (typeof fit === 'number' ? fit : 0));
+          const percentFromTypes = toPercent(typeof share === 'number' ? share : undefined);
+          const shareFromScores = typeof typeScore?.share_pct === 'number' ? typeScore.share_pct : undefined;
+          const fallbackShare = fallbackShares.get(code);
+          const displayShare = types && types.length > 0
+            ? percentFromTypes
+            : shareFromScores && shareFromScores > 0
+            ? shareFromScores
+            : fallbackShare ?? 0;
+
           const title = TYPE_KB[code]?.title || code;
           const isMain = code === primary;
-          
+
           return (
             <div key={code} className={`p-4 border rounded-xl ${isMain ? 'bg-muted/50' : ''}`}>
               <div className="flex justify-between items-baseline">
@@ -599,8 +624,18 @@ function Top3({ p, types }:{ p:Profile; types?: any[] }){
         profile={p}
         data={topItems.map(({ code, fit, share }) => ({
           code,
-          fit: types && types.length > 0 ? (fit || 0) : (p.type_scores?.[code]?.fit_abs ?? fit ?? 0),
-          share: types && types.length > 0 ? (share || 0) : (p.type_scores?.[code]?.share_pct ?? 0),
+          fit: types && types.length > 0
+            ? (typeof fit === 'number' ? fit : 0)
+            : (p.type_scores?.[code]?.fit_abs ?? (typeof fit === 'number' ? fit : 0)),
+          share: types && types.length > 0
+            ? toPercent(typeof share === 'number' ? share : undefined)
+            : (() => {
+                const shareFromScores = p.type_scores?.[code]?.share_pct;
+                if (typeof shareFromScores === 'number' && shareFromScores > 0) {
+                  return shareFromScores;
+                }
+                return fallbackShares.get(code) ?? 0;
+              })(),
         }))}
       />
     </section>
@@ -651,12 +686,6 @@ function Strengths({ p, functions }:{ p:Profile; functions?: any[] }){
 }
 
 function Dimensions({ p, functions }:{ p:Profile; functions?: any[] }){
-  console.log('🔵 Dimensions component called with profile dimensions data:', {
-    hasDimensions: !!p.dimensions,
-    dimensions: p.dimensions,
-    dimensionsKeys: p.dimensions ? Object.keys(p.dimensions) : 'No dimensions',
-    functionsV2: functions?.length || 0
-  });
 
   // Use v2 functions data if available, otherwise fallback to legacy profile dimensions
   const dimensionData = functions && functions.length > 0
@@ -709,13 +738,6 @@ function Dimensions({ p, functions }:{ p:Profile; functions?: any[] }){
 }
 
 function Blocks({ p, state }:{ p:Profile; state?: any[] }){
-  console.log('🔵 Blocks component called with profile blocks data:', {
-    hasBlocks: !!p.blocks,
-    hasBlocksNorm: !!p.blocks_norm,
-    blocks: p.blocks,
-    blocks_norm: p.blocks_norm,
-    stateV2: state?.length || 0
-  });
 
   // Use v2 state data if available, otherwise fallback to legacy profile blocks_norm
   const blocksData = state && state.length > 0 && state[0]
@@ -793,8 +815,6 @@ function Blocks({ p, state }:{ p:Profile; state?: any[] }){
 
 // Enhanced Core Description component using centralized data
 function TypeCoreSection({ typeCode }: { typeCode: string }) {
-  console.log('🔵 TypeCoreSection called with typeCode:', typeCode, 'Available TYPE_CORE_DESCRIPTIONS keys:', Object.keys(TYPE_CORE_DESCRIPTIONS));
-  
   if (!typeCode) {
     console.warn('🔴 TypeCoreSection: No typeCode provided');
     return null;
@@ -813,8 +833,6 @@ function TypeCoreSection({ typeCode }: { typeCode: string }) {
       </section>
     );
   }
-  
-  console.log('🟢 TypeCoreSection: Successfully found core data for', typeCode, 'with', coreData.paragraphs.length, 'paragraphs');
   
   return (
     <section className="p-6 border rounded-2xl bg-card prism-shadow-card">
@@ -1070,16 +1088,6 @@ function TypeNarrative({ typeCode }:{ typeCode:string }){
 }
 
 function MetaInfo({ p }:{ p:Profile }){
-  console.log('🔵 MetaInfo component called with profile validity data:', {
-    hasValidity: !!p.validity,
-    validity: p.validity,
-    inconsistency: p.validity?.inconsistency,
-    sd_index: p.validity?.sd_index,
-    validityStatus: p.validity_status,
-    confidence: p.confidence,
-    conf_band: p.conf_band
-  });
-
   const validityColor = p.validity_status === "pass" ? "text-green-600" :
                        p.validity_status === "warning" ? "text-orange-600" : "text-red-600";
 
@@ -1168,9 +1176,7 @@ function SafeComponent<T extends Record<string, any>>({
   fallbackName: string;
 }) {
   try {
-    console.log(`🔵 SafeComponent: About to render ${fallbackName} with props:`, props);
     const result = <Component {...props} />;
-    console.log(`✅ SafeComponent: Successfully rendered ${fallbackName}`);
     return result;
   } catch (error) {
     console.error(`🔴 SafeComponent Error in ${fallbackName}:`, error);
@@ -1189,43 +1195,18 @@ function SafeComponent<T extends Record<string, any>>({
 }
 
 // ---------- Main export -----------------------------------------------------
-export const ResultsV2: React.FC<{ 
-  profile: Profile; 
+export const ResultsV2: React.FC<{
+  profile: Profile;
   types?: any[];
   functions?: any[];
   state?: any[];
   resultsVersion?: string;
 }> = ({ profile: p, types, functions, state, resultsVersion }) => {
-  console.log('🟢 ResultsV2 component rendering with profile:', p);
-  console.log('🟢 Profile keys:', p ? Object.keys(p) : 'No profile');
-  console.log('🟢 V2 data:', { 
-    types: types?.length, 
-    functions: functions?.length, 
-    state: state?.length,
-    resultsVersion 
-  });
-  
-  // Strict V2 data presence check
-  const hasV2 = 
+  const hasV2 =
     resultsVersion === "v2" &&
     Array.isArray(types) && types.length === 16 &&
     Array.isArray(functions) && functions.length === 8 &&
     Array.isArray(state) && state.length > 0;
-
-  // If we're missing complete V2 data but expected it, show recompute prompt
-  if (resultsVersion === "v2" && !hasV2) {
-    return (
-      <div className="mx-auto max-w-3xl p-8 text-center space-y-2">
-        <h2 className="text-2xl font-semibold">Preparing enhanced results</h2>
-        <p className="text-muted-foreground">
-          We're recomputing your enhanced profile. If this persists, tap "Recompute" in Admin.
-        </p>
-      </div>
-    );
-  }
-
-  const hasV2Data = hasV2;
-  const isV2Missing = !hasV2;
   
   // Early return for missing profile
   if (!p) {
@@ -1241,18 +1222,10 @@ export const ResultsV2: React.FC<{
   }
   
   // Show banner if not v2 or missing v2 data
-  const showV2Banner = !hasV2Data;
+  const showV2Banner = resultsVersion === "v2" && !hasV2;
   
   const primary = p.top_types?.[0] || p.type_code;
   const overlay = p.overlay ?? '';
-  console.log('🟡 Primary type determined as:', primary);
-  console.log('🟡 Available data:', {
-    top_types: p.top_types,
-    type_code: p.type_code,
-    overlay,
-    strengths: p.strengths ? Object.keys(p.strengths) : 'Missing',
-    blocks: p.blocks ? Object.keys(p.blocks) : 'Missing'
-  });
   
   // Early return for missing primary type
   if (!primary) {
@@ -1268,20 +1241,6 @@ export const ResultsV2: React.FC<{
   }
   
   try {
-    console.log('🟡 About to render components, profile data check:', {
-      hasBlocks: !!p.blocks,
-      hasBlocksNorm: !!p.blocks_norm,
-      hasDimensions: !!p.dimensions,
-      hasStrengths: !!p.strengths,
-      hasValidity: !!p.validity,
-      hasTypeCode: !!p.type_code,
-      primaryType: primary,
-      blocksKeys: p.blocks ? Object.keys(p.blocks) : 'No blocks',
-      blocksNormKeys: p.blocks_norm ? Object.keys(p.blocks_norm) : 'No blocks_norm',
-      dimensionsKeys: p.dimensions ? Object.keys(p.dimensions) : 'No dimensions',
-      strengthsKeys: p.strengths ? Object.keys(p.strengths) : 'No strengths',
-    });
-
     return (
       <div className="max-w-4xl mx-auto space-y-6">
         {showV2Banner && (
@@ -1295,39 +1254,39 @@ export const ResultsV2: React.FC<{
           </div>
         )}
         
-        <SafeComponent 
-          component={Top3} 
-          props={{ p, types: hasV2Data ? types : null }} 
-          fallbackName="Top3" 
+        <SafeComponent
+          component={Top3}
+          props={{ p, types: hasV2 ? types : null }}
+          fallbackName="Top3"
         />
-        <SafeComponent 
-          component={StateOverlaySection} 
-          props={{ overlay, state: hasV2Data ? state : null }} 
-          fallbackName="StateOverlaySection" 
+        <SafeComponent
+          component={StateOverlaySection}
+          props={{ overlay, state: hasV2 ? state : null }}
+          fallbackName="StateOverlaySection"
         />
         <SafeComponent component={TypeCoreSection} props={{ typeCode: primary }} fallbackName="TypeCoreSection" />
         <SafeComponent component={TypeNarrative} props={{ typeCode: primary }} fallbackName="TypeNarrative" />
         <SafeComponent 
-          component={FunctionsAnalysis} 
-          props={{ p, functions: hasV2Data ? functions : null }} 
-          fallbackName="FunctionsAnalysis" 
+          component={FunctionsAnalysis}
+          props={{ p, functions: hasV2 ? functions : null }}
+          fallbackName="FunctionsAnalysis"
         />
         <div className="grid md:grid-cols-2 gap-6">
-          <SafeComponent 
-            component={Strengths} 
-            props={{ p, functions: hasV2Data ? functions : null }} 
-            fallbackName="Strengths" 
+          <SafeComponent
+            component={Strengths}
+            props={{ p, functions: hasV2 ? functions : null }}
+            fallbackName="Strengths"
           />
-          <SafeComponent 
-            component={Dimensions} 
-            props={{ p, functions: hasV2Data ? functions : null }} 
-            fallbackName="Dimensions" 
+          <SafeComponent
+            component={Dimensions}
+            props={{ p, functions: hasV2 ? functions : null }}
+            fallbackName="Dimensions"
           />
         </div>
-        <SafeComponent 
-          component={Blocks} 
-          props={{ p, state: hasV2Data ? state : null }} 
-          fallbackName="Blocks" 
+        <SafeComponent
+          component={Blocks}
+          props={{ p, state: hasV2 ? state : null }}
+          fallbackName="Blocks"
         />
         <SafeComponent component={CoreAlignmentSection} props={{ typeCode: primary }} fallbackName="CoreAlignmentSection" />
         <SafeComponent component={MetaInfo} props={{ p }} fallbackName="MetaInfo" />

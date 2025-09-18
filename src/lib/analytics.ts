@@ -123,10 +123,14 @@ export const trackResultsViewed = (sessionId: string, typeCode?: string) => {
       type_code: typeCode
     });
   }
-  
+
   // Fire custom event for Reddit S2S tracking
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('app:results:viewed', { 
+  if (
+    typeof window !== 'undefined' &&
+    typeof window.dispatchEvent === 'function' &&
+    typeof window.CustomEvent === 'function'
+  ) {
+    window.dispatchEvent(new window.CustomEvent('app:results:viewed', {
       detail: { sessionId, typeCode }
     }));
   }
