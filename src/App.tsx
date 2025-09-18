@@ -179,7 +179,7 @@ const App = () => (
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <div className="min-h-screen flex flex-col bg-background">
               <Header />
-              <main className="flex-1">
+              <main className="flex-1 pt-16">
                 <Routes>
                   <Route path="/" element={<Navigate to="/about" replace />} />
                   <Route path="/login" element={<Login />} />
