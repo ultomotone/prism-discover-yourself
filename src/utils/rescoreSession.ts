@@ -14,8 +14,8 @@ export async function rescoreSession(sessionId: string) {
       console.log('Cleanup result:', cleanupData);
     }
 
-    // Trigger re-scoring with the updated edge function
-    const { data, error } = await supabase.functions.invoke('score_prism', {
+    // Trigger re-scoring with the enhanced scoring engine
+    const { data, error } = await supabase.functions.invoke('enhanced-score-engine', {
       body: { session_id: sessionId },
     });
 

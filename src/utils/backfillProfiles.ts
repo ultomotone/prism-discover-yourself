@@ -57,7 +57,7 @@ export async function backfillMissingProfiles() {
         })
         .eq('id', sess.id);
 
-      const { error: scoreError } = await supabase.functions.invoke('score_prism', {
+      const { error: scoreError } = await supabase.functions.invoke('enhanced-score-engine', {
         body: { session_id: sess.id },
       });
 
