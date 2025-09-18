@@ -1,9 +1,6 @@
 // Reddit Pixel & CAPI tracking utility
 declare global {
   interface Window {
-    rdt: (...args: any[]) => void;
-    rdtTrack: (eventName: string, props?: any) => string;
-    rdtSetUser: (props: { email?: string }) => void;
     redditNormalizeEmail: (email: string) => string;
     __lastConversionId: string;
     __supabaseFunctionFetch: (path: string, init: RequestInit) => Promise<Response>;
