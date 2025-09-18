@@ -94,16 +94,16 @@ serve(async (req) => {
 
       // Check if we have v2 scoring data
       if (!types || types.length === 0) {
-        console.log(JSON.stringify({
-          evt: 'results_v2_missing_scoring',
-          session_id,
-          timestamp: new Date().toISOString()
-        }));
-        return jsonResponse({ 
-          ok: false, 
-          code: 'SCORING_ROWS_MISSING',
-          error: "Scoring data not available" 
-        }, 503);
+      console.log(JSON.stringify({
+        evt: 'results_v2_missing_scoring',
+        session_id,
+        timestamp: new Date().toISOString()
+      }));
+      return jsonResponse({ 
+        ok: false, 
+        code: 'SCORING_ROWS_MISSING',
+        error: "Scoring data not available" 
+      }, 200); // Return 200 so frontend can handle gracefully
       }
 
       console.log(JSON.stringify({
