@@ -41,7 +41,7 @@ function AdminControls() {
     if (!sessionId) return;
     setBusy("session");
     try {
-      const res = await invokeEdge("recompute-profiles", { session_id: sessionId.trim() });
+      const res = await invokeEdge("recompute-profiles", { sessionId: sessionId.trim() });
       toast({
         title: "Session recomputed",
         description: `Updated ${res?.updated ?? 0} / ${res?.processed ?? 0} sessions`,
