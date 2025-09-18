@@ -1,5 +1,5 @@
 // Script to seed test fixtures into Supabase
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { ALL_FIXTURES } from '../fixtures/assessmentFixtures';
 
 export interface FixtureSeedResult {

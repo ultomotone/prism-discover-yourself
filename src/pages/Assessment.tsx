@@ -4,7 +4,7 @@ import Header from '@/components/Header';
 import { AssessmentForm, AssessmentResponse } from '@/components/assessment/AssessmentForm';
 import { SavedAssessments } from '@/components/assessment/SavedAssessments';
 import { AssessmentIntro } from '@/components/assessment/AssessmentIntro';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { trackAssessmentComplete, trackLead } from '@/lib/analytics';
 import { TOTAL_PRISM_QUESTIONS } from '@/services/prismConfig';
 

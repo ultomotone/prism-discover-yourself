@@ -34,7 +34,7 @@ import { AccountLinkPrompt } from './AccountLinkPrompt';
 import { useToast } from '@/hooks/use-toast';
 import { useEmailSessionManager } from '@/hooks/useEmailSessionManager';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { Save } from 'lucide-react';
 import { trackAssessmentStart, trackAssessmentProgress } from '@/lib/analytics';
 
