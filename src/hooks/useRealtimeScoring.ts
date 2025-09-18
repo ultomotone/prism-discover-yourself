@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
+import { trackAssessmentScored } from '@/lib/ga4-analytics';
 
 export interface ScoringResult {
   id: string;
@@ -95,6 +96,17 @@ export const useRealtimeScoring = () => {
                     title: "New Results Available",
                     description: `Assessment results for ${newRecord.type_code} are ready!`,
                   });
+
+                  // Track GA4 event for new scoring result
+                  trackAssessmentScored({
+                    sessionId: newRecord.session_id,
+                    score: newRecord.score_fit_calibrated || 0,
+                    typeCode: newRecord.type_code || undefined,
+                    confidence: newRecord.confidence || undefined,
+                    fitBand: newRecord.fit_band || undefined,
+                    overlay: newRecord.overlay || undefined
+                  });
+
                   return [newRecord as ScoringResult, ...current];
                 }
                 return current;
@@ -106,6 +118,17 @@ export const useRealtimeScoring = () => {
                     title: "Results Updated",
                     description: `Assessment results have been recomputed`,
                   });
+
+                  // Track GA4 event for updated scoring result
+                  trackAssessmentScored({
+                    sessionId: newRecord.session_id,
+                    score: newRecord.score_fit_calibrated || 0,
+                    typeCode: newRecord.type_code || undefined,
+                    confidence: newRecord.confidence || undefined,
+                    fitBand: newRecord.fit_band || undefined,
+                    overlay: newRecord.overlay || undefined
+                  });
+
                   return current.map(r => 
                     r.id === newRecord.id ? newRecord as ScoringResult : r
                   );

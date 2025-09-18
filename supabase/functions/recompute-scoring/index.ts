@@ -131,6 +131,9 @@ serve(async (req) => {
         if (upsertResult.success) {
           updatedCount++;
           console.log(`✅ Updated scores for session ${session.id}`);
+          
+          // Send GA4 event for successful scoring
+          await sendGA4ScoringEvent(session.id, session.user_id, computedScores);
         } else {
           console.error(`❌ Failed to upsert scores for session ${session.id}:`, upsertResult.error);
         }
@@ -312,4 +315,65 @@ async function upsertScoringResults(
   }
 
   return { success: false, error: 'Max retries exceeded' };
+}
+
+/**
+ * Send GA4 Measurement Protocol event for scoring completion
+ */
+async function sendGA4ScoringEvent(
+  sessionId: string,
+  userId: string | null,
+  scores: any
+): Promise<void> {
+  try {
+    const measurementId = Deno.env.get('GA4_MEASUREMENT_ID');
+    const apiSecret = Deno.env.get('GA4_API_SECRET');
+    
+    if (!measurementId || !apiSecret) {
+      console.log('⚠️ GA4 credentials not configured, skipping analytics event');
+      return;
+    }
+
+    const gaURL = `https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`;
+    
+    // Generate event ID for potential client-side deduplication
+    const eventId = crypto.randomUUID();
+    
+    const payload = {
+      client_id: userId || sessionId || 'server',
+      user_id: userId || undefined,
+      events: [{
+        name: 'assessment_scored',
+        params: {
+          event_id: eventId,
+          assessment_id: sessionId,
+          score: scores.score_fit_calibrated || 0,
+          type_code: scores.type_code,
+          confidence: scores.confidence,
+          fit_band: scores.fit_band,
+          overlay: scores.overlay,
+          realtime: true,
+          results_version: scores.results_version
+        }
+      }]
+    };
+
+    const response = await fetch(gaURL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.ok) {
+      console.log(`📊 GA4 event sent for session ${sessionId} (event_id: ${eventId})`);
+    } else {
+      console.error(`❌ GA4 event failed: ${response.status} ${response.statusText}`);
+    }
+
+  } catch (error) {
+    console.error('❌ Error sending GA4 event:', error);
+    // Don't throw - GA4 failures shouldn't break scoring
+  }
 }

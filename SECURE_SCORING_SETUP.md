@@ -1,6 +1,6 @@
 # Secure Assessment Scoring System
 
-This document provides a complete guide for the secure assessment scoring system with real-time updates, RLS policies, and server-side score computation.
+This document provides a complete guide for the secure assessment scoring system with real-time updates, RLS policies, server-side score computation, and GA4 analytics integration.
 
 ## 🏗️ Architecture Overview
 
@@ -41,7 +41,31 @@ The system consists of four main components:
 ```bash
 SUPABASE_URL=https://gnkuikentdtnatazeriu.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+
+# GA4 Analytics Integration
+GA4_MEASUREMENT_ID=G-J2XXMC9VWV
+GA4_API_SECRET=your_ga4_api_secret_here
 ```
+
+### GA4 Analytics Setup
+
+1. **Get your Measurement ID**: Already configured as `G-J2XXMC9VWV`
+
+2. **Create GA4 API Secret**:
+   - Go to GA4 Admin → Data streams → Web → your stream
+   - Click "Measurement Protocol API secrets"
+   - Create new secret, name it "Supabase Edge Functions"
+   - Copy the secret value
+
+3. **Set Supabase Secrets**:
+```bash
+supabase secrets set GA4_MEASUREMENT_ID=G-J2XXMC9VWV
+supabase secrets set GA4_API_SECRET=your_api_secret_from_step_2
+```
+
+4. **Optional: GitHub Secrets** (for CI/CD):
+   - Go to GitHub → Settings → Secrets and variables → Actions
+   - Add `GA4_MEASUREMENT_ID` and `GA4_API_SECRET`
 
 ### Verifying Configuration
 
@@ -171,6 +195,38 @@ The hook automatically subscribes to:
 Events are filtered by `user_id = auth.uid()` for security.
 
 ## 🧪 Testing Guide
+
+### GA4 Analytics Testing
+
+```bash
+# Test GA4 integration
+curl -X POST your-edge-function-url \
+  -H "Content-Type: application/json" \
+  -d '{"sessionId": "test-session-id"}'
+
+# Check GA4 DebugView:
+# 1. Go to GA4 → Admin → DebugView
+# 2. Trigger a recompute via dashboard
+# 3. Verify 'assessment_scored' event appears
+# 4. Check event parameters (score, type_code, etc.)
+```
+
+### Client-Side GA4 (Optional)
+
+```javascript
+// Initialize GA4 after user consent
+import { initializeGA4, trackAssessmentScored } from '@/lib/ga4-analytics';
+
+// After user accepts cookies/analytics
+initializeGA4();
+
+// Manual tracking (usually automatic via realtime hook)
+trackAssessmentScored({
+  sessionId: 'test-123',
+  score: 85,
+  typeCode: 'INTJ'
+});
+```
 
 ### Integration Test Script
 
