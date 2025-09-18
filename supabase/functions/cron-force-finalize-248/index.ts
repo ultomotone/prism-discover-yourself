@@ -1,6 +1,6 @@
 // Deno Deploy Edge Function
 // Schedules-safe, idempotent.
-// Force-compute any session with completed_questions >= 248,
+// Force-compute any session with enough completed questions (full assessment = 248),
 // and overwrite profile only if responses_hash unchanged (or profile missing).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -61,6 +61,9 @@ Deno.serve(async (req) => {
 
   try {
     console.log("Starting cron-force-finalize-248 execution");
+
+    const MIN_RESPONSE_COUNT = 248;
+    const TARGET_RESULTS_VERSION = "v1.2.1";
     
     // Fetch ALL candidate sessions with actual response count (not relying on completed_questions)
     const { data: allSessions, error } = await admin
@@ -75,7 +78,7 @@ Deno.serve(async (req) => {
       throw error;
     }
 
-    // Filter sessions with >= 248 actual responses
+    // Filter sessions with >= MIN_RESPONSE_COUNT actual responses
     const sessions: SessionRow[] = [];
     for (const session of allSessions || []) {
       const { count: answerCount } = await admin
@@ -83,7 +86,7 @@ Deno.serve(async (req) => {
         .select("id", { count: "exact", head: true })
         .eq("session_id", session.id);
       
-      if (answerCount && answerCount >= 248) {
+      if (answerCount && answerCount >= MIN_RESPONSE_COUNT) {
         sessions.push(session as SessionRow);
       }
     }
@@ -96,7 +99,10 @@ Deno.serve(async (req) => {
         const hash = await computeResponsesHash(s.id);
         const existing = await getProfile(s.id);
 
-        const needsRecompute = !existing || existing.responses_hash !== hash;
+        const needsRecompute =
+          !existing ||
+          existing.responses_hash !== hash ||
+          existing.results_version !== TARGET_RESULTS_VERSION;
 
         if (needsRecompute) {
           console.log(`Recomputing session ${s.id} (hash changed or no profile)`);

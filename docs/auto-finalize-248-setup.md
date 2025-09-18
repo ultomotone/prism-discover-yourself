@@ -18,6 +18,7 @@ This system automatically finalizes sessions with 248+ completed questions and p
 - **Purpose**: Auto-finalize 248+ question sessions with email addresses
 - **Logic**: 
   - Only recomputes if responses_hash changed or profile missing
+  - Recomputes when stored results_version mismatches the current release
   - Calls `finalizeAssessment` edge function for scoring
   - Updates `responses_hash` after finalization
   - Ensures share tokens exist for all sessions
