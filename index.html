@@ -9,6 +9,7 @@
         const defaultConfig = {
           SUPABASE_URL: "https://gnkuikentdtnatazeriu.supabase.co",
           SUPABASE_ANON_KEY: "sb_publishable_Yu_Gv0Xfve27udk78CyT3w_qrbMR3Cn",
+          REDDIT_PIXEL_ID: "a2_hisg7r10d2ta", // Default Reddit Pixel ID
         };
         const config = Object.assign({}, defaultConfig, existing);
 
@@ -308,9 +309,16 @@
       !function(w,d){if(!w.rdt){var p=w.rdt=function(){p.sendEvent?p.sendEvent.apply(p,arguments):p.callQueue.push(arguments)};p.callQueue=[];
       var t=d.createElement("script");t.src="https://www.redditstatic.com/ads/pixel.js";t.async=!0;
       var s=d.getElementsByTagName("script")[0];s.parentNode.insertBefore(t,s)}}(window,document);
-      rdt('init','a2_hisg7r10d2ta');
+      // Use configurable pixel ID from app config or fallback
+      const redditPixelId = (window.__APP_CONFIG__ && window.__APP_CONFIG__.REDDIT_PIXEL_ID) || 'a2_hisg7r10d2ta';
+      rdt('init', redditPixelId);
     </script>
     <!-- End Reddit Pixel (init) -->
+
+    <!-- Reddit Pixel noscript fallback -->
+    <noscript>
+      <img height="1" width="1" style="display:none" src="https://www.reddit.com/tr?id=a2_hisg7r10d2ta&ev=PageVisit&noscript=1">
+    </noscript>
 
     <!-- Reddit Pixel helpers: unique conversion_id + click_id + SPA route tracking -->
     <script>
@@ -381,7 +389,8 @@
         if (props.email && window.redditNormalizeEmail) {
           props.email = window.redditNormalizeEmail(props.email);
         }
-        if (window.rdt) rdt('init', 'a2_hisg7r10d2ta', props);
+        const pixelId = (window.__APP_CONFIG__ && window.__APP_CONFIG__.REDDIT_PIXEL_ID) || 'a2_hisg7r10d2ta';
+        if (window.rdt) rdt('init', pixelId, props);
       };
 
       // Fire initial page view
