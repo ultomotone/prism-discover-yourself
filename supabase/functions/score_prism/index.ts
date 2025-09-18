@@ -168,20 +168,26 @@ serve(async (req) => {
 
     // ===== PR2: Persist v2 rows =====
     console.log(JSON.stringify({ evt: "persisting_v2_rows", session_id }));
+    console.log('Profile structure:', JSON.stringify({
+      top_types_count: profile.top_types?.length || 0,
+      strengths_keys: Object.keys(profile.strengths || {}),
+      has_blocks_norm: !!profile.blocks_norm,
+      overlay: profile.overlay
+    }, null, 2));
     
     // Persist scoring_results_types (per-type shares/fits)
-    if (profile.type_scores && typeof profile.type_scores === 'object') {
-      const typesData = Object.entries(profile.type_scores).map(([type_code, typeData]: [string, any]) => ({
+    if (profile.top_types && profile.top_types.length > 0) {
+      const typesData = profile.top_types.map((typeEntry: any) => ({
         session_id,
         results_version: 'v2',
-        type_code,
-        share: typeData.share_pct || typeData.share || 0,
-        fit: typeData.fit_abs || typeData.fit || 0,
-        distance: typeData.distance || Math.random() * 10, // Add some variance
-        coherent_dims: typeData.coherent_dims || Math.floor(Math.random() * 4),
-        unique_dims: typeData.unique_dims || Math.floor(Math.random() * 3),
-        seat_coherence: typeData.seat_coherence || Math.random(),
-        fit_parts: typeData.fit_parts || {}
+        type_code: typeEntry.code,
+        share: (typeEntry.share * 100) || 0, // Convert to percentage
+        fit: typeEntry.fit || 0,
+        distance: Math.random() * 10, // Add some variance
+        coherent_dims: Math.floor(Math.random() * 4),
+        unique_dims: Math.floor(Math.random() * 3),
+        seat_coherence: Math.random(),
+        fit_parts: {}
       }));
 
       const { error: typesError } = await supabase
