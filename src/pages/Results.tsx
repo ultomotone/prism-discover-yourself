@@ -19,6 +19,7 @@ import { trackResultsViewed } from "@/lib/analytics";
 import { classifyRpcError, type RpcErrorCategory } from "@/features/results/errorClassifier";
 import { fetchResultsBySession } from "@/services/resultsApi";
 import { ensureSessionLinked } from "@/services/sessionLinking";
+import { IS_PREVIEW } from "@/lib/env";
 
 type ResultsPayload = {
   session: { id: string; status: string };
@@ -268,6 +269,7 @@ export default function Results({ components }: ResultsProps = {}) {
   }, [sessionId]);
 
   useEffect(() => {
+    if (IS_PREVIEW) return;
     if (shareToken) return;
     if (!data) return;
     if (linkAttemptedRef.current) return;

@@ -1,10 +1,10 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, createBrowserRouter } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import Footer from "./components/Footer";
@@ -82,7 +82,7 @@ import PracticalOptimizer from "./pages/types/PracticalOptimizer";
 import PossibilityConnector from "./pages/types/PossibilityConnector";
 import IntegrityGuide from "./pages/types/IntegrityGuide";
 import Roadmap from "./pages/Roadmap";
-import Admin from "./pages/Admin";
+const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 import YourPersonalityBlueprint from "./pages/YourPersonalityBlueprint";
 import RelationalFitPage from "./pages/prism-relational-fit/page";
 import RelationalFitHome from "./pages/relational-fit/RelationalFitHome";
@@ -214,7 +214,14 @@ const App = () => (
                   <Route path="/real-time-type" element={<RealTimeType />} />
                   <Route path="/live-dashboard" element={<LiveDashboard />} />
 
-                  <Route path="/admin" element={<Admin />} />
+                  <Route
+                    path="/admin"
+                    element={(
+                      <Suspense fallback={<div className="p-6 text-sm">Loading admin…</div>}>
+                        <AdminDashboard />
+                      </Suspense>
+                    )}
+                  />
                   <Route path="/about" element={<About />} />
                   <Route path="/signals" element={<Signals />} />
                   <Route path="/ti" element={<Ti />} />

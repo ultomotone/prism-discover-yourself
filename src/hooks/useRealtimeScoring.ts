@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { trackAssessmentScored } from '@/lib/ga4-analytics';
+import { IS_PREVIEW } from '@/lib/env';
 
 export interface ScoringResult {
   id: string;
@@ -39,6 +40,7 @@ export const useRealtimeScoring = () => {
   // Fetch initial scoring results
   const fetchScoringResults = useCallback(async () => {
     if (!user) return;
+    if (IS_PREVIEW) return;
 
     try {
       setIsLoading(true);
@@ -69,6 +71,7 @@ export const useRealtimeScoring = () => {
   // Set up realtime subscription
   useEffect(() => {
     if (!user) return;
+    if (IS_PREVIEW) return;
 
     console.log('🔄 Setting up realtime subscription for scoring results');
 
@@ -177,6 +180,7 @@ export const useRealtimeScoring = () => {
   // Trigger recomputation
   const recomputeScoring = useCallback(async (sessionId?: string) => {
     if (!user) return { ok: false, error: 'User not authenticated' };
+    if (IS_PREVIEW) return { ok: false, error: 'preview_mode' };
 
     try {
       setIsRecomputing(true);

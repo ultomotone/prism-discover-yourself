@@ -11,7 +11,10 @@ declare global {
   }
 }
 
+import { IS_PREVIEW } from './env';
+
 export const trackEvent = (action: string, category: string, label?: string, value?: number) => {
+  if (IS_PREVIEW) return;
   if (typeof window !== 'undefined' && window.gtag) {
     window.gtag('event', action, {
       event_category: category,
@@ -23,6 +26,7 @@ export const trackEvent = (action: string, category: string, label?: string, val
 
 // Lead tracking for marketing funnels
 export const trackLead = (email?: string, metadata: Record<string, any> = {}) => {
+  if (IS_PREVIEW) return;
   trackEvent('lead', 'marketing');
 
   if (typeof window !== 'undefined') {
@@ -42,6 +46,7 @@ export const trackLead = (email?: string, metadata: Record<string, any> = {}) =>
 
 // Assessment-specific tracking functions
 export const trackAssessmentStart = (sessionId: string) => {
+  if (IS_PREVIEW) return;
   trackEvent('assessment_started', 'assessment', sessionId);
   
   // Track Reddit Lead event for assessment start (legacy pixel method)
@@ -61,6 +66,7 @@ export const trackAssessmentStart = (sessionId: string) => {
 };
 
 export const trackAssessmentProgress = (questionIndex: number, totalQuestions: number, sessionId: string) => {
+  if (IS_PREVIEW) return;
   const progress = Math.round((questionIndex + 1) / totalQuestions * 100);
   trackEvent('assessment_progress', 'assessment', `${progress}%_complete`, progress);
   
@@ -71,6 +77,7 @@ export const trackAssessmentProgress = (questionIndex: number, totalQuestions: n
 };
 
 export const trackAssessmentComplete = (sessionId: string, totalQuestions: number) => {
+  if (IS_PREVIEW) return;
   trackEvent('assessment_completed', 'assessment', sessionId, totalQuestions);
   
   // Track Reddit CompleteRegistration for 248+ question completion
@@ -91,6 +98,7 @@ export const trackAssessmentComplete = (sessionId: string, totalQuestions: numbe
 };
 
 export const trackAccountCreation = (email: string, sessionId?: string) => {
+  if (IS_PREVIEW) return;
   trackEvent('account_created', 'user', 'from_assessment');
   trackEvent('signup_completed', 'user');
   trackLead(email);
@@ -113,6 +121,7 @@ export const trackAccountCreation = (email: string, sessionId?: string) => {
 };
 
 export const trackResultsViewed = (sessionId: string, typeCode?: string) => {
+  if (IS_PREVIEW) return;
   trackEvent('results_viewed', 'assessment', typeCode || 'unknown');
   
   // Track Reddit ViewContent for results page (legacy pixel method)
@@ -137,6 +146,7 @@ export const trackResultsViewed = (sessionId: string, typeCode?: string) => {
 };
 
 export const trackPaymentSuccess = (value: number, currency: string = 'USD', transactionId: string, sessionId?: string) => {
+  if (IS_PREVIEW) return;
   trackEvent('purchase_completed', 'ecommerce', transactionId, value);
   
   // Track Reddit Purchase event

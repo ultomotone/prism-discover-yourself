@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { ensureSessionLinked } from '@/services/sessionLinking';
+import { IS_PREVIEW } from '@/lib/env';
 
 interface AuthContextType {
   user: User | null;
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!user) return;
+    if (IS_PREVIEW) return;
 
     let cancelled = false;
 
