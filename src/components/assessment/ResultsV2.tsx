@@ -647,16 +647,38 @@ function Strengths({ p, functions }:{ p:Profile; functions?: any[] }){
   const strengthValues = Object.values(p.strengths);
   const medianStrength = strengthValues.sort((a, b) => a - b)[Math.floor(strengthValues.length / 2)];
   const suppressedThreshold = medianStrength - 1; // >1 SD below median (simplified)
-  
-  // Prepare FC support data if available
-  const fcSupport: Record<string, number> = {};
-  if (p?.meta?.diagnostics?.considered && FUNCS) {
-    // This would come from the edge function FC support data - placeholder for now
-    FUNCS.forEach(f => {
-      fcSupport[f] = Math.random() * 0.5; // Placeholder - should come from actual FC data
-    });
+
+  const fcSupportData = (p.meta?.fc_support ?? p.meta?.diagnostics?.fc_support) as Record<string, number | undefined> | undefined;
+  const missingFcSupport = new Set<string>();
+  const resolveFcSupport = (func: Func): number | undefined => {
+    if (!fcSupportData) return undefined;
+    const value = fcSupportData[func];
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+    missingFcSupport.add(func);
+    return undefined;
+  };
+
+  if (fcSupportData && missingFcSupport.size === 0 && Object.keys(fcSupportData).length === 0) {
+    console.warn("⚠️ fc_support provided but empty", { profileId: p.id });
   }
-  
+
+  const fcValues = {
+    Ti: resolveFcSupport("Ti"),
+    Te: resolveFcSupport("Te"),
+    Fi: resolveFcSupport("Fi"),
+    Fe: resolveFcSupport("Fe"),
+    Ni: resolveFcSupport("Ni"),
+    Ne: resolveFcSupport("Ne"),
+    Si: resolveFcSupport("Si"),
+    Se: resolveFcSupport("Se"),
+  } as Record<Func, number | undefined>;
+
+  if (fcSupportData && missingFcSupport.size > 0) {
+    console.warn("⚠️ fc_support missing entries", { profileId: p.id, missing: [...missingFcSupport] });
+  }
+
   return (
     <section className="p-5 border rounded-2xl bg-card">
       <div className="flex items-center gap-2 mb-3">
@@ -668,19 +690,24 @@ function Strengths({ p, functions }:{ p:Profile; functions?: any[] }){
       <div className="grid md:grid-cols-2 gap-3">
         <div>
           <div className="text-sm text-muted-foreground mb-2">Judging (J)</div>
-          <Bar label="Ti" value={p.strengths.Ti || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcSupport.Ti} />
-          <Bar label="Te" value={p.strengths.Te || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcSupport.Te} />
-          <Bar label="Fi" value={p.strengths.Fi || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcSupport.Fi} />
-          <Bar label="Fe" value={p.strengths.Fe || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcSupport.Fe} />
+          <Bar label="Ti" value={p.strengths.Ti || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Ti} />
+          <Bar label="Te" value={p.strengths.Te || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Te} />
+          <Bar label="Fi" value={p.strengths.Fi || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Fi} />
+          <Bar label="Fe" value={p.strengths.Fe || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Fe} />
         </div>
         <div>
           <div className="text-sm text-muted-foreground mb-2">Perceiving (P)</div>
-          <Bar label="Ni" value={p.strengths.Ni || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcSupport.Ni} />
-          <Bar label="Ne" value={p.strengths.Ne || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcSupport.Ne} />
-          <Bar label="Si" value={p.strengths.Si || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcSupport.Si} />
-          <Bar label="Se" value={p.strengths.Se || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcSupport.Se} />
+          <Bar label="Ni" value={p.strengths.Ni || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Ni} />
+          <Bar label="Ne" value={p.strengths.Ne || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Ne} />
+          <Bar label="Si" value={p.strengths.Si || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Si} />
+          <Bar label="Se" value={p.strengths.Se || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Se} />
         </div>
       </div>
+      {missingFcSupport.size > 0 && (
+        <p className="text-xs text-muted-foreground mt-2">
+          Forced-choice coverage pending for: {[...missingFcSupport].join(", ")}
+        </p>
+      )}
     </section>
   );
 }
