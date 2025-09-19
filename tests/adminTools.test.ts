@@ -3,81 +3,42 @@ import assert from "node:assert/strict";
 
 process.env.VITE_SUPABASE_URL = "https://example.supabase.co";
 process.env.VITE_SUPABASE_ANON_KEY = "anon-key";
+process.env.VITE_SUPABASE_SERVICE_ROLE_KEY = "service-role-key";
 
-const supabaseModule = await import("@/lib/supabaseClient");
-const supabase = supabaseModule.default ?? (supabaseModule as any).supabase;
 const adminTools = await import("@/services/adminTools");
 
 const originalFetch = globalThis.fetch;
 
-function createOkResponse(payload: unknown): Response {
-  return new Response(JSON.stringify(payload), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-test("recomputeSession attaches Authorization header when JWT available", async () => {
-  const jwt = "jwt-token";
-  const originalGetSession = (supabase.auth as any).getSession;
-  (supabase.auth as any).getSession = async () => ({ data: { session: { access_token: jwt } } });
-
+test("recomputeSession invokes recompute-scoring with service role", async () => {
+  adminTools.__testing.resetCaches();
   const calls: Array<{ input: RequestInfo | URL; init?: RequestInit }> = [];
+
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     calls.push({ input, init });
-    return createOkResponse({ ok: true });
+    return new Response(JSON.stringify({ ok: true, updatedCount: 1 }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   };
 
   try {
-    await adminTools.recomputeSession("123e4567-e89b-12d3-a456-426614174000");
+    const result = await adminTools.recomputeSession("123e4567-e89b-12d3-a456-426614174000");
+    assert.deepEqual(result, { ok: true, updatedCount: 1 });
     assert.equal(calls.length, 1);
-    const { init, input } = calls[0];
-    assert.equal(
-      input,
-      "https://example.supabase.co/functions/v1/score_prism",
-      "should target score_prism edge function",
-    );
-    assert.ok(init?.headers, "headers should be present");
-    const headers = init?.headers as Record<string, string>;
-    assert.equal(headers.Authorization, `Bearer ${jwt}`);
-    assert.equal(headers.apikey, "anon-key");
+    const [{ input, init }] = calls;
+    assert.equal(input, "https://example.supabase.co/functions/v1/recompute-scoring");
     assert.equal(init?.method, "POST");
-    const body = init?.body;
-    assert.ok(body);
-    assert.deepEqual(JSON.parse(String(body)), { session_id: "123e4567-e89b-12d3-a456-426614174000" });
+    const headers = init?.headers as Record<string, string>;
+    assert.equal(headers.Authorization, "Bearer service-role-key");
+    assert.equal(headers.apikey, "service-role-key");
+    assert.deepEqual(JSON.parse(String(init?.body)), { sessionId: "123e4567-e89b-12d3-a456-426614174000" });
   } finally {
-    (supabase.auth as any).getSession = originalGetSession;
     globalThis.fetch = originalFetch;
   }
 });
 
-test("qaSession omits Authorization when no JWT available", async () => {
-  const originalGetSession = (supabase.auth as any).getSession;
-  (supabase.auth as any).getSession = async () => ({ data: { session: null } });
-
-  const calls: Array<{ init?: RequestInit }> = [];
-  globalThis.fetch = async (_input: RequestInfo | URL, init?: RequestInit) => {
-    calls.push({ init });
-    return createOkResponse({ ok: true });
-  };
-
-  try {
-    await adminTools.qaSession("123e4567-e89b-12d3-a456-426614174001");
-    assert.equal(calls.length, 1);
-    const headers = calls[0].init?.headers as Record<string, string>;
-    assert.ok(headers);
-    assert.equal(headers.Authorization, undefined);
-    assert.equal(headers.apikey, "anon-key");
-  } finally {
-    (supabase.auth as any).getSession = originalGetSession;
-    globalThis.fetch = originalFetch;
-  }
-});
-
-test("post helpers propagate error responses", async () => {
-  const originalGetSession = (supabase.auth as any).getSession;
-  (supabase.auth as any).getSession = async () => ({ data: { session: null } });
-
+test("recomputeSession throws when function fails", async () => {
+  adminTools.__testing.resetCaches();
   globalThis.fetch = async () =>
     new Response(JSON.stringify({ error: "boom" }), {
       status: 500,
@@ -85,9 +46,84 @@ test("post helpers propagate error responses", async () => {
     });
 
   try {
-    await assert.rejects(() => adminTools.sampleBroken(10), /boom/);
+    await assert.rejects(() => adminTools.recomputeSession("123e4567-e89b-12d3-a456-426614174000"), /boom/);
   } finally {
-    (supabase.auth as any).getSession = originalGetSession;
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("qaSession returns normalized completeness counts", async () => {
+  adminTools.__testing.resetCaches();
+  const rpcCalls: Array<{ name: string; params: Record<string, unknown> }> = [];
+  adminTools.__testing.setServiceClient({
+    rpc: async (name: string, params: Record<string, unknown>) => {
+      rpcCalls.push({ name, params });
+      if (name === "v2_completeness") {
+        return { data: { types: "16", functions: "8", state: "2" }, error: null };
+      }
+      throw new Error(`unexpected rpc ${name}`);
+    },
+  } as unknown as any);
+
+  const result = await adminTools.qaSession("123e4567-e89b-12d3-a456-426614174000");
+  assert.deepEqual(result, { types: 16, functions: 8, state: 2 });
+  assert.equal(rpcCalls.length, 1);
+  assert.deepEqual(rpcCalls[0], {
+    name: "v2_completeness",
+    params: { p_session: "123e4567-e89b-12d3-a456-426614174000" },
+  });
+});
+
+test("sampleBroken delegates to SQL helper", async () => {
+  adminTools.__testing.resetCaches();
+  adminTools.__testing.setServiceClient({
+    rpc: async (name: string) => {
+      if (name === "find_broken_sessions_sql") {
+        return { data: [{ session_id: "sess-1" }], error: null };
+      }
+      throw new Error(`unexpected rpc ${name}`);
+    },
+  } as unknown as any);
+
+  const rows = await adminTools.sampleBroken(10);
+  assert.deepEqual(rows, [{ session_id: "sess-1" }]);
+  await assert.rejects(() => adminTools.sampleBroken(0), /positive number/);
+});
+
+test("backfillBrokenSessions iterates recompute responses", async () => {
+  adminTools.__testing.resetCaches();
+  const rpcCalls: Array<string> = [];
+  adminTools.__testing.setServiceClient({
+    rpc: async (name: string) => {
+      rpcCalls.push(name);
+      if (name === "find_broken_sessions_sql") {
+        return { data: [{ session_id: "sess-1" }, { session_id: "sess-2" }], error: null };
+      }
+      throw new Error(`unexpected rpc ${name}`);
+    },
+  } as unknown as any);
+
+  type JsonValue = Record<string, unknown>;
+
+  const responses: Array<JsonValue> = [
+    { ok: true, updatedCount: 1 },
+    { ok: false, error: "fc_failed" },
+  ];
+  let idx = 0;
+  globalThis.fetch = async () =>
+    new Response(JSON.stringify(responses[idx++] ?? {}), {
+      status: idx === 1 ? 200 : 500,
+      headers: { "Content-Type": "application/json" },
+    });
+
+  try {
+    const summary = await adminTools.backfillBrokenSessions({ days: 90, batchSize: 50 });
+    assert.equal(rpcCalls.filter((name) => name === "find_broken_sessions_sql").length, 1);
+    assert.equal(summary.fetched, 2);
+    assert.equal(summary.recomputed, 1);
+    assert.equal(summary.results.length, 2);
+    assert.equal(summary.results[1].result.ok, false);
+  } finally {
     globalThis.fetch = originalFetch;
   }
 });

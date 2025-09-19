@@ -7,7 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { TYPE_CORE_DESCRIPTIONS } from "@/data/typeCoreDescriptions";
 import { prismTypes } from "@/data/prismTypes";
 import { StateLegend } from "@/components/common/StateLegend";
-import { FUNCS, safeGet, safeArray, normalizeProfileData, type Profile, type Func } from "@/features/results/types";
+import { FUNCS, safeGet, safeArray, type Profile, type Func } from "@/features/results/types";
 
 export type Top3Item = { code: string; fit?: number };
 
@@ -643,8 +643,24 @@ function Top3({ p, types }:{ p:Profile; types?: any[] }){
 }
 
 function Strengths({ p, functions }:{ p:Profile; functions?: any[] }){
+  const strengths = (p as unknown as { strengths?: Record<Func, number> | null }).strengths;
+  if (!strengths) {
+    console.warn({ evt: "results_missing_key", sessionId: getSessionId(p), key: "strengths" });
+    return (
+      <section className="p-5 border rounded-2xl bg-card">
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="font-semibold">Functional strengths (1–5)</h3>
+          <InfoTip title={GLOSSARY.strength.label}>
+            <div>{GLOSSARY.strength.text}</div>
+          </InfoTip>
+        </div>
+        <div className="text-sm text-muted-foreground">Strength data unavailable for this session.</div>
+      </section>
+    );
+  }
+
   // Calculate user's median strength for suppressed detection
-  const strengthValues = Object.values(p.strengths);
+  const strengthValues = Object.values(strengths);
   const medianStrength = strengthValues.sort((a, b) => a - b)[Math.floor(strengthValues.length / 2)];
   const suppressedThreshold = medianStrength - 1; // >1 SD below median (simplified)
 
@@ -690,17 +706,17 @@ function Strengths({ p, functions }:{ p:Profile; functions?: any[] }){
       <div className="grid md:grid-cols-2 gap-3">
         <div>
           <div className="text-sm text-muted-foreground mb-2">Judging (J)</div>
-          <Bar label="Ti" value={p.strengths.Ti || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Ti} />
-          <Bar label="Te" value={p.strengths.Te || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Te} />
-          <Bar label="Fi" value={p.strengths.Fi || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Fi} />
-          <Bar label="Fe" value={p.strengths.Fe || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Fe} />
+          <Bar label="Ti" value={strengths.Ti || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Ti} />
+          <Bar label="Te" value={strengths.Te || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Te} />
+          <Bar label="Fi" value={strengths.Fi || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Fi} />
+          <Bar label="Fe" value={strengths.Fe || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Fe} />
         </div>
         <div>
           <div className="text-sm text-muted-foreground mb-2">Perceiving (P)</div>
-          <Bar label="Ni" value={p.strengths.Ni || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Ni} />
-          <Bar label="Ne" value={p.strengths.Ne || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Ne} />
-          <Bar label="Si" value={p.strengths.Si || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Si} />
-          <Bar label="Se" value={p.strengths.Se || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Se} />
+          <Bar label="Ni" value={strengths.Ni || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Ni} />
+          <Bar label="Ne" value={strengths.Ne || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Ne} />
+          <Bar label="Si" value={strengths.Si || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Si} />
+          <Bar label="Se" value={strengths.Se || 0} suppressedThreshold={suppressedThreshold} fcSupport={fcValues.Se} />
         </div>
       </div>
       {missingFcSupport.size > 0 && (
@@ -713,11 +729,16 @@ function Strengths({ p, functions }:{ p:Profile; functions?: any[] }){
 }
 
 function Dimensions({ p, functions }:{ p:Profile; functions?: any[] }){
+  const baseDimensions = (p as unknown as { dimensions?: Record<string, number> | null }).dimensions;
+
+  if ((!functions || functions.length === 0) && !baseDimensions) {
+    console.warn({ evt: "results_missing_key", sessionId: getSessionId(p), key: "dimensions" });
+  }
 
   // Use v2 functions data if available, otherwise fallback to legacy profile dimensions
   const dimensionData = functions && functions.length > 0
     ? functions.reduce((acc, f) => ({ ...acc, [f.func]: f.dimension || 0 }), {} as Record<string, number>)
-    : p.dimensions;
+    : baseDimensions;
 
   // Check if dimensionData exists and has non-zero values
   const hasValidDimensionsData = dimensionData && 
@@ -725,7 +746,6 @@ function Dimensions({ p, functions }:{ p:Profile; functions?: any[] }){
     Object.values(dimensionData).some(val => typeof val === 'number' && val > 0);
 
   if (!hasValidDimensionsData) {
-    console.warn('🔴 Missing or zero dimensions data:', { profile: p.dimensions, v2: functions });
     return (
       <section className="p-5 border rounded-2xl bg-card">
         <div className="flex items-center gap-2 mb-3">
@@ -765,16 +785,21 @@ function Dimensions({ p, functions }:{ p:Profile; functions?: any[] }){
 }
 
 function Blocks({ p, state }:{ p:Profile; state?: any[] }){
+  const baseBlocks = (p as unknown as { blocks_norm?: { Core: number; Critic: number; Hidden: number; Instinct: number } | null }).blocks_norm;
+
+  if ((!state || state.length === 0) && !baseBlocks) {
+    console.warn({ evt: "results_missing_key", sessionId: getSessionId(p), key: "blocks_norm" });
+  }
 
   // Use v2 state data if available, otherwise fallback to legacy profile blocks_norm
   const blocksData = state && state.length > 0 && state[0]
     ? {
         Core: state[0].block_core || 0,
-        Critic: state[0].block_critic || 0, 
+        Critic: state[0].block_critic || 0,
         Hidden: state[0].block_hidden || 0,
         Instinct: state[0].block_instinct || 0
       }
-    : p.blocks_norm;
+    : baseBlocks;
 
   // Check if blocks exists and has non-zero values
   const hasValidBlocksData = blocksData && 
@@ -782,7 +807,6 @@ function Blocks({ p, state }:{ p:Profile; state?: any[] }){
     Object.values(blocksData).some(val => val && val > 0);
 
   if (!hasValidBlocksData) {
-    console.warn('🔴 Missing or zero blocks data:', { profile: p.blocks_norm, v2: state });
     return (
       <section className="p-5 border rounded-2xl bg-card">
         <div className="flex items-center gap-2 mb-3">
@@ -1001,8 +1025,27 @@ function CoreAlignmentSection({ typeCode }: { typeCode: string }) {
 
 // Enhanced Functions Analysis Section
 function FunctionsAnalysis({ p, functions }: { p: Profile; functions?: any[] }) {
+  const strengths = (p as unknown as { strengths?: Record<Func, number> | null }).strengths;
+  if (!strengths) {
+    return (
+      <section className="p-5 border rounded-2xl bg-card">
+        <div className="flex items-center gap-2 mb-4">
+          <h3 className="font-semibold">Functions Analysis</h3>
+          <InfoTip title="Functions Categories">
+            <div className="space-y-2">
+              <div><b>Typical:</b> {GLOSSARY.coherent.text}</div>
+              <div><b>Unique:</b> {GLOSSARY.unique.text}</div>
+              <div><b>Suppressed:</b> {GLOSSARY.suppressed.text}</div>
+            </div>
+          </InfoTip>
+        </div>
+        <div className="text-sm text-muted-foreground">Function analysis unavailable for this session.</div>
+      </section>
+    );
+  }
+
   // Calculate user's median strength for suppressed detection
-  const strengthValues = Object.values(p.strengths);
+  const strengthValues = Object.values(strengths);
   const medianStrength = strengthValues.sort((a, b) => a - b)[Math.floor(strengthValues.length / 2)];
   const suppressedThreshold = medianStrength - 1;
   
@@ -1221,6 +1264,24 @@ function SafeComponent<T extends Record<string, any>>({
   }
 }
 
+function getSessionId(profile: Profile): string {
+  const raw = profile as unknown as Record<string, unknown>;
+  const meta = raw.meta;
+  if (typeof raw.session_id === "string" && raw.session_id.length > 0) {
+    return raw.session_id;
+  }
+  if (meta && typeof meta === "object" && meta !== null) {
+    const session = (meta as Record<string, unknown>).session_id;
+    if (typeof session === "string" && session.length > 0) {
+      return session;
+    }
+  }
+  if (typeof raw.id === "string" && raw.id.length > 0) {
+    return raw.id;
+  }
+  return "unknown";
+}
+
 // ---------- Main export -----------------------------------------------------
 export const ResultsV2: React.FC<{
   profile: Profile;
@@ -1234,6 +1295,19 @@ export const ResultsV2: React.FC<{
     Array.isArray(types) && types.length === 16 &&
     Array.isArray(functions) && functions.length === 8 &&
     Array.isArray(state) && state.length > 0;
+
+  const rawProfile = p as unknown as Record<string, unknown>;
+  const sessionId = getSessionId(p);
+
+  const warnIfMissing = (key: "strengths" | "dimensions" | "blocks_norm", value: unknown) => {
+    if (value == null) {
+      console.warn({ evt: "results_missing_key", sessionId, key });
+    }
+  };
+
+  warnIfMissing("strengths", rawProfile.strengths);
+  warnIfMissing("dimensions", rawProfile.dimensions);
+  warnIfMissing("blocks_norm", rawProfile.blocks_norm);
   
   // Early return for missing profile
   if (!p) {
