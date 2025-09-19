@@ -1,379 +1,219 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface RecomputeRequest {
-  sessionId?: string;
-  userId?: string;
+const requestSchema = z.object({
+  sessionId: z.string().uuid().optional(),
+  userId: z.string().uuid().optional(),
+}).refine((value) => Boolean(value.sessionId || value.userId), {
+  message: "Either sessionId or userId required",
+});
+
+interface SessionRow {
+  id: string;
+  user_id: string | null;
+  status: string;
+  completed_at: string | null;
 }
 
-interface RecomputeResponse {
+export interface CompletenessCounts {
+  types: number;
+  functions: number;
+  state: number;
+}
+
+export interface RecomputeResult {
+  sessionId: string;
+  invoked: boolean;
+  status: "updated" | "skipped" | "failed";
+  reason?: string;
+}
+
+export interface RecomputeSummary {
   ok: boolean;
   updatedCount: number;
-  sessionId?: string;
+  results: RecomputeResult[];
+}
+
+interface InvocationResult {
+  ok: boolean;
   error?: string;
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
+interface PipelineDependencies {
+  listSessions: (filter: { sessionId?: string; userId?: string }) => Promise<SessionRow[]>;
+  fetchCompleteness: (sessionId: string) => Promise<CompletenessCounts>;
+  invokeScoreFc: (sessionId: string) => Promise<InvocationResult>;
+  invokeScorePrism: (sessionId: string) => Promise<InvocationResult>;
+}
+
+export function needsRecompute(counts: CompletenessCounts): boolean {
+  return !(counts.types === 16 && counts.functions === 8 && counts.state >= 1);
+}
+
+async function listSessionsForRecompute(client: SupabaseClient, filter: { sessionId?: string; userId?: string }): Promise<SessionRow[]> {
+  let query = client
+    .from("assessment_sessions")
+    .select("id,user_id,status,completed_at")
+    .eq("status", "completed");
+
+  if (filter.sessionId) {
+    query = query.eq("id", filter.sessionId);
+  }
+  if (filter.userId) {
+    query = query.eq("user_id", filter.userId);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`failed_to_fetch_sessions:${error.message}`);
+  }
+  return (data ?? []) as SessionRow[];
+}
+
+async function loadCompleteness(client: SupabaseClient, sessionId: string): Promise<CompletenessCounts> {
+  const [{ count: types }, { count: functions }, { count: state }] = await Promise.all([
+    client
+      .from("scoring_results_types")
+      .select("type_code", { count: "exact", head: true })
+      .eq("session_id", sessionId)
+      .eq("results_version", "v2"),
+    client
+      .from("scoring_results_functions")
+      .select("func", { count: "exact", head: true })
+      .eq("session_id", sessionId)
+      .eq("results_version", "v2"),
+    client
+      .from("scoring_results_state")
+      .select("block_context", { count: "exact", head: true })
+      .eq("session_id", sessionId)
+      .eq("results_version", "v2"),
+  ]);
+
+  return {
+    types: types ?? 0,
+    functions: functions ?? 0,
+    state: state ?? 0,
+  };
+}
+
+async function invokeFunction(
+  client: SupabaseClient,
+  name: string,
+  sessionId: string,
+  body: Record<string, unknown>,
+): Promise<InvocationResult> {
+  const { data, error } = await client.functions.invoke(name, { body });
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+  if (data && typeof data === "object" && "error" in data && !("status" in data && data.status === "success")) {
+    const err = (data as { error?: string }).error;
+    return { ok: false, error: err ?? `${name}_failed` };
+  }
+  return { ok: true };
+}
+
+async function buildDependencies(client: SupabaseClient): Promise<PipelineDependencies> {
+  return {
+    listSessions: (filter) => listSessionsForRecompute(client, filter),
+    fetchCompleteness: (sessionId) => loadCompleteness(client, sessionId),
+    invokeScoreFc: (sessionId) => invokeFunction(client, "score_fc_session", sessionId, { session_id: sessionId }),
+    invokeScorePrism: (sessionId) => invokeFunction(client, "score_prism", sessionId, { session_id: sessionId }),
+  };
+}
+
+export async function recomputeSessions(
+  filter: { sessionId?: string; userId?: string },
+  deps: PipelineDependencies,
+): Promise<RecomputeSummary> {
+  const sessions = await deps.listSessions(filter);
+  const results: RecomputeResult[] = [];
+
+  for (const session of sessions) {
+    const completeness = await deps.fetchCompleteness(session.id);
+    if (!needsRecompute(completeness)) {
+      console.log(JSON.stringify({ evt: "recompute_skip_complete", session_id: session.id }));
+      results.push({ sessionId: session.id, invoked: false, status: "skipped", reason: "already_complete" });
+      continue;
+    }
+
+    console.log(JSON.stringify({ evt: "recompute_pipeline_start", session_id: session.id }));
+    const fc = await deps.invokeScoreFc(session.id);
+    if (!fc.ok) {
+      console.error(JSON.stringify({ evt: "recompute_fc_failed", session_id: session.id, error: fc.error }));
+      results.push({ sessionId: session.id, invoked: false, status: "failed", reason: fc.error ?? "score_fc_session_failed" });
+      continue;
+    }
+
+    const prism = await deps.invokeScorePrism(session.id);
+    if (!prism.ok) {
+      console.error(JSON.stringify({ evt: "recompute_prism_failed", session_id: session.id, error: prism.error }));
+      results.push({ sessionId: session.id, invoked: true, status: "failed", reason: prism.error ?? "score_prism_failed" });
+      continue;
+    }
+
+    const postCompleteness = await deps.fetchCompleteness(session.id);
+    if (needsRecompute(postCompleteness)) {
+      console.error(JSON.stringify({ evt: "recompute_postcheck_incomplete", session_id: session.id, counts: postCompleteness }));
+      results.push({ sessionId: session.id, invoked: true, status: "failed", reason: "v2_rows_incomplete" });
+      continue;
+    }
+
+    console.log(JSON.stringify({ evt: "recompute_complete", session_id: session.id }));
+    results.push({ sessionId: session.id, invoked: true, status: "updated" });
+  }
+
+  const updatedCount = results.filter((r) => r.status === "updated").length;
+  return { ok: true, updatedCount, results };
+}
+
+export async function handleRequest(req: Request): Promise<Response> {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('🔄 Recompute scoring request received');
-    
-    // Create admin client using service role key
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const text = await req.text();
+    if (!text) {
+      return new Response(JSON.stringify({ ok: false, error: "Either sessionId or userId required", updatedCount: 0 }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const parsedJson = JSON.parse(text);
+    const parsed = requestSchema.safeParse(parsedJson);
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ ok: false, error: parsed.error.errors[0]?.message ?? "Invalid payload", updatedCount: 0 }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const client = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
-
-    const { sessionId, userId } = await req.json() as RecomputeRequest;
-
-    if (!sessionId && !userId) {
-      return new Response(
-        JSON.stringify({ ok: false, error: 'Either sessionId or userId required', updatedCount: 0 }),
-        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      );
-    }
-
-    console.log(`🎯 Processing recompute for sessionId: ${sessionId}, userId: ${userId}`);
-
-    // Build query for sessions to recompute
-    let sessionsQuery = supabaseAdmin
-      .from('assessment_sessions')
-      .select(`
-        id,
-        user_id,
-        email,
-        status,
-        completed_questions,
-        created_at
-      `)
-      .eq('status', 'completed');
-
-    if (sessionId) {
-      sessionsQuery = sessionsQuery.eq('id', sessionId);
-      if (userId) {
-        // Cross-check: if both provided, ensure they match
-        sessionsQuery = sessionsQuery.eq('user_id', userId);
-      }
-    } else if (userId) {
-      sessionsQuery = sessionsQuery.eq('user_id', userId);
-    }
-
-    const { data: sessions, error: sessionsError } = await sessionsQuery;
-
-    if (sessionsError) {
-      console.error('❌ Error fetching sessions:', sessionsError);
-      return new Response(
-        JSON.stringify({ ok: false, error: sessionsError.message, updatedCount: 0 }),
-        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      );
-    }
-
-    if (!sessions || sessions.length === 0) {
-      console.log('⚠️ No sessions found for recomputation');
-      return new Response(
-        JSON.stringify({ ok: true, updatedCount: 0, error: 'No sessions found' }),
-        { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      );
-    }
-
-    console.log(`📊 Found ${sessions.length} sessions to recompute`);
-
-    let updatedCount = 0;
-    const results: RecomputeResponse[] = [];
-
-    // Process each session
-    for (const session of sessions) {
-      try {
-        console.log(`🔍 Processing session ${session.id}`);
-
-        // Fetch assessment responses for this session
-        const { data: responses, error: responsesError } = await supabaseAdmin
-          .from('assessment_responses')
-          .select('question_id, answer_value, answer_numeric, created_at')
-          .eq('session_id', session.id)
-          .order('created_at', { ascending: true });
-
-        if (responsesError) {
-          console.error(`❌ Error fetching responses for session ${session.id}:`, responsesError);
-          continue;
-        }
-
-        if (!responses || responses.length < 10) {
-          console.log(`⚠️ Insufficient responses for session ${session.id} (${responses?.length || 0})`);
-          continue;
-        }
-
-        // Compute scores based on responses
-        const computedScores = await computeScoresFromResponses(responses, supabaseAdmin);
-        
-        if (!computedScores) {
-          console.log(`⚠️ Could not compute scores for session ${session.id}`);
-          continue;
-        }
-
-        // Upsert scoring results with retry logic
-        const upsertResult = await upsertScoringResults(
-          supabaseAdmin,
-          session.id,
-          session.user_id,
-          computedScores
-        );
-
-        if (upsertResult.success) {
-          updatedCount++;
-          console.log(`✅ Updated scores for session ${session.id}`);
-          
-          // Send GA4 event for successful scoring
-          await sendGA4ScoringEvent(session.id, session.user_id, computedScores);
-        } else {
-          console.error(`❌ Failed to upsert scores for session ${session.id}:`, upsertResult.error);
-        }
-
-      } catch (sessionError) {
-        console.error(`❌ Error processing session ${session.id}:`, sessionError);
-        continue;
-      }
-    }
-
-    const response: RecomputeResponse = {
-      ok: true,
-      updatedCount,
-      sessionId: sessionId || undefined
-    };
-
-    console.log(`🎉 Recompute completed: ${updatedCount} sessions updated`);
-
-    return new Response(
-      JSON.stringify(response),
-      { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-    );
-
-  } catch (error) {
-    console.error('💥 Recompute scoring error:', error);
-    return new Response(
-      JSON.stringify({ 
-        ok: false, 
-        error: error instanceof Error ? error.message : 'Unknown error',
-        updatedCount: 0
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-    );
-  }
-});
-
-/**
- * Compute scores from assessment responses
- */
-async function computeScoresFromResponses(responses: any[], supabaseAdmin: any) {
-  try {
-    // Fetch scoring configuration
-    const { data: scoringConfig } = await supabaseAdmin
-      .from('scoring_config')
-      .select('key, value');
-
-    // Simple scoring algorithm (replace with your actual logic)
-    const responseCount = responses.length;
-    const numericResponses = responses.filter(r => r.answer_numeric !== null);
-    const avgScore = numericResponses.length > 0 
-      ? numericResponses.reduce((sum, r) => sum + (r.answer_numeric || 0), 0) / numericResponses.length 
-      : 3;
-
-    // Determine type code (simplified - replace with your logic)
-    const typeCode = determineTypeCode(responses);
-    const confidence = determineConfidence(avgScore, responseCount);
-    const fitBand = determineFitBand(avgScore);
-    const overlay = determineOverlay(responses);
-
-    return {
-      type_code: typeCode,
-      confidence,
-      fit_band: fitBand,
-      overlay,
-      score_fit_calibrated: Math.round(avgScore * 100) / 100,
-      top_types: [
-        {
-          type: typeCode,
-          fit_score: avgScore,
-          confidence: confidence
-        }
-      ],
-      dimensions: {
-        response_count: responseCount,
-        avg_score: avgScore,
-        computed_at: new Date().toISOString()
-      },
-      validity_status: responseCount >= 20 ? 'pass' : 'incomplete',
-      results_version: 'v1.2'
-    };
-
-  } catch (error) {
-    console.error('❌ Error computing scores:', error);
-    return null;
-  }
-}
-
-/**
- * Determine personality type code from responses
- */
-function determineTypeCode(responses: any[]): string {
-  // Simplified type determination - replace with your actual algorithm
-  const types = ['INTJ', 'INFJ', 'INFP', 'INTP', 'ENTJ', 'ENTP', 'ENFJ', 'ENFP', 
-                 'ISTJ', 'ISFJ', 'ISFP', 'ISTP', 'ESTJ', 'ESFJ', 'ESFP', 'ESTP'];
-  const randomIndex = Math.floor(Math.random() * types.length);
-  return types[randomIndex];
-}
-
-/**
- * Determine confidence level
- */
-function determineConfidence(avgScore: number, responseCount: number): string {
-  if (responseCount < 20) return 'Low';
-  if (avgScore >= 4) return 'High';
-  if (avgScore >= 3) return 'Moderate';
-  return 'Low';
-}
-
-/**
- * Determine fit band
- */
-function determineFitBand(avgScore: number): string {
-  if (avgScore >= 4) return 'High';
-  if (avgScore >= 3) return 'Medium';
-  return 'Low';
-}
-
-/**
- * Determine overlay
- */
-function determineOverlay(responses: any[]): string | null {
-  // Simplified overlay determination
-  const positiveCount = responses.filter(r => r.answer_numeric && r.answer_numeric > 3).length;
-  const totalCount = responses.filter(r => r.answer_numeric !== null).length;
-  
-  if (totalCount === 0) return null;
-  
-  const ratio = positiveCount / totalCount;
-  if (ratio > 0.6) return '+';
-  if (ratio < 0.4) return '–';
-  return null;
-}
-
-/**
- * Upsert scoring results with exponential retry
- */
-async function upsertScoringResults(
-  supabaseAdmin: any, 
-  sessionId: string, 
-  userId: string | null, 
-  scores: any,
-  retries = 3
-): Promise<{ success: boolean; error?: string }> {
-  
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      const { error } = await supabaseAdmin
-        .from('scoring_results')
-        .upsert({
-          session_id: sessionId,
-          user_id: userId,
-          ...scores,
-          computed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'session_id,user_id,results_version'
-        });
-
-      if (error) {
-        throw error;
-      }
-
-      return { success: true };
-
-    } catch (error) {
-      console.error(`❌ Upsert attempt ${attempt} failed:`, error);
-      
-      if (attempt === retries) {
-        return { 
-          success: false, 
-          error: error instanceof Error ? error.message : 'Unknown error' 
-        };
-      }
-
-      // Exponential backoff
-      const delay = Math.pow(2, attempt) * 100;
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-  }
-
-  return { success: false, error: 'Max retries exceeded' };
-}
-
-/**
- * Send GA4 Measurement Protocol event for scoring completion
- */
-async function sendGA4ScoringEvent(
-  sessionId: string,
-  userId: string | null,
-  scores: any
-): Promise<void> {
-  try {
-    const measurementId = Deno.env.get('GA4_MEASUREMENT_ID');
-    const apiSecret = Deno.env.get('GA4_API_SECRET');
-    
-    if (!measurementId || !apiSecret) {
-      console.log('⚠️ GA4 credentials not configured, skipping analytics event');
-      return;
-    }
-
-    const gaURL = `https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`;
-    
-    // Generate event ID for potential client-side deduplication
-    const eventId = crypto.randomUUID();
-    
-    const payload = {
-      client_id: userId || sessionId || 'server',
-      user_id: userId || undefined,
-      events: [{
-        name: 'assessment_scored',
-        params: {
-          event_id: eventId,
-          assessment_id: sessionId,
-          score: scores.score_fit_calibrated || 0,
-          type_code: scores.type_code,
-          confidence: scores.confidence,
-          fit_band: scores.fit_band,
-          overlay: scores.overlay,
-          realtime: true,
-          results_version: scores.results_version
-        }
-      }]
-    };
-
-    const response = await fetch(gaURL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload)
+    const deps = await buildDependencies(client);
+    const summary = await recomputeSessions(parsed.data, deps);
+    return new Response(JSON.stringify(summary), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-
-    if (response.ok) {
-      console.log(`📊 GA4 event sent for session ${sessionId} (event_id: ${eventId})`);
-    } else {
-      console.error(`❌ GA4 event failed: ${response.status} ${response.statusText}`);
-    }
-
   } catch (error) {
-    console.error('❌ Error sending GA4 event:', error);
-    // Don't throw - GA4 failures shouldn't break scoring
+    console.error(JSON.stringify({ evt: "recompute_scoring_error", error: error instanceof Error ? error.message : String(error) }));
+    return new Response(JSON.stringify({ ok: false, error: error instanceof Error ? error.message : "Unknown error", updatedCount: 0 }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
+}
+
+if (import.meta.main) {
+  serve(handleRequest);
 }

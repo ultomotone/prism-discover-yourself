@@ -51,6 +51,13 @@ export interface ProfileInput {
   fc_expected?: number;
 }
 
+export class ForcedChoiceScoresMissingError extends Error {
+  constructor(public readonly sessionId: string, public readonly answeredCount: number) {
+    super("fc_scores_missing");
+    this.name = "ForcedChoiceScoresMissingError";
+  }
+}
+
 export interface ProfileResult {
   type_code: TypeCode;
   base_func: Func;
@@ -141,20 +148,15 @@ function softmax(scores: Record<string, number>, temp: number): Record<string, n
 export function scoreAssessment(input: ProfileInput): ProfileResult {
   const { responses, scoringKey, config, fcFunctionScores } = input;
   const likert: Record<Func, { sum: number; count: number }> = {} as any;
-  const fcDerived: Record<Func, number> = {} as any;
-  let fcAnswered = 0;
+  let fcQuestionsAnswered = 0;
 
   for (const r of responses) {
     const key = scoringKey[String(r.question_id)];
     if (!key) continue;
 
-    // first handle forced-choice mapping regardless of numeric value
-    if (!fcFunctionScores && key.fc_map) {
-      const f = key.fc_map[String(r.answer_value)] as Func | undefined;
-      if (f) {
-        fcDerived[f] = (fcDerived[f] || 0) + 1;
-        fcAnswered++;
-      }
+    if (key.fc_map) {
+      const answered = r.answer_value !== undefined && r.answer_value !== null && String(r.answer_value) in key.fc_map;
+      if (answered) fcQuestionsAnswered += 1;
     }
 
     const val = parseNumber(r.answer_value);
@@ -177,25 +179,25 @@ export function scoreAssessment(input: ProfileInput): ProfileResult {
     }
   }
 
+  if (fcQuestionsAnswered > 0 && !fcFunctionScores) {
+    throw new ForcedChoiceScoresMissingError(input.sessionId, fcQuestionsAnswered);
+  }
+
   const strengths: Record<Func, number> = {} as any;
-  let fcSource: 'session' | 'derived' | 'none' = 'none';
   const fcNorm: Record<Func, number> = {} as any;
   if (fcFunctionScores) {
-    fcSource = 'session';
     for (const f of FUNCS) {
-      const score = fcFunctionScores[f] ?? 0;
-      fcNorm[f] = (score / 100) * 5;
+      const score = fcFunctionScores[f];
+      fcNorm[f] = Number.isFinite(score) ? ((score as number) / 100) * 5 : 0;
     }
-  } else if (Object.keys(fcDerived).length > 0) {
-    fcSource = 'derived';
-    const total = Object.values(fcDerived).reduce((a,b)=>a+b,0) || 1;
-    for (const f of FUNCS) fcNorm[f] = (fcDerived[f] || 0) / total * 5;
+  } else {
+    for (const f of FUNCS) fcNorm[f] = 0;
   }
 
   for (const f of FUNCS) {
     const lik = likert[f] ? likert[f].sum / likert[f].count : 0;
     const fc = fcNorm[f] || 0;
-    strengths[f] = fcSource === 'none' ? lik : 0.5 * lik + 0.5 * fc;
+    strengths[f] = fcFunctionScores ? 0.5 * lik + 0.5 * fc : lik;
   }
 
   // Type matching
@@ -235,7 +237,9 @@ export function scoreAssessment(input: ProfileInput): ProfileResult {
     : top.fit >= config.fit_band_thresholds.moderate_fit
       ? 'moderate_fit'
       : 'low_fit';
-  const fc_answered_ct = fcFunctionScores ? Object.keys(fcFunctionScores).length : fcAnswered;
+  const fc_answered_ct = fcFunctionScores
+    ? Object.values(fcFunctionScores).filter((value) => Number.isFinite(value)).length
+    : 0;
   const coverage = fc_answered_ct >= (input.fc_expected ?? config.fc_expected_min) ? 'full' : 'low';
 
   const result: ProfileResult = {

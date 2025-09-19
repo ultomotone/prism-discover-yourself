@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert";
 import { readFileSync, readdirSync } from "fs";
 import path from "path";
-import { scoreAssessment } from "../index.ts";
+import { scoreAssessment, ForcedChoiceScoresMissingError } from "../index.ts";
 
 const goldDir = path.join(import.meta.dirname, "goldens");
 const pairs = readdirSync(goldDir)
@@ -35,7 +35,7 @@ test('resumed session yields same final result', () => {
   assert.deepStrictEqual(resumed, singleShot);
 });
 
-test('fc_map derives forced-choice strengths', () => {
+test('throws when forced-choice answers present but fc_scores missing', () => {
   const cfg = {
     results_version: 'v1.2.1',
     dim_thresholds: { one: 0, two: 0, three: 0 },
@@ -59,7 +59,5 @@ test('fc_map derives forced-choice strengths', () => {
     },
     config: cfg,
   };
-  const result = scoreAssessment(input as any);
-  assert(result.strengths.Ti > 0);
-  assert(result.strengths.Fe > 0);
+  assert.throws(() => scoreAssessment(input as any), ForcedChoiceScoresMissingError);
 });
