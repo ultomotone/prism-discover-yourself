@@ -1,7 +1,10 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+const SESSION_STORAGE_KEY = "prism-admin-service-role-key";
+
 let cachedFunctionsBase: string | null = null;
 let cachedServiceClient: SupabaseClient | null = null;
+let cachedServiceRoleKey: string | null = null;
 
 const viteEnv = (typeof import.meta !== "undefined" ? (import.meta as any).env : undefined) ?? {};
 const nodeEnv = (typeof process !== "undefined" ? process.env : undefined) ?? {};
@@ -54,16 +57,67 @@ function resolveFunctionsBase(): string {
   return cachedFunctionsBase;
 }
 
-function resolveServiceRoleKey(): string {
+function readServiceRoleKeyFromEnv(): string | null {
   const key =
     (viteEnv.VITE_SUPABASE_SERVICE_ROLE_KEY as string | undefined) ??
     nodeEnv.VITE_SUPABASE_SERVICE_ROLE_KEY ??
     nodeEnv.SUPABASE_SERVICE_ROLE_KEY ??
     null;
   if (!key) {
-    throw new Error("Supabase service role key not configured");
+    return null;
   }
-  return key;
+  const trimmed = key.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function readServiceRoleKeyFromSession(): string | null {
+  if (typeof window === "undefined" || !window.sessionStorage) {
+    return null;
+  }
+  try {
+    const stored = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
+    if (!stored) return null;
+    const trimmed = stored.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  } catch (error) {
+    console.warn("Unable to read admin service role key from session storage", error);
+    return null;
+  }
+}
+
+function persistServiceRoleKeyToSession(key: string | null): void {
+  if (typeof window === "undefined" || !window.sessionStorage) {
+    return;
+  }
+  try {
+    if (key) {
+      window.sessionStorage.setItem(SESSION_STORAGE_KEY, key);
+    } else {
+      window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    }
+  } catch (error) {
+    console.warn("Unable to persist admin service role key to session storage", error);
+  }
+}
+
+function resolveServiceRoleKey(): string {
+  if (cachedServiceRoleKey) {
+    return cachedServiceRoleKey;
+  }
+
+  const envKey = readServiceRoleKeyFromEnv();
+  if (envKey) {
+    cachedServiceRoleKey = envKey;
+    return cachedServiceRoleKey;
+  }
+
+  const sessionKey = readServiceRoleKeyFromSession();
+  if (sessionKey) {
+    cachedServiceRoleKey = sessionKey;
+    return cachedServiceRoleKey;
+  }
+
+  throw new Error("Supabase service role key not configured");
 }
 
 function getServiceRoleClient(): SupabaseClient {
@@ -76,6 +130,40 @@ function getServiceRoleClient(): SupabaseClient {
   });
   cachedServiceClient = client;
   return cachedServiceClient;
+}
+
+export function configureAdminServiceRoleKey(rawKey: string): void {
+  const trimmed = rawKey.trim();
+  if (!trimmed) {
+    throw new Error("Service role key cannot be empty");
+  }
+  cachedServiceRoleKey = trimmed;
+  persistServiceRoleKeyToSession(trimmed);
+  cachedServiceClient = null;
+}
+
+export function clearAdminServiceRoleKey(): void {
+  const envKey = readServiceRoleKeyFromEnv();
+  cachedServiceRoleKey = envKey;
+  persistServiceRoleKeyToSession(null);
+  cachedServiceClient = null;
+}
+
+export function isAdminServiceRoleKeyConfigured(): boolean {
+  if (cachedServiceRoleKey) {
+    return true;
+  }
+  const envKey = readServiceRoleKeyFromEnv();
+  if (envKey) {
+    cachedServiceRoleKey = envKey;
+    return true;
+  }
+  const sessionKey = readServiceRoleKeyFromSession();
+  if (sessionKey) {
+    cachedServiceRoleKey = sessionKey;
+    return true;
+  }
+  return false;
 }
 
 function coerceCount(value: unknown): number {
@@ -211,9 +299,13 @@ export const __testing = {
   resetCaches() {
     cachedFunctionsBase = null;
     cachedServiceClient = null;
+    cachedServiceRoleKey = null;
   },
   setServiceClient(client: SupabaseClient | null) {
     cachedServiceClient = client;
+  },
+  setCachedServiceRoleKey(key: string | null) {
+    cachedServiceRoleKey = key;
   },
   callRecompute,
   normalizeCompleteness,

@@ -137,3 +137,24 @@ test("input validation rejects invalid limits", async () => {
   await assert.rejects(() => adminTools.backfillBrokenSessions({ days: -1, batchSize: 10 }), /positive number/);
   await assert.rejects(() => adminTools.backfillBrokenSessions({ days: 10, batchSize: 0 }), /positive number/);
 });
+
+test("service role key can be configured at runtime", async () => {
+  const original = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+  process.env.VITE_SUPABASE_SERVICE_ROLE_KEY = "";
+  adminTools.__testing.resetCaches();
+  adminTools.clearAdminServiceRoleKey();
+  assert.equal(adminTools.isAdminServiceRoleKeyConfigured(), false);
+
+  adminTools.configureAdminServiceRoleKey("temp-key");
+  assert.equal(adminTools.isAdminServiceRoleKeyConfigured(), true);
+
+  adminTools.clearAdminServiceRoleKey();
+  assert.equal(adminTools.isAdminServiceRoleKeyConfigured(), false);
+
+  process.env.VITE_SUPABASE_SERVICE_ROLE_KEY = original;
+  adminTools.__testing.resetCaches();
+});
+
+test("configuring with empty key is rejected", () => {
+  assert.throws(() => adminTools.configureAdminServiceRoleKey("  \t"), /cannot be empty/);
+});
