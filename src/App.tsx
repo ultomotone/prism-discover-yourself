@@ -217,7 +217,7 @@ const App = () => (
                   <Route
                     path="/admin"
                     element={(
-                      <Suspense fallback={<div className="p-6 text-sm">Loading admin…</div>}>
+                      <Suspense fallback={<div className="p-6 text-sm">Loading…</div>}>
                         <AdminDashboard />
                       </Suspense>
                     )}
