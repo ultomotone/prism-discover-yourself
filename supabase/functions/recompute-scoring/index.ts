@@ -31,7 +31,7 @@ export interface RecomputeResult {
   sessionId: string;
   invoked: boolean;
   status: "updated" | "skipped" | "failed";
-  reason?: string;
+  reason?: "already_complete" | "no_responses" | "fc_failed" | "prism_failed" | "v2_rows_incomplete" | string;
 }
 
 export interface RecomputeSummary {
@@ -48,12 +48,41 @@ interface InvocationResult {
 interface PipelineDependencies {
   listSessions: (filter: { sessionId?: string; userId?: string }) => Promise<SessionRow[]>;
   fetchCompleteness: (sessionId: string) => Promise<CompletenessCounts>;
+  hasResponses: (sessionId: string) => Promise<boolean>;
   invokeScoreFc: (sessionId: string) => Promise<InvocationResult>;
   invokeScorePrism: (sessionId: string) => Promise<InvocationResult>;
 }
 
 export function needsRecompute(counts: CompletenessCounts): boolean {
   return !(counts.types === 16 && counts.functions === 8 && counts.state >= 1);
+}
+
+export function normalizeCompletenessPayload(raw: unknown): CompletenessCounts {
+  if (Array.isArray(raw)) {
+    return normalizeCompletenessPayload(raw[0] ?? null);
+  }
+
+  if (!raw || typeof raw !== "object") {
+    return { types: 0, functions: 0, state: 0 };
+  }
+
+  const record = raw as Record<string, unknown>;
+  const coerce = (value: unknown): number => {
+    if (typeof value === "number" && Number.isFinite(value)) return Math.trunc(value);
+    if (typeof value === "string" && value.trim().length > 0) {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) {
+        return Math.trunc(parsed);
+      }
+    }
+    return 0;
+  };
+
+  return {
+    types: coerce(record.types),
+    functions: coerce(record.functions),
+    state: coerce(record.state),
+  };
 }
 
 async function listSessionsForRecompute(client: SupabaseClient, filter: { sessionId?: string; userId?: string }): Promise<SessionRow[]> {
@@ -77,29 +106,11 @@ async function listSessionsForRecompute(client: SupabaseClient, filter: { sessio
 }
 
 async function loadCompleteness(client: SupabaseClient, sessionId: string): Promise<CompletenessCounts> {
-  const [{ count: types }, { count: functions }, { count: state }] = await Promise.all([
-    client
-      .from("scoring_results_types")
-      .select("type_code", { count: "exact", head: true })
-      .eq("session_id", sessionId)
-      .eq("results_version", "v2"),
-    client
-      .from("scoring_results_functions")
-      .select("func", { count: "exact", head: true })
-      .eq("session_id", sessionId)
-      .eq("results_version", "v2"),
-    client
-      .from("scoring_results_state")
-      .select("block_context", { count: "exact", head: true })
-      .eq("session_id", sessionId)
-      .eq("results_version", "v2"),
-  ]);
-
-  return {
-    types: types ?? 0,
-    functions: functions ?? 0,
-    state: state ?? 0,
-  };
+  const { data, error } = await client.rpc("v2_completeness", { p_session: sessionId });
+  if (error) {
+    throw new Error(`failed_to_fetch_completeness:${error.message}`);
+  }
+  return normalizeCompletenessPayload(data);
 }
 
 async function invokeFunction(
@@ -123,9 +134,23 @@ async function buildDependencies(client: SupabaseClient): Promise<PipelineDepend
   return {
     listSessions: (filter) => listSessionsForRecompute(client, filter),
     fetchCompleteness: (sessionId) => loadCompleteness(client, sessionId),
+    hasResponses: (sessionId) => hasAnyResponses(client, sessionId),
     invokeScoreFc: (sessionId) => invokeFunction(client, "score_fc_session", sessionId, { session_id: sessionId }),
     invokeScorePrism: (sessionId) => invokeFunction(client, "score_prism", sessionId, { session_id: sessionId }),
   };
+}
+
+async function hasAnyResponses(db: SupabaseClient, sessionId: string): Promise<boolean> {
+  const { count, error } = await db
+    .from("assessment_responses")
+    .select("id", { count: "exact", head: true })
+    .eq("session_id", sessionId);
+
+  if (error) {
+    throw new Error(`responses_count_failed:${error.message}`);
+  }
+
+  return (count ?? 0) > 0;
 }
 
 export async function recomputeSessions(
@@ -143,18 +168,25 @@ export async function recomputeSessions(
       continue;
     }
 
+    const hasResponses = await deps.hasResponses(session.id);
+    if (!hasResponses) {
+      console.log(JSON.stringify({ evt: "recompute_skip_no_responses", session_id: session.id }));
+      results.push({ sessionId: session.id, invoked: false, status: "skipped", reason: "no_responses" });
+      continue;
+    }
+
     console.log(JSON.stringify({ evt: "recompute_pipeline_start", session_id: session.id }));
     const fc = await deps.invokeScoreFc(session.id);
     if (!fc.ok) {
       console.error(JSON.stringify({ evt: "recompute_fc_failed", session_id: session.id, error: fc.error }));
-      results.push({ sessionId: session.id, invoked: false, status: "failed", reason: fc.error ?? "score_fc_session_failed" });
+      results.push({ sessionId: session.id, invoked: true, status: "failed", reason: "fc_failed" });
       continue;
     }
 
     const prism = await deps.invokeScorePrism(session.id);
     if (!prism.ok) {
       console.error(JSON.stringify({ evt: "recompute_prism_failed", session_id: session.id, error: prism.error }));
-      results.push({ sessionId: session.id, invoked: true, status: "failed", reason: prism.error ?? "score_prism_failed" });
+      results.push({ sessionId: session.id, invoked: true, status: "failed", reason: "prism_failed" });
       continue;
     }
 
