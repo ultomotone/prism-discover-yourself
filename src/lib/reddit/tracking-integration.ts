@@ -1,11 +1,13 @@
 // Integration layer for Reddit tracking with existing analytics
 
 import { trackRedditFull, generateConversionId } from './client';
+import { IS_PREVIEW } from '@/lib/env';
 
 /**
  * Enhanced assessment start tracking with Reddit Conversions API
  */
 export async function trackAssessmentStartEnhanced(sessionId: string): Promise<void> {
+  if (IS_PREVIEW) return;
   const conversion_id = generateConversionId(sessionId, 'assessment-start');
   
   await trackRedditFull('Lead', {
@@ -20,9 +22,10 @@ export async function trackAssessmentStartEnhanced(sessionId: string): Promise<v
  * Enhanced assessment completion tracking
  */
 export async function trackAssessmentCompleteEnhanced(
-  sessionId: string, 
+  sessionId: string,
   questionCount: number = 248
 ): Promise<void> {
+  if (IS_PREVIEW) return;
   const conversion_id = generateConversionId(sessionId, 'assessment-complete');
   
   // Use SignUp for major milestone completion
@@ -39,9 +42,10 @@ export async function trackAssessmentCompleteEnhanced(
  * Enhanced results viewing tracking
  */
 export async function trackResultsViewedEnhanced(
-  sessionId: string, 
+  sessionId: string,
   typeCode?: string
 ): Promise<void> {
+  if (IS_PREVIEW) return;
   const conversion_id = generateConversionId(sessionId, 'results-view');
   
   await trackRedditFull('ViewContent', {
@@ -56,9 +60,10 @@ export async function trackResultsViewedEnhanced(
  * Enhanced account creation tracking
  */
 export async function trackAccountCreationEnhanced(
-  email: string, 
+  email: string,
   sessionId?: string
 ): Promise<void> {
+  if (IS_PREVIEW) return;
   const conversion_id = generateConversionId(
     sessionId || 'account-signup', 
     'account-created'
@@ -82,6 +87,7 @@ export async function trackPaymentSuccessEnhanced(
   sessionId?: string,
   productName?: string
 ): Promise<void> {
+  if (IS_PREVIEW) return;
   const conversion_id = generateConversionId(transactionId, 'purchase');
   
   await trackRedditFull('Purchase', {
@@ -103,6 +109,7 @@ export async function trackContentEngagement(
   contentName: string,
   sessionId?: string
 ): Promise<void> {
+  if (IS_PREVIEW) return;
   const conversion_id = generateConversionId(
     sessionId || 'content-engagement',
     'content-view',
@@ -123,6 +130,7 @@ export async function trackSearchEnhanced(
   query: string,
   sessionId?: string
 ): Promise<void> {
+  if (IS_PREVIEW) return;
   const conversion_id = generateConversionId(
     sessionId || 'search',
     'search',
@@ -144,6 +152,7 @@ export async function trackAddToWishlist(
   itemName: string,
   sessionId?: string
 ): Promise<void> {
+  if (IS_PREVIEW) return;
   const conversion_id = generateConversionId(
     sessionId || 'wishlist',
     'add-to-wishlist',
@@ -168,6 +177,7 @@ export async function trackAddToCart(
   currency?: string,
   sessionId?: string
 ): Promise<void> {
+  if (IS_PREVIEW) return;
   const conversion_id = generateConversionId(
     sessionId || 'cart',
     'add-to-cart',

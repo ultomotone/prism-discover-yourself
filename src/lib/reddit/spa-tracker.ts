@@ -1,6 +1,7 @@
 // SPA route tracking for Reddit Pixel + Conversions API
 
 import { trackRedditPixel, trackRedditS2S } from './client';
+import { IS_PREVIEW } from '@/lib/env';
 
 interface RouteTrackingOptions {
   trackPixel?: boolean;
@@ -16,6 +17,7 @@ let trackingTimeout: NodeJS.Timeout | null = null;
  * Track page visit on route change
  */
 function trackPageVisit(path: string, options: RouteTrackingOptions = {}): void {
+  if (IS_PREVIEW) return;
   const {
     trackPixel = true,
     trackConversions = true,
@@ -57,6 +59,7 @@ function trackPageVisit(path: string, options: RouteTrackingOptions = {}): void 
  * Track specific events based on route patterns
  */
 function trackSpecificPageEvents(path: string): void {
+  if (IS_PREVIEW) return;
   const lowerPath = path.toLowerCase();
 
   // Assessment pages
@@ -96,7 +99,7 @@ function trackSpecificPageEvents(path: string): void {
  * Initialize SPA route tracking
  */
 export function initializeRedditSPATracking(options: RouteTrackingOptions = {}): void {
-  if (isInitialized || typeof window === 'undefined') {
+  if (IS_PREVIEW || isInitialized || typeof window === 'undefined') {
     return;
   }
 

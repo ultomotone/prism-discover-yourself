@@ -3,6 +3,8 @@
  * Provides client-side GA4 tracking with server-side deduplication support
  */
 
+import { IS_PREVIEW } from './env';
+
 // Public GA4 Measurement ID (safe to include in client bundle)
 const GA4_MEASUREMENT_ID = 'G-J2XXMC9VWV';
 
@@ -17,6 +19,7 @@ declare global {
  * Initialize GA4 gtag (call after user consent)
  */
 export const initializeGA4 = () => {
+  if (IS_PREVIEW) return;
   if (typeof window === 'undefined') return;
 
   // Load gtag script
@@ -49,6 +52,7 @@ export const trackAssessmentScored = (params: {
   overlay?: string;
   eventId?: string;
 }) => {
+  if (IS_PREVIEW) return;
   if (typeof window === 'undefined' || !window.gtag) {
     console.log('GA4 not initialized, skipping client event');
     return;
@@ -74,6 +78,7 @@ export const trackAssessmentScored = (params: {
  * Track other assessment events
  */
 export const trackAssessmentStarted = (sessionId: string) => {
+  if (IS_PREVIEW) return;
   if (typeof window === 'undefined' || !window.gtag) return;
 
   window.gtag('event', 'assessment_started', {
@@ -84,6 +89,7 @@ export const trackAssessmentStarted = (sessionId: string) => {
 };
 
 export const trackAssessmentCompleted = (sessionId: string, questionCount: number) => {
+  if (IS_PREVIEW) return;
   if (typeof window === 'undefined' || !window.gtag) return;
 
   window.gtag('event', 'assessment_completed', {

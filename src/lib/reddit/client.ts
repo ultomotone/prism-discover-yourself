@@ -1,5 +1,7 @@
 // Reddit Pixel + Conversions API client-side tracking utility
 
+import { IS_PREVIEW } from "@/lib/env";
+
 export interface AttributionContext {
   uuid: string;
   click_id?: string | null;
@@ -28,6 +30,15 @@ export interface RedditEventPayload {
  * Get attribution context from URL params and browser environment
  */
 export function getAttributionContext(): AttributionContext {
+  if (IS_PREVIEW || typeof window === 'undefined') {
+    return {
+      uuid: crypto.randomUUID(),
+      click_id: null,
+      screen_width: null,
+      screen_height: null,
+    };
+  }
+
   const params = new URLSearchParams(window.location.search);
   
   // Reddit click ID - various possible parameter names
@@ -67,9 +78,10 @@ export function getAttributionContext(): AttributionContext {
  * Never sends raw PII from client - only hashed server-side
  */
 export async function trackRedditS2S(
-  event_name: string, 
+  event_name: string,
   payload: RedditEventPayload = {}
 ): Promise<void> {
+  if (IS_PREVIEW) return;
   try {
     const ctx = getAttributionContext();
     
@@ -103,6 +115,7 @@ export async function trackRedditS2S(
  * Track Reddit pixel event (client-side only)
  */
 export function trackRedditPixel(event_name: string, metadata: Record<string, any> = {}): void {
+  if (IS_PREVIEW) return;
   try {
     if (typeof window !== 'undefined' && (window as any).rdt) {
       (window as any).rdt('track', event_name, metadata);
@@ -116,9 +129,10 @@ export function trackRedditPixel(event_name: string, metadata: Record<string, an
  * Combined tracking: both pixel and server-to-server
  */
 export async function trackRedditFull(
-  event_name: string, 
+  event_name: string,
   payload: RedditEventPayload = {}
 ): Promise<void> {
+  if (IS_PREVIEW) return;
   // Fire pixel event immediately
   trackRedditPixel(event_name, payload);
   
@@ -141,6 +155,7 @@ export function generateConversionId(
 // Pre-defined event tracking functions for common PRISM events
 
 export async function trackAssessmentStart(sessionId: string): Promise<void> {
+  if (IS_PREVIEW) return;
   const conversion_id = generateConversionId(sessionId, 'assessment-start');
   
   await trackRedditFull('Lead', {
@@ -151,9 +166,10 @@ export async function trackAssessmentStart(sessionId: string): Promise<void> {
 }
 
 export async function trackAssessmentComplete(
-  sessionId: string, 
+  sessionId: string,
   questionCount: number = 248
 ): Promise<void> {
+  if (IS_PREVIEW) return;
   const conversion_id = generateConversionId(sessionId, 'assessment-complete');
   
   // Use SignUp for comprehensive assessment completion
@@ -166,9 +182,10 @@ export async function trackAssessmentComplete(
 }
 
 export async function trackResultsView(
-  sessionId: string, 
+  sessionId: string,
   typeCode?: string
 ): Promise<void> {
+  if (IS_PREVIEW) return;
   const conversion_id = generateConversionId(sessionId, 'results-view');
   
   await trackRedditFull('ViewContent', {
@@ -180,9 +197,10 @@ export async function trackResultsView(
 }
 
 export async function trackAccountCreation(
-  sessionId: string, 
+  sessionId: string,
   email?: string
 ): Promise<void> {
+  if (IS_PREVIEW) return;
   const conversion_id = generateConversionId(sessionId, 'account-created');
   
   await trackRedditFull('SignUp', {
@@ -200,6 +218,7 @@ export async function trackPurchase(
   itemCount: number = 1,
   productName?: string
 ): Promise<void> {
+  if (IS_PREVIEW) return;
   const conversion_id = generateConversionId(orderId, 'purchase');
   
   await trackRedditFull('Purchase', {
@@ -214,6 +233,7 @@ export async function trackPurchase(
 }
 
 export async function trackSearch(query: string, sessionId?: string): Promise<void> {
+  if (IS_PREVIEW) return;
   const conversion_id = generateConversionId(
     sessionId || 'anonymous', 
     'search', 

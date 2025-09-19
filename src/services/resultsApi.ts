@@ -1,4 +1,5 @@
-import { supabase } from "@/lib/supabaseClient";
+import supabase from "@/lib/supabaseClient";
+import { IS_PREVIEW } from "@/lib/env";
 
 let cachedFunctionsBase: string | null = null;
 
@@ -6,18 +7,36 @@ function resolveFunctionsBase(): string {
   if (cachedFunctionsBase) return cachedFunctionsBase;
 
   const envUrl =
-    process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL ??
+    (typeof process !== "undefined" ? process.env?.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL : undefined) ??
     (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_SUPABASE_URL
       ? `${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1`
       : undefined);
 
-  const resolved = envUrl ?? 'https://gnkuikentdtnatazeriu.supabase.co/functions/v1';
+  const resolved = envUrl ?? "https://gnkuikentdtnatazeriu.supabase.co/functions/v1";
 
   cachedFunctionsBase = resolved;
   return cachedFunctionsBase;
 }
 
 export type ResultsFetchPayload = Record<string, any>;
+
+type FetchResponse = ResultsFetchPayload & {
+  ok?: boolean;
+  code?: string;
+  error?: string;
+  profile?: ResultsFetchPayload;
+  results_version?: string;
+};
+
+function buildFallback(payload: FetchResponse): FetchResponse {
+  if (payload.profile) {
+    return {
+      results_version: payload.results_version ?? "v1",
+      profile: payload.profile,
+    };
+  }
+  return payload;
+}
 
 export async function fetchResultsBySession(
   sessionId: string,
@@ -36,29 +55,58 @@ export async function fetchResultsBySession(
 
   if (shareToken) {
     body.share_token = shareToken;
-  } else {
-    const { data } = await supabase.auth.getSession();
-    const jwt = data?.session?.access_token;
-    if (jwt) {
-      headers.Authorization = `Bearer ${jwt}`;
+  } else if (!IS_PREVIEW) {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData?.user?.id) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const jwt = sessionData?.session?.access_token;
+        if (jwt) {
+          headers.Authorization = `Bearer ${jwt}`;
+        }
+      }
+    } catch (error) {
+      console.warn("Failed to load Supabase session", error);
     }
   }
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(body),
-  });
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    });
 
-  const payload = await response.json().catch(() => ({}));
+    const payload: FetchResponse = await response.json().catch(() => ({}));
 
-  if (!response.ok || (payload && typeof payload === "object" && payload.ok === false)) {
-    const message =
-      (payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
-        ? payload.error
-        : null) ?? `get-results-by-session ${response.status}`;
-    throw new Error(message);
+    if (!response.ok) {
+      if (payload.profile) {
+        return buildFallback(payload);
+      }
+
+      const message =
+        typeof payload.error === "string" && payload.error.length > 0
+          ? payload.error
+          : `get-results-by-session ${response.status}`;
+      throw new Error(message);
+    }
+
+    if (payload.ok === false) {
+      if (payload.code === "SCORING_ROWS_MISSING" && payload.profile) {
+        return buildFallback(payload);
+      }
+      return payload;
+    }
+
+    if (!payload.ok && payload.profile && !payload.types) {
+      return buildFallback(payload);
+    }
+
+    return payload;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("Failed to fetch results");
   }
-
-  return payload as ResultsFetchPayload;
 }

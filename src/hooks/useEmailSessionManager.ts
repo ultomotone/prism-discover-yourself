@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { trackLead } from '@/lib/analytics';
 import { ensureSessionLinked } from '@/services/sessionLinking';
+import { IS_PREVIEW } from '@/lib/env';
 
 export interface SessionData {
   session_id: string;
@@ -108,6 +109,14 @@ export function useEmailSessionManager() {
   ): Promise<boolean> => {
     try {
       console.log('Linking session to account:', { sessionId, userId, email });
+
+      if (IS_PREVIEW) {
+        toast({
+          title: "Preview Mode",
+          description: "Session linking is disabled in preview environments.",
+        });
+        return true;
+      }
 
       const linked = await ensureSessionLinked({
         sessionId,

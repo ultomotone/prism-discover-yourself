@@ -1,14 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { IS_PREVIEW } from "@/lib/env";
 
 // Simple dashboard analytics hook for public dashboard
 export const useDashboardAnalytics = () => {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!IS_PREVIEW);
   const [typeDistribution, setTypeDistribution] = useState<Array<{ type: string; count: number }>>([]);
   const [latestAssessments, setLatestAssessments] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    if (IS_PREVIEW) {
+      setLoading(false);
+      setTypeDistribution([]);
+      setLatestAssessments([]);
+      setError(null);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -92,13 +101,13 @@ export const useDashboardAnalytics = () => {
         'ILE', 'LII', 'SEI', 'ESE', 'SLE', 'LSI', 'IEI', 'EIE',
         'LIE', 'ILI', 'SEE', 'ESI', 'LSE', 'SLI', 'IEE', 'EII'
       ];
-      
+
       // Initialize all types with 0 count
       const typeStats: Record<string, number> = {};
       allPrismTypes.forEach(type => {
         typeStats[type] = 0;
       });
-      
+
       // Count actual profiles
       profiles.forEach(profile => {
         const displayType = profile.type_code?.substring(0, 3);
@@ -127,7 +136,6 @@ export const useDashboardAnalytics = () => {
 
       setTypeDistribution(typeDistData);
       setLatestAssessments(latestData);
-
     } catch (err) {
       console.error('🔍 Dashboard analytics error:', err);
       setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -136,20 +144,22 @@ export const useDashboardAnalytics = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Initial load
-  useEffect(() => {
-    fetchData();
   }, []);
 
-  // Realtime subscriptions for dashboard
   useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (IS_PREVIEW) {
+      return () => undefined;
+    }
+
     const channel = supabase
       .channel('dashboard-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, () => {
         console.log('New profile added, refreshing dashboard...');
-        fetchData();
+        void fetchData();
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'assessment_sessions' }, () => {
         console.log('New session started...');
@@ -160,11 +170,11 @@ export const useDashboardAnalytics = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [fetchData]);
 
-  const refreshData = () => {
-    fetchData();
-  };
+  const refreshData = useCallback(() => {
+    void fetchData();
+  }, [fetchData]);
 
   return {
     typeDistribution,
