@@ -1,7 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { buildResultsLink } from "../_shared/results-link.ts";
-import { ensureResultsVersion } from "../_shared/resultsVersion.ts";
+import { ensureResultsVersion, RESULTS_VERSION } from "../_shared/resultsVersion.ts";
+import {
+  FinalizeAssessmentError,
+  finalizeAssessmentCore,
+  type ProfileRow,
+  type SessionRow,
+} from "../_shared/finalizeAssessmentCore.ts";
 
 const url = Deno.env.get("SUPABASE_URL")!;
 const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -22,71 +28,158 @@ const json = (body: any, status = 200) =>
     headers: { "Content-Type": "application/json", ...corsHeaders },
   });
 
+interface SupabaseProfileRow extends ProfileRow {
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+interface SupabaseSessionRow extends SessionRow {
+  share_token_expires_at: string | null;
+  completed_questions: number | null;
+  finalized_at: string | null;
+  completed_at: string | null;
+  status: string | null;
+  updated_at: string | null;
+}
+
+const sessionLocks = new Map<string, Promise<void>>();
+
+async function acquireSessionLock(sessionId: string): Promise<() => void> {
+  const existing = sessionLocks.get(sessionId) ?? Promise.resolve();
+  let releaseCurrent: (() => void) | null = null;
+  const current = existing.finally(() => new Promise<void>((resolve) => {
+    releaseCurrent = resolve;
+  }));
+  sessionLocks.set(sessionId, current);
+  await existing;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    if (releaseCurrent) releaseCurrent();
+    if (sessionLocks.get(sessionId) === current) {
+      sessionLocks.delete(sessionId);
+    }
+  };
+}
+
+async function getProfile(sessionId: string): Promise<ProfileRow | null> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("session_id", sessionId)
+    .maybeSingle();
+  if (error) {
+    throw new Error(`failed to load profile: ${error.message}`);
+  }
+  return (data as SupabaseProfileRow | null) ?? null;
+}
+
+async function normalizeProfile(profile: ProfileRow): Promise<ProfileRow> {
+  const needsUpdate = profile.results_version !== RESULTS_VERSION || profile.version !== RESULTS_VERSION;
+  if (!needsUpdate) {
+    return { ...profile, results_version: RESULTS_VERSION, version: RESULTS_VERSION };
+  }
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({ results_version: RESULTS_VERSION, version: RESULTS_VERSION })
+    .eq("id", profile.id)
+    .select("*")
+    .maybeSingle();
+  if (error) {
+    throw new Error(`failed to stamp profile version: ${error.message}`);
+  }
+  const stamped = (data as SupabaseProfileRow | null) ?? profile;
+  return { ...stamped, results_version: RESULTS_VERSION, version: RESULTS_VERSION };
+}
+
+async function getSession(sessionId: string): Promise<SessionRow | null> {
+  const { data, error } = await supabase
+    .from("assessment_sessions")
+    .select("id, share_token, share_token_expires_at, completed_at, finalized_at, completed_questions, status, updated_at")
+    .eq("id", sessionId)
+    .maybeSingle();
+  if (error) {
+    throw new Error(`failed to load session: ${error.message}`);
+  }
+  return (data as SupabaseSessionRow | null) ?? null;
+}
+
+async function upsertSession(sessionId: string, patch: Partial<SessionRow>): Promise<void> {
+  const { error } = await supabase
+    .from("assessment_sessions")
+    .upsert({ id: sessionId, ...patch }, { onConflict: "id" });
+  if (error) {
+    throw new Error(`failed to update session: ${error.message}`);
+  }
+}
+
+async function scoreFcSession(sessionId: string): Promise<void> {
+  const { error } = await supabase.functions.invoke("score_fc_session", {
+    body: { session_id: sessionId, version: "v1.2", basis: "functions" },
+  });
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+async function scorePrism(sessionId: string) {
+  const { data, error } = await supabase.functions.invoke("score_prism", { body: { session_id: sessionId } });
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data;
+}
+
+function generateShareToken(): string {
+  return crypto.randomUUID();
+}
+
+function resolveSiteUrl(req: Request): string {
+  return (
+    Deno.env.get("RESULTS_BASE_URL") ||
+    req.headers.get("origin") ||
+    "https://prismassessment.com"
+  );
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  let sessionId: string | undefined;
   try {
-    const { session_id, responses } = await req.json();
-    if (!session_id) return json({ status: "error", error: "session_id required" }, 400);
+    const body = await req.json();
+    sessionId = body?.session_id;
+    const responses = body?.responses;
+    if (!sessionId) return json({ status: "error", error: "session_id required" }, 400);
 
-    console.log(JSON.stringify({ evt: "scoring_start", session_id }));
-
-    // FC scoring (best-effort)
-    try {
-      await supabase.functions.invoke("score_fc_session", {
-        body: { session_id, version: "v1.2", basis: "functions" },
-      });
-    } catch (fcError: any) {
-      console.log(JSON.stringify({ evt: "fc_no_responses", session_id, error: fcError?.message }));
-    }
-
-    // Profile scoring
-    const { data, error } = await supabase.functions.invoke("score_prism", { body: { session_id } });
-    if (error || data?.status !== "success" || !data?.profile) {
-      return json({ status: "error", error: error?.message || data?.error || "scoring failed" }, 422);
-    }
-    // Share token + session update
-    const { data: sessRow } = await supabase
-      .from("assessment_sessions")
-      .select("share_token, share_token_expires_at")
-      .eq("id", session_id)
-      .single();
-    const share_token = sessRow?.share_token ?? crypto.randomUUID();
-    const ttl = sessRow?.share_token_expires_at ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-
-    const completedCount = Array.isArray(responses)
-      ? responses.length
-      : data.profile.fc_answered_ct || 0;
-
-    const { error: sessionUpdateError } = await supabase
-      .from("assessment_sessions")
-      .update({
-        status: "completed",
-        completed_at: new Date().toISOString(),
-        finalized_at: new Date().toISOString(),
-        completed_questions: completedCount,
-        share_token,
-        share_token_expires_at: ttl,
-        profile_id: data.profile.id,
-      })
-      .eq("id", session_id);
-    if (sessionUpdateError) return json({ status: "error", error: sessionUpdateError.message }, 500);
-
-    const siteUrl =
-      Deno.env.get("RESULTS_BASE_URL") ||
-      req.headers.get("origin") ||
-      "https://prismassessment.com";
-
-    const resultsUrl = buildResultsLink(siteUrl, session_id, share_token);
-    
-    console.log(JSON.stringify({ evt: "scoring_complete", session_id, type_code: data.profile.type_code, share_token }));
-    
-    return json(
-      { ok: true, status: "success", session_id, share_token, profile: data.profile, results_url: resultsUrl },
-      200,
+    const result = await finalizeAssessmentCore(
+      {
+        acquireLock: (sessionId) => acquireSessionLock(sessionId),
+        getProfile,
+        normalizeProfile,
+        scoreFcSession,
+        scorePrism,
+        getSession,
+        upsertSession,
+        generateShareToken,
+        buildResultsUrl: buildResultsLink,
+        now: () => new Date(),
+        log: (payload) => console.log(JSON.stringify(payload)),
+      },
+      {
+        sessionId,
+        responses,
+        siteUrl: resolveSiteUrl(req),
+      },
     );
+
+    return json({ ...result, status: "success", session_id: sessionId });
   } catch (e: any) {
-    console.log(JSON.stringify({ evt: "scoring_error", session_id, error: e?.message || String(e) }));
+    if (e instanceof FinalizeAssessmentError) {
+      console.log(JSON.stringify({ evt: "finalize.error", sessionId, error: e.message }));
+      return json({ status: "error", error: e.message }, 422);
+    }
+    console.log(JSON.stringify({ evt: "scoring_error", sessionId, error: e?.message || String(e) }));
     return json({ status: "error", error: e?.message || "Internal server error" }, 500);
   }
 });
-

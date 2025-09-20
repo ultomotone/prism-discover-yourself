@@ -3,14 +3,24 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { RESULTS_VERSION } from "../supabase/functions/_shared/resultsVersion.ts";
 
+type FinalizeResponse = {
+  ok: boolean;
+  status?: string;
+  profile: { id: string; session_id: string; results_version?: string | null };
+  share_token: string;
+  results_url: string;
+  results_version: string;
+};
+
 const url = process.env.SUPABASE_URL;
 const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!url || !service) {
   test.skip("requires Supabase env", () => {});
 } else {
-  test("finalizeAssessment runs complete scoring flow", async () => {
-    const supabase = createClient(url, service);
+  const supabase = createClient(url, service);
+
+  test("finalizeAssessment orchestrates scoring and reuse", async () => {
     const { data: session } = await supabase
       .from("assessment_sessions")
       .insert({ user_id: "00000000-0000-0000-0000-000000000000" })
@@ -23,81 +33,52 @@ if (!url || !service) {
       answer_value: 3,
     });
 
-    const { data, error } = await supabase.functions.invoke("finalizeAssessment", {
+    const first = await supabase.functions.invoke<FinalizeResponse>("finalizeAssessment", {
       body: { session_id: session.id },
     });
-    assert.equal(error, null);
-    assert.equal(data.status, "success");
-    assert.equal(data.profile.session_id, session.id);
+    assert.equal(first.error, null);
+    assert(first.data);
+    assert.equal(first.data.ok, true);
+    assert.equal(first.data.profile.session_id, session.id);
+    assert.equal(first.data.profile.results_version, RESULTS_VERSION);
+    assert.equal(first.data.results_version, RESULTS_VERSION);
+    assert.match(first.data.share_token, /^[0-9a-f-]{36}$/);
+    assert.ok(first.data.results_url.includes(session.id));
 
-    const { data: again } = await supabase.functions.invoke("finalizeAssessment", {
+    const second = await supabase.functions.invoke<FinalizeResponse>("finalizeAssessment", {
       body: { session_id: session.id },
     });
-    assert.equal(again.status, "success");
+    assert.equal(second.error, null);
+    assert(second.data);
+    assert.equal(second.data.ok, true);
+    assert.equal(second.data.profile.id, first.data.profile.id);
+    assert.equal(second.data.share_token, first.data.share_token);
+    assert.equal(second.data.results_url, first.data.results_url);
   });
 
-  test("IR-09B: RLS fix test - existing session", async () => {
-    const supabase = createClient(url, service);
+  test("production session can be finalized without direct score_prism", async () => {
     const sessionId = "618c5ea6-aeda-4084-9156-0aac9643afd3";
-    
-    console.log("Testing RLS fix with session:", sessionId);
-    
-    // Check if profile exists before
-    const { data: beforeProfile } = await supabase
-      .from("profiles")
-      .select("id, results_version")
-      .eq("session_id", sessionId)
-      .maybeSingle();
-    
-    console.log("Profile before test:", beforeProfile || "No profile");
-    
-    // Test score_prism directly first
-    const { data: scoreData, error: scoreError } = await supabase.functions.invoke("score_prism", {
+
+    const first = await supabase.functions.invoke<FinalizeResponse>("finalizeAssessment", {
       body: { session_id: sessionId },
     });
-    
-    if (scoreError) {
-      console.log("score_prism error:", scoreError);
-    } else {
-      console.log("score_prism success:", scoreData?.status);
+
+    if (first.error) {
+      console.log("finalizeAssessment error:", first.error);
+      assert.fail(`finalizeAssessment failed: ${first.error.message}`);
     }
-    
-    // Check if profile was created
-    const { data: afterProfile } = await supabase
+
+    assert(first.data);
+    assert.equal(first.data.ok, true);
+    assert.equal(first.data.results_version, RESULTS_VERSION);
+
+    const { data: profile } = await supabase
       .from("profiles")
-      .select("id, results_version, type_code, created_at")
+      .select("session_id, results_version")
       .eq("session_id", sessionId)
       .maybeSingle();
-    
-    console.log("Profile after score_prism:", afterProfile || "Still no profile");
-    
-    // Test finalizeAssessment
-    const { data, error } = await supabase.functions.invoke("finalizeAssessment", {
-      body: { session_id: sessionId },
-    });
-    
-    if (error) {
-      console.log("finalizeAssessment error:", error);
-    } else {
-      console.log("finalizeAssessment success:", data?.status);
-      console.log("Results URL:", data?.results_url);
-    }
-    
-    // Final profile check
-    const { data: finalProfile } = await supabase
-      .from("profiles")
-      .select("id, results_version, type_code")
-      .eq("session_id", sessionId)
-      .maybeSingle();
-    
-    console.log("Final profile state:", finalProfile || "No profile created");
-    
-    // Assert that we now have a profile (if RLS fix worked)
-    if (finalProfile) {
-      assert.equal(finalProfile.results_version, RESULTS_VERSION, "Profile should have v1.2.1 version");
-      console.log("✅ SUCCESS: Profile created with correct version");
-    } else {
-      console.log("❌ FAILED: No profile was created - RLS fix may not be working");
-    }
+
+    assert(profile, "expected profile to exist after finalizeAssessment");
+    assert.equal(profile?.results_version, RESULTS_VERSION);
   });
 }
