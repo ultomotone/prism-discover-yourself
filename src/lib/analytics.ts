@@ -1,5 +1,6 @@
 // Google Analytics tracking utility
 import { IS_PREVIEW } from './env';
+import { sendQuoraEvent } from './quora/events';
 import { sendTwitterEvent } from './twitter/events';
 import {
   buildFacebookDpaPayload,
@@ -54,6 +55,10 @@ export const trackLead = (email?: string, metadata: Record<string, any> = {}) =>
       ...metadata,
       email_address: email,
     });
+    sendQuoraEvent('GenerateLead', {
+      email: email || undefined,
+      ...metadata,
+    });
   }
 };
 
@@ -71,6 +76,10 @@ export const trackAssessmentStart = (sessionId: string) => {
   }
 
   sendTwitterEvent('Lead', {
+    content_name: 'PRISM Assessment',
+    session_id: sessionId,
+  });
+  sendQuoraEvent('GenerateLead', {
     content_name: 'PRISM Assessment',
     session_id: sessionId,
   });
@@ -112,6 +121,10 @@ export const trackAssessmentComplete = (sessionId: string, totalQuestions: numbe
     session_id: sessionId,
     question_count: totalQuestions,
   });
+  sendQuoraEvent('CompleteRegistration', {
+    session_id: sessionId,
+    question_count: totalQuestions,
+  });
 
   // Fire app event that other trackers can listen to
   if (typeof window !== 'undefined') {
@@ -141,6 +154,10 @@ export const trackAccountCreation = (email: string, sessionId?: string) => {
     source: 'assessment',
     session_id: sessionId,
   });
+  sendQuoraEvent('CompleteRegistration', {
+    email,
+    session_id: sessionId,
+  });
 
   // Fire app event that other trackers can listen to
   if (typeof window !== 'undefined') {
@@ -165,6 +182,15 @@ export const trackResultsViewed = (sessionId: string, typeCode?: string) => {
 
   sendTwitterEvent(
     'ContentView',
+    {
+      content_name: 'PRISM Results',
+      session_id: sessionId,
+      type_code: typeCode,
+    },
+    { allowOnResults: true },
+  );
+  sendQuoraEvent(
+    'ViewContent',
     {
       content_name: 'PRISM Results',
       session_id: sessionId,
@@ -208,6 +234,12 @@ export const trackPaymentSuccess = (
   }
 
   sendTwitterEvent('Purchase', {
+    value,
+    currency,
+    transaction_id: transactionId,
+    session_id: sessionId,
+  });
+  sendQuoraEvent('Purchase', {
     value,
     currency,
     transaction_id: transactionId,

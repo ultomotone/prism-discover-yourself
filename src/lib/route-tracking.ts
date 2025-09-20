@@ -1,5 +1,6 @@
 // SPA route change tracking for Reddit and other analytics platforms
 
+import { sendQuoraEvent, sendQuoraPageView } from './quora/events';
 import { sendTwitterEvent, sendTwitterPageView } from './twitter/events';
 
 // Track route changes for SPA navigation
@@ -19,6 +20,7 @@ export const trackRouteChange = (path: string) => {
   }
 
   sendTwitterPageView(path);
+  sendQuoraPageView(path);
 
   if (debug) {
     console.info('[Twitter Pixel] PageView fired', { path });
@@ -30,6 +32,8 @@ export const trackRouteChange = (path: string) => {
       page_path: path
     });
   }
+
+  trackRouteSpecificEvents(path);
 };
 
 // Set up SPA route tracking listeners
@@ -63,7 +67,7 @@ export const initializeRouteTracking = () => {
 };
 
 // Route-specific event tracking
-export const trackRouteSpecificEvents = (path: string) => {
+export function trackRouteSpecificEvents(path: string) {
   if (typeof window === 'undefined') return;
 
   const normalizedPath = path.toLowerCase();
@@ -77,6 +81,7 @@ export const trackRouteSpecificEvents = (path: string) => {
       window.fbTrack('ViewContent', { content_name: 'Assessment' });
     }
     sendTwitterEvent('ContentView', { content_name: 'Assessment' });
+    sendQuoraEvent('GenerateLead', { content_name: 'Assessment' });
   }
 
   // Results page tracking
@@ -89,6 +94,11 @@ export const trackRouteSpecificEvents = (path: string) => {
     }
     sendTwitterEvent(
       'ContentView',
+      { content_name: 'PRISM Results' },
+      { allowOnResults: true },
+    );
+    sendQuoraEvent(
+      'ViewContent',
       { content_name: 'PRISM Results' },
       { allowOnResults: true },
     );
@@ -107,5 +117,6 @@ export const trackRouteSpecificEvents = (path: string) => {
       window.fbTrack('CompleteRegistration');
     }
     sendTwitterEvent('SignUp', {});
+    sendQuoraEvent('CompleteRegistration', {});
   }
-};
+}
