@@ -93,6 +93,10 @@ export default function Results({ components }: ResultsProps = {}) {
   const [shareToken, setShareToken] = useState<string | null>(
     query.get("t") ?? null
   );
+  const hasShareToken = useMemo(
+    () => typeof shareToken === "string" && shareToken.trim().length > 0,
+    [shareToken]
+  );
   useEffect(() => {
     setShareToken(query.get("t") ?? null);
   }, [query]);
@@ -205,9 +209,9 @@ export default function Results({ components }: ResultsProps = {}) {
   };
 
   const resultsQuery = useQuery<ResultsResponse | null>({
-    queryKey: resultsQueryKeys.session(sessionId, shareToken),
-    queryFn: () => fetchResultsBySession(sessionId, shareToken ?? undefined) as Promise<ResultsResponse>,
-    enabled: Boolean(sessionId),
+    queryKey: resultsQueryKeys.session(sessionId, hasShareToken ? shareToken : null),
+    queryFn: () => fetchResultsBySession(sessionId, shareToken!) as Promise<ResultsResponse>,
+    enabled: Boolean(sessionId && hasShareToken),
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchInterval: (currentData) => {
@@ -279,6 +283,10 @@ export default function Results({ components }: ResultsProps = {}) {
   }
 
   const loading = resultsQuery.isPending && !data && !err && !errKind;
+
+  if (!hasShareToken) {
+    errKind = "expired_or_invalid_token";
+  }
 
   useEffect(() => {
     if (!sessionId) return;

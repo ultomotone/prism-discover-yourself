@@ -33,12 +33,25 @@ function buildFallback(payload: FetchResponse): FetchResponse {
   return payload;
 }
 
+function logFailure(sessionId: string, shareToken: string | null | undefined, status?: number) {
+  console.error('results-fetch-failure', {
+    sessionId,
+    hasToken: Boolean(shareToken && shareToken.trim() !== ''),
+    httpStatus: status ?? null,
+  });
+}
+
 export async function fetchResultsBySession(
   sessionId: string,
-  shareToken?: string | null
+  shareToken: string
 ): Promise<ResultsFetchPayload> {
   if (!sessionId) {
     throw new Error("sessionId is required");
+  }
+
+  if (!shareToken || shareToken.trim() === "") {
+    logFailure(sessionId, shareToken, 401);
+    throw new ResultsApiError("Secure share token required", 401);
   }
 
   const url = `${resolveSupabaseFunctionsBase()}/get-results-by-session`;
@@ -47,11 +60,10 @@ export async function fetchResultsBySession(
     "Cache-Control": "no-store",
   });
 
-  const body: Record<string, unknown> = { session_id: sessionId };
-
-  if (shareToken) {
-    body.share_token = shareToken;
-  }
+  const body: Record<string, unknown> = {
+    session_id: sessionId,
+    share_token: shareToken,
+  };
 
   if (!IS_PREVIEW) {
     const authHeaders = await buildAuthHeaders();
@@ -78,6 +90,7 @@ export async function fetchResultsBySession(
         typeof payload.error === "string" && payload.error.length > 0
           ? payload.error
           : `get-results-by-session ${response.status}`;
+      logFailure(sessionId, shareToken, response.status);
       throw new ResultsApiError(message, response.status);
     }
 
@@ -94,9 +107,14 @@ export async function fetchResultsBySession(
 
     return payload;
   } catch (error) {
-    if (error instanceof Error) {
+    if (error instanceof ResultsApiError) {
       throw error;
     }
+    if (error instanceof Error) {
+      logFailure(sessionId, shareToken, (error as ResultsApiError).status);
+      throw error;
+    }
+    logFailure(sessionId, shareToken, undefined);
     throw new ResultsApiError("Failed to fetch results");
   }
 }

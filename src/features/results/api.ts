@@ -69,14 +69,25 @@ function mapUnknown(e: unknown): FetchResultsError {
 async function rpcCall(
   client: SupabaseClient,
   sessionId: string,
-  shareToken: string | undefined,
+  shareToken: string,
 ): Promise<FetchResultsResponse> {
   const { data, error } = await client.functions.invoke<FetchResultsResponse>(
     'get-results-by-session',
-    { body: { session_id: sessionId, share_token: shareToken || null } },
+    { body: { session_id: sessionId, share_token: shareToken } },
   );
   if (error) {
     const status = (error as any)?.code;
+    const httpStatus =
+      typeof status === 'number'
+        ? status
+        : Number.isFinite(Number(status))
+          ? Number(status)
+          : undefined;
+    console.error('results-fetch-failure', {
+      sessionId,
+      hasToken: Boolean(shareToken),
+      httpStatus: httpStatus ?? null,
+    });
     throw mapStatus(status, (error as any).message);
   }
   // Handle v2 contract - let SCORING_ROWS_MISSING pass through to frontend
@@ -111,10 +122,18 @@ async function executeWithRetry<T>(
 }
 
 export async function fetchResultsBySession(
-  { sessionId, shareToken }: { sessionId: string; shareToken?: string },
+  { sessionId, shareToken }: { sessionId: string; shareToken: string },
   client: SupabaseClient = supabase,
 ): Promise<FetchResultsResponse> {
-  const key = `${sessionId}|${shareToken ?? ''}`;
+  if (!shareToken || shareToken.trim() === '') {
+    console.error('results-fetch-failure', {
+      sessionId,
+      hasToken: false,
+      httpStatus: 401,
+    });
+    throw new FetchResultsError('unauthorized', 'share token required');
+  }
+  const key = `${sessionId}|${shareToken}`;
   const existing = inFlight.get(key);
   if (existing) return existing.promise;
 

@@ -115,10 +115,15 @@ test('maps error variants', async () => {
   }
 });
 
-test('missing share token throws unauthorized', async () => {
-  const client = createClient(async () => ({ data: null, error: { code: '401' } }));
+test('missing share token throws unauthorized without invoking RPC', async () => {
+  let calls = 0;
+  const client = createClient(async () => {
+    calls++;
+    return { data: null, error: { code: '401' } };
+  });
   await assert.rejects(
     () => fetchResults({ sessionId: 's' }, client),
     (e) => e instanceof FetchResultsError && e.kind === 'unauthorized',
   );
+  assert.equal(calls, 0);
 });

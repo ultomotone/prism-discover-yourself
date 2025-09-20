@@ -131,35 +131,6 @@ test(
 );
 
 test(
-  "Results page → RPC contract + render: passes undefined token when query lacks t",
-  async () => {
-    const calls: Array<{ url: string; body: any; headers: Record<string, string> }> = [];
-    createFetchStub(({ url, init }) => {
-      const body = init?.body ? JSON.parse(String(init.body)) : null;
-      const headers = new Headers(init?.headers ?? {});
-      calls.push({ url, body, headers: Object.fromEntries(headers.entries()) });
-      if (url.endsWith("/link_session_to_account")) {
-        return new Response("{}", { status: 200 });
-      }
-      return new Response(JSON.stringify(successPayload(body.session_id, "IEI")), { status: 200 });
-    });
-
-    const queryClient = renderResultsRoute(["/results/sess-xyz"]);
-
-    await waitFor(() => {
-      assert.ok(screen.getByTestId("results-loaded"));
-    });
-
-    queryClient.clear();
-
-    const getResultsCall = calls.find((c) => c.url.endsWith("/get-results-by-session"));
-    assert.ok(getResultsCall);
-    assert.deepEqual(getResultsCall!.body, { session_id: "sess-xyz" });
-    assert.equal(getResultsCall!.headers.apikey, SUPABASE_ANON_KEY);
-  }
-);
-
-test(
   "Results page → RPC contract + render: surfaces error state when backend throws",
   async () => {
     createFetchStub(({ url }) => {
@@ -177,3 +148,44 @@ test(
     queryClient.clear();
   }
 );
+
+test("Results page → invalid token surfaces explicit error UI", async () => {
+  createFetchStub(({ url }) => {
+    if (url.endsWith("/link_session_to_account")) {
+      return new Response("{}", { status: 200 });
+    }
+    return new Response("{\"error\":\"invalid token\"}", { status: 401 });
+  });
+
+  const queryClient = renderResultsRoute(["/results/sess-auth?t=bad-token"]);
+
+  await waitFor(() => {
+    assert.ok(screen.getByText(/This results link has expired or was rotated/i));
+  });
+  assert.ok(screen.getByText(/Ask the owner for a fresh link/i));
+  assert.equal(screen.queryByTestId("results-loaded"), null);
+
+  queryClient.clear();
+});
+
+test("Results page → missing token renders expired state without RPC", async () => {
+  const calls: Array<{ url: string; body: any }> = [];
+  createFetchStub(({ url, init }) => {
+    if (url.endsWith("/link_session_to_account")) {
+      return new Response("{}", { status: 200 });
+    }
+    const body = init?.body ? JSON.parse(String(init.body)) : null;
+    calls.push({ url, body });
+    return new Response("{}", { status: 200 });
+  });
+
+  const queryClient = renderResultsRoute(["/results/sess-missing"]);
+
+  await waitFor(() => {
+    assert.ok(screen.getByText(/This results link has expired or was rotated/i));
+  });
+  const edgeCalls = calls.filter((call) => call.url.endsWith("/get-results-by-session"));
+  assert.equal(edgeCalls.length, 0);
+
+  queryClient.clear();
+});
