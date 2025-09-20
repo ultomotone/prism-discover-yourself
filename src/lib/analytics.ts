@@ -153,7 +153,7 @@ export const trackAccountCreation = (email: string, sessionId?: string) => {
 export const trackResultsViewed = (sessionId: string, typeCode?: string) => {
   if (IS_PREVIEW) return;
   trackEvent('results_viewed', 'assessment', typeCode || 'unknown');
-  
+
   // Track Reddit ViewContent for results page (legacy pixel method)
   if (typeof window !== 'undefined' && window.rdtTrack) {
     window.rdtTrack('ViewContent', {
@@ -184,6 +184,8 @@ export const trackResultsViewed = (sessionId: string, typeCode?: string) => {
     }));
   }
 };
+
+export { sendLinkedInSignup, testLinkedInSignup } from "./linkedin/track";
 
 export const trackPaymentSuccess = (
   value: number,

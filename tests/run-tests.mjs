@@ -26,6 +26,8 @@ const TEST_FILES = [
   'tests/paywall.guard.test.tsx',
   'tests/tiktokCapi.test.ts',
   'tests/tiktokClient.test.ts',
+  'tests/linkedinCapiPayload.test.ts',
+  'tests/linkedinTrack.test.ts',
   'tests/getUserJwt.test.ts',
   'tests/classifyRpcError.test.ts',
   'tests/saveResponseIdempotent.test.ts',
