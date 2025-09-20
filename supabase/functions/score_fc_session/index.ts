@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.55.0";
+import { ensureResultsVersion } from "../_shared/resultsVersion.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -7,6 +8,24 @@ const cors = {
 };
 
 type Weights = Record<string, number>;
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+if (!SUPABASE_URL) {
+  throw new Error("Missing SUPABASE_URL environment variable");
+}
+
+if (!SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable");
+}
+
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY, // service role so RLS never blocks scoring
+);
+
+await ensureResultsVersion(supabase);
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
@@ -23,11 +42,6 @@ serve(async (req) => {
     if (!version || version === 'v1.1') {
       console.warn(`evt:fc_version_mismatch,session_id:${session_id},version:${version || 'undefined'},expected:v1.2`);
     }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!, 
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!  // service role so RLS never blocks scoring
-    );
 
     console.log(`evt:fc_scoring_start,session_id:${session_id},basis:${basis},version:${version}`);
 

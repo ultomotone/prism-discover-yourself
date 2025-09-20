@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import test from "node:test";
 import assert from "node:assert/strict";
+import { RESULTS_VERSION } from "../supabase/functions/_shared/resultsVersion.ts";
 
 const url = process.env.SUPABASE_URL;
 const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -93,7 +94,7 @@ if (!url || !service) {
     
     // Assert that we now have a profile (if RLS fix worked)
     if (finalProfile) {
-      assert.equal(finalProfile.results_version, "v1.2.1", "Profile should have v1.2.1 version");
+      assert.equal(finalProfile.results_version, RESULTS_VERSION, "Profile should have v1.2.1 version");
       console.log("✅ SUCCESS: Profile created with correct version");
     } else {
       console.log("❌ FAILED: No profile was created - RLS fix may not be working");
