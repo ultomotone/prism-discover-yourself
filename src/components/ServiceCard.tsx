@@ -2,6 +2,10 @@
 
 import React from "react";
 import type { Service } from "@/data/services";
+import {
+  buildFacebookPayloadFromService,
+  rememberFacebookDpaPayload,
+} from "@/lib/facebook";
 
 export function ServiceCard({
   service,
@@ -14,6 +18,11 @@ export function ServiceCard({
 }) {
   const handleClick = () => {
     onSelect(service);
+    const payload = buildFacebookPayloadFromService(service);
+    rememberFacebookDpaPayload(payload);
+    if (typeof window !== "undefined" && window.fbTrack) {
+      window.fbTrack("AddToCart", payload);
+    }
     const el = document.getElementById("book");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };

@@ -1,4 +1,14 @@
 // Google Analytics tracking utility
+import { IS_PREVIEW } from './env';
+import { sendTwitterEvent } from './twitter/events';
+import {
+  buildFacebookDpaPayload,
+  getRememberedFacebookDpaPayload,
+  mergePurchaseDetails,
+  rememberFacebookDpaPayload,
+  type FacebookProduct,
+} from './facebook';
+
 declare global {
   interface Window {
     gtag: (...args: any[]) => void;
@@ -10,9 +20,6 @@ declare global {
     fbSetUser: (props: { email?: string }) => void;
   }
 }
-
-import { IS_PREVIEW } from './env';
-import { sendTwitterEvent } from './twitter/events';
 
 export const trackEvent = (action: string, category: string, label?: string, value?: number) => {
   if (IS_PREVIEW) return;
@@ -178,10 +185,16 @@ export const trackResultsViewed = (sessionId: string, typeCode?: string) => {
   }
 };
 
-export const trackPaymentSuccess = (value: number, currency: string = 'USD', transactionId: string, sessionId?: string) => {
+export const trackPaymentSuccess = (
+  value: number,
+  currency: string = 'USD',
+  transactionId: string,
+  sessionId?: string,
+  product?: FacebookProduct,
+) => {
   if (IS_PREVIEW) return;
   trackEvent('purchase_completed', 'ecommerce', transactionId, value);
-  
+
   // Track Reddit Purchase event
   if (typeof window !== 'undefined' && window.rdtTrack) {
     window.rdtTrack('Purchase', {
@@ -198,4 +211,32 @@ export const trackPaymentSuccess = (value: number, currency: string = 'USD', tra
     transaction_id: transactionId,
     session_id: sessionId,
   });
+
+  if (typeof window !== 'undefined' && window.fbTrack) {
+    const metadata = { transaction_id: transactionId, session_id: sessionId };
+    const basePayload = product
+      ? buildFacebookDpaPayload({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          currency: product.currency,
+          quantity: product.quantity,
+        })
+      : getRememberedFacebookDpaPayload();
+
+    const purchasePayload = mergePurchaseDetails(basePayload, value, currency, metadata);
+
+    if (purchasePayload) {
+      rememberFacebookDpaPayload(purchasePayload);
+      window.fbTrack('Purchase', purchasePayload);
+    } else {
+      console.warn(
+        'trackPaymentSuccess: skipped Facebook Purchase - missing dynamic ads payload',
+        {
+          transactionId,
+          sessionId,
+        },
+      );
+    }
+  }
 };
