@@ -31,6 +31,7 @@ const TEST_FILES = [
   'tests/getUserJwt.test.ts',
   'tests/classifyRpcError.test.ts',
   'tests/saveResponseIdempotent.test.ts',
+  'tests/retake.limits.test.ts',
   'supabase/functions/_shared/score-engine/__tests__/score-engine.test.ts',
   'tests/resultsLink.security.test.ts',
   'tests/finalizeAssessment.flow.test.ts',

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { safeString, safeObject } from "@/lib/typeGuards";
 import {
@@ -33,11 +34,15 @@ import { EmailSavePrompt } from './EmailSavePrompt';
 import { SessionConflictModal } from './SessionConflictModal';
 import { AccountLinkPrompt } from './AccountLinkPrompt';
 import { useToast } from '@/hooks/use-toast';
-import { useEmailSessionManager } from '@/hooks/useEmailSessionManager';
+import {
+  useEmailSessionManager,
+  type RetakeBlock,
+} from '@/hooks/useEmailSessionManager';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Save } from 'lucide-react';
 import { trackAssessmentStart, trackAssessmentProgress } from '@/lib/analytics';
+import { RetakeLimitNotice } from './RetakeLimitNotice';
 
 export interface AssessmentResponse {
   questionId: number | string;
@@ -106,6 +111,7 @@ export function AssessmentForm({
   const [showEmailPrompt, setShowEmailPrompt] = useState(false);
   const [showAccountPrompt, setShowAccountPrompt] = useState(false);
   const [capturedEmail, setCapturedEmail] = useState<string>('');
+  const [attemptNumber, setAttemptNumber] = useState<number | null>(null);
   const [sessionConflict, setSessionConflict] = useState<{
     type: 'resume' | 'recent_completion' | null;
     email: string;
@@ -122,7 +128,40 @@ export function AssessmentForm({
   const { user } = useAuth();
   const { startAssessmentSession, linkSessionToAccount } =
     useEmailSessionManager();
+  const [retakeBlock, setRetakeBlock] = useState<RetakeBlock | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  const handleRetakeBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+    if (typeof window !== 'undefined') {
+      window.location.assign('/assessment');
+    }
+  };
+
+  const readCachedEmail = (): string | undefined => {
+    if (user?.email) {
+      return user.email;
+    }
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return undefined;
+    }
+    try {
+      const raw = window.localStorage.getItem('prism_last_session');
+      if (!raw) {
+        return undefined;
+      }
+      const parsed = JSON.parse(raw) as { email?: unknown };
+      if (typeof parsed.email === 'string' && parsed.email.includes('@')) {
+        return parsed.email;
+      }
+    } catch (error) {
+      console.warn('Failed to parse cached session email', error);
+    }
+    return undefined;
+  };
 
   // Filter to visible questions with comprehensive library
   const [assessmentLibrary, setAssessmentLibrary] = useState<Question[]>([]);
@@ -249,6 +288,7 @@ export function AssessmentForm({
       console.log('Load error:', loadError);
 
       setIsLoading(true);
+      setRetakeBlock(null);
 
       try {
         // If resuming a session, load existing session data
@@ -278,15 +318,17 @@ export function AssessmentForm({
           });
         }
 
+        const effectiveEmail = readCachedEmail();
         console.log('Calling startAssessmentSession with:', {
-          email: user?.email,
+          cachedEmail: effectiveEmail,
+          userEmail: user?.email,
           userId: user?.id,
         });
         // Create session via edge function to respect RLS policies
-        const sessionData = await startAssessmentSession(user?.email, user?.id);
-        console.log('startAssessmentSession result:', sessionData);
+        const result = await startAssessmentSession(effectiveEmail, user?.id);
+        console.log('startAssessmentSession result:', result);
 
-        if (!sessionData) {
+        if (!result) {
           console.error('No session data returned from startAssessmentSession');
           toast({
             title: 'Failed to Initialize',
@@ -298,14 +340,24 @@ export function AssessmentForm({
           return;
         }
 
+        if (result.status === 'blocked') {
+          console.warn('Retake limit blocked session start:', result.block);
+          setRetakeBlock(result.block);
+          setLoadError(null);
+          return;
+        }
+
+        const sessionData = result.session;
         const newId = sessionData.session_id;
         console.log(
           'Session initialized successfully via edge function:',
           newId,
         );
 
+        setAttemptNumber(sessionData.attempt_no ?? null);
         setSessionId(newId);
         setQuestionStartTime(Date.now());
+        setLoadError(null);
 
         // Track assessment start
         trackAssessmentStart(newId);
@@ -435,6 +487,24 @@ export function AssessmentForm({
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p>Loading assessment library...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (retakeBlock) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <RetakeLimitNotice
+          block={retakeBlock}
+          footer={
+            <>
+              <Button onClick={handleRetakeBack}>Return to assessment overview</Button>
+              <Button variant="outline" asChild>
+                <a href="mailto:hello@discoverprism.com">Contact support</a>
+              </Button>
+            </>
+          }
+        />
       </div>
     );
   }
@@ -1262,6 +1332,13 @@ export function AssessmentForm({
     <div className="min-h-screen bg-background pt-24 pb-8">
       <div className="prism-container">
         <div className="max-w-3xl mx-auto">
+          {attemptNumber ? (
+            <div className="flex justify-end mb-4">
+              <Badge variant="secondary" className="text-sm">
+                Attempt #{attemptNumber}
+              </Badge>
+            </div>
+          ) : null}
           {/* Header with Progress */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">

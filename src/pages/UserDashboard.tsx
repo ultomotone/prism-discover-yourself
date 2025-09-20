@@ -3,8 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LogOut, User, Target, ExternalLink, ChevronRight, RefreshCw, Zap } from "lucide-react";
+import { LogOut, User, Target, ExternalLink, ChevronRight, RefreshCw, Zap, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +20,11 @@ import Header from "@/components/Header";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { fetchDashboardResults, DashboardResult } from "@/lib/dashboardResults";
 import { useRealtimeScoring } from "@/hooks/useRealtimeScoring";
+import {
+  useEmailSessionManager,
+  type RetakeBlock,
+} from "@/hooks/useEmailSessionManager";
+import { RetakeLimitNotice } from "@/components/assessment/RetakeLimitNotice";
 
 interface UserSession {
   id: string;
@@ -28,19 +41,37 @@ interface UserSession {
   };
 }
 
+interface AssessmentAttempt {
+  session_id: string;
+  started_at: string;
+  completed_at: string | null;
+  attempt_no: number;
+  type_code?: string | null;
+  conf_band?: string | null;
+  overlay?: string | null;
+  payment_status?: string | null;
+}
+
 const UserDashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [userSessions, setUserSessions] = useState<UserSession[]>([]);
   const [dashboardResults, setDashboardResults] = useState<DashboardResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+  const [attempts, setAttempts] = useState<AssessmentAttempt[]>([]);
+  const [retakeBlock, setRetakeBlock] = useState<RetakeBlock | null>(null);
+
   // Real-time scoring hook
-  const { 
-    scoringResults, 
-    isRecomputing, 
-    recomputeScoring 
+  const {
+    scoringResults,
+    isRecomputing,
+    recomputeScoring
   } = useRealtimeScoring();
+
+  const {
+    startAssessmentSession: triggerRetake,
+    isLoading: isStartingSession,
+  } = useEmailSessionManager();
 
   useEffect(() => {
     if (user?.email) {
@@ -78,11 +109,70 @@ const UserDashboard = () => {
         setUserSessions(sessionsWithProfiles);
       }
 
+      // Fetch attempt history for retake tracking
+      try {
+        const { data: attemptResult, error: attemptError } = await supabase
+          .rpc('get_user_assessment_attempts', { p_user_id: user.id });
+
+        if (attemptError) {
+          console.error('Error fetching assessment attempts:', attemptError);
+          setAttempts([]);
+        } else {
+          const rowsRaw = (attemptResult as any)?.attempts ?? attemptResult;
+          const rows = Array.isArray(rowsRaw) ? rowsRaw : [];
+          setAttempts(
+            rows.map((row: any) => ({
+              session_id: String(row.session_id ?? row.id ?? ''),
+              started_at: String(row.started_at ?? row.created_at ?? ''),
+              completed_at: row.completed_at ?? null,
+              attempt_no: Number(row.attempt_no ?? row.attempt_number ?? 0),
+              type_code: row.type_code ?? row.profile_type ?? null,
+              conf_band: row.conf_band ?? row.confidence ?? null,
+              overlay: row.overlay ?? row.profile_overlay ?? null,
+              payment_status: row.payment_status ?? row.billing_status ?? null,
+            }))
+          );
+        }
+      } catch (attemptError) {
+        console.error('Unexpected attempt history failure:', attemptError);
+        setAttempts([]);
+      }
+
     } catch (error) {
       console.error('Error fetching user data:', error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRetake = async () => {
+    if (!user) {
+      return;
+    }
+    setRetakeBlock(null);
+
+    const result = await triggerRetake(user.email ?? undefined, user.id, true);
+    if (!result) {
+      return;
+    }
+
+    if (result.status === 'blocked') {
+      setRetakeBlock(result.block);
+      return;
+    }
+
+    navigate(`/assessment?start=true&session=${result.session.session_id}`);
+  };
+
+  const formatTimestamp = (value: string | null) => {
+    if (!value) {
+      return '—';
+    }
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return '—';
+    }
+    return format(parsed, 'MMM dd, yyyy HH:mm');
   };
 
   return (
@@ -265,6 +355,76 @@ const UserDashboard = () => {
                 </Card>
               </div>
             )}
+
+            {/* Assessment Attempts */}
+            <Card className="mb-8">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-xl">Assessment Attempts</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRetake}
+                    disabled={isStartingSession}
+                    className="flex items-center gap-2"
+                  >
+                    {isStartingSession ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Target className="h-4 w-4" />
+                    )}
+                    Retake
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={fetchUserData}
+                    disabled={isLoading}
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {retakeBlock ? (
+                  <RetakeLimitNotice block={retakeBlock} />
+                ) : null}
+                {attempts.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Attempt</TableHead>
+                        <TableHead>Started</TableHead>
+                        <TableHead>Completed</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Confidence</TableHead>
+                        <TableHead>Overlay</TableHead>
+                        <TableHead>Payment</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {attempts.map((attempt) => (
+                        <TableRow key={attempt.session_id}>
+                          <TableCell>#{attempt.attempt_no}</TableCell>
+                          <TableCell>{formatTimestamp(attempt.started_at)}</TableCell>
+                          <TableCell>{formatTimestamp(attempt.completed_at)}</TableCell>
+                          <TableCell>{attempt.type_code ?? '—'}</TableCell>
+                          <TableCell>{attempt.conf_band ?? '—'}</TableCell>
+                          <TableCell>{attempt.overlay ?? '—'}</TableCell>
+                          <TableCell>{attempt.payment_status ?? '—'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No assessment attempts recorded yet.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
 
             {/* User Assessment History */}
             <div className="mb-8">

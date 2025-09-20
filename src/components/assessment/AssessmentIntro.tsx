@@ -6,9 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Clock, Brain, Shield, CheckCircle, Users, AlertTriangle, ChevronDown, Target, Zap, TrendingUp, BarChart3, Mail, ArrowRight, Loader2 } from "lucide-react";
 import { SystemStatusIndicator } from "@/components/SystemStatusIndicator";
-import { useEmailSessionManager } from "@/hooks/useEmailSessionManager";
+import {
+  useEmailSessionManager,
+  type RetakeBlock,
+} from "@/hooks/useEmailSessionManager";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from 'react-router-dom';
+import { RetakeLimitNotice } from './RetakeLimitNotice';
 
 interface AssessmentIntroProps {
   onStart: () => void;
@@ -22,10 +26,11 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
   const { startAssessmentSession, isLoading } = useEmailSessionManager();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [retakeBlock, setRetakeBlock] = useState<RetakeBlock | null>(null);
 
   const handleEmailContinue = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email.trim()) {
       toast({
         title: "Email required",
@@ -46,22 +51,36 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
       return;
     }
 
-    const sessionData = await startAssessmentSession(email);
-    if (sessionData) {
-      if (sessionData.existing_session) {
-        // Resume existing session
-        navigate(`/assessment?resume=${sessionData.session_id}`);
-      } else {
-        // Start new session with email
-        navigate(`/assessment?start=true&session=${sessionData.session_id}`);
-      }
+    setRetakeBlock(null);
+
+    const result = await startAssessmentSession(email);
+    if (!result) {
+      return;
+    }
+
+    if (result.status === 'blocked') {
+      setRetakeBlock(result.block);
+      return;
+    }
+
+    const sessionData = result.session;
+
+    if (sessionData.existing_session) {
+      navigate(`/assessment?resume=${sessionData.session_id}`);
+    } else {
+      navigate(`/assessment?start=true&session=${sessionData.session_id}`);
     }
   };
-  
+
   return (
     <div className="min-h-screen bg-background">
       <div className="prism-container pt-24 pb-16">
         <div className="max-w-4xl mx-auto">
+          {retakeBlock ? (
+            <div className="mb-8">
+              <RetakeLimitNotice block={retakeBlock} />
+            </div>
+          ) : null}
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="prism-heading-lg text-primary mb-6">
