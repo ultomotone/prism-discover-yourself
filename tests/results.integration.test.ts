@@ -40,7 +40,7 @@ test('unauthorized does not retry', async () => {
     if (calls === 1) return { data: null, error: { code: '401' } };
     return { data: { profile: { id: 'p' }, session: { id: 's', status: 'completed' } }, error: null };
   });
-  await assert.rejects(() => fetchResults({ sessionId: 's' }, client as any), (e) =>
+  await assert.rejects(() => fetchResults({ sessionId: 's', shareToken: 't' }, client as any), (e) =>
     e instanceof FetchResultsError && e.kind === 'unauthorized',
   );
   assert.equal(calls, 1);
@@ -55,5 +55,5 @@ test('requires share token', async () => {
   await assert.rejects(() => fetchResults({ sessionId: 's' }, client as any), (e) =>
     e instanceof FetchResultsError && e.kind === 'unauthorized',
   );
-  assert.equal(calls, 1);
+  assert.equal(calls, 0);
 });
