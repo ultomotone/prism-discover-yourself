@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import React from "react";
 import { render, screen, waitFor, cleanup } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const StubResultsView = ({ profile }: any) => (
   <div data-testid="results-loaded">profile:{profile?.type_code ?? "none"}</div>
@@ -35,18 +36,67 @@ function successPayload(sessionId: string, typeCode = "LII") {
 }
 
 const { default: Results } = await import("@/pages/Results");
+const { supabase } = await import("@/lib/supabaseClient");
+
+const originalChannel = supabase.channel.bind(supabase);
+const originalRemoveChannel = supabase.removeChannel.bind(supabase);
+
+function stubRealtime() {
+  supabase.channel = ((name: string) => {
+    const channel: any = {
+      on: () => channel,
+      subscribe: () => channel,
+    };
+    return channel;
+  }) as typeof supabase.channel;
+
+  supabase.removeChannel = (async () => ({ data: null, error: null })) as typeof supabase.removeChannel;
+}
+
+function restoreRealtime() {
+  supabase.channel = originalChannel;
+  supabase.removeChannel = originalRemoveChannel;
+}
+
+function renderResultsRoute(initialEntries: string[]) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+
+  render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={initialEntries}>
+        <Routes>
+          <Route
+            path="/results/:sessionId"
+            element={<Results components={{ ResultsView: StubResultsView }} />}
+          />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>
+  );
+
+  return queryClient;
+}
 
 beforeEach(() => {
   globalThis.fetch = originalFetch;
+  stubRealtime();
 });
 
 afterEach(() => {
   cleanup();
   globalThis.fetch = originalFetch;
+  restoreRealtime();
 });
 
 after(() => {
   globalThis.fetch = originalFetch;
+  restoreRealtime();
 });
 
 test(
@@ -61,20 +111,13 @@ test(
       return new Response(JSON.stringify(successPayload(body.session_id)), { status: 200 });
     });
 
-    render(
-      <MemoryRouter initialEntries={["/results/sess-123?t=tok-abc"]}>
-        <Routes>
-          <Route
-            path="/results/:sessionId"
-            element={<Results components={{ ResultsView: StubResultsView }} />}
-          />
-        </Routes>
-      </MemoryRouter>
-    );
+    const queryClient = renderResultsRoute(["/results/sess-123?t=tok-abc"]);
 
     await waitFor(() => {
       assert.ok(screen.getByTestId("results-loaded"));
     });
+
+    queryClient.clear();
 
     const getResultsCall = calls.find((c) => c.url.endsWith("/get-results-by-session"));
     assert.ok(getResultsCall);
@@ -94,20 +137,13 @@ test(
       return new Response(JSON.stringify(successPayload(body.session_id, "IEI")), { status: 200 });
     });
 
-    render(
-      <MemoryRouter initialEntries={["/results/sess-xyz"]}>
-        <Routes>
-          <Route
-            path="/results/:sessionId"
-            element={<Results components={{ ResultsView: StubResultsView }} />}
-          />
-        </Routes>
-      </MemoryRouter>
-    );
+    const queryClient = renderResultsRoute(["/results/sess-xyz"]);
 
     await waitFor(() => {
       assert.ok(screen.getByTestId("results-loaded"));
     });
+
+    queryClient.clear();
 
     const getResultsCall = calls.find((c) => c.url.endsWith("/get-results-by-session"));
     assert.ok(getResultsCall);
@@ -125,18 +161,11 @@ test(
       return new Response("{\"error\":\"failure\"}", { status: 500 });
     });
 
-    render(
-      <MemoryRouter initialEntries={["/results/sess-bad?t=tok"]}>
-        <Routes>
-          <Route
-            path="/results/:sessionId"
-            element={<Results components={{ ResultsView: StubResultsView }} />}
-          />
-        </Routes>
-      </MemoryRouter>
-    );
+    const queryClient = renderResultsRoute(["/results/sess-bad?t=tok"]);
 
     const error = await screen.findByText(/Unable to load results/i);
     assert.ok(error);
+
+    queryClient.clear();
   }
 );

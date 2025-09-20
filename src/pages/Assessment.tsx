@@ -7,10 +7,13 @@ import { AssessmentIntro } from '@/components/assessment/AssessmentIntro';
 import { supabase } from '@/integrations/supabase/client';
 import { trackAssessmentComplete, trackLead } from '@/lib/analytics';
 import { TOTAL_PRISM_QUESTIONS } from '@/services/prismConfig';
+import { useQueryClient } from '@tanstack/react-query';
+import { resultsQueryKeys } from '@/features/results/queryKeys';
 
 const Assessment = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const resume = searchParams.get('resume');
   const start = searchParams.get('start');
@@ -33,6 +36,7 @@ const Assessment = () => {
       if (error) throw error;
       trackAssessmentComplete(sessionId, responses.length);
       trackLead(undefined, { source: 'assessment_complete' });
+      queryClient.removeQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId) });
       const token = (data as any)?.share_token;
       navigate(
         `/results/${sessionId}${token ? `?t=${token}` : ''}`,
