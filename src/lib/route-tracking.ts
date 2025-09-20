@@ -6,6 +6,8 @@ import { sendTwitterEvent, sendTwitterPageView } from './twitter/events';
 export const trackRouteChange = (path: string) => {
   if (typeof window === 'undefined') return;
 
+  const debug = window.__TW_DEBUG__ === true;
+
   // Track page view for Reddit
   if (window.rdtTrack) {
     window.rdtTrack('PageVisit');
@@ -17,6 +19,10 @@ export const trackRouteChange = (path: string) => {
   }
 
   sendTwitterPageView(path);
+
+  if (debug) {
+    console.info('[Twitter Pixel] PageView fired', { path });
+  }
 
   // Track page view for Google Analytics
   if (window.gtag) {
@@ -51,7 +57,9 @@ export const initializeRouteTracking = () => {
     trackRouteChange(window.location.pathname);
   });
 
-  console.log('✅ SPA route tracking initialized');
+  if (window.__TW_DEBUG__ === true) {
+    console.log('✅ SPA route tracking initialized');
+  }
 };
 
 // Route-specific event tracking

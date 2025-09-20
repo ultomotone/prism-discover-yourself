@@ -61,6 +61,44 @@
       })();
     </script>
     <script>
+      (function initialiseTwitterDebugFlags() {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          if (params.get('twdebug') === '1') {
+            window.__TW_DEBUG__ = true;
+          }
+          if (window.__TW_DEBUG__ === true) {
+            if (params.get('twforce') === '1') {
+              window.__TW_FORCE__ = true;
+              try {
+                sessionStorage.setItem('__tw_force', '1');
+              } catch (storageError) {
+                if (window.__TW_DEBUG__ === true) {
+                  console.warn('[Twitter Pixel] Unable to persist twforce flag', storageError);
+                }
+              }
+            }
+            try {
+              if (sessionStorage.getItem('__tw_force') === '1') {
+                window.__TW_FORCE__ = true;
+              }
+            } catch (storageError) {
+              if (window.__TW_DEBUG__ === true) {
+                console.warn('[Twitter Pixel] Unable to read twforce flag', storageError);
+              }
+            }
+            if (window.__TW_FORCE__ === true) {
+              console.warn('[Twitter Pixel] Consent override active via ?twforce=1');
+            }
+          }
+        } catch (error) {
+          if (window.__TW_DEBUG__ === true) {
+            console.warn('[Twitter Pixel] Debug flag initialisation failed', error);
+          }
+        }
+      })();
+    </script>
+    <script>
       (function guardRudderIdentify() {
         const REQUIRED_INTERVAL_MS = 500;
 
@@ -481,15 +519,35 @@
     <!-- Twitter Pixel (base loader) -->
     <script>
       !(function(w, d, s, u, a, b) {
-        if (w.twq) return;
+        const debug = w.__TW_DEBUG__ === true;
+        if (w.twq) {
+          if (debug) {
+            console.info('[Twitter Pixel] twq stub already present');
+          }
+          return;
+        }
         u = w.twq = function() {
-          u.exe ? u.exe.apply(u, arguments) : u.queue.push(arguments);
+          if (u.exe) {
+            u.exe.apply(u, arguments);
+          } else {
+            u.queue.push(arguments);
+          }
         };
         u.version = '1.1';
         u.queue = [];
         a = d.createElement(s);
         a.async = true;
         a.src = 'https://static.ads-twitter.com/uwt.js';
+        if (debug) {
+          console.info('[Twitter Pixel] Loader stub defined; requesting uwt.js', { src: a.src });
+          a.addEventListener('load', () => {
+            console.info('[Twitter Pixel] uwt.js loaded');
+          });
+          a.addEventListener('error', (event) => {
+            console.error('[Twitter Pixel] Failed to load uwt.js', event);
+            w.__TW_LAST_ERROR__ = 'Failed to load uwt.js';
+          });
+        }
         b = d.getElementsByTagName(s)[0];
         b.parentNode.insertBefore(a, b);
       })(window, document, 'script');
@@ -504,38 +562,311 @@
         const RESULTS_PATH_PATTERN = /\/results(\/|$)/i;
         const CONSENT_CHECK_INTERVAL = 500;
         const MAX_CONSENT_CHECKS = 40;
+        const debug = window.__TW_DEBUG__ === true;
+        const forceOverride = window.__TW_FORCE__ === true;
         let configured = false;
+        let lastError = window.__TW_LAST_ERROR__ || null;
+        let lastConfigFailure = null;
+        let cmpAnalyticsConsent = null;
+        let tcfAnalyticsConsent = null;
+        let cspProbeResult = 'pending';
+        let cspProbeAttempted = false;
+        let cmpListenerRegistered = false;
+        let tcfListenerRegistered = false;
+        let cmpLastPoll = 0;
+        let tcfLastPoll = 0;
+        const CMP_POLL_INTERVAL = 5000;
+        const TCF_POLL_INTERVAL = 5000;
 
-        function hasAnalyticsConsent() {
-          try {
-            const consent = window.__consent;
-            if (!consent || typeof consent !== 'object') return false;
-            return consent.analytics === true;
-          } catch (error) {
-            console.warn('Twitter Pixel consent check failed (non-blocking):', error);
-            return false;
+        if (debug) {
+          console.info(
+            '[Twitter Pixel] Required CSP domains (img-src & connect-src): static.ads-twitter.com, ads-twitter.com, ads-api.twitter.com, analytics.twitter.com, t.co',
+          );
+        }
+
+        function debugLog(level, message, payload) {
+          if (!debug) return;
+          const logger = typeof console[level] === 'function' ? console[level] : console.log;
+          if (payload !== undefined) {
+            logger.call(console, `[Twitter Pixel] ${message}`, payload);
+          } else {
+            logger.call(console, `[Twitter Pixel] ${message}`);
           }
         }
 
-        function ensureConfigured() {
+        function setLastError(message) {
+          lastError = message;
+          if (message) {
+            window.__TW_LAST_ERROR__ = message;
+          } else {
+            delete window.__TW_LAST_ERROR__;
+          }
+        }
+
+        function interpretConsentValue(value) {
+          if (value === null || value === undefined) return null;
+          if (typeof value === 'boolean') return value;
+          if (typeof value === 'number') return value === 1;
+          if (typeof value === 'string') {
+            const normalized = value.toLowerCase();
+            if (['granted', 'true', '1', 'allow', 'allowed', 'accepted', 'consent', 'yes', 'on'].includes(normalized)) {
+              return true;
+            }
+            if (['denied', 'declined', 'false', '0', 'refused', 'revoked', 'no', 'off'].includes(normalized)) {
+              return false;
+            }
+          }
+          return null;
+        }
+
+        function evaluateConsentFromObject(source) {
+          if (!source || typeof source !== 'object') return null;
+          const keys = [
+            'analytics',
+            'Analytics',
+            'statistics',
+            'Statistics',
+            'performance',
+            'Performance',
+            'measurement',
+            'Measurement',
+            'consentAnalytics',
+            'analyticsConsent',
+            'measurementConsent',
+          ];
+          for (const key of keys) {
+            if (key in source) {
+              const interpreted = interpretConsentValue(source[key]);
+              if (interpreted !== null) return interpreted;
+            }
+          }
+          const categoryArrays = [
+            source.categories,
+            source.allowedCategories,
+            source.acceptedCategories,
+            source.grantedCategories,
+            source.enabled,
+            source.enabledCategories,
+          ];
+          const acceptedValues = ['analytics', 'measurement', 'statistics', 'performance'];
+          for (const arrayCandidate of categoryArrays) {
+            if (Array.isArray(arrayCandidate)) {
+              if (arrayCandidate.some((value) => typeof value === 'string' && acceptedValues.includes(value.toLowerCase()))) {
+                return true;
+              }
+            }
+          }
+          return null;
+        }
+
+        function evaluateCmpResult(result) {
+          if (!result || typeof result !== 'object') return null;
+          const direct = evaluateConsentFromObject(result);
+          if (direct !== null) return direct;
+          const purposeConsents = result.purposeConsents || result.purposes || result.purpose || result.categories;
+          if (purposeConsents && typeof purposeConsents === 'object') {
+            const purposeKeys = ['analytics', 'measurement', 'statistics', 'performance', '7', '8', '9', '10'];
+            for (const key of purposeKeys) {
+              if (key in purposeConsents) {
+                const interpreted = interpretConsentValue(purposeConsents[key]);
+                if (interpreted !== null) return interpreted;
+              }
+            }
+          }
+          return null;
+        }
+
+        function evaluateTcData(tcData) {
+          if (!tcData || typeof tcData !== 'object') return null;
+          const direct = evaluateConsentFromObject(tcData);
+          if (direct !== null) return direct;
+          const consents = tcData.purpose && tcData.purpose.consents;
+          if (consents && typeof consents === 'object') {
+            const purposeKeys = ['7', '8', '9', '10'];
+            for (const key of purposeKeys) {
+              if (key in consents) {
+                const interpreted = interpretConsentValue(consents[key]);
+                if (interpreted !== null) return interpreted;
+              }
+            }
+          }
+          if (tcData.specialFeatureOptins && typeof tcData.specialFeatureOptins === 'object') {
+            const measurementOptIn = interpretConsentValue(tcData.specialFeatureOptins['1']);
+            if (measurementOptIn !== null) return measurementOptIn;
+          }
+          return null;
+        }
+
+        function refreshCmpConsent() {
+          const cmp = window.__cmp;
+          if (typeof cmp !== 'function') return;
+          const now = Date.now();
+          if (cmpAnalyticsConsent === null || now - cmpLastPoll >= CMP_POLL_INTERVAL) {
+            cmpLastPoll = now;
+            try {
+              cmp('getConsentState', null, (result, success) => {
+                if (!success) return;
+                const interpreted = evaluateCmpResult(result);
+                if (interpreted !== null) {
+                  cmpAnalyticsConsent = interpreted;
+                  debugLog('info', 'CMP analytics consent updated', { source: 'getConsentState', value: interpreted });
+                  ensureConfigured('cmp-getConsentState');
+                }
+              });
+            } catch (error) {
+              debugLog('warn', 'CMP getConsentState failed', error);
+            }
+          }
+          if (!cmpListenerRegistered) {
+            try {
+              cmp('addEventListener', null, (event) => {
+                if (!event) return;
+                const interpreted = evaluateCmpResult(event);
+                if (interpreted !== null) {
+                  cmpAnalyticsConsent = interpreted;
+                  debugLog('info', 'CMP analytics consent event', { value: interpreted });
+                  ensureConfigured('cmp-event');
+                }
+              });
+              cmpListenerRegistered = true;
+            } catch (error) {
+              cmpListenerRegistered = false;
+              debugLog('debug', 'CMP addEventListener unavailable', error);
+            }
+          }
+        }
+
+        function refreshTcfConsent() {
+          const tcfapi = window.__tcfapi;
+          if (typeof tcfapi !== 'function') return;
+          const now = Date.now();
+          if (tcfAnalyticsConsent === null || now - tcfLastPoll >= TCF_POLL_INTERVAL) {
+            tcfLastPoll = now;
+            try {
+              tcfapi('getTCData', 2, (tcData, success) => {
+                if (!success) return;
+                const interpreted = evaluateTcData(tcData);
+                if (interpreted !== null) {
+                  tcfAnalyticsConsent = interpreted;
+                  debugLog('info', 'TCF analytics consent updated', { source: 'getTCData', value: interpreted });
+                  ensureConfigured('tcf-getTCData');
+                }
+              });
+            } catch (error) {
+              debugLog('warn', 'TCF getTCData failed', error);
+            }
+          }
+          if (!tcfListenerRegistered) {
+            try {
+              tcfapi('addEventListener', 2, (tcData, success) => {
+                if (!success) return;
+                const interpreted = evaluateTcData(tcData);
+                if (interpreted !== null) {
+                  tcfAnalyticsConsent = interpreted;
+                  debugLog('info', 'TCF analytics consent event', { value: interpreted, eventStatus: tcData && tcData.eventStatus });
+                  ensureConfigured('tcf-event');
+                }
+              });
+              tcfListenerRegistered = true;
+            } catch (error) {
+              tcfListenerRegistered = false;
+              debugLog('debug', 'TCF addEventListener unavailable', error);
+            }
+          }
+        }
+
+        function sanitisePayloadForLog(payload) {
+          if (!payload || typeof payload !== 'object') return payload;
+          const clone = Object.assign({}, payload);
+          if ('email_address' in clone) clone.email_address = '[redacted]';
+          if ('email' in clone) clone.email = '[redacted]';
+          if ('phone_number' in clone) clone.phone_number = '[redacted]';
+          if ('phone' in clone) clone.phone = '[redacted]';
+          return clone;
+        }
+
+        function refreshConsentSignals() {
+          refreshCmpConsent();
+          refreshTcfConsent();
+        }
+
+        function hasAnalyticsConsent() {
+          if (forceOverride) return true;
+          const direct = evaluateConsentFromObject(window.__consent);
+          if (direct !== null) return direct;
+          if (cmpAnalyticsConsent !== null) return cmpAnalyticsConsent;
+          if (tcfAnalyticsConsent !== null) return tcfAnalyticsConsent;
+          return false;
+        }
+
+        function recordFailure(message, detail) {
+          setLastError(message);
+          if (!debug) return;
+          if (lastConfigFailure !== message) {
+            console.warn('[Twitter Pixel]', message, detail || undefined);
+          }
+          lastConfigFailure = message;
+        }
+
+        function clearFailures() {
+          setLastError(null);
+          lastConfigFailure = null;
+        }
+
+        function logDebugSummary(stage) {
+          if (!debug) return;
+          const status = {
+            hasTwq: typeof window.twq === 'function',
+            configured,
+            consent: hasAnalyticsConsent(),
+            pathname: window.location.pathname,
+            csp: cspProbeResult,
+          };
+          console.groupCollapsed('[Twitter Pixel] Debug summary');
+          console.log(`Stage: ${stage}`);
+          console.table([status]);
+          console.log(`${status.hasTwq ? '✅' : '❌'} hasTwq`);
+          console.log(`${status.configured ? '✅' : '❌'} configured`);
+          console.log(`${status.consent ? '✅' : '❌'} consent`);
+          const cspIndicator = status.csp === 'ok' ? '✅' : status.csp === 'blocked' ? '❌' : '⚠️';
+          console.log(`${cspIndicator} CSP (${status.csp})`);
+          console.log(`Path: ${status.pathname}`);
+          if (lastError) {
+            console.log('Last error:', lastError);
+          }
+          console.groupEnd();
+        }
+
+        function ensureConfigured(context) {
           if (configured) return true;
-          if (!hasAnalyticsConsent()) return false;
-          if (typeof window.twq !== 'function') return false;
-          try {
-            window.twq('config', PIXEL_ID, { use_1p: true });
-            configured = true;
-          } catch (error) {
-            console.warn('Twitter Pixel configuration error (non-blocking):', error);
+          if (!hasAnalyticsConsent()) {
+            recordFailure('Waiting for analytics consent', { context });
             return false;
           }
-          return true;
+          if (typeof window.twq !== 'function') {
+            recordFailure('Twitter Pixel loader not ready', { context });
+            return false;
+          }
+          try {
+            debugLog('info', `Configuring Twitter Pixel (${PIXEL_ID})`, { context, forceOverride });
+            window.twq('config', PIXEL_ID, { use_1p: true });
+            configured = true;
+            clearFailures();
+            debugLog('info', 'Twitter Pixel configured', { context });
+            logDebugSummary('configured');
+            return true;
+          } catch (error) {
+            recordFailure('Twitter Pixel configuration error', error);
+            return false;
+          }
         }
 
         function scheduleConsentChecks() {
           let attempts = 0;
           const timer = window.setInterval(() => {
             attempts += 1;
-            if (ensureConfigured() || attempts >= MAX_CONSENT_CHECKS) {
+            refreshConsentSignals();
+            if (ensureConfigured('consent-interval') || attempts >= MAX_CONSENT_CHECKS) {
               window.clearInterval(timer);
             }
           }, CONSENT_CHECK_INTERVAL);
@@ -547,16 +878,18 @@
             const clickId = params.get('twclid');
             if (clickId) {
               localStorage.setItem('twclid', clickId);
+              debugLog('info', 'Captured twclid', { clickId });
             }
           } catch (error) {
-            console.warn('Twitter Pixel click id capture failed (non-blocking):', error);
+            debugLog('warn', 'Twitter Pixel click id capture failed (non-blocking)', error);
           }
         }
 
         function getStoredTwclid() {
           try {
             return localStorage.getItem('twclid') || undefined;
-          } catch {
+          } catch (error) {
+            debugLog('debug', 'Unable to access stored twclid', error);
             return undefined;
           }
         }
@@ -564,7 +897,8 @@
         function generateConversionId() {
           try {
             return crypto.randomUUID();
-          } catch {
+          } catch (error) {
+            debugLog('debug', 'crypto.randomUUID unavailable, using fallback', error);
             return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
           }
         }
@@ -573,16 +907,71 @@
           const events = ['consent:updated', 'app:consent:updated', 'consentchange'];
           events.forEach((eventName) => {
             if (typeof window.addEventListener === 'function') {
-              window.addEventListener(eventName, ensureConfigured, { passive: true });
+              window.addEventListener(
+                eventName,
+                () => {
+                  refreshConsentSignals();
+                  ensureConfigured(`event:${eventName}`);
+                },
+                { passive: true },
+              );
             }
             if (typeof document.addEventListener === 'function') {
-              document.addEventListener(eventName, ensureConfigured, { passive: true });
+              document.addEventListener(
+                eventName,
+                () => {
+                  refreshConsentSignals();
+                  ensureConfigured(`event:${eventName}`);
+                },
+                { passive: true },
+              );
             }
           });
         }
 
+        function runCspProbe() {
+          if (!debug || typeof fetch !== 'function' || cspProbeAttempted) return;
+          cspProbeAttempted = true;
+          fetch('https://static.ads-twitter.com/uwt.js', { mode: 'no-cors', cache: 'no-store' })
+            .then(() => {
+              cspProbeResult = 'ok';
+              debugLog('info', 'CSP probe succeeded');
+              logDebugSummary('csp-ok');
+            })
+            .catch((error) => {
+              cspProbeResult = 'blocked';
+              recordFailure('Twitter Pixel loader blocked (CSP or network)', error);
+              console.error(
+                '[Twitter Pixel] uwt.js fetch failed. Ensure CSP allows static.ads-twitter.com, ads-twitter.com, ads-api.twitter.com, analytics.twitter.com, and t.co in both img-src and connect-src.',
+              );
+              logDebugSummary('csp-error');
+            });
+        }
+
+        window.__twStatus = function __twStatus() {
+          return {
+            hasTwq: typeof window.twq === 'function',
+            configured,
+            consent: hasAnalyticsConsent(),
+            path: window.location.pathname,
+            lastError: lastError || null,
+            csp: cspProbeResult,
+          };
+        };
+
         window.twqTrack = function twqTrack(eventName, properties) {
-          if (!ensureConfigured()) return undefined;
+          refreshConsentSignals();
+          const hasConsent = hasAnalyticsConsent();
+          if (!ensureConfigured(`track:${eventName}`)) {
+            if (debug) {
+              const reason = hasConsent ? 'pixel not ready' : 'missing consent';
+              debugLog('info', `Dropping ${eventName} event (${reason})`, {
+                event: eventName,
+                path: window.location.pathname,
+              });
+            }
+            return undefined;
+          }
 
           const payload = Object.assign({}, properties);
           const allowOnResults = Boolean(payload && payload[ALLOW_RESULTS_FLAG]);
@@ -590,11 +979,14 @@
             delete payload[ALLOW_RESULTS_FLAG];
           }
 
-          if (
-            RESULTS_PATH_PATTERN.test(window.location.pathname || '') &&
-            eventName !== 'PageView' &&
-            !allowOnResults
-          ) {
+          const onResultsRoute = RESULTS_PATH_PATTERN.test(window.location.pathname || '');
+          if (onResultsRoute && eventName !== 'PageView' && !allowOnResults) {
+            recordFailure('Event suppressed on results route');
+            if (debug) {
+              debugLog('info', `Dropping ${eventName} on results route`, {
+                path: window.location.pathname,
+              });
+            }
             return undefined;
           }
 
@@ -609,18 +1001,43 @@
 
           try {
             window.twq('track', eventName, payload);
+            clearFailures();
+            if (debug) {
+              debugLog('info', `Sent ${eventName}`, {
+                payload: sanitisePayloadForLog(payload),
+              });
+            }
           } catch (error) {
-            console.warn('Twitter Pixel track error (non-blocking):', error);
+            recordFailure('Twitter Pixel track error', error);
           }
 
           return payload.conversion_id;
         };
 
+        if (debug) {
+          window.twqTest = function twqTest() {
+            const conversionId = window.twqTrack
+              ? window.twqTrack('Lead', { test: true, [ALLOW_RESULTS_FLAG]: true })
+              : undefined;
+            debugLog('info', 'twqTest invoked', { conversionId });
+            return conversionId;
+          };
+        } else if ('twqTest' in window) {
+          try {
+            delete window.twqTest;
+          } catch (error) {
+            // no-op if delete fails
+          }
+        }
+
         captureTwclid();
         attachConsentListeners();
-        if (!ensureConfigured()) {
+        refreshConsentSignals();
+        if (!ensureConfigured('initial')) {
           scheduleConsentChecks();
         }
+        logDebugSummary('init');
+        runCspProbe();
       })();
     </script>
     <!-- End Twitter Pixel helpers -->
