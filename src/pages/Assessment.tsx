@@ -34,17 +34,17 @@ const Assessment = () => {
         { body: { session_id: sessionId, responses } },
       );
       if (error) throw error;
+      const payload = data as { ok?: boolean; results_url?: string } | null;
+      if (!payload?.ok || !payload.results_url) {
+        throw new Error('Finalize response missing results URL');
+      }
+      const target = new URL(payload.results_url);
       trackAssessmentComplete(sessionId, responses.length);
       trackLead(undefined, { source: 'assessment_complete' });
       queryClient.removeQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId) });
-      const token = (data as any)?.share_token;
-      navigate(
-        `/results/${sessionId}${token ? `?t=${token}` : ''}`,
-        { replace: true },
-      );
+      navigate(`${target.pathname}${target.search}`, { replace: true });
     } catch (e) {
       console.error('post-completion redirect failed', e);
-      navigate(`/results/${sessionId}`, { replace: true });
     } finally {
       setFinalizing(false);
     }
@@ -60,7 +60,21 @@ const Assessment = () => {
         .eq('session_id', resume);
 
       if ((count ?? 0) >= TOTAL_PRISM_QUESTIONS) {
-        navigate(`/results/${resume}`, { replace: true });
+        try {
+          const { data, error } = await supabase.functions.invoke(
+            'finalizeAssessment',
+            { body: { session_id: resume } },
+          );
+          if (error) throw error;
+          const payload = data as { ok?: boolean; results_url?: string } | null;
+          if (!payload?.ok || !payload.results_url) {
+            throw new Error('Finalize response missing results URL');
+          }
+          const target = new URL(payload.results_url);
+          navigate(`${target.pathname}${target.search}`, { replace: true });
+        } catch (err) {
+          console.error('resume finalize failed', err);
+        }
       }
     };
 

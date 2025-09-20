@@ -41,29 +41,20 @@ function AdminControls() {
     if (!sessionId) return;
     setBusy("session");
     try {
-      // Try direct scoring first
-      console.log('Attempting direct scoring for session:', sessionId.trim());
-      const scoreRes = await invokeEdge("score_prism", { session_id: sessionId.trim() });
-      console.log('Score result:', scoreRes);
-      
+      const { ok, results_url: resultsUrl } = await invokeEdge("finalizeAssessment", {
+        session_id: sessionId.trim(),
+      });
+
+      if (!ok) {
+        throw new Error("Finalize did not complete successfully");
+      }
+
       toast({
-        title: "Session scored",
-        description: `Session ${sessionId.trim()} has been scored successfully`,
+        title: "Session finalized",
+        description: resultsUrl ? `Results ready: ${resultsUrl}` : `Session ${sessionId.trim()} finalized`,
       });
     } catch (e: any) {
-      // If direct scoring fails, try recompute-profiles
-      try {
-        console.log('Direct scoring failed, trying recompute-profiles:', e.message);
-        const res = await invokeEdge("recompute-profiles", { sessionId: sessionId.trim() });
-        console.log('Recompute result:', res);
-        toast({
-          title: "Session recomputed", 
-          description: `Updated ${res?.updated ?? res?.count ?? 0} sessions`,
-        });
-      } catch (recomputeError: any) {
-        console.error('Both scoring methods failed:', { scoreError: e, recomputeError });
-        toast({ title: "Scoring failed", description: `${e.message} | ${recomputeError.message}`, variant: "destructive" });
-      }
+      toast({ title: "Finalization failed", description: e.message, variant: "destructive" });
     } finally {
       setBusy(null);
     }
