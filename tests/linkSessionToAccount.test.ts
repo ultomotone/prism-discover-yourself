@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import supabase from '../src/lib/supabaseClient';
+import supabase, { SUPABASE_ANON_KEY } from '../src/lib/supabaseClient';
 import { ensureSessionLinked, linkSessionToAccount } from '../src/services/sessionLinking';
 
 const originalFetch = globalThis.fetch;
@@ -30,10 +30,11 @@ test.beforeEach(() => {
 });
 
 test('ensureSessionLinked sends POST with payload and returns true on 200', async () => {
-  const calls: Array<{ url: string; body: any }> = [];
+  const calls: Array<{ url: string; body: any; headers: Record<string, string> }> = [];
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const body = init?.body ? JSON.parse(String(init.body)) : null;
-    calls.push({ url: String(input), body });
+    const headers = new Headers(init?.headers ?? {});
+    calls.push({ url: String(input), body, headers: Object.fromEntries(headers.entries()) });
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   }) as typeof fetch;
 
@@ -47,6 +48,8 @@ test('ensureSessionLinked sends POST with payload and returns true on 200', asyn
     user_id: TEST_USER_ID,
     email: 'a@b.com',
   });
+  assert.equal(calls[0].headers.apikey, SUPABASE_ANON_KEY);
+  assert.equal(calls[0].headers.authorization, 'Bearer test-token');
 });
 
 test('ensureSessionLinked treats 409 as success', async () => {

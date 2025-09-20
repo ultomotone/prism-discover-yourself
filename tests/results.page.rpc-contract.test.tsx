@@ -19,11 +19,12 @@ const StubResultsView = ({ profile }: any) => (
 
 const originalFetch = globalThis.fetch;
 
-function createFetchStub(responseFactory: (url: string, body: any) => Response | Promise<Response>) {
+type FetchCall = { url: string; init?: RequestInit };
+
+function createFetchStub(responseFactory: (call: FetchCall) => Response | Promise<Response>) {
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
-    const payload = init?.body ? JSON.parse(String(init.body)) : null;
-    return responseFactory(url, payload);
+    return responseFactory({ url, init });
   }) as typeof fetch;
 }
 
@@ -36,7 +37,7 @@ function successPayload(sessionId: string, typeCode = "LII") {
 }
 
 const { default: Results } = await import("@/pages/Results");
-const { supabase } = await import("@/lib/supabaseClient");
+const { supabase, SUPABASE_ANON_KEY } = await import("@/lib/supabaseClient");
 
 const originalChannel = supabase.channel.bind(supabase);
 const originalRemoveChannel = supabase.removeChannel.bind(supabase);
@@ -102,9 +103,11 @@ after(() => {
 test(
   "Results page → RPC contract + render: calls function with session + token and renders",
   async () => {
-    const calls: Array<{ url: string; body: any }> = [];
-    createFetchStub((url, body) => {
-      calls.push({ url, body });
+    const calls: Array<{ url: string; body: any; headers: Record<string, string> }> = [];
+    createFetchStub(({ url, init }) => {
+      const body = init?.body ? JSON.parse(String(init.body)) : null;
+      const headers = new Headers(init?.headers ?? {});
+      calls.push({ url, body, headers: Object.fromEntries(headers.entries()) });
       if (url.endsWith("/link_session_to_account")) {
         return new Response("{}", { status: 200 });
       }
@@ -122,15 +125,19 @@ test(
     const getResultsCall = calls.find((c) => c.url.endsWith("/get-results-by-session"));
     assert.ok(getResultsCall);
     assert.deepEqual(getResultsCall!.body, { session_id: "sess-123", share_token: "tok-abc" });
+    assert.equal(getResultsCall!.headers.apikey, SUPABASE_ANON_KEY);
+    assert.equal(getResultsCall!.headers.authorization, undefined);
   }
 );
 
 test(
   "Results page → RPC contract + render: passes undefined token when query lacks t",
   async () => {
-    const calls: Array<{ url: string; body: any }> = [];
-    createFetchStub((url, body) => {
-      calls.push({ url, body });
+    const calls: Array<{ url: string; body: any; headers: Record<string, string> }> = [];
+    createFetchStub(({ url, init }) => {
+      const body = init?.body ? JSON.parse(String(init.body)) : null;
+      const headers = new Headers(init?.headers ?? {});
+      calls.push({ url, body, headers: Object.fromEntries(headers.entries()) });
       if (url.endsWith("/link_session_to_account")) {
         return new Response("{}", { status: 200 });
       }
@@ -148,13 +155,14 @@ test(
     const getResultsCall = calls.find((c) => c.url.endsWith("/get-results-by-session"));
     assert.ok(getResultsCall);
     assert.deepEqual(getResultsCall!.body, { session_id: "sess-xyz" });
+    assert.equal(getResultsCall!.headers.apikey, SUPABASE_ANON_KEY);
   }
 );
 
 test(
   "Results page → RPC contract + render: surfaces error state when backend throws",
   async () => {
-    createFetchStub((url) => {
+    createFetchStub(({ url }) => {
       if (url.endsWith("/link_session_to_account")) {
         return new Response("{}", { status: 200 });
       }

@@ -1,6 +1,7 @@
 import supabase from "@/lib/supabaseClient";
 import { buildAuthHeaders } from "@/lib/authSession";
 import { IS_PREVIEW } from "@/lib/env";
+import { buildEdgeRequestHeaders, resolveSupabaseFunctionsBase } from "@/services/supabaseEdge";
 
 export class ResultsApiError extends Error {
   status?: number;
@@ -10,23 +11,6 @@ export class ResultsApiError extends Error {
     this.name = "ResultsApiError";
     this.status = status;
   }
-}
-
-let cachedFunctionsBase: string | null = null;
-
-function resolveFunctionsBase(): string {
-  if (cachedFunctionsBase) return cachedFunctionsBase;
-
-  const envUrl =
-    (typeof process !== "undefined" ? process.env?.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL : undefined) ??
-    (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_SUPABASE_URL
-      ? `${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1`
-      : undefined);
-
-  const resolved = envUrl ?? "https://gnkuikentdtnatazeriu.supabase.co/functions/v1";
-
-  cachedFunctionsBase = resolved;
-  return cachedFunctionsBase;
 }
 
 export type ResultsFetchPayload = Record<string, any>;
@@ -57,11 +41,11 @@ export async function fetchResultsBySession(
     throw new Error("sessionId is required");
   }
 
-  const url = `${resolveFunctionsBase()}/get-results-by-session`;
-  const headers: Record<string, string> = {
+  const url = `${resolveSupabaseFunctionsBase()}/get-results-by-session`;
+  const headers = buildEdgeRequestHeaders({
     "Content-Type": "application/json",
     "Cache-Control": "no-store",
-  };
+  });
 
   const body: Record<string, unknown> = { session_id: sessionId };
 

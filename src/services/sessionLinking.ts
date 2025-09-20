@@ -3,23 +3,7 @@ import type { User } from "@supabase/supabase-js";
 import { buildAuthHeaders } from "@/lib/authSession";
 import supabase from "@/lib/supabaseClient";
 import { IS_PREVIEW } from "@/lib/env";
-
-let cachedFunctionsBase: string | null = null;
-
-function resolveFunctionsBase(): string {
-  if (cachedFunctionsBase) return cachedFunctionsBase;
-
-  const envUrl =
-    (typeof process !== "undefined" ? process.env?.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL : undefined) ??
-    (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_SUPABASE_URL
-      ? `${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1`
-      : undefined);
-
-  const resolved = envUrl ?? "https://gnkuikentdtnatazeriu.supabase.co/functions/v1";
-
-  cachedFunctionsBase = resolved;
-  return cachedFunctionsBase;
-}
+import { buildEdgeRequestHeaders, resolveSupabaseFunctionsBase } from "@/services/supabaseEdge";
 
 export type EnsureSessionLinkedArgs = {
   supabase?: unknown;
@@ -34,13 +18,18 @@ async function invokeLink(
   body: Record<string, unknown>,
   authHeaders: Record<string, string>
 ): Promise<Response> {
-  return fetch(`${resolveFunctionsBase()}/link_session_to_account`, {
+  const headers = buildEdgeRequestHeaders({
+    "Content-Type": "application/json",
+    "Cache-Control": "no-store",
+  });
+
+  if (authHeaders.Authorization) {
+    headers.Authorization = authHeaders.Authorization;
+  }
+
+  return fetch(`${resolveSupabaseFunctionsBase()}/link_session_to_account`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-store",
-      ...authHeaders,
-    },
+    headers,
     body: JSON.stringify(body),
   });
 }
