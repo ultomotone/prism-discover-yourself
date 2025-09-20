@@ -19,8 +19,20 @@ const ALLOW_RESULTS_FLAG = '__allowResults';
 
 declare global {
   interface Window {
+    __TW_DEBUG__?: boolean;
+    __TW_FORCE__?: boolean;
+    __TW_LAST_ERROR__?: string;
+    __twStatus?: () => {
+      hasTwq: boolean;
+      configured: boolean;
+      consent: boolean;
+      path: string;
+      lastError: string | null;
+      csp?: string;
+    };
     twq?: (...args: unknown[]) => void;
     twqTrack?: (eventName: string, props?: Record<string, unknown>) => string | undefined;
+    twqTest?: () => string | undefined;
   }
 }
 
@@ -47,12 +59,24 @@ export const sendTwitterEvent = (
   options: TwitterTrackOptions = {},
 ): string | undefined => {
   if (IS_PREVIEW) return undefined;
-  if (typeof window === 'undefined' || typeof window.twqTrack !== 'function') return undefined;
+  if (typeof window === 'undefined') return undefined;
+  if (window.__TW_DEBUG__ === true && typeof window.twqTrack !== 'function') {
+    console.warn('[Twitter Pixel] twqTrack unavailable; dropping event', { eventName });
+  }
+  if (typeof window.twqTrack !== 'function') return undefined;
 
   const payload: Record<string, unknown> = sanitizeMetadata(props);
 
   if (options.allowOnResults) {
     payload[ALLOW_RESULTS_FLAG] = true;
+  }
+
+  if (window.__TW_DEBUG__ === true) {
+    console.info('[Twitter Pixel] sendTwitterEvent', {
+      eventName,
+      payloadKeys: Object.keys(payload),
+      allowOnResults: Boolean(options.allowOnResults),
+    });
   }
 
   try {
@@ -68,5 +92,9 @@ export const sendTwitterPageView = (path?: string) => {
   if (path) {
     props.page_path = path;
   }
-  sendTwitterEvent('PageView', props);
+  if (typeof window !== 'undefined' && window.__TW_DEBUG__ === true) {
+    const resolvedPath = path ?? window.location.pathname;
+    console.info('[Twitter Pixel] PageView requested', { path: resolvedPath });
+  }
+  sendTwitterEvent('PageView', props, { allowOnResults: true });
 };
