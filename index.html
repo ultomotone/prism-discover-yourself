@@ -226,11 +226,69 @@
       }
 
       // Wrapper to attach an eventID and fbc; returns the id we used
+      const FB_LOG_DEV = (() => {
+        try {
+          const host = (window.location && window.location.hostname) || '';
+          return host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local');
+        } catch (err) {
+          console.warn('fbTrack host detection failed', err);
+          return false;
+        }
+      })();
+
+      function validateFbDpaPayload(eventName, props) {
+        if (eventName !== 'AddToCart' && eventName !== 'Purchase') {
+          return true;
+        }
+
+        const hasContents = Array.isArray(props.contents) && props.contents.length > 0;
+        const hasContentIds = Array.isArray(props.content_ids) && props.content_ids.length > 0;
+        if (!hasContents && !hasContentIds) {
+          console.warn(`fbTrack ${eventName} skipped: missing contents/content_ids`, props);
+          return false;
+        }
+
+        if (!props.content_type) {
+          props.content_type = 'product';
+        }
+
+        if (eventName === 'Purchase') {
+          if (typeof props.value !== 'number' || !Number.isFinite(props.value)) {
+            console.warn(`fbTrack ${eventName} skipped: invalid value`, props);
+            return false;
+          }
+          if (typeof props.currency !== 'string' || !props.currency.trim()) {
+            console.warn(`fbTrack ${eventName} skipped: missing currency`, props);
+            return false;
+          }
+        }
+
+        return true;
+      }
+
+      function logFbPayload(eventName, props) {
+        if (!FB_LOG_DEV) return;
+        if (eventName !== 'AddToCart' && eventName !== 'Purchase') return;
+        try {
+          const snapshot = JSON.parse(JSON.stringify(props));
+          console.debug(`[fbTrack:${eventName}]`, snapshot);
+        } catch {
+          console.debug(`[fbTrack:${eventName}]`, props);
+        }
+      }
+
       window.fbTrack = function(eventName, props){
         props = props || {};
         if (!props.eventID) props.eventID = convUUID();
         const clickId = props.fbc || getFBClickId();
         if (clickId) props.fbc = `fb.1.${Date.now()}.${clickId}`;
+
+        if (!validateFbDpaPayload(eventName, props)) {
+          return '';
+        }
+
+        logFbPayload(eventName, props);
+
         if (window.fbq) {
           if (eventName === 'Custom' && props.custom_event_name) {
             fbq('trackCustom', props.custom_event_name, props);
