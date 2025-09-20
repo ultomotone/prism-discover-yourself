@@ -9,6 +9,7 @@ import React, {
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { ResultsV2 } from "@/components/assessment/ResultsV2";
+import { PaywallGuard } from "@/components/PaywallGuard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link as LinkIcon, Copy, Download, RotateCcw } from "lucide-react";
@@ -23,9 +24,19 @@ import { IS_PREVIEW } from "@/lib/env";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { resultsQueryKeys } from "@/features/results/queryKeys";
 
+type ResultsProfile = {
+  paid: boolean;
+  type_code?: string;
+  dims_highlights?: {
+    coherent?: string[];
+    unique?: string[];
+  };
+  [key: string]: any;
+};
+
 type ResultsPayload = {
   session: { id: string; status: string };
-  profile: any;
+  profile?: ResultsProfile;
   types?: any[];
   functions?: any[];
   state?: any[];
@@ -39,8 +50,8 @@ type ResultsResponse = ResultsPayload & {
 };
 
 type ResultsComponents = {
-  ResultsView?: ComponentType<{ 
-    profile: any; 
+  ResultsView?: ComponentType<{
+    profile: ResultsProfile | undefined;
     types?: any[];
     functions?: any[];
     state?: any[];
@@ -284,9 +295,21 @@ export default function Results({ components }: ResultsProps = {}) {
 
   const loading = resultsQuery.isPending && !data && !err && !errKind;
 
+  if (data?.profile) {
+    data = {
+      ...data,
+      profile: {
+        ...data.profile,
+        paid: Boolean(data.profile.paid),
+      },
+    };
+  }
+
   if (!hasShareToken) {
     errKind = "expired_or_invalid_token";
   }
+
+  const profile = data?.profile ?? undefined;
 
   useEffect(() => {
     if (!sessionId) return;
@@ -336,10 +359,10 @@ export default function Results({ components }: ResultsProps = {}) {
   }, [queryClient, sessionId]);
 
   useEffect(() => {
-    if (data?.profile) {
-      trackResultsViewed(sessionId, (data.profile as any)?.type_code);
+    if (profile) {
+      trackResultsViewed(sessionId, (profile as any)?.type_code);
     }
-  }, [data?.profile, sessionId]);
+  }, [profile, sessionId]);
 
   useEffect(() => {
     linkAttemptedRef.current = false;
@@ -428,14 +451,14 @@ export default function Results({ components }: ResultsProps = {}) {
     return <div className="p-8">No results available.</div>;
   }
 
-  return (
+  const fullResults = (
     <div className="min-h-screen bg-background">
-      {query.get("debug") === "1" && data.profile && (
+      {query.get("debug") === "1" && profile && (
         <div className="fixed top-2 right-2 bg-black/70 text-white text-xs p-2 rounded">
-          <div>version: {data.profile.version}</div>
-          <div>fc_source: {data.profile.fc_source || "none"}</div>
+          <div>version: {profile?.version}</div>
+          <div>fc_source: {profile?.fc_source || "none"}</div>
           <div>
-            {data.profile.top_types
+            {profile?.top_types
               ?.slice(0, 3)
               .map((t: any) => `${t.code}:${Number(t.share).toFixed(3)}`)
               .join(" ")}
@@ -445,8 +468,8 @@ export default function Results({ components }: ResultsProps = {}) {
 
       <div className="py-8 px-4 space-y-6">
         <div id="results-content">
-          <ResultsView 
-            profile={data.profile} 
+          <ResultsView
+            profile={profile}
             types={data.types}
             functions={data.functions}
             state={data.state}
@@ -514,5 +537,11 @@ export default function Results({ components }: ResultsProps = {}) {
         </Card>
       </div>
     </div>
+  );
+
+  return (
+    <PaywallGuard profile={profile} sessionId={sessionId}>
+      {fullResults}
+    </PaywallGuard>
   );
 }

@@ -37,9 +37,10 @@ export function safeObject<T extends Record<string, any>>(value: any, defaultVal
  */
 export function normalizeProfileData(p: any): any {
   if (!p) return p;
-  
+
   return {
     ...p,
+    paid: Boolean(p?.paid),
     // Ensure critical nested properties exist
     dims_highlights: {
       coherent: safeArray(p?.dims_highlights?.coherent),
@@ -64,6 +65,7 @@ export interface Profile {
   base_func: Func;
   creative_func: Func;
   overlay: '+' | '–';
+  paid: boolean;
   strengths: Record<Func, number>;
   dimensions: Record<Func, number>; // 1..4
   blocks: { Core: number; Critic: number; Hidden: number; Instinct: number };

@@ -23,6 +23,7 @@ const TEST_FILES = [
   'tests/individualsPage.test.tsx',
   'tests/organizationsPage.test.tsx',
   'tests/serviceCard.test.tsx',
+  'tests/paywall.guard.test.tsx',
   'tests/tiktokCapi.test.ts',
   'tests/tiktokClient.test.ts',
   'tests/getUserJwt.test.ts',

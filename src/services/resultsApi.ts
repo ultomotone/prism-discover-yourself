@@ -13,21 +13,45 @@ export class ResultsApiError extends Error {
   }
 }
 
-export type ResultsFetchPayload = Record<string, any>;
+export type ResultsProfilePayload = Record<string, any> & {
+  paid?: boolean;
+};
+
+export type ResultsFetchPayload = Record<string, any> & {
+  profile?: ResultsProfilePayload;
+};
 
 type FetchResponse = ResultsFetchPayload & {
   ok?: boolean;
   code?: string;
   error?: string;
-  profile?: ResultsFetchPayload;
+  profile?: ResultsProfilePayload;
   results_version?: string;
 };
+
+function normalizeProfilePayload(profile: ResultsProfilePayload): ResultsProfilePayload {
+  return {
+    ...profile,
+    paid: Boolean(profile?.paid),
+  };
+}
+
+function ensureProfile<T extends { profile?: ResultsProfilePayload }>(payload: T): T {
+  if (!payload?.profile) {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    profile: normalizeProfilePayload(payload.profile),
+  };
+}
 
 function buildFallback(payload: FetchResponse): FetchResponse {
   if (payload.profile) {
     return {
       results_version: payload.results_version ?? "v1",
-      profile: payload.profile,
+      profile: normalizeProfilePayload(payload.profile),
     };
   }
   return payload;
@@ -79,7 +103,7 @@ export async function fetchResultsBySession(
       body: JSON.stringify(body),
     });
 
-    const payload: FetchResponse = await response.json().catch(() => ({}));
+    const payload: FetchResponse = ensureProfile(await response.json().catch(() => ({})));
 
     if (!response.ok) {
       if (payload.profile) {
@@ -117,4 +141,9 @@ export async function fetchResultsBySession(
     logFailure(sessionId, shareToken, undefined);
     throw new ResultsApiError("Failed to fetch results");
   }
+}
+
+export async function markResultsPaid(sessionId: string): Promise<void> {
+  if (!sessionId) return;
+  // Billing integration will be added in a follow-up. Intentionally left blank for now.
 }
