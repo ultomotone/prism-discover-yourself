@@ -20,6 +20,8 @@ import { classifyRpcError, type RpcErrorCategory } from "@/features/results/erro
 import { fetchResultsBySession } from "@/services/resultsApi";
 import { ensureSessionLinked } from "@/services/sessionLinking";
 import { IS_PREVIEW } from "@/lib/env";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { resultsQueryKeys } from "@/features/results/queryKeys";
 
 type ResultsPayload = {
   session: { id: string; status: string };
@@ -30,7 +32,11 @@ type ResultsPayload = {
   results_version?: string;
 };
 
-type RotateResponse = { share_token: string };
+type ResultsResponse = ResultsPayload & {
+  ok?: boolean;
+  code?: string;
+  error?: string;
+};
 
 type ResultsComponents = {
   ResultsView?: ComponentType<{ 
@@ -55,6 +61,7 @@ export default function Results({ components }: ResultsProps = {}) {
     [location.search]
   );
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const sessionId = useMemo(
     () => paramId || query.get("sessionId") || "",
@@ -90,10 +97,6 @@ export default function Results({ components }: ResultsProps = {}) {
     setShareToken(query.get("t") ?? null);
   }, [query]);
 
-  const [data, setData] = useState<ResultsPayload | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  const [errKind, setErrKind] = useState<RpcErrorCategory | null>(null);
-  const [loading, setLoading] = useState(true);
   const [rotating, setRotating] = useState(false);
   const linkAttemptedRef = useRef(false);
 
@@ -160,6 +163,7 @@ export default function Results({ components }: ResultsProps = {}) {
       }
 
       setShareToken(newToken);
+      queryClient.removeQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId) });
       window.history.replaceState(
         null,
         "",
@@ -172,7 +176,7 @@ export default function Results({ components }: ResultsProps = {}) {
     } finally {
       setRotating(false);
     }
-  }, [sessionId, navigate]);
+  }, [navigate, queryClient, sessionId]);
 
   const downloadPDF = async () => {
     const node = document.getElementById("results-content");
@@ -200,63 +204,128 @@ export default function Results({ components }: ResultsProps = {}) {
     pdf.save("PRISM_Profile.pdf");
   };
 
+  const resultsQuery = useQuery<ResultsResponse | null>({
+    queryKey: resultsQueryKeys.session(sessionId, shareToken),
+    queryFn: () => fetchResultsBySession(sessionId, shareToken ?? undefined) as Promise<ResultsResponse>,
+    enabled: Boolean(sessionId),
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: (currentData) => {
+      const data = currentData as ResultsResponse | undefined;
+      if (!data) return 2500;
+      if (data.ok === false && data.code === "SCORING_ROWS_MISSING" && !data.profile) {
+        return 2500;
+      }
+      if (!data.profile) {
+        return 2500;
+      }
+      return false;
+    },
+    retry: (failureCount, error) => {
+      const kind = classifyRpcError(error);
+      if (kind === "expired_or_invalid_token" || kind === "not_authorized") {
+        return false;
+      }
+      if (kind === "transient") {
+        return failureCount < 4;
+      }
+      return false;
+    },
+    gcTime: 1000 * 60 * 10,
+    staleTime: 0,
+  });
+
+  const derivedState = useMemo(() => {
+    const result = resultsQuery.data as ResultsResponse | undefined;
+    if (!result) {
+      return { data: null as ResultsPayload | null, err: null as string | null };
+    }
+
+    if (result.ok === false) {
+      if (result.code === "SCORING_ROWS_MISSING" && result.profile) {
+        return { data: result, err: null };
+      }
+      if (result.code === "SCORING_ROWS_MISSING") {
+        return { data: null, err: "Results updating—recompute required." };
+      }
+      return { data: null, err: result.error ?? "Failed to load results" };
+    }
+
+    if (!result.profile) {
+      return { data: null, err: "Profile not found" };
+    }
+
+    return { data: result, err: null };
+  }, [resultsQuery.data]);
+
+  let err: string | null = derivedState.err;
+  let errKind: RpcErrorCategory | null = null;
+  let data: ResultsPayload | null = derivedState.data;
+
+  if (resultsQuery.error) {
+    const kind = classifyRpcError(resultsQuery.error);
+    if (kind === "expired_or_invalid_token" || kind === "not_authorized") {
+      err = null;
+      errKind = kind;
+      data = null;
+    } else {
+      err =
+        resultsQuery.error instanceof Error && resultsQuery.error.message
+          ? resultsQuery.error.message
+          : "Failed to load results";
+      errKind = null;
+      data = null;
+    }
+  }
+
+  const loading = resultsQuery.isPending && !data && !err && !errKind;
+
   useEffect(() => {
     if (!sessionId) return;
 
-    let cancelled = false;
-
-    (async () => {
-      setLoading(true);
-      setErr(null);
-      setErrKind(null);
-
-      try {
-        const result = await fetchResultsBySession(sessionId, shareToken);
-
-        if (cancelled) return;
-
-        if (result?.ok === false) {
-          if (result.code === 'SCORING_ROWS_MISSING' && result.profile) {
-            setData(result);
-            return;
-          }
-          if (result.code === 'SCORING_ROWS_MISSING') {
-            setErr('Results updating—recompute required.');
-            return;
-          }
-          throw new Error(result?.error ?? 'Failed to load results');
+    const channel = supabase
+      .channel(`results-session-${sessionId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "assessment_sessions", filter: `id=eq.${sessionId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId), exact: false });
         }
-
-        if (!result?.profile) {
-          throw new Error('Profile not found');
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "profiles", filter: `session_id=eq.${sessionId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId), exact: false });
         }
-
-        setData(result);
-      } catch (e: any) {
-        if (cancelled) return;
-        const kind = classifyRpcError(e);
-        if (kind === 'expired_or_invalid_token' || kind === 'not_authorized') {
-          setErrKind(kind);
-          setErr(null);
-        } else {
-          setErr(
-            e?.message && typeof e.message === 'string'
-              ? e.message
-              : 'Failed to load results'
-          );
-          setErrKind(null);
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "scoring_results_types", filter: `session_id=eq.${sessionId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId), exact: false });
         }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "scoring_results_functions", filter: `session_id=eq.${sessionId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId), exact: false });
         }
-      }
-    })();
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "scoring_results_state", filter: `session_id=eq.${sessionId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId), exact: false });
+        }
+      )
+      .subscribe();
 
     return () => {
-      cancelled = true;
+      void supabase.removeChannel(channel);
     };
-  }, [sessionId, shareToken]);
+  }, [queryClient, sessionId]);
 
   useEffect(() => {
     if (data?.profile) {

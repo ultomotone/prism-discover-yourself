@@ -1,6 +1,16 @@
 import supabase from "@/lib/supabaseClient";
 import { IS_PREVIEW } from "@/lib/env";
 
+export class ResultsApiError extends Error {
+  status?: number;
+
+  constructor(message: string, status?: number) {
+    super(message);
+    this.name = "ResultsApiError";
+    this.status = status;
+  }
+}
+
 let cachedFunctionsBase: string | null = null;
 
 function resolveFunctionsBase(): string {
@@ -88,7 +98,7 @@ export async function fetchResultsBySession(
         typeof payload.error === "string" && payload.error.length > 0
           ? payload.error
           : `get-results-by-session ${response.status}`;
-      throw new Error(message);
+      throw new ResultsApiError(message, response.status);
     }
 
     if (payload.ok === false) {
@@ -107,6 +117,6 @@ export async function fetchResultsBySession(
     if (error instanceof Error) {
       throw error;
     }
-    throw new Error("Failed to fetch results");
+    throw new ResultsApiError("Failed to fetch results");
   }
 }
