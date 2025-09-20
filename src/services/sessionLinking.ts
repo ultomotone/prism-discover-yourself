@@ -1,3 +1,6 @@
+import type { User } from "@supabase/supabase-js";
+
+import { buildAuthHeaders } from "@/lib/authSession";
 import supabase from "@/lib/supabaseClient";
 import { IS_PREVIEW } from "@/lib/env";
 
@@ -27,24 +30,34 @@ export type EnsureSessionLinkedArgs = {
 
 export type LinkResult = { ok: true } | { ok: false; code?: string; error?: unknown };
 
-async function invokeLink(body: Record<string, unknown>): Promise<Response> {
+async function invokeLink(
+  body: Record<string, unknown>,
+  authHeaders: Record<string, string>
+): Promise<Response> {
   return fetch(`${resolveFunctionsBase()}/link_session_to_account`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      ...authHeaders,
+    },
     body: JSON.stringify(body),
   });
 }
 
-async function linkWithSupabaseAuth(sessionId: string, email?: string): Promise<LinkResult> {
+async function linkWithSupabaseAuth(
+  sessionId: string,
+  authUser: User,
+  email: string | undefined,
+  authHeaders: Record<string, string>
+): Promise<LinkResult> {
   try {
-    const { data: authData } = await supabase.auth.getUser();
-    const authUser = authData?.user;
-    if (!authUser?.id) {
-      return { ok: false, code: "NO_AUTH" };
-    }
-
     const { data, error } = await supabase.functions.invoke("link_session_to_account", {
       body: { session_id: sessionId, user_id: authUser.id, email: email ?? authUser.email ?? null },
+      headers: {
+        ...authHeaders,
+        "Cache-Control": "no-store",
+      },
     });
 
     if (error) {
@@ -101,7 +114,22 @@ export async function linkSessionToAccount(
     return { ok: false, code: "INVALID_INPUT" };
   }
 
-  const viaAuth = await linkWithSupabaseAuth(sessionId, email);
+  const { data: authData } = await supabase.auth.getUser();
+  const authUser = authData?.user;
+  if (!authUser?.id) {
+    return { ok: false, code: "NO_AUTH" };
+  }
+
+  if (authUser.id !== userId) {
+    return { ok: false, code: "USER_MISMATCH" };
+  }
+
+  const authHeaders = await buildAuthHeaders();
+  if (!authHeaders.Authorization) {
+    return { ok: false, code: "NO_AUTH" };
+  }
+
+  const viaAuth = await linkWithSupabaseAuth(sessionId, authUser, email, authHeaders);
   if (viaAuth.ok) {
     return viaAuth;
   }
@@ -111,7 +139,7 @@ export async function linkSessionToAccount(
       session_id: sessionId,
       user_id: userId,
       email: email ?? null,
-    });
+    }, authHeaders);
 
     if (response.status === 200 || response.status === 204 || response.status === 409) {
       return { ok: true };
