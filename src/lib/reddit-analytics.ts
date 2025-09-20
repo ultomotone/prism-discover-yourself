@@ -13,28 +13,59 @@ export interface RedditEventProps {
   email?: string;
   content_name?: string;
   custom_event_name?: string;
+  customEventName?: string;
+  name?: string;
   value?: number;
   currency?: string;
   transaction_id?: string;
   [key: string]: any;
 }
 
+let warnedMissingCustomEventName = false;
+
+const normalizeCustomEventProps = (eventName: string, props: RedditEventProps): RedditEventProps | undefined => {
+  if (eventName !== 'Custom') return props;
+  const customName = props.custom_event_name || props.customEventName || props.name;
+  if (!customName) {
+    if (!warnedMissingCustomEventName) {
+      warnedMissingCustomEventName = true;
+      console.warn('Reddit Custom event skipped: missing custom event name', props);
+    }
+    return undefined;
+  }
+  return {
+    ...props,
+    custom_event_name: customName,
+    customEventName: customName,
+  };
+};
+
 // Reddit event tracking utility - handles both pixel and CAPI
 export const trackRedditEvent = (eventName: string, props: RedditEventProps = {}) => {
   if (typeof window === 'undefined') return;
 
   try {
+    const normalizedProps = normalizeCustomEventProps(eventName, props);
+    if (!normalizedProps) {
+      return;
+    }
+
     // Track via Reddit pixel if available
     if (window.rdtTrack) {
-      return window.rdtTrack(eventName, props);
+      return window.rdtTrack(eventName, normalizedProps);
     }
-    
+
     // Fallback: direct pixel call if rdtTrack not available
     if (window.rdt) {
       const enrichedProps = {
         conversion_id: generateConversionId(),
-        ...props
+        ...normalizedProps
       };
+      if (eventName === 'Custom') {
+        const customName = enrichedProps.custom_event_name as string;
+        enrichedProps.custom_event_name = customName;
+        (enrichedProps as any).customEventName = customName;
+      }
       window.rdt('track', eventName, enrichedProps);
       return enrichedProps.conversion_id;
     }
@@ -111,6 +142,7 @@ export const trackRedditPurchase = (value: number, currency: string = 'USD', tra
 export const trackRedditCustom = (customEventName: string, metadata: Record<string, any> = {}) => {
   return trackRedditEvent('Custom', {
     custom_event_name: customEventName,
+    customEventName: customEventName,
     ...metadata
   });
 };

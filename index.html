@@ -343,9 +343,23 @@
         catch { return undefined; }
       }
 
+      let redditCustomNameWarned = false;
+
       // Wrapper to always attach a conversion_id and click_id; returns the id we used
         window.rdtTrack = function(eventName, props){
           props = props || {};
+          if (eventName === 'Custom') {
+            const customName = props.custom_event_name || props.customEventName || props.name;
+            if (!customName) {
+              if (!redditCustomNameWarned) {
+                redditCustomNameWarned = true;
+                console.warn('Reddit Custom event skipped: missing custom event name', props);
+              }
+              return '';
+            }
+            props.custom_event_name = customName;
+            props.customEventName = customName;
+          }
           if (!props.conversion_id) props.conversion_id = convUUID();
           const clickId = props.click_id || getClickId();
           if (clickId) props.click_id = clickId;
@@ -353,15 +367,19 @@
             props.email = window.redditNormalizeEmail(props.email);
           }
           if (window.rdt) rdt('track', eventName, props);
+          const customName = eventName === 'Custom' ? props.custom_event_name : undefined;
+          const requestBody = {
+            event_name: customName || eventName,
+            event_type: eventName,
+            conversion_id: props.conversion_id,
+            click_id: props.click_id,
+            email: props.email,
+            ...(customName ? { custom_event_name: customName } : {}),
+          };
           const requestInit = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              event_name: eventName,
-              conversion_id: props.conversion_id,
-              click_id: props.click_id,
-              email: props.email,
-            }),
+            body: JSON.stringify(requestBody),
             keepalive: true,
           };
           try {

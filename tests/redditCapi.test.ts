@@ -26,9 +26,36 @@ test('sends event to Reddit CAPI', async () => {
   assert.equal(calls[1].url, 'https://ads-api.reddit.com/api/v2/conversions');
   const body = JSON.parse(calls[1].options.body);
   assert.equal(body.events[0].event_type, 'SignUp');
+  assert.equal(body.events[0].event_name, 'SignUp');
   assert.equal(body.events[0].conversion_id, 'c1');
   assert.equal(body.events[0].click_id, 'cid');
   assert.equal(body.events[0].user.hashed_email, 'hash');
+  assert.ok(!('custom_event_name' in body.events[0]));
+});
+
+test('includes custom event fields for Custom events', async () => {
+  resetEnv();
+  process.env.REDDIT_CLIENT_ID = 'id';
+  process.env.REDDIT_CLIENT_SECRET = 'secret';
+  process.env.REDDIT_PIXEL_ID = 'pixel';
+  const calls: Array<{ url: string; options: any }> = [];
+  globalThis.fetch = async (url: any, options: any) => {
+    calls.push({ url: String(url), options });
+    if (String(url).includes('access_token')) {
+      return { ok: true, json: async () => ({ access_token: 'tok' }) } as any;
+    }
+    return { ok: true, json: async () => ({ ok: true }) } as any;
+  };
+  await sendRedditCapiEvent({
+    event_name: 'AssessmentComplete',
+    event_type: 'Custom',
+    custom_event_name: 'AssessmentComplete',
+    conversion_id: 'c42',
+  });
+  const body = JSON.parse(calls[1].options.body);
+  assert.equal(body.events[0].event_type, 'Custom');
+  assert.equal(body.events[0].event_name, 'AssessmentComplete');
+  assert.equal(body.events[0].custom_event_name, 'AssessmentComplete');
 });
 
 test('throws on missing env', async () => {
