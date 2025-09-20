@@ -26,8 +26,7 @@ type MockSession = {
   updated_at: string | null;
 };
 
-test("finalizeAssessmentCore is idempotent and logs cache path", async () => {
-  const logs: Record<string, unknown>[] = [];
+test("finalizeAssessmentCore is idempotent and reports path", async () => {
   const now = new Date("2024-01-01T00:00:00.000Z");
   let profileStore: MockProfile | null = null;
   let sessionStore: MockSession = {
@@ -81,8 +80,8 @@ test("finalizeAssessmentCore is idempotent and logs cache path", async () => {
     },
     buildResultsUrl: (_base: string, sessionId: string, token: string) => `/results/${sessionId}?t=${token}`,
     now: () => now,
-    log: (payload: Record<string, unknown>) => {
-      logs.push(payload);
+    log: () => {
+      /* no-op */
     },
   } as const;
 
@@ -98,7 +97,7 @@ test("finalizeAssessmentCore is idempotent and logs cache path", async () => {
   assert.equal(first.results_url, "/results/sess-1?t=token-123");
   assert.equal(first.results_version, RESULTS_VERSION);
   assert.equal(prismCalls, 1);
-  assert.equal(logs.at(-1)?.path, "scored");
+  assert.equal(first.path, "scored");
 
   const second = await finalizeAssessmentCore(deps, {
     sessionId: "sess-1",
@@ -110,5 +109,5 @@ test("finalizeAssessmentCore is idempotent and logs cache path", async () => {
   assert.equal(second.share_token, "token-123");
   assert.equal(second.results_url, "/results/sess-1?t=token-123");
   assert.equal(prismCalls, 1, "score_prism should not be invoked twice");
-  assert.equal(logs.at(-1)?.path, "cache_hit");
+  assert.equal(second.path, "cache_hit");
 });

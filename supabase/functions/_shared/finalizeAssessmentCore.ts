@@ -23,6 +23,8 @@ export interface SessionRow {
   completed_questions: number | null;
   status: string | null;
   updated_at: string | null;
+  user_id?: string | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 export interface ScorePrismSuccess {
@@ -58,6 +60,8 @@ export interface FinalizeAssessmentOutput {
   share_token: string;
   results_url: string;
   results_version: string;
+  path: "cache_hit" | "scored";
+  session: SessionRow;
 }
 
 function toResponsesCount(responses: unknown): number | null {
@@ -145,24 +149,14 @@ export async function finalizeAssessmentCore(
       });
 
       const resultsUrl = deps.buildResultsUrl(siteUrl, sessionId, shareToken);
-      deps.log({
-        evt: "finalize.complete",
-        path: "cache_hit",
-        sessionId,
-        RESULTS_VERSION,
-        fc_used: flagFcUsed(normalized),
-        top_type: normalized.type_code ?? null,
-        top_gap: normalized.top_gap ?? null,
-        conf_calibrated: normalized.conf_calibrated ?? null,
-        validity_status: normalized.validity_status ?? null,
-      });
-
       return {
         ok: true,
         profile: normalized,
         share_token: shareToken,
         results_url: resultsUrl,
         results_version: RESULTS_VERSION,
+        path: "cache_hit",
+        session: ensuredSession,
       };
     }
 
@@ -194,24 +188,14 @@ export async function finalizeAssessmentCore(
     });
 
     const resultsUrl = deps.buildResultsUrl(siteUrl, sessionId, shareToken);
-    deps.log({
-      evt: "finalize.complete",
-      path: "scored",
-      sessionId,
-      RESULTS_VERSION,
-      fc_used: flagFcUsed(normalized),
-      top_type: normalized.type_code ?? null,
-      top_gap: normalized.top_gap ?? null,
-      conf_calibrated: normalized.conf_calibrated ?? null,
-      validity_status: normalized.validity_status ?? null,
-    });
-
     return {
       ok: true,
       profile: normalized,
       share_token: shareToken,
       results_url: resultsUrl,
       results_version: RESULTS_VERSION,
+      path: "scored",
+      session: ensuredSession,
     };
   } finally {
     release();

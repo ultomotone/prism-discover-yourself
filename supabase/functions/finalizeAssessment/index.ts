@@ -8,6 +8,8 @@ import {
   type ProfileRow,
   type SessionRow,
 } from "../_shared/finalizeAssessmentCore.ts";
+import { buildCompletionLog } from "../_shared/observability.ts";
+import { emitMetric, withTimer } from "../../../lib/metrics.ts";
 
 const url = Deno.env.get("SUPABASE_URL")!;
 const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -40,6 +42,8 @@ interface SupabaseSessionRow extends SessionRow {
   completed_at: string | null;
   status: string | null;
   updated_at: string | null;
+  user_id: string | null;
+  metadata: Record<string, unknown> | null;
 }
 
 const sessionLocks = new Map<string, Promise<void>>();
@@ -96,7 +100,9 @@ async function normalizeProfile(profile: ProfileRow): Promise<ProfileRow> {
 async function getSession(sessionId: string): Promise<SessionRow | null> {
   const { data, error } = await supabase
     .from("assessment_sessions")
-    .select("id, share_token, share_token_expires_at, completed_at, finalized_at, completed_questions, status, updated_at")
+    .select(
+      "id, share_token, share_token_expires_at, completed_at, finalized_at, completed_questions, status, updated_at, user_id, metadata",
+    )
     .eq("id", sessionId)
     .maybeSingle();
   if (error) {
@@ -150,36 +156,79 @@ Deno.serve(async (req) => {
     const body = await req.json();
     sessionId = body?.session_id;
     const responses = body?.responses;
-    if (!sessionId) return json({ status: "error", error: "session_id required" }, 400);
+    if (!sessionId) {
+      await emitMetric("assessment.finalize.error", {
+        session_id: null,
+        RESULTS_VERSION,
+      });
+      return json({ status: "error", error: "session_id required" }, 400);
+    }
 
-    const result = await finalizeAssessmentCore(
-      {
-        acquireLock: (sessionId) => acquireSessionLock(sessionId),
-        getProfile,
-        normalizeProfile,
-        scoreFcSession,
-        scorePrism,
-        getSession,
-        upsertSession,
-        generateShareToken,
-        buildResultsUrl: buildResultsLink,
-        now: () => new Date(),
-        log: (payload) => console.log(JSON.stringify(payload)),
-      },
-      {
-        sessionId,
-        responses,
-        siteUrl: resolveSiteUrl(req),
-      },
+    const timed = await withTimer(() =>
+      finalizeAssessmentCore(
+        {
+          acquireLock: (sessionId) => acquireSessionLock(sessionId),
+          getProfile,
+          normalizeProfile,
+          scoreFcSession,
+          scorePrism,
+          getSession,
+          upsertSession,
+          generateShareToken,
+          buildResultsUrl: buildResultsLink,
+          now: () => new Date(),
+          log: (payload) => console.log(JSON.stringify(payload)),
+        },
+        {
+          sessionId,
+          responses,
+          siteUrl: resolveSiteUrl(req),
+        },
+      ),
     );
 
-    return json({ ...result, status: "success", session_id: sessionId });
+    if (timed.error) {
+      throw timed.error;
+    }
+
+    const finalizeResult = timed.result!;
+    const { session: finalizedSession, path, ...responseBody } = finalizeResult;
+    const logPayload = buildCompletionLog({
+      event: "assessment.completed",
+      sessionId,
+      profile: finalizeResult.profile,
+      session: finalizedSession,
+      resultsVersion: finalizeResult.results_version,
+      durationMs: timed.durationMs,
+      extra: { path },
+    });
+
+    console.log(JSON.stringify(logPayload));
+
+    await emitMetric("assessment.finalize.success", {
+      session_id: sessionId,
+      RESULTS_VERSION,
+    });
+
+    return json({ ...responseBody, status: "success", session_id: sessionId });
   } catch (e: any) {
+    await emitMetric("assessment.finalize.error", {
+      session_id: sessionId ?? null,
+      RESULTS_VERSION,
+    });
     if (e instanceof FinalizeAssessmentError) {
-      console.log(JSON.stringify({ evt: "finalize.error", sessionId, error: e.message }));
+      console.log(JSON.stringify({ event: "assessment.error", session_id: sessionId, error: e.message }));
       return json({ status: "error", error: e.message }, 422);
     }
-    console.log(JSON.stringify({ evt: "scoring_error", sessionId, error: e?.message || String(e) }));
+    const durationMs = typeof e === "object" && e && "__durationMs" in e ? Math.round(Number(e.__durationMs)) : undefined;
+    console.log(
+      JSON.stringify({
+        event: "assessment.error",
+        session_id: sessionId,
+        error: e?.message || String(e),
+        duration_ms: durationMs,
+      }),
+    );
     return json({ status: "error", error: e?.message || "Internal server error" }, 500);
   }
 });

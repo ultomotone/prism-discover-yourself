@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { emitMetric } from "../../../lib/metrics.ts";
 
 type AuthContext = "token" | "owner";
 
@@ -71,6 +72,16 @@ serve(async (req) => {
     const body = await req.json();
     const sessionId: string | undefined = body.session_id ?? body.sessionId;
     const shareToken: string | null = body.share_token ?? body.shareToken ?? null;
+    const hasToken = !!shareToken;
+
+    const respondError = async (status: number, message: string) => {
+      await emitMetric("results.fetch.error", {
+        session_id: sessionId ?? null,
+        http_status: status,
+        has_token: hasToken,
+      });
+      return jsonResponse(origin, { ok: false, error: message }, status);
+    };
 
     console.log(
       JSON.stringify({
@@ -82,7 +93,7 @@ serve(async (req) => {
     );
 
     if (!sessionId) {
-      return jsonResponse(origin, { ok: false, error: "session_id required" }, 400);
+      return respondError(400, "session_id required");
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -91,7 +102,7 @@ serve(async (req) => {
 
     if (!supabaseUrl || !serviceKey || !anonKey) {
       console.error("Missing Supabase configuration");
-      return jsonResponse(origin, { ok: false, error: "configuration error" }, 500);
+      return respondError(500, "configuration error");
     }
 
     const serviceClient = createClient(supabaseUrl, serviceKey, {
@@ -104,7 +115,7 @@ serve(async (req) => {
     if (!shareToken) {
       const authorization = req.headers.get("authorization");
       if (!authorization || !authorization.startsWith("Bearer ")) {
-        return jsonResponse(origin, { ok: false, error: "authorization required" }, 401);
+        return respondError(401, "authorization required");
       }
 
       const authedClient = createAuthedClient(supabaseUrl, anonKey, authorization);
@@ -112,12 +123,12 @@ serve(async (req) => {
 
       if (userError) {
         console.error("Failed to load authenticated user", userError);
-        return jsonResponse(origin, { ok: false, error: "unauthorized" }, 401);
+        return respondError(401, "unauthorized");
       }
 
       const user = userResponse?.user;
       if (!user) {
-        return jsonResponse(origin, { ok: false, error: "unauthorized" }, 401);
+        return respondError(401, "unauthorized");
       }
 
       const { data: sessionRow, error: sessionError } = await authedClient
@@ -128,11 +139,11 @@ serve(async (req) => {
 
       if (sessionError) {
         console.error("session lookup failed", sessionError);
-        return jsonResponse(origin, { ok: false, error: "session lookup failed" }, 500);
+        return respondError(500, "session lookup failed");
       }
 
       if (!sessionRow) {
-        return jsonResponse(origin, { ok: false, error: "forbidden" }, 403);
+        return respondError(403, "forbidden");
       }
 
       dataClient = authedClient;
@@ -146,11 +157,11 @@ serve(async (req) => {
 
       if (sessionError) {
         console.error("share token lookup failed", sessionError);
-        return jsonResponse(origin, { ok: false, error: "session lookup failed" }, 500);
+        return respondError(500, "session lookup failed");
       }
 
       if (!sess || sess.share_token !== shareToken) {
-        return jsonResponse(origin, { ok: false, error: "invalid token" }, 401);
+        return respondError(401, "invalid token");
       }
     }
 
@@ -229,11 +240,11 @@ serve(async (req) => {
           timestamp: new Date().toISOString(),
         }),
       );
-      return jsonResponse(origin, { ok: false, error: "no results found" }, 404);
+      return respondError(404, "no results found");
     }
 
     if (!profile) {
-      return jsonResponse(origin, { ok: false, error: "no results found" }, 404);
+      return respondError(404, "no results found");
     }
 
     const typedProfile = profile as Record<string, unknown>;
@@ -259,6 +270,11 @@ serve(async (req) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("Error in get-results-by-session:", message);
+    await emitMetric("results.fetch.error", {
+      session_id: undefined,
+      http_status: 500,
+      has_token: false,
+    });
     return jsonResponse(origin, { ok: false, error: message || "Internal server error" }, 500);
   }
 });
