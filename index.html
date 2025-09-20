@@ -400,6 +400,135 @@
       })();
     </script>
     <!-- End LinkedIn Insight Tag helpers -->
+    <!-- Quora Pixel Code (Base) -->
+    <script>
+!function(q,e,v,n,t,s){if(q.qp) return; n=q.qp=function(){n.qp?n.qp.apply(n,arguments):n.queue.push(arguments);}; n.queue=[];
+t=document.createElement(e);t.async=!0;t.src=v; s=document.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t,s);
+}(window,'script','https://a.quora.com/qevents.js');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+      src="https://q.quora.com/_/ad/3b47052b877e48a5b43d5f0d775d8e06/pixel?tag=ViewContent&noscript=1"/></noscript>
+    <!-- End of Quora Pixel Code -->
+    <script>
+      (function(){
+        const PIXEL_ID = '3b47052b877e48a5b43d5f0d775d8e06';
+        const RESULTS_RE = /\/results(\/|$)/i;
+        const ALLOW_RESULTS_FLAG = '__allowResults';
+        const DEBUG = /\bqdebug=1\b/.test(location.search);
+        let configured = false, lastError = null;
+
+        function hasAnalyticsConsent(){
+          try {
+            const c = window.__consent;
+            return !!(c && c.analytics === true);
+          } catch (e) { return false; }
+        }
+
+        function initQuora(email){
+          try {
+            if (configured || !window.qp) return;
+            if (email) { qp('init', PIXEL_ID, { email: email }); }
+            else { qp('init', PIXEL_ID); }
+            configured = true;
+            if (DEBUG) console.info('[Quora] configured', { email: !!email });
+          } catch (e) { lastError = e; if (DEBUG) console.warn('[Quora] init error', e); }
+        }
+
+        // Defer init until consent is granted
+        function tryConfigure(){
+          if (configured) return true;
+          if (!hasAnalyticsConsent() || typeof window.qp !== 'function') return false;
+          // Optionally pass known email for advanced matching (hashed by Quora)
+          const knownEmail = (window.__knownUser && window.__knownUser.email) || undefined;
+          initQuora(knownEmail);
+          return configured;
+        }
+
+        // Poll briefly; also listen for consent changes
+        let attempts = 0, timer = setInterval(function(){
+          attempts++; if (tryConfigure() || attempts > 40) clearInterval(timer);
+        }, 500);
+        ['consent:updated','app:consent:updated','consentchange'].forEach(evt=>{
+          addEventListener(evt, tryConfigure, { passive:true });
+        });
+
+        function uuid(){
+          if (crypto && crypto.randomUUID) return crypto.randomUUID();
+          return (Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
+        }
+
+        function invokeCapi(eventName, payload){
+          if (!payload || !payload.conversion_id || !hasAnalyticsConsent()) return;
+          const body = {
+            event_name: eventName,
+            conversion_id: payload.conversion_id,
+            value: typeof payload.value === 'number' ? payload.value : undefined,
+            currency: typeof payload.currency === 'string' ? payload.currency : undefined,
+            email: typeof payload.email === 'string' ? payload.email : undefined,
+            contents: Array.isArray(payload.contents) ? payload.contents : undefined,
+            content_ids: Array.isArray(payload.content_ids) ? payload.content_ids : undefined,
+            event_time: Math.floor(Date.now() / 1000),
+            user_agent: navigator.userAgent,
+          };
+          if (window.__knownUser && typeof window.__knownUser.email === 'string' && !body.email) {
+            body.email = window.__knownUser.email;
+          }
+          const requestInit = {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-consent-analytics': hasAnalyticsConsent() ? 'true' : 'false',
+            },
+            body: JSON.stringify(body),
+            keepalive: true,
+          };
+          try {
+            const invoke = window.__supabaseFunctionFetch;
+            if (typeof invoke === 'function') {
+              invoke('quora-capi', requestInit).catch(() => {});
+            } else {
+              fetch('/functions/v1/quora-capi', requestInit).catch(() => {});
+            }
+          } catch (err) {
+            if (DEBUG) console.warn('[Quora] CAPI error', err);
+          }
+        }
+
+        window.qpTrack = function(eventName, props){
+          if (!configured) { if (DEBUG) console.info('[Quora] drop (not configured)', eventName); return; }
+          const payload = Object.assign({}, props || {});
+          const allowOnResults = !!payload[ALLOW_RESULTS_FLAG];
+          if (ALLOW_RESULTS_FLAG in payload) delete payload[ALLOW_RESULTS_FLAG];
+
+          if (RESULTS_RE.test(location.pathname) && eventName !== 'ViewContent' && !allowOnResults){
+            if (DEBUG) console.info('[Quora] suppressed on /results', eventName);
+            return;
+          }
+          if (!payload.conversion_id) payload.conversion_id = uuid();
+          try {
+            qp('track', eventName, payload);
+            if (payload.conversion_id) {
+              try { window.__lastQuoraConversionId = payload.conversion_id; } catch (_) {}
+            }
+            invokeCapi(eventName, payload);
+            if (DEBUG) console.info('[Quora] track', eventName, payload);
+            return payload.conversion_id;
+          } catch (e) { lastError = e; if (DEBUG) console.warn('[Quora] track error', e); }
+        };
+
+        // Debug helpers
+        window.__QW_STATUS__ = function(){
+          return {
+            configured, hasTwqLike:false, // placeholder parity
+            consent: hasAnalyticsConsent(),
+            path: location.pathname, lastError
+          };
+        };
+        window.qpTest = function(){
+          return window.qpTrack('GenerateLead', { test:true });
+        };
+      })();
+    </script>
     <!-- Reddit Pixel (init) -->
     <script>
       !function(w,d){if(!w.rdt){var p=w.rdt=function(){p.sendEvent?p.sendEvent.apply(p,arguments):p.callQueue.push(arguments)};p.callQueue=[];

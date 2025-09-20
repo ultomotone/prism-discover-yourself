@@ -6,6 +6,7 @@ import {
   buildFacebookPayloadFromService,
   rememberFacebookDpaPayload,
 } from "@/lib/facebook";
+import { sendQuoraEvent } from "@/lib/quora/events";
 
 export function ServiceCard({
   service,
@@ -23,6 +24,22 @@ export function ServiceCard({
     if (typeof window !== "undefined" && window.fbTrack) {
       window.fbTrack("AddToCart", payload);
     }
+    const numericPrice = Number(service.price.replace(/[^0-9.]/g, ""));
+    const value = Number.isFinite(numericPrice) ? numericPrice : undefined;
+    sendQuoraEvent("AddToCart", {
+      value,
+      currency: value ? "USD" : undefined,
+      contents: [
+        {
+          content_id: service.id,
+          content_name: service.title,
+          content_price: value,
+          num_items: 1,
+        },
+      ],
+      content_ids: [service.id],
+    });
+    sendQuoraEvent("InitiateCheckout", { step: "cal.com_open", content_id: service.id });
     const el = document.getElementById("book");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
