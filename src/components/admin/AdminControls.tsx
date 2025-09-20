@@ -41,28 +41,27 @@ function AdminControls() {
     if (!sessionId) return;
     setBusy("session");
     try {
-      // Try direct scoring first
-      console.log('Attempting direct scoring for session:', sessionId.trim());
-      const scoreRes = await invokeEdge("score_prism", { session_id: sessionId.trim() });
-      console.log('Score result:', scoreRes);
-      
+      console.log('Attempting finalize for session:', sessionId.trim());
+      const finalizeRes = await invokeEdge("finalizeAssessment", { session_id: sessionId.trim() });
+      console.log('Finalize result:', finalizeRes);
+
       toast({
-        title: "Session scored",
-        description: `Session ${sessionId.trim()} has been scored successfully`,
+        title: "Session finalized",
+        description: `Session ${sessionId.trim()} has been finalized successfully`,
       });
     } catch (e: any) {
-      // If direct scoring fails, try recompute-profiles
+      // If finalize fails, try recompute-profiles
       try {
-        console.log('Direct scoring failed, trying recompute-profiles:', e.message);
+        console.log('Finalize failed, trying recompute-profiles:', e.message);
         const res = await invokeEdge("recompute-profiles", { sessionId: sessionId.trim() });
         console.log('Recompute result:', res);
         toast({
-          title: "Session recomputed", 
+          title: "Session recomputed",
           description: `Updated ${res?.updated ?? res?.count ?? 0} sessions`,
         });
       } catch (recomputeError: any) {
-        console.error('Both scoring methods failed:', { scoreError: e, recomputeError });
-        toast({ title: "Scoring failed", description: `${e.message} | ${recomputeError.message}`, variant: "destructive" });
+        console.error('Both finalize and recompute methods failed:', { finalizeError: e, recomputeError });
+        toast({ title: "Finalize failed", description: `${e.message} | ${recomputeError.message}`, variant: "destructive" });
       }
     } finally {
       setBusy(null);

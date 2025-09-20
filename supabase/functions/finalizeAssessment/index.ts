@@ -1,10 +1,19 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { buildResultsLink } from "../_shared/results-link.ts";
 import { ensureResultsVersion } from "../_shared/resultsVersion.ts";
+import { finalizeAssessment } from "./finalize.ts";
 
-const url = Deno.env.get("SUPABASE_URL")!;
-const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const url = Deno.env.get("SUPABASE_URL");
+const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+if (!url) {
+  throw new Error("Missing SUPABASE_URL environment variable");
+}
+
+if (!key) {
+  throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable");
+}
+
 const supabase = createClient(url, key);
 
 await ensureResultsVersion(supabase);
@@ -16,7 +25,7 @@ const corsHeaders = {
   "Cache-Control": "no-store",
 };
 
-const json = (body: any, status = 200) =>
+const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
     headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -24,69 +33,31 @@ const json = (body: any, status = 200) =>
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
   try {
     const { session_id, responses } = await req.json();
-    if (!session_id) return json({ status: "error", error: "session_id required" }, 400);
-
-    console.log(JSON.stringify({ evt: "scoring_start", session_id }));
-
-    // FC scoring (best-effort)
-    try {
-      await supabase.functions.invoke("score_fc_session", {
-        body: { session_id, version: "v1.2", basis: "functions" },
-      });
-    } catch (fcError: any) {
-      console.log(JSON.stringify({ evt: "fc_no_responses", session_id, error: fcError?.message }));
+    if (!session_id) {
+      return json({ status: "error", error: "session_id required" }, 400);
     }
-
-    // Profile scoring
-    const { data, error } = await supabase.functions.invoke("score_prism", { body: { session_id } });
-    if (error || data?.status !== "success" || !data?.profile) {
-      return json({ status: "error", error: error?.message || data?.error || "scoring failed" }, 422);
-    }
-    // Share token + session update
-    const { data: sessRow } = await supabase
-      .from("assessment_sessions")
-      .select("share_token, share_token_expires_at")
-      .eq("id", session_id)
-      .single();
-    const share_token = sessRow?.share_token ?? crypto.randomUUID();
-    const ttl = sessRow?.share_token_expires_at ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-
-    const completedCount = Array.isArray(responses)
-      ? responses.length
-      : data.profile.fc_answered_ct || 0;
-
-    const { error: sessionUpdateError } = await supabase
-      .from("assessment_sessions")
-      .update({
-        status: "completed",
-        completed_at: new Date().toISOString(),
-        finalized_at: new Date().toISOString(),
-        completed_questions: completedCount,
-        share_token,
-        share_token_expires_at: ttl,
-        profile_id: data.profile.id,
-      })
-      .eq("id", session_id);
-    if (sessionUpdateError) return json({ status: "error", error: sessionUpdateError.message }, 500);
 
     const siteUrl =
       Deno.env.get("RESULTS_BASE_URL") ||
       req.headers.get("origin") ||
       "https://prismassessment.com";
 
-    const resultsUrl = buildResultsLink(siteUrl, session_id, share_token);
-    
-    console.log(JSON.stringify({ evt: "scoring_complete", session_id, type_code: data.profile.type_code, share_token }));
-    
-    return json(
-      { ok: true, status: "success", session_id, share_token, profile: data.profile, results_url: resultsUrl },
-      200,
-    );
-  } catch (e: any) {
-    console.log(JSON.stringify({ evt: "scoring_error", session_id, error: e?.message || String(e) }));
-    return json({ status: "error", error: e?.message || "Internal server error" }, 500);
+    const result = await finalizeAssessment({
+      supabase,
+      sessionId: session_id,
+      responses,
+      siteUrl,
+      now: () => new Date(),
+      logger: (payload) => console.log(JSON.stringify(payload)),
+    });
+
+    return json(result, 200);
+  } catch (error: any) {
+    console.log(JSON.stringify({ evt: "finalize_error", error: error?.message ?? String(error) }));
+    return json({ status: "error", error: error?.message ?? "Internal server error" }, 500);
   }
 });
 
