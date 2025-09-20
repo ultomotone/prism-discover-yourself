@@ -1,4 +1,5 @@
 import supabase from "@/lib/supabaseClient";
+import { buildAuthHeaders } from "@/lib/authSession";
 import { IS_PREVIEW } from "@/lib/env";
 
 let cachedFunctionsBase: string | null = null;
@@ -49,24 +50,19 @@ export async function fetchResultsBySession(
   const url = `${resolveFunctionsBase()}/get-results-by-session`;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "Cache-Control": "no-store",
   };
 
   const body: Record<string, unknown> = { session_id: sessionId };
 
   if (shareToken) {
     body.share_token = shareToken;
-  } else if (!IS_PREVIEW) {
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData?.user?.id) {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const jwt = sessionData?.session?.access_token;
-        if (jwt) {
-          headers.Authorization = `Bearer ${jwt}`;
-        }
-      }
-    } catch (error) {
-      console.warn("Failed to load Supabase session", error);
+  }
+
+  if (!IS_PREVIEW) {
+    const authHeaders = await buildAuthHeaders();
+    if (authHeaders.Authorization) {
+      headers.Authorization = authHeaders.Authorization;
     }
   }
 
