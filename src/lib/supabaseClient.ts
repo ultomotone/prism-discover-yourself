@@ -11,6 +11,9 @@ const fallbackAnon =
 const url = (viteEnv.VITE_SUPABASE_URL as string | undefined) ?? nextPublicUrl ?? fallbackUrl;
 const anon = (viteEnv.VITE_SUPABASE_ANON_KEY as string | undefined) ?? nextPublicAnon ?? fallbackAnon;
 
+export const SUPABASE_URL = url;
+export const SUPABASE_ANON_KEY = anon;
+
 const getStorage = (): Storage => {
   if (typeof window !== "undefined" && window.localStorage) {
     return window.localStorage;
