@@ -459,6 +459,153 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@prism_personality" />
     <meta name="twitter:image" content="/lovable-uploads/5e9af605-c408-4bf3-ac7d-7d379b09af9b.png" />
+
+    <!-- Twitter Pixel (base loader) -->
+    <script>
+      !(function(w, d, s, u, a, b) {
+        if (w.twq) return;
+        u = w.twq = function() {
+          u.exe ? u.exe.apply(u, arguments) : u.queue.push(arguments);
+        };
+        u.version = '1.1';
+        u.queue = [];
+        a = d.createElement(s);
+        a.async = true;
+        a.src = 'https://static.ads-twitter.com/uwt.js';
+        b = d.getElementsByTagName(s)[0];
+        b.parentNode.insertBefore(a, b);
+      })(window, document, 'script');
+    </script>
+    <!-- End Twitter Pixel (base loader) -->
+
+    <!-- Twitter Pixel helpers: consent, dedupe, and results-page safety -->
+    <script>
+      (function configureTwitterPixel() {
+        const PIXEL_ID = 'nwcm8';
+        const ALLOW_RESULTS_FLAG = '__allowResults';
+        const RESULTS_PATH_PATTERN = /\/results(\/|$)/i;
+        const CONSENT_CHECK_INTERVAL = 500;
+        const MAX_CONSENT_CHECKS = 40;
+        let configured = false;
+
+        function hasAnalyticsConsent() {
+          try {
+            const consent = window.__consent;
+            if (!consent || typeof consent !== 'object') return false;
+            return consent.analytics === true;
+          } catch (error) {
+            console.warn('Twitter Pixel consent check failed (non-blocking):', error);
+            return false;
+          }
+        }
+
+        function ensureConfigured() {
+          if (configured) return true;
+          if (!hasAnalyticsConsent()) return false;
+          if (typeof window.twq !== 'function') return false;
+          try {
+            window.twq('config', PIXEL_ID, { use_1p: true });
+            configured = true;
+          } catch (error) {
+            console.warn('Twitter Pixel configuration error (non-blocking):', error);
+            return false;
+          }
+          return true;
+        }
+
+        function scheduleConsentChecks() {
+          let attempts = 0;
+          const timer = window.setInterval(() => {
+            attempts += 1;
+            if (ensureConfigured() || attempts >= MAX_CONSENT_CHECKS) {
+              window.clearInterval(timer);
+            }
+          }, CONSENT_CHECK_INTERVAL);
+        }
+
+        function captureTwclid() {
+          try {
+            const params = new URLSearchParams(window.location.search);
+            const clickId = params.get('twclid');
+            if (clickId) {
+              localStorage.setItem('twclid', clickId);
+            }
+          } catch (error) {
+            console.warn('Twitter Pixel click id capture failed (non-blocking):', error);
+          }
+        }
+
+        function getStoredTwclid() {
+          try {
+            return localStorage.getItem('twclid') || undefined;
+          } catch {
+            return undefined;
+          }
+        }
+
+        function generateConversionId() {
+          try {
+            return crypto.randomUUID();
+          } catch {
+            return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+          }
+        }
+
+        function attachConsentListeners() {
+          const events = ['consent:updated', 'app:consent:updated', 'consentchange'];
+          events.forEach((eventName) => {
+            if (typeof window.addEventListener === 'function') {
+              window.addEventListener(eventName, ensureConfigured, { passive: true });
+            }
+            if (typeof document.addEventListener === 'function') {
+              document.addEventListener(eventName, ensureConfigured, { passive: true });
+            }
+          });
+        }
+
+        window.twqTrack = function twqTrack(eventName, properties) {
+          if (!ensureConfigured()) return undefined;
+
+          const payload = Object.assign({}, properties);
+          const allowOnResults = Boolean(payload && payload[ALLOW_RESULTS_FLAG]);
+          if (payload && ALLOW_RESULTS_FLAG in payload) {
+            delete payload[ALLOW_RESULTS_FLAG];
+          }
+
+          if (
+            RESULTS_PATH_PATTERN.test(window.location.pathname || '') &&
+            eventName !== 'PageView' &&
+            !allowOnResults
+          ) {
+            return undefined;
+          }
+
+          if (!payload.conversion_id) {
+            payload.conversion_id = generateConversionId();
+          }
+
+          if (!payload.twclid) {
+            const storedClickId = getStoredTwclid();
+            if (storedClickId) payload.twclid = storedClickId;
+          }
+
+          try {
+            window.twq('track', eventName, payload);
+          } catch (error) {
+            console.warn('Twitter Pixel track error (non-blocking):', error);
+          }
+
+          return payload.conversion_id;
+        };
+
+        captureTwclid();
+        attachConsentListeners();
+        if (!ensureConfigured()) {
+          scheduleConsentChecks();
+        }
+      })();
+    </script>
+    <!-- End Twitter Pixel helpers -->
   </head>
 
   <body>
@@ -472,12 +619,30 @@
       <img height="1" width="1" style="display:none;" alt=""
         src="https://px.ads.linkedin.com/collect/?pid=7877778&fmt=gif" />
     </noscript>
-    
+
     <!-- Reddit Pixel noscript fallback -->
     <noscript>
       <img height="1" width="1" style="display:none" src="https://www.reddit.com/tr?id=a2_hisg7r10d2ta&ev=PageVisit&noscript=1">
     </noscript>
-    
+
+    <!-- Twitter Pixel noscript fallback -->
+    <noscript>
+      <img
+        height="1"
+        width="1"
+        style="display:none"
+        alt=""
+        src="https://analytics.twitter.com/i/adsct?txn_id=nwcm8&p_id=Twitter&tw_sale_amount=0&tw_order_quantity=0"
+      />
+      <img
+        height="1"
+        width="1"
+        style="display:none"
+        alt=""
+        src="https://t.co/i/adsct?txn_id=nwcm8&p_id=Twitter&tw_sale_amount=0&tw_order_quantity=0"
+      />
+    </noscript>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
