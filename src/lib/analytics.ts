@@ -12,6 +12,7 @@ declare global {
 }
 
 import { IS_PREVIEW } from './env';
+import { sendTwitterEvent } from './twitter/events';
 
 export const trackEvent = (action: string, category: string, label?: string, value?: number) => {
   if (IS_PREVIEW) return;
@@ -41,6 +42,11 @@ export const trackLead = (email?: string, metadata: Record<string, any> = {}) =>
     if (w.rdtTrack) w.rdtTrack('Lead', { email, ...metadata });
     // Facebook tracking
     if (w.fbTrack) w.fbTrack('Lead', { email, ...metadata });
+    // Twitter tracking
+    sendTwitterEvent('Lead', {
+      ...metadata,
+      email_address: email,
+    });
   }
 };
 
@@ -51,15 +57,20 @@ export const trackAssessmentStart = (sessionId: string) => {
   
   // Track Reddit Lead event for assessment start (legacy pixel method)
   if (typeof window !== 'undefined' && window.rdtTrack) {
-    window.rdtTrack('Lead', { 
+    window.rdtTrack('Lead', {
       content_name: 'PRISM Assessment',
       session_id: sessionId
     });
   }
-  
+
+  sendTwitterEvent('Lead', {
+    content_name: 'PRISM Assessment',
+    session_id: sessionId,
+  });
+
   // Fire custom event for Reddit S2S tracking
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('app:assessment:start', { 
+    window.dispatchEvent(new CustomEvent('app:assessment:start', {
       detail: { sessionId }
     }));
   }
@@ -89,9 +100,15 @@ export const trackAssessmentComplete = (sessionId: string, totalQuestions: numbe
     });
   }
 
+  sendTwitterEvent('CompleteRegistration', {
+    content_name: 'PRISM Assessment Complete',
+    session_id: sessionId,
+    question_count: totalQuestions,
+  });
+
   // Fire app event that other trackers can listen to
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('app:assessment:complete', { 
+    window.dispatchEvent(new CustomEvent('app:assessment:complete', {
       detail: { sessionId, totalQuestions }
     }));
   }
@@ -112,9 +129,15 @@ export const trackAccountCreation = (email: string, sessionId?: string) => {
     });
   }
 
+  sendTwitterEvent('SignUp', {
+    email_address: email,
+    source: 'assessment',
+    session_id: sessionId,
+  });
+
   // Fire app event that other trackers can listen to
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('app:user:signup', { 
+    window.dispatchEvent(new CustomEvent('app:user:signup', {
       detail: { email, sessionId }
     }));
   }
@@ -132,6 +155,16 @@ export const trackResultsViewed = (sessionId: string, typeCode?: string) => {
       type_code: typeCode
     });
   }
+
+  sendTwitterEvent(
+    'ContentView',
+    {
+      content_name: 'PRISM Results',
+      session_id: sessionId,
+      type_code: typeCode,
+    },
+    { allowOnResults: true },
+  );
 
   // Fire custom event for Reddit S2S tracking
   if (
@@ -158,4 +191,11 @@ export const trackPaymentSuccess = (value: number, currency: string = 'USD', tra
       session_id: sessionId
     });
   }
+
+  sendTwitterEvent('Purchase', {
+    value,
+    currency,
+    transaction_id: transactionId,
+    session_id: sessionId,
+  });
 };
