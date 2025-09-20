@@ -1,6 +1,8 @@
 
 interface RedditEvent {
   event_name: string;
+  event_type?: string;
+  custom_event_name?: string;
   conversion_id: string;
   click_id?: string;
   email?: string; // already SHA256 hashed and normalized
@@ -44,17 +46,26 @@ export async function sendRedditCapiEvent(evt: RedditEvent, fetchImpl: typeof fe
   const accessToken = tokenJson.access_token;
   if (!accessToken) throw new Error("Missing access_token in token response");
 
+  const eventType = evt.event_type ?? evt.event_name;
+  const eventPayload: Record<string, unknown> = {
+    event_type: eventType,
+    event_name: evt.event_name,
+    event_time: Math.floor(Date.now() / 1000),
+    pixel_id: pixelId,
+    conversion_id: evt.conversion_id,
+    click_id: evt.click_id,
+  };
+
+  if (evt.custom_event_name) {
+    eventPayload.custom_event_name = evt.custom_event_name;
+  }
+
+  if (evt.email) {
+    eventPayload.user = { hashed_email: evt.email };
+  }
+
   const body = {
-    events: [
-      {
-        event_type: evt.event_name,
-        event_time: Math.floor(Date.now() / 1000),
-        pixel_id: pixelId,
-        conversion_id: evt.conversion_id,
-        click_id: evt.click_id,
-        user: evt.email ? { hashed_email: evt.email } : undefined,
-      },
-    ],
+    events: [eventPayload],
   };
 
   const resp = await fetchImpl("https://ads-api.reddit.com/api/v2/conversions", {
