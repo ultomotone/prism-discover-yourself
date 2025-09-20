@@ -4,6 +4,11 @@ import { useToast } from '@/hooks/use-toast';
 import { trackLead } from '@/lib/analytics';
 import { ensureSessionLinked } from '@/services/sessionLinking';
 import { IS_PREVIEW } from '@/lib/env';
+import {
+  checkRetakeAllowance,
+  RetakeAllowanceError,
+  type RetakeAllowanceResult,
+} from '@/services/retake';
 
 export interface SessionData {
   session_id: string;
@@ -17,6 +22,39 @@ export interface SessionData {
     has_recent_completion: boolean;
     days_since_completion: number;
   };
+  attempt_no?: number;
+}
+
+export interface RetakeBlock {
+  nextEligibleDate: string | null;
+  attemptNo?: number;
+  maxPerWindow: number;
+  windowDays: number;
+}
+
+export type StartAssessmentSessionResult =
+  | { status: 'blocked'; block: RetakeBlock }
+  | { status: 'existing' | 'new'; session: SessionData };
+
+const RETAKE_WINDOW = { maxPerWindow: 3, windowDays: 30 } as const;
+
+function readCachedEmail(): string | undefined {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return undefined;
+  }
+
+  try {
+    const raw = window.localStorage.getItem('prism_last_session');
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as { email?: unknown };
+    if (typeof parsed.email === 'string' && parsed.email.includes('@')) {
+      return parsed.email;
+    }
+  } catch (error) {
+    console.warn('Failed to read cached session email', error);
+  }
+
+  return undefined;
 }
 
 export function useEmailSessionManager() {
@@ -27,20 +65,54 @@ export function useEmailSessionManager() {
     email?: string, 
     userId?: string, 
     forceNew = false
-  ): Promise<SessionData | null> => {
+  ): Promise<StartAssessmentSessionResult | null> => {
     console.log('=== START ASSESSMENT SESSION CALLED ===');
     console.log('Parameters:', { email, userId, forceNew });
-    
+
     setIsLoading(true);
     try {
       console.log('Starting assessment session:', { email, userId, forceNew });
       
+      let allowance: RetakeAllowanceResult | null = null;
+      try {
+        allowance = await checkRetakeAllowance({
+          userId,
+          email: email ?? readCachedEmail(),
+          maxPerWindow: RETAKE_WINDOW.maxPerWindow,
+          windowDays: RETAKE_WINDOW.windowDays,
+        });
+      } catch (error) {
+        if (error instanceof RetakeAllowanceError) {
+          console.error('Retake allowance check failed:', error.message);
+        } else {
+          console.error('Unexpected allowance failure:', error);
+        }
+        toast({
+          title: 'Session Error',
+          description: 'Unable to verify retake allowance. Please try again.',
+          variant: 'destructive',
+        });
+        return null;
+      }
+
+      if (!allowance?.allowed) {
+        return {
+          status: 'blocked',
+          block: {
+            nextEligibleDate: allowance?.nextEligibleDate ?? null,
+            attemptNo: allowance?.attemptNo,
+            maxPerWindow: RETAKE_WINDOW.maxPerWindow,
+            windowDays: RETAKE_WINDOW.windowDays,
+          },
+        } satisfies StartAssessmentSessionResult;
+      }
+
       console.log('Calling supabase.functions.invoke with start_assessment...');
       const { data, error } = await supabase.functions.invoke('start_assessment', {
-        body: { 
-          email, 
-          user_id: userId, 
-          force_new: forceNew 
+        body: {
+          email,
+          user_id: userId,
+          force_new: forceNew
         }
       });
 
@@ -56,26 +128,41 @@ export function useEmailSessionManager() {
         return null;
       }
 
-      if (!data || !data.success) {
-        console.error('Assessment session failed:', data);
+      const payload = data as (SessionData & {
+        success?: boolean;
+        error?: string;
+        attempt_no?: number;
+      }) | null;
+
+      if (!payload || !payload.success) {
+        console.error('Assessment session failed:', payload);
         toast({
-          title: "Session Error", 
-          description: data?.error || "Failed to start assessment session.",
+          title: "Session Error",
+          description: payload?.error || "Failed to start assessment session.",
           variant: "destructive",
         });
         return null;
       }
 
-      console.log('Assessment session started successfully:', data);
+      const session: SessionData = {
+        session_id: payload.session_id,
+        share_token: payload.share_token,
+        existing_session: Boolean(payload.existing_session),
+        progress: payload.progress,
+        recent_completion: payload.recent_completion,
+        attempt_no: payload.attempt_no ?? allowance.attemptNo,
+      };
+
+      console.log('Assessment session started successfully:', session);
 
       // Show appropriate message based on session type
-      if (data.existing_session) {
+      if (session.existing_session) {
         toast({
           title: "Resuming Assessment",
-          description: `Continuing from question ${(data.progress?.completed || 0) + 1}`,
+          description: `Continuing from question ${(session.progress?.completed || 0) + 1}`,
         });
-      } else if (data.recent_completion?.has_recent_completion) {
-        const days = Math.round(data.recent_completion.days_since_completion);
+      } else if (session.recent_completion?.has_recent_completion) {
+        const days = Math.round(session.recent_completion.days_since_completion);
         toast({
           title: "Recent Assessment Detected",
           description: `You completed an assessment ${days} day${days !== 1 ? 's' : ''} ago. Starting fresh.`,
@@ -88,7 +175,10 @@ export function useEmailSessionManager() {
         trackLead(email);
       }
 
-      return data as SessionData;
+      return {
+        status: session.existing_session ? 'existing' : 'new',
+        session,
+      } satisfies StartAssessmentSessionResult;
     } catch (error) {
       console.error('Unexpected error starting assessment:', error);
       toast({
