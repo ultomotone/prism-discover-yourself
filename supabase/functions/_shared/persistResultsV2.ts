@@ -1,5 +1,6 @@
 // supabase/functions/_shared/persistResultsV2.ts
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { RESULTS_VERSION } from "./resultsVersion.ts";
 
 export interface TypeResultInput {
   type_code: string;
@@ -36,8 +37,6 @@ export interface PersistResultsV2Payload {
   functions: FunctionResultInput[];
   state: StateResultInput;
 }
-
-const RESULTS_VERSION = "v2";
 
 function normalizeShare(value: number): number {
   if (!Number.isFinite(value)) return 0;

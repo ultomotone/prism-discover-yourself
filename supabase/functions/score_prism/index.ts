@@ -2,8 +2,9 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { persistResultsV2, type TypeResultInput, type FunctionResultInput, type StateResultInput } from "../_shared/persistResultsV2.ts";
-import { scoreAssessment, FALLBACK_PROTOTYPES, Func, TypeCode, Block } from "../_shared/scoreEngine.ts";
+import { scoreAssessment, FALLBACK_PROTOTYPES, Func } from "../_shared/scoreEngine.ts";
 import { PrismCalibration } from "../_shared/calibration.ts";
+import { RESULTS_VERSION, ensureResultsVersion, parseResultsVersion } from "../_shared/resultsVersion.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,15 +13,27 @@ const corsHeaders = {
 
 const ALL_TYPES: string[] = ["LIE","ILI","ESE","SEI","LII","ILE","ESI","SEE","LSE","SLI","EIE","IEI","LSI","SLE","EII","IEE"];
 
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+if (!SUPABASE_URL) {
+  throw new Error("Missing SUPABASE_URL environment variable");
+}
+
+if (!SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable");
+}
+
+const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+await ensureResultsVersion(db);
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const { session_id } = await req.json();
     if (!session_id) return new Response(JSON.stringify({ status: "error", error: "session_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type":"application/json" } });
-
-    const url = Deno.env.get("SUPABASE_URL")!, key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const db = createClient(url, key);
 
     // Pull responses (latest per question)
     const { data: rows, error: respErr } = await db
@@ -46,6 +59,7 @@ serve(async (req) => {
       "results_version", "softmax_temp", "conf_raw_params", "fit_band_thresholds", "fc_expected_min"
     ]);
     const cfg = Object.fromEntries((cfgRows ?? []).map(r => [r.key, r.value]));
+    const configResultsVersion = parseResultsVersion(cfg.results_version);
 
     // Prototypes
     let typePrototypes = FALLBACK_PROTOTYPES;
@@ -74,7 +88,7 @@ serve(async (req) => {
       scoringKey,
       fcFunctionScores: fcScores,
       config: {
-        results_version: cfg.results_version || "v1.2.1",
+        results_version: configResultsVersion ?? RESULTS_VERSION,
         dim_thresholds: { one: 0, two: 0, three: 0 },
         neuro_norms: { mean: 0, sd: 1 },
         overlay_neuro_cut: 0,
@@ -111,8 +125,8 @@ serve(async (req) => {
       recomputed_at: existing ? now : null,
       created_at: existing?.submitted_at || now,
       updated_at: now,
-      results_version: "v1.2.1",
-      version: "v1.2.1",
+      results_version: RESULTS_VERSION,
+      version: RESULTS_VERSION,
     };
     await db.from("profiles").upsert(profileRow, { onConflict: "session_id" });
 
@@ -163,7 +177,7 @@ serve(async (req) => {
       session_id, 
       type_code: profileRow.type_code, 
       confidence: profileRow.conf_calibrated,
-      results_version: "v1.2.1"
+      results_version: RESULTS_VERSION
     }));
 
     return new Response(JSON.stringify({ status: "success", profile: profileRow, type_code: profileRow.type_code, confidence: profileRow.conf_calibrated }), { headers: { ...corsHeaders, "Content-Type":"application/json" } });
