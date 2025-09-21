@@ -18,7 +18,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { trackResultsViewed } from "@/lib/analytics";
 import { classifyRpcError, type RpcErrorCategory } from "@/features/results/errorClassifier";
-import { fetchResultsBySession } from "@/services/resultsApi";
+import { fetchResultsBySession, type ResultsFetchMode } from "@/services/resultsApi";
 import { ensureSessionLinked } from "@/services/sessionLinking";
 import { IS_PREVIEW } from "@/lib/env";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -108,15 +108,19 @@ export default function Results({ components }: ResultsProps = {}) {
   const [resultsVersionKey, setResultsVersionKey] = useState<string | null>(
     () => versionParam ?? null
   );
-  const hasShareToken = useMemo(
-    () => typeof shareToken === "string" && shareToken.trim().length > 0,
-    [shareToken]
-  );
+  const normalizedShareToken = useMemo(() => {
+    if (typeof shareToken !== "string") {
+      return null;
+    }
+    const trimmed = shareToken.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }, [shareToken]);
   const identityKey = useMemo(
-    () => (hasShareToken ? `token:${shareToken}` : "owner"),
-    [hasShareToken, shareToken]
+    () => (normalizedShareToken ? `token:${normalizedShareToken}` : "owner"),
+    [normalizedShareToken]
   );
   const [hasAuthSession, setHasAuthSession] = useState(false);
+  const [authStateResolved, setAuthStateResolved] = useState(false);
   useEffect(() => {
     setShareToken(query.get("t") ?? null);
   }, [query]);
@@ -129,13 +133,21 @@ export default function Results({ components }: ResultsProps = {}) {
   useEffect(() => {
     let active = true;
     (async () => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (active) {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!active) {
+          return;
+        }
         setHasAuthSession(Boolean(sessionData?.session?.access_token));
+      } finally {
+        if (active) {
+          setAuthStateResolved(true);
+        }
       }
     })();
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setHasAuthSession(Boolean(session?.access_token));
+      setAuthStateResolved(true);
     });
     return () => {
       active = false;
@@ -173,11 +185,25 @@ export default function Results({ components }: ResultsProps = {}) {
     pdf.save("PRISM_Profile.pdf");
   };
 
+  const fetchMode = useMemo<ResultsFetchMode | null>(() => {
+    if (normalizedShareToken) {
+      return { mode: "share", shareToken: normalizedShareToken };
+    }
+    if (hasAuthSession) {
+      return { mode: "owner" };
+    }
+    return null;
+  }, [normalizedShareToken, hasAuthSession]);
+
   const resultsQuery = useQuery<ResultsResponse | null>({
     queryKey: resultsQueryKeys.session(sessionId, identityKey, resultsVersionKey),
-    queryFn: () =>
-      fetchResultsBySession(sessionId, hasShareToken ? shareToken : null) as Promise<ResultsResponse>,
-    enabled: Boolean(sessionId),
+    queryFn: async () => {
+      if (!fetchMode) {
+        throw new Error("Results fetch mode unavailable");
+      }
+      return fetchResultsBySession(sessionId, fetchMode) as Promise<ResultsResponse>;
+    },
+    enabled: Boolean(sessionId && fetchMode),
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchInterval: (currentData) => {
@@ -242,7 +268,7 @@ export default function Results({ components }: ResultsProps = {}) {
 
   if (resultsQuery.error) {
     let kind = classifyRpcError(resultsQuery.error);
-    if (kind === "expired_or_invalid_token" && !hasShareToken && hasAuthSession) {
+    if (kind === "expired_or_invalid_token" && !normalizedShareToken && hasAuthSession) {
       kind = "not_authorized";
     }
     if (kind === "expired_or_invalid_token" || kind === "not_authorized") {
@@ -259,7 +285,28 @@ export default function Results({ components }: ResultsProps = {}) {
     }
   }
 
-  const loading = resultsQuery.isPending && !data && !err && !errKind;
+  const fetchPreconditionError: RpcErrorCategory | null = useMemo(() => {
+    if (fetchMode) {
+      return null;
+    }
+    if (!sessionId) {
+      return null;
+    }
+    if (normalizedShareToken) {
+      return null;
+    }
+    if (!authStateResolved) {
+      return null;
+    }
+    return "not_authorized";
+  }, [authStateResolved, fetchMode, normalizedShareToken, sessionId]);
+
+  if (!errKind && fetchPreconditionError) {
+    errKind = fetchPreconditionError;
+  }
+
+  const isAuthResolving = !fetchMode && !normalizedShareToken && !authStateResolved;
+  const loading = (resultsQuery.isPending || isAuthResolving) && !data && !err && !errKind;
 
   if (data?.profile) {
     data = {
@@ -282,7 +329,7 @@ export default function Results({ components }: ResultsProps = {}) {
     return trimmed.length > 0 ? trimmed : null;
   }, [data?.session]);
 
-  const navigationShareToken = hasShareToken ? shareToken : null;
+  const navigationShareToken = normalizedShareToken;
   const displayShareToken = navigationShareToken ?? sessionShareToken ?? null;
 
   const resultsVersion = useMemo(
@@ -449,7 +496,7 @@ export default function Results({ components }: ResultsProps = {}) {
 
   useEffect(() => {
     if (IS_PREVIEW) return;
-    if (shareToken) return;
+    if (normalizedShareToken) return;
     if (!data) return;
     if (linkAttemptedRef.current) return;
 
@@ -471,7 +518,7 @@ export default function Results({ components }: ResultsProps = {}) {
     return () => {
       cancelled = true;
     };
-  }, [data, sessionId, shareToken]);
+  }, [data, sessionId, normalizedShareToken]);
 
   if (errKind) {
     const content =

@@ -1,6 +1,5 @@
 import supabase from "@/lib/supabaseClient";
 import { buildAuthHeaders } from "@/lib/authSession";
-import { IS_PREVIEW } from "@/lib/env";
 import { buildEdgeRequestHeaders, resolveSupabaseFunctionsBase } from "@/services/supabaseEdge";
 
 export class ResultsApiError extends Error {
@@ -65,15 +64,17 @@ function logFailure(sessionId: string, shareToken: string | null | undefined, st
   });
 }
 
+export type ShareResultsFetchOptions = { mode: "share"; shareToken: string };
+export type OwnerResultsFetchOptions = { mode: "owner" };
+export type ResultsFetchMode = ShareResultsFetchOptions | OwnerResultsFetchOptions;
+
 export async function fetchResultsBySession(
   sessionId: string,
-  shareToken?: string | null
+  options: ResultsFetchMode
 ): Promise<ResultsFetchPayload> {
   if (!sessionId) {
     throw new Error("sessionId is required");
   }
-
-  const normalizedToken = shareToken?.trim() ?? "";
 
   const url = `${resolveSupabaseFunctionsBase()}/get-results-by-session`;
   const headers = buildEdgeRequestHeaders({
@@ -85,20 +86,22 @@ export async function fetchResultsBySession(
     session_id: sessionId,
   };
 
-  if (normalizedToken) {
-    body.share_token = normalizedToken;
-  }
+  let normalizedToken: string | null = null;
 
-  if (!IS_PREVIEW) {
-    const authHeaders = await buildAuthHeaders();
-    if (authHeaders.Authorization) {
-      headers.Authorization = authHeaders.Authorization;
+  if (options.mode === "share") {
+    normalizedToken = options.shareToken.trim();
+    if (!normalizedToken) {
+      logFailure(sessionId, null, 401);
+      throw new ResultsApiError("Share token required", 401);
     }
-  }
-
-  if (!normalizedToken && !headers.Authorization) {
-    logFailure(sessionId, shareToken ?? null, 401);
-    throw new ResultsApiError("Authorization required", 401);
+    body.share_token = normalizedToken;
+  } else {
+    const authHeaders = await buildAuthHeaders();
+    if (!authHeaders.Authorization) {
+      logFailure(sessionId, null, 401);
+      throw new ResultsApiError("Authorization required", 401);
+    }
+    headers.Authorization = authHeaders.Authorization;
   }
 
   try {
@@ -119,7 +122,7 @@ export async function fetchResultsBySession(
         typeof payload.error === "string" && payload.error.length > 0
           ? payload.error
           : `get-results-by-session ${response.status}`;
-      logFailure(sessionId, shareToken ?? null, response.status);
+      logFailure(sessionId, normalizedToken, response.status);
       throw new ResultsApiError(message, response.status);
     }
 
@@ -140,10 +143,10 @@ export async function fetchResultsBySession(
       throw error;
     }
     if (error instanceof Error) {
-      logFailure(sessionId, shareToken ?? null, (error as ResultsApiError).status);
+      logFailure(sessionId, normalizedToken, (error as ResultsApiError).status);
       throw error;
     }
-    logFailure(sessionId, shareToken ?? null, undefined);
+    logFailure(sessionId, normalizedToken, undefined);
     throw new ResultsApiError("Failed to fetch results");
   }
 }
