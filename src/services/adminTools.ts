@@ -26,14 +26,34 @@ export type BackfillSummary = {
 
 type BackfillResultEntry = { sessionId: string; result: RecomputeHttpResult };
 
-function normalizeBaseUrl(raw: string | undefined): string | null {
+const FUNCTIONS_V1_SUFFIX = "/functions/v1" as const;
+
+function trimTrailingSlashes(value: string): string {
+  return value.replace(/\/*$/, "");
+}
+
+function normalizeFunctionsBase(raw: string | undefined): string | null {
   if (!raw) return null;
-  const trimmed = raw.trim();
+  const trimmed = trimTrailingSlashes(raw.trim());
   if (!trimmed) return null;
-  if (trimmed.endsWith("/functions/v1")) {
+
+  if (trimmed.includes(".functions.supabase.co")) {
     return trimmed;
   }
-  return `${trimmed.replace(/\/$/, "")}/functions/v1`;
+
+  if (trimmed.endsWith(FUNCTIONS_V1_SUFFIX)) {
+    const base = trimTrailingSlashes(trimmed.slice(0, -FUNCTIONS_V1_SUFFIX.length));
+    if (base.includes(".supabase.co")) {
+      return base.replace(".supabase.co", ".functions.supabase.co");
+    }
+    return `${base}${FUNCTIONS_V1_SUFFIX}`;
+  }
+
+  if (trimmed.includes(".supabase.co")) {
+    return trimmed.replace(".supabase.co", ".functions.supabase.co");
+  }
+
+  return trimmed;
 }
 
 function resolveSupabaseUrl(): string {
@@ -47,13 +67,29 @@ function resolveSupabaseUrl(): string {
 
 function resolveFunctionsBase(): string {
   if (cachedFunctionsBase) return cachedFunctionsBase;
-  const explicit =
-    nodeEnv.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL ??
-    nodeEnv.VITE_SUPABASE_FUNCTIONS_URL ??
-    (viteEnv.VITE_SUPABASE_FUNCTIONS_URL as string | undefined) ??
-    null;
-  const resolved = normalizeBaseUrl(explicit ?? undefined) ?? `${resolveSupabaseUrl()}/functions/v1`;
-  cachedFunctionsBase = resolved;
+  const explicitCandidates = [
+    nodeEnv.NEXT_PUBLIC_SUPABASE_FUNCTION_URL,
+    nodeEnv.VITE_SUPABASE_FUNCTION_URL,
+    (viteEnv.VITE_SUPABASE_FUNCTION_URL as string | undefined) ?? null,
+    nodeEnv.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL,
+    nodeEnv.VITE_SUPABASE_FUNCTIONS_URL,
+    (viteEnv.VITE_SUPABASE_FUNCTIONS_URL as string | undefined) ?? null,
+  ];
+
+  for (const candidate of explicitCandidates) {
+    const normalized = normalizeFunctionsBase(candidate ?? undefined);
+    if (normalized) {
+      cachedFunctionsBase = normalized;
+      return cachedFunctionsBase;
+    }
+  }
+
+  const supabaseUrl = resolveSupabaseUrl();
+  const fallback = supabaseUrl.includes(".supabase.co")
+    ? supabaseUrl.replace(".supabase.co", ".functions.supabase.co")
+    : `${supabaseUrl}${FUNCTIONS_V1_SUFFIX}`;
+
+  cachedFunctionsBase = normalizeFunctionsBase(fallback) ?? fallback;
   return cachedFunctionsBase;
 }
 
