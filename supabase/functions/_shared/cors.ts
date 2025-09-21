@@ -34,6 +34,7 @@ export function corsHeaders(origin: string) {
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     Vary: "Origin, Authorization",
+    "Cache-Control": "no-store",
   };
 }
 
@@ -43,7 +44,6 @@ export function json(origin: string, body: unknown, status = 200) {
     headers: {
       ...corsHeaders(origin),
       "Content-Type": "application/json",
-      "Cache-Control": "no-store",
     },
   });
 }
