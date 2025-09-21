@@ -115,6 +115,8 @@ export interface FetchResultsResponse {
   functions?: any[];
   state?: any[];
   results_version?: string;
+  scoring_version?: string;
+  result_id?: string;
   code?: string;
   error?: string;
 }

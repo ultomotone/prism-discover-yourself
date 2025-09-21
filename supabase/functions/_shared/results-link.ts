@@ -1,20 +1,25 @@
 export type BuildResultsLinkOptions = {
   version?: string | null;
+  scoringVersion?: string | null;
 };
 
 export function buildResultsLink(
   baseUrl: string,
-  sessionId: string,
-  token: string,
+  resultId: string,
+  token: string | null,
   options: BuildResultsLinkOptions = {},
 ): string {
-  const normalized = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  const normalizedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
   const params = new URLSearchParams();
-  params.set('t', token);
-  if (options.version && options.version.trim() !== '') {
-    params.set('sv', options.version.trim());
+  if (token && token.trim().length > 0) {
+    params.set('t', token.trim());
+  }
+  const scoringVersion = options.scoringVersion ?? options.version;
+  if (scoringVersion && scoringVersion.trim().length > 0) {
+    params.set('sv', scoringVersion.trim());
   }
   const query = params.toString();
-  return `${normalized}/results/${sessionId}?${query}`;
+  return query
+    ? `${normalizedBase}/results/${resultId}?${query}`
+    : `${normalizedBase}/results/${resultId}`;
 }
-

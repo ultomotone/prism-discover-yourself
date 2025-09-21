@@ -1,4 +1,3 @@
-import supabase from "@/lib/supabaseClient";
 import { buildAuthHeaders } from "@/lib/authSession";
 import { buildEdgeRequestHeaders, resolveSupabaseFunctionsBase } from "@/services/supabaseEdge";
 
@@ -12,143 +11,131 @@ export class ResultsApiError extends Error {
   }
 }
 
-export type ResultsProfilePayload = Record<string, any> & {
+export type ResultsProfilePayload = Record<string, unknown> & {
   paid?: boolean;
 };
 
-export type ResultsFetchPayload = Record<string, any> & {
-  profile?: ResultsProfilePayload;
-};
+export interface ResultsSuccessPayload {
+  ok: true;
+  results_version: string;
+  scoring_version?: string;
+  result_id: string;
+  session: Record<string, unknown> | null;
+  profile: ResultsProfilePayload;
+  types: unknown[];
+  functions: unknown[];
+  state: unknown[];
+}
 
-type FetchResponse = ResultsFetchPayload & {
-  ok?: boolean;
-  code?: string;
-  error?: string;
-  profile?: ResultsProfilePayload;
-  results_version?: string;
-};
+export interface ResultsPendingPayload {
+  ok: false;
+  code: "SCORING_ROWS_MISSING";
+}
 
-function normalizeProfilePayload(profile: ResultsProfilePayload): ResultsProfilePayload {
+export type ResultsFetchPayload = ResultsSuccessPayload | ResultsPendingPayload;
+
+function normalizeProfile(profile: ResultsProfilePayload): ResultsProfilePayload {
   return {
     ...profile,
     paid: Boolean(profile?.paid),
   };
 }
 
-function ensureProfile<T extends { profile?: ResultsProfilePayload }>(payload: T): T {
-  if (!payload?.profile) {
-    return payload;
-  }
-
-  return {
-    ...payload,
-    profile: normalizeProfilePayload(payload.profile),
-  };
-}
-
-function buildFallback(payload: FetchResponse): FetchResponse {
-  if (payload.profile) {
-    return {
-      results_version: payload.results_version ?? "v1",
-      profile: normalizeProfilePayload(payload.profile),
-    };
-  }
-  return payload;
-}
-
-function logFailure(sessionId: string, shareToken: string | null | undefined, status?: number) {
-  console.error('results-fetch-failure', {
-    sessionId,
-    hasToken: Boolean(shareToken && shareToken.trim() !== ''),
-    httpStatus: status ?? null,
-  });
-}
-
-export type ShareResultsFetchOptions = { mode: "share"; shareToken: string };
-export type OwnerResultsFetchOptions = { mode: "owner" };
-export type ResultsFetchMode = ShareResultsFetchOptions | OwnerResultsFetchOptions;
-
-export async function fetchResultsBySession(
-  sessionId: string,
-  options: ResultsFetchMode
+async function executeRequest(
+  body: Record<string, unknown>,
+  headers: HeadersInit
 ): Promise<ResultsFetchPayload> {
-  if (!sessionId) {
-    throw new Error("sessionId is required");
+  const url = `${resolveSupabaseFunctionsBase()}/get-results-by-session`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  let payload: any = null;
+  try {
+    payload = await response.json();
+  } catch {
+    payload = null;
   }
 
-  const url = `${resolveSupabaseFunctionsBase()}/get-results-by-session`;
-  const headers = buildEdgeRequestHeaders({
+  if (!response.ok) {
+    const message =
+      typeof payload?.error === "string" && payload.error.length > 0
+        ? payload.error
+        : `get-results-by-session ${response.status}`;
+    throw new ResultsApiError(message, response.status);
+  }
+
+  if (payload?.ok === false && payload?.code === "SCORING_ROWS_MISSING") {
+    return { ok: false, code: "SCORING_ROWS_MISSING" };
+  }
+
+  if (payload?.ok === true) {
+    if (payload?.profile) {
+      payload.profile = normalizeProfile(payload.profile as ResultsProfilePayload);
+    }
+    return payload as ResultsSuccessPayload;
+  }
+
+  const message =
+    typeof payload?.error === "string" && payload.error.length > 0
+      ? payload.error
+      : "Unexpected results payload";
+  throw new ResultsApiError(message, 500);
+}
+
+function baseHeaders(): Record<string, string> {
+  return buildEdgeRequestHeaders({
     "Content-Type": "application/json",
     "Cache-Control": "no-store",
   });
+}
 
-  const body: Record<string, unknown> = {
-    session_id: sessionId,
-  };
-
-  let normalizedToken: string | null = null;
-
-  if (options.mode === "share") {
-    normalizedToken = options.shareToken.trim();
-    if (!normalizedToken) {
-      logFailure(sessionId, null, 401);
-      throw new ResultsApiError("Share token required", 401);
-    }
-    body.share_token = normalizedToken;
-  } else {
-    const authHeaders = await buildAuthHeaders();
-    if (!authHeaders.Authorization) {
-      logFailure(sessionId, null, 401);
-      throw new ResultsApiError("Authorization required", 401);
-    }
-    headers.Authorization = authHeaders.Authorization;
+/** SHARE flow (no Authorization header) */
+export async function fetchSharedResultBySession(
+  sessionId: string,
+  shareToken: string
+): Promise<ResultsFetchPayload> {
+  if (!sessionId) {
+    throw new ResultsApiError("sessionId is required", 400);
+  }
+  if (!shareToken || !shareToken.trim()) {
+    throw new ResultsApiError("shareToken is required", 401);
   }
 
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
+  const headers = baseHeaders();
+  return executeRequest(
+    {
+      session_id: sessionId,
+      share_token: shareToken.trim(),
+    },
+    headers
+  );
+}
 
-    const payload: FetchResponse = ensureProfile(await response.json().catch(() => ({})));
-
-    if (!response.ok) {
-      if (payload.profile) {
-        return buildFallback(payload);
-      }
-
-      const message =
-        typeof payload.error === "string" && payload.error.length > 0
-          ? payload.error
-          : `get-results-by-session ${response.status}`;
-      logFailure(sessionId, normalizedToken, response.status);
-      throw new ResultsApiError(message, response.status);
-    }
-
-    if (payload.ok === false) {
-      if (payload.code === "SCORING_ROWS_MISSING" && payload.profile) {
-        return buildFallback(payload);
-      }
-      return payload;
-    }
-
-    if (!payload.ok && payload.profile && !payload.types) {
-      return buildFallback(payload);
-    }
-
-    return payload;
-  } catch (error) {
-    if (error instanceof ResultsApiError) {
-      throw error;
-    }
-    if (error instanceof Error) {
-      logFailure(sessionId, normalizedToken, (error as ResultsApiError).status);
-      throw error;
-    }
-    logFailure(sessionId, normalizedToken, undefined);
-    throw new ResultsApiError("Failed to fetch results");
+/** OWNER flow (Authorization required) */
+export async function fetchOwnerResultBySession(
+  sessionId: string
+): Promise<ResultsFetchPayload> {
+  if (!sessionId) {
+    throw new ResultsApiError("sessionId is required", 400);
   }
+
+  const headers = baseHeaders();
+  const authHeaders = await buildAuthHeaders();
+  const authorization = authHeaders.Authorization;
+  if (!authorization) {
+    throw new ResultsApiError("Authorization required", 401);
+  }
+  (headers as any).Authorization = authorization;
+
+  return executeRequest(
+    {
+      session_id: sessionId,
+    },
+    headers
+  );
 }
 
 export async function markResultsPaid(sessionId: string): Promise<void> {

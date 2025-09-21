@@ -30,6 +30,7 @@ const TEST_FILES = [
   'tests/linkedinTrack.test.ts',
   'tests/quoraCapiPayload.test.ts',
   'tests/quoraEvents.test.ts',
+  'tests/redditConfig.test.ts',
   'tests/getUserJwt.test.ts',
   'tests/classifyRpcError.test.ts',
   'tests/saveResponseIdempotent.test.ts',

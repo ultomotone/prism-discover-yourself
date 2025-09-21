@@ -78,7 +78,8 @@ test("finalizeAssessmentCore is idempotent and reports path", async () => {
       sessionStore = { ...sessionStore, share_token: token };
       return token;
     },
-    buildResultsUrl: (_base: string, sessionId: string, token: string) => `/results/${sessionId}?t=${token}`,
+    buildResultsUrl: (_base: string, resultId: string, token: string, scoringVersion: string) =>
+      `/results/${resultId}?t=${token}&sv=${scoringVersion}`,
     now: () => now,
     log: () => {
       /* no-op */
@@ -94,8 +95,10 @@ test("finalizeAssessmentCore is idempotent and reports path", async () => {
   assert.equal(first.ok, true);
   assert.equal(first.profile.results_version, RESULTS_VERSION);
   assert.equal(first.share_token, "token-123");
-  assert.equal(first.results_url, "/results/sess-1?t=token-123");
+  assert.equal(first.results_url, "/results/sess-1?t=token-123&sv=v1.2.1");
   assert.equal(first.results_version, RESULTS_VERSION);
+  assert.equal(first.result_id, "sess-1");
+  assert.equal(first.scoring_version, RESULTS_VERSION);
   assert.equal(prismCalls, 1);
   assert.equal(first.path, "scored");
 
@@ -107,7 +110,9 @@ test("finalizeAssessmentCore is idempotent and reports path", async () => {
   assert.equal(second.ok, true);
   assert.equal(second.profile.results_version, RESULTS_VERSION);
   assert.equal(second.share_token, "token-123");
-  assert.equal(second.results_url, "/results/sess-1?t=token-123");
+  assert.equal(second.results_url, "/results/sess-1?t=token-123&sv=v1.2.1");
   assert.equal(prismCalls, 1, "score_prism should not be invoked twice");
   assert.equal(second.path, "cache_hit");
+  assert.equal(second.result_id, "sess-1");
+  assert.equal(second.scoring_version, RESULTS_VERSION);
 });
