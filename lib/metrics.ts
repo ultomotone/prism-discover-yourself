@@ -1,3 +1,5 @@
+import { logger } from "../src/lib/logger.ts";
+
 export type MetricFields = Record<string, string | number | boolean | null | undefined>;
 
 function readEnv(name: string): string | undefined {
@@ -29,13 +31,7 @@ const METRICS_ENABLED = NODE_ENV === "production";
 
 async function dispatchMetric(name: string, fields: MetricFields): Promise<void> {
   if (!METRICS_ENDPOINT) {
-    console.log(
-      JSON.stringify({
-        event: "metric.emit",
-        name,
-        fields,
-      }),
-    );
+    logger.info("metric.emit", { name, fields });
     return;
   }
 
@@ -46,13 +42,10 @@ async function dispatchMetric(name: string, fields: MetricFields): Promise<void>
       body: JSON.stringify({ name, fields }),
     });
   } catch (error) {
-    console.error(
-      JSON.stringify({
-        event: "metric.error",
-        name,
-        message: error instanceof Error ? error.message : String(error),
-      }),
-    );
+    logger.error("metric.error", {
+      name,
+      message: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
