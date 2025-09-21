@@ -1,6 +1,7 @@
 // Reddit Pixel + Conversions API client-side tracking utility
 
 import { IS_PREVIEW } from "@/lib/env";
+import { getConfiguredRedditPixelId } from "@/lib/reddit/config";
 
 export interface AttributionContext {
   uuid: string;
@@ -84,11 +85,11 @@ export async function trackRedditS2S(
   if (IS_PREVIEW) return;
   try {
     const ctx = getAttributionContext();
-    
+
     // Check if Reddit tracking is properly configured
-    const redditAppId = localStorage.getItem('reddit_app_id');
+    const redditAppId = getConfiguredRedditPixelId();
     if (!redditAppId) {
-      console.log('Reddit tracking disabled - no app ID configured');
+      console.log('Reddit tracking disabled - no pixel ID configured');
       return;
     }
     

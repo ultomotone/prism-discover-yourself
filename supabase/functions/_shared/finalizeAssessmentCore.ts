@@ -43,7 +43,7 @@ export interface FinalizeAssessmentDeps {
   getSession(sessionId: string): Promise<SessionRow | null>;
   upsertSession(sessionId: string, patch: Partial<SessionRow>): Promise<void>;
   generateShareToken(): string;
-  buildResultsUrl(baseUrl: string, sessionId: string, token: string, version: string): string;
+  buildResultsUrl(baseUrl: string, resultId: string, token: string, scoringVersion: string): string;
   now(): Date;
   log(payload: Record<string, unknown>): void;
 }
@@ -60,6 +60,8 @@ export interface FinalizeAssessmentOutput {
   share_token: string;
   results_url: string;
   results_version: string;
+  result_id: string;
+  scoring_version: string;
   path: "cache_hit" | "scored";
   session: SessionRow;
 }
@@ -148,13 +150,17 @@ export async function finalizeAssessmentCore(
         updated_at: now.toISOString(),
       });
 
-      const resultsUrl = deps.buildResultsUrl(siteUrl, sessionId, shareToken, RESULTS_VERSION);
+      const resultId = sessionId;
+      const scoringVersion = normalized.results_version ?? RESULTS_VERSION;
+      const resultsUrl = deps.buildResultsUrl(siteUrl, resultId, shareToken, scoringVersion);
       return {
         ok: true,
         profile: normalized,
         share_token: shareToken,
         results_url: resultsUrl,
         results_version: RESULTS_VERSION,
+        result_id: resultId,
+        scoring_version: scoringVersion,
         path: "cache_hit",
         session: ensuredSession,
       };
@@ -187,13 +193,17 @@ export async function finalizeAssessmentCore(
       updated_at: now.toISOString(),
     });
 
-    const resultsUrl = deps.buildResultsUrl(siteUrl, sessionId, shareToken, RESULTS_VERSION);
+    const resultId = sessionId;
+    const scoringVersion = normalized.results_version ?? RESULTS_VERSION;
+    const resultsUrl = deps.buildResultsUrl(siteUrl, resultId, shareToken, scoringVersion);
     return {
       ok: true,
       profile: normalized,
       share_token: shareToken,
       results_url: resultsUrl,
       results_version: RESULTS_VERSION,
+      result_id: resultId,
+      scoring_version: scoringVersion,
       path: "scored",
       session: ensuredSession,
     };

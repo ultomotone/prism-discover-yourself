@@ -31,6 +31,7 @@ const TEST_FILES = [
   'tests/quoraCapiPayload.test.ts',
   'tests/quoraEvents.test.ts',
   'tests/quoraEnvConfig.test.ts',
+  'tests/redditConfig.test.ts',
   'tests/getUserJwt.test.ts',
   'tests/classifyRpcError.test.ts',
   'tests/saveResponseIdempotent.test.ts',
@@ -135,16 +136,14 @@ function pickTestFiles(pattern) {
   let regex;
   try {
     regex = new RegExp(pattern);
-  } catch (error) {
+  } catch {
     regex = undefined;
   }
 
   const lowered = pattern.toLowerCase();
   for (const hint of PATTERN_HINTS) {
     const matches = hint.testNames.some((name) => {
-      if (regex && regex.test(name)) {
-        return true;
-      }
+      if (regex && regex.test(name)) return true;
       return name.toLowerCase().includes(lowered);
     });
     if (matches) {
@@ -164,9 +163,7 @@ const tsxBin = path.resolve(__dirname, '../node_modules/tsx/dist/cli.mjs');
 const result = spawnSync(
   process.execPath,
   [c8Bin, tsxBin, '--test', '--test-force-exit', ...forwardedArgs, ...filesToRun],
-  {
-    stdio: 'inherit',
-  }
+  { stdio: 'inherit' }
 );
 
 if (result.error) {
