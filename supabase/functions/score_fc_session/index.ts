@@ -1,11 +1,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.55.0";
 import { ensureResultsVersion } from "../_shared/resultsVersion.ts";
-
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders, json, resolveOrigin } from "../_shared/cors.ts";
 
 type Weights = Record<string, number>;
 
@@ -28,14 +24,13 @@ const supabase = createClient(
 await ensureResultsVersion(supabase);
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+  const origin = resolveOrigin(req);
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders(origin) });
 
   try {
     const { session_id, basis = "functions", version = "v1.2" } = await req.json();
     if (!session_id) {
-      return new Response(JSON.stringify({ error: "session_id required" }), {
-        status: 400, headers: { ...cors, "Content-Type": "application/json" },
-      });
+      return json(origin, { error: "session_id required" }, 400);
     }
 
     // Version validation warning
@@ -64,10 +59,14 @@ serve(async (req) => {
 
     if (!reps || reps.length === 0) {
       console.log(`evt:fc_no_responses,session_id:${session_id}`);
-      return new Response(JSON.stringify({
-        session_id, version, basis, blocks_answered: 0,
-        scores: {}, info: "no fc responses"
-      }), { headers: { ...cors, "Content-Type": "application/json" }});
+      return json(origin, {
+        session_id,
+        version,
+        basis,
+        blocks_answered: 0,
+        scores: {},
+        info: "no fc responses",
+      });
     }
 
     // 2) Index options by id
@@ -123,14 +122,10 @@ serve(async (req) => {
 
     console.log(`evt:fc_scoring_complete,session_id:${session_id},blocks_answered:${answered}`);
 
-    return new Response(JSON.stringify({
-      session_id, version, basis, blocks_answered: answered, scores
-    }), { headers: { ...cors, "Content-Type": "application/json" }});
+    return json(origin, { session_id, version, basis, blocks_answered: answered, scores });
 
   } catch (e) {
     console.error("score_fc_session error", e);
-    return new Response(JSON.stringify({ error: e?.message || String(e) }), {
-      status: 500, headers: { ...cors, "Content-Type": "application/json" },
-    });
+    return json(origin, { error: e?.message || String(e) }, 500);
   }
 });

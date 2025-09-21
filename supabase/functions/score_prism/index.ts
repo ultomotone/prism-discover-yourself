@@ -8,11 +8,7 @@ import { RESULTS_VERSION, ensureResultsVersion, parseResultsVersion } from "../_
 import type { ProfileRow, SessionRow } from "../_shared/finalizeAssessmentCore.ts";
 import { buildCompletionLog } from "../_shared/observability.ts";
 import { withTimer } from "../../../lib/metrics.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders, json, resolveOrigin } from "../_shared/cors.ts";
 
 const ALL_TYPES: string[] = ["LIE","ILI","ESE","SEI","LII","ILE","ESI","SEE","LSE","SLI","EIE","IEI","LSI","SLE","EII","IEE"];
 
@@ -32,11 +28,15 @@ const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 await ensureResultsVersion(db);
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const origin = resolveOrigin(req);
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders(origin) });
+
+  let session_id: string | undefined;
 
   try {
-    const { session_id } = await req.json();
-    if (!session_id) return new Response(JSON.stringify({ status: "error", error: "session_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type":"application/json" } });
+    const parsed = await req.json();
+    session_id = parsed?.session_id;
+    if (!session_id) return json(origin, { status: "error", error: "session_id required" }, 400);
 
     // Pull responses (latest per question)
     const { data: rows, error: respErr } = await db
@@ -45,10 +45,7 @@ serve(async (req) => {
       .eq("session_id", session_id);
     if (respErr) throw respErr;
     if (!rows?.length) {
-      return new Response(JSON.stringify({ status: "error", error: "no responses" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json(origin, { status: "error", error: "no responses" }, 400);
     }
     const last = new Map<number, any>();
     for (const r of rows) {
@@ -225,9 +222,7 @@ serve(async (req) => {
 
     console.log(JSON.stringify(completionLog));
 
-    return new Response(JSON.stringify(scoringResult.responseBody), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json(origin, scoringResult.responseBody);
   } catch (e: any) {
     const durationMs = typeof e === "object" && e && "__durationMs" in e ? Math.round(Number(e.__durationMs)) : undefined;
     console.log(
@@ -238,6 +233,6 @@ serve(async (req) => {
         duration_ms: durationMs,
       }),
     );
-    return new Response(JSON.stringify({ status:"error", error: e?.message || "internal" }), { status: 500, headers: { ...corsHeaders, "Content-Type":"application/json" } });
+    return json(origin, { status: "error", error: e?.message || "internal" }, 500);
   }
 });
