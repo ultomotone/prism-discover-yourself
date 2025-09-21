@@ -10,6 +10,8 @@ type FinalizeResponse = {
   share_token: string;
   results_url: string;
   results_version: string;
+  result_id: string;
+  scoring_version: string;
 };
 
 const url = process.env.SUPABASE_URL;
@@ -42,8 +44,11 @@ if (!url || !service) {
     assert.equal(first.data.profile.session_id, session.id);
     assert.equal(first.data.profile.results_version, RESULTS_VERSION);
     assert.equal(first.data.results_version, RESULTS_VERSION);
+    assert.equal(first.data.result_id, session.id);
+    assert.equal(first.data.scoring_version, RESULTS_VERSION);
     assert.match(first.data.share_token, /^[0-9a-f-]{36}$/);
-    assert.ok(first.data.results_url.includes(session.id));
+    assert.ok(first.data.results_url.includes(`${session.id}?`));
+    assert.ok(first.data.results_url.includes('sv='));
 
     const second = await supabase.functions.invoke<FinalizeResponse>("finalizeAssessment", {
       body: { session_id: session.id },
@@ -54,6 +59,8 @@ if (!url || !service) {
     assert.equal(second.data.profile.id, first.data.profile.id);
     assert.equal(second.data.share_token, first.data.share_token);
     assert.equal(second.data.results_url, first.data.results_url);
+    assert.equal(second.data.result_id, first.data.result_id);
+    assert.equal(second.data.scoring_version, first.data.scoring_version);
   });
 
   test("production session can be finalized without direct score_prism", async () => {
@@ -71,6 +78,8 @@ if (!url || !service) {
     assert(first.data);
     assert.equal(first.data.ok, true);
     assert.equal(first.data.results_version, RESULTS_VERSION);
+    assert.equal(first.data.result_id, sessionId);
+    assert.equal(first.data.scoring_version, RESULTS_VERSION);
 
     const { data: profile } = await supabase
       .from("profiles")

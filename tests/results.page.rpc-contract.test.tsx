@@ -30,9 +30,15 @@ function createFetchStub(responseFactory: (call: FetchCall) => Response | Promis
 
 function successPayload(sessionId: string, typeCode = "LII") {
   return {
+    ok: true,
+    result_id: sessionId,
+    scoring_version: "v2.0.0",
+    results_version: "v2",
     profile: { type_code: typeCode, top_3_fits: [{ code: typeCode, fit: 72.1 }] },
     session: { id: sessionId, status: "completed" },
-    results_version: "v1",
+    types: Array.from({ length: 16 }, (_, index) => ({ type_code: `${typeCode}-${index}` })),
+    functions: Array.from({ length: 8 }, (_, index) => ({ func: `F${index}` })),
+    state: [{ overlay_band: "A" }],
   };
 }
 
