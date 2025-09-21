@@ -175,7 +175,8 @@ Deno.serve(async (req) => {
           getSession,
           upsertSession,
           generateShareToken,
-          buildResultsUrl: buildResultsLink,
+          buildResultsUrl: (baseUrl, sessionId, token, version) =>
+            buildResultsLink(baseUrl, sessionId, token, { version }),
           now: () => new Date(),
           log: (payload) => console.log(JSON.stringify(payload)),
         },

@@ -67,16 +67,13 @@ function logFailure(sessionId: string, shareToken: string | null | undefined, st
 
 export async function fetchResultsBySession(
   sessionId: string,
-  shareToken: string
+  shareToken?: string | null
 ): Promise<ResultsFetchPayload> {
   if (!sessionId) {
     throw new Error("sessionId is required");
   }
 
-  if (!shareToken || shareToken.trim() === "") {
-    logFailure(sessionId, shareToken, 401);
-    throw new ResultsApiError("Secure share token required", 401);
-  }
+  const normalizedToken = shareToken?.trim() ?? "";
 
   const url = `${resolveSupabaseFunctionsBase()}/get-results-by-session`;
   const headers = buildEdgeRequestHeaders({
@@ -86,14 +83,22 @@ export async function fetchResultsBySession(
 
   const body: Record<string, unknown> = {
     session_id: sessionId,
-    share_token: shareToken,
   };
+
+  if (normalizedToken) {
+    body.share_token = normalizedToken;
+  }
 
   if (!IS_PREVIEW) {
     const authHeaders = await buildAuthHeaders();
     if (authHeaders.Authorization) {
       headers.Authorization = authHeaders.Authorization;
     }
+  }
+
+  if (!normalizedToken && !headers.Authorization) {
+    logFailure(sessionId, shareToken ?? null, 401);
+    throw new ResultsApiError("Authorization required", 401);
   }
 
   try {
@@ -114,7 +119,7 @@ export async function fetchResultsBySession(
         typeof payload.error === "string" && payload.error.length > 0
           ? payload.error
           : `get-results-by-session ${response.status}`;
-      logFailure(sessionId, shareToken, response.status);
+      logFailure(sessionId, shareToken ?? null, response.status);
       throw new ResultsApiError(message, response.status);
     }
 
@@ -135,10 +140,10 @@ export async function fetchResultsBySession(
       throw error;
     }
     if (error instanceof Error) {
-      logFailure(sessionId, shareToken, (error as ResultsApiError).status);
+      logFailure(sessionId, shareToken ?? null, (error as ResultsApiError).status);
       throw error;
     }
-    logFailure(sessionId, shareToken, undefined);
+    logFailure(sessionId, shareToken ?? null, undefined);
     throw new ResultsApiError("Failed to fetch results");
   }
 }

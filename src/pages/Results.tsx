@@ -104,24 +104,214 @@ export default function Results({ components }: ResultsProps = {}) {
   const [shareToken, setShareToken] = useState<string | null>(
     query.get("t") ?? null
   );
+  const versionParam = useMemo(() => query.get("sv"), [query]);
+  const [resultsVersionKey, setResultsVersionKey] = useState<string | null>(
+    () => versionParam ?? null
+  );
   const hasShareToken = useMemo(
     () => typeof shareToken === "string" && shareToken.trim().length > 0,
     [shareToken]
   );
+  const identityKey = useMemo(
+    () => (hasShareToken ? `token:${shareToken}` : "owner"),
+    [hasShareToken, shareToken]
+  );
+  const [hasAuthSession, setHasAuthSession] = useState(false);
   useEffect(() => {
     setShareToken(query.get("t") ?? null);
   }, [query]);
+  useEffect(() => {
+    setResultsVersionKey((current) => {
+      const normalized = versionParam ?? null;
+      return current === normalized ? current : normalized;
+    });
+  }, [versionParam]);
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (active) {
+        setHasAuthSession(Boolean(sessionData?.session?.access_token));
+      }
+    })();
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setHasAuthSession(Boolean(session?.access_token));
+    });
+    return () => {
+      active = false;
+      listener?.subscription?.unsubscribe();
+    };
+  }, []);
 
   const [rotating, setRotating] = useState(false);
   const linkAttemptedRef = useRef(false);
 
-  const resultsUrl = useMemo(
-    () =>
-      shareToken
-        ? `${window.location.origin}/results/${sessionId}?t=${shareToken}`
-        : `${window.location.origin}/results/${sessionId}`,
-    [sessionId, shareToken]
+
+  const downloadPDF = async () => {
+    const node = document.getElementById("results-content");
+    if (!node) return;
+
+    const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#ffffff" });
+    const img = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const imgProps = pdf.getImageProperties(img);
+    const imgWidth = pageWidth;
+    const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+
+    pdf.addImage(img, "PNG", 0, 0, imgWidth, Math.min(imgHeight, pageHeight));
+    let remaining = imgHeight - pageHeight;
+    let y = 0;
+    while (remaining > 0) {
+      pdf.addPage();
+      y += pageHeight;
+      pdf.addImage(img, "PNG", 0, -y, imgWidth, imgHeight);
+      remaining -= pageHeight;
+    }
+
+    pdf.save("PRISM_Profile.pdf");
+  };
+
+  const resultsQuery = useQuery<ResultsResponse | null>({
+    queryKey: resultsQueryKeys.session(sessionId, identityKey, resultsVersionKey),
+    queryFn: () =>
+      fetchResultsBySession(sessionId, hasShareToken ? shareToken : null) as Promise<ResultsResponse>,
+    enabled: Boolean(sessionId),
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: (currentData) => {
+      const data = currentData as ResultsResponse | undefined;
+      if (!data) return 2500;
+      if (data.ok === false && data.code === "SCORING_ROWS_MISSING" && !data.profile) {
+        return 2500;
+      }
+      if (!data.profile) {
+        return 2500;
+      }
+      return false;
+    },
+    retry: (failureCount, error) => {
+      const kind = classifyRpcError(error);
+      if (kind === "expired_or_invalid_token" || kind === "not_authorized") {
+        return false;
+      }
+      if (kind === "transient") {
+        return failureCount < 4;
+      }
+      return false;
+    },
+    gcTime: 1000 * 60 * 10,
+    staleTime: 0,
+  });
+
+  const derivedState = useMemo(() => {
+    const result = resultsQuery.data as ResultsResponse | undefined;
+    if (!result) {
+      return { data: null as ResultsPayload | null, err: null as string | null };
+    }
+
+    if (result.ok === false) {
+      if (result.code === "SCORING_ROWS_MISSING" && result.profile) {
+        return { data: result, err: null };
+      }
+      if (result.code === "SCORING_ROWS_MISSING") {
+        return { data: null, err: "Results updating—recompute required." };
+      }
+      return { data: null, err: result.error ?? "Failed to load results" };
+    }
+
+    if (!result.profile) {
+      return { data: null, err: "Profile not found" };
+    }
+
+    return { data: result, err: null };
+  }, [resultsQuery.data]);
+
+  useEffect(() => {
+    const nextVersion = resultsQuery.data?.results_version ?? null;
+    if (!nextVersion) {
+      return;
+    }
+    setResultsVersionKey((current) => (current === nextVersion ? current : nextVersion));
+  }, [resultsQuery.data?.results_version]);
+
+  let err: string | null = derivedState.err;
+  let errKind: RpcErrorCategory | null = null;
+  let data: ResultsPayload | null = derivedState.data;
+
+  if (resultsQuery.error) {
+    let kind = classifyRpcError(resultsQuery.error);
+    if (kind === "expired_or_invalid_token" && !hasShareToken && hasAuthSession) {
+      kind = "not_authorized";
+    }
+    if (kind === "expired_or_invalid_token" || kind === "not_authorized") {
+      err = null;
+      errKind = kind;
+      data = null;
+    } else {
+      err =
+        resultsQuery.error instanceof Error && resultsQuery.error.message
+          ? resultsQuery.error.message
+          : "Failed to load results";
+      errKind = null;
+      data = null;
+    }
+  }
+
+  const loading = resultsQuery.isPending && !data && !err && !errKind;
+
+  if (data?.profile) {
+    data = {
+      ...data,
+      profile: {
+        ...data.profile,
+        paid: Boolean(data.profile.paid),
+      },
+    };
+  }
+
+  const profile = data?.profile ?? undefined;
+
+  const sessionShareToken = useMemo(() => {
+    const raw = (data?.session as { share_token?: string } | undefined)?.share_token;
+    if (typeof raw !== "string") {
+      return null;
+    }
+    const trimmed = raw.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }, [data?.session]);
+
+  const navigationShareToken = hasShareToken ? shareToken : null;
+  const displayShareToken = navigationShareToken ?? sessionShareToken ?? null;
+
+  const resultsVersion = useMemo(
+    () => data?.results_version ?? resultsVersionKey ?? null,
+    [data?.results_version, resultsVersionKey]
   );
+
+  const buildResultsPath = useCallback(
+    (token: string | null, version: string | null) => {
+      const params = new URLSearchParams();
+      if (token && token.trim().length > 0) {
+        params.set("t", token.trim());
+      }
+      if (version && version.trim().length > 0) {
+        params.set("sv", version.trim());
+      }
+      const queryString = params.toString();
+      return queryString ? `/results/${sessionId}?${queryString}` : `/results/${sessionId}`;
+    },
+    [sessionId]
+  );
+
+  const resultsUrl = useMemo(() => {
+    const path = buildResultsPath(displayShareToken, resultsVersion);
+    if (typeof window === "undefined") {
+      return path;
+    }
+    return `${window.location.origin}${path}`;
+  }, [buildResultsPath, displayShareToken, resultsVersion]);
 
   const copyResultsLink = async () => {
     try {
@@ -177,139 +367,28 @@ export default function Results({ components }: ResultsProps = {}) {
         return;
       }
 
-      setShareToken(newToken);
       queryClient.removeQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId) });
-      window.history.replaceState(
-        null,
-        "",
-        `/results/${sessionId}?t=${newToken}`
-      );
-      navigate(`/results/${sessionId}?t=${newToken}`, { replace: true });
+      setShareToken(newToken);
+      const nextPath = buildResultsPath(newToken, resultsVersion);
+      navigate(nextPath, { replace: true });
       toast({ title: "New secure link generated." });
     } catch {
       toast({ title: "Could not rotate link. Please try again." });
     } finally {
       setRotating(false);
     }
-  }, [navigate, queryClient, sessionId]);
+  }, [buildResultsPath, navigate, queryClient, resultsVersion, sessionId]);
 
-  const downloadPDF = async () => {
-    const node = document.getElementById("results-content");
-    if (!node) return;
-
-    const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#ffffff" });
-    const img = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pageWidth = 210;
-    const pageHeight = 297;
-    const imgProps = pdf.getImageProperties(img);
-    const imgWidth = pageWidth;
-    const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-
-    pdf.addImage(img, "PNG", 0, 0, imgWidth, Math.min(imgHeight, pageHeight));
-    let remaining = imgHeight - pageHeight;
-    let y = 0;
-    while (remaining > 0) {
-      pdf.addPage();
-      y += pageHeight;
-      pdf.addImage(img, "PNG", 0, -y, imgWidth, imgHeight);
-      remaining -= pageHeight;
+  useEffect(() => {
+    if (!sessionId) return;
+    if (!resultsVersion) return;
+    const desiredPath = buildResultsPath(navigationShareToken, resultsVersion);
+    const currentPath = `${location.pathname}${location.search}`;
+    if (currentPath === desiredPath) {
+      return;
     }
-
-    pdf.save("PRISM_Profile.pdf");
-  };
-
-  const resultsQuery = useQuery<ResultsResponse | null>({
-    queryKey: resultsQueryKeys.session(sessionId, hasShareToken ? shareToken : null),
-    queryFn: () => fetchResultsBySession(sessionId, shareToken!) as Promise<ResultsResponse>,
-    enabled: Boolean(sessionId && hasShareToken),
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    refetchInterval: (currentData) => {
-      const data = currentData as ResultsResponse | undefined;
-      if (!data) return 2500;
-      if (data.ok === false && data.code === "SCORING_ROWS_MISSING" && !data.profile) {
-        return 2500;
-      }
-      if (!data.profile) {
-        return 2500;
-      }
-      return false;
-    },
-    retry: (failureCount, error) => {
-      const kind = classifyRpcError(error);
-      if (kind === "expired_or_invalid_token" || kind === "not_authorized") {
-        return false;
-      }
-      if (kind === "transient") {
-        return failureCount < 4;
-      }
-      return false;
-    },
-    gcTime: 1000 * 60 * 10,
-    staleTime: 0,
-  });
-
-  const derivedState = useMemo(() => {
-    const result = resultsQuery.data as ResultsResponse | undefined;
-    if (!result) {
-      return { data: null as ResultsPayload | null, err: null as string | null };
-    }
-
-    if (result.ok === false) {
-      if (result.code === "SCORING_ROWS_MISSING" && result.profile) {
-        return { data: result, err: null };
-      }
-      if (result.code === "SCORING_ROWS_MISSING") {
-        return { data: null, err: "Results updating—recompute required." };
-      }
-      return { data: null, err: result.error ?? "Failed to load results" };
-    }
-
-    if (!result.profile) {
-      return { data: null, err: "Profile not found" };
-    }
-
-    return { data: result, err: null };
-  }, [resultsQuery.data]);
-
-  let err: string | null = derivedState.err;
-  let errKind: RpcErrorCategory | null = null;
-  let data: ResultsPayload | null = derivedState.data;
-
-  if (resultsQuery.error) {
-    const kind = classifyRpcError(resultsQuery.error);
-    if (kind === "expired_or_invalid_token" || kind === "not_authorized") {
-      err = null;
-      errKind = kind;
-      data = null;
-    } else {
-      err =
-        resultsQuery.error instanceof Error && resultsQuery.error.message
-          ? resultsQuery.error.message
-          : "Failed to load results";
-      errKind = null;
-      data = null;
-    }
-  }
-
-  const loading = resultsQuery.isPending && !data && !err && !errKind;
-
-  if (data?.profile) {
-    data = {
-      ...data,
-      profile: {
-        ...data.profile,
-        paid: Boolean(data.profile.paid),
-      },
-    };
-  }
-
-  if (!hasShareToken) {
-    errKind = "expired_or_invalid_token";
-  }
-
-  const profile = data?.profile ?? undefined;
+    navigate(desiredPath, { replace: true });
+  }, [buildResultsPath, location.pathname, location.search, navigationShareToken, navigate, resultsVersion, sessionId]);
 
   useEffect(() => {
     if (!sessionId) return;
