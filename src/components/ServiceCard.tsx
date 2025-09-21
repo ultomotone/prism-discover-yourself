@@ -6,7 +6,9 @@ import {
   buildFacebookPayloadFromService,
   rememberFacebookDpaPayload,
 } from "@/lib/facebook";
+import { sendLinkedInAddToCart } from "@/lib/linkedin/track";
 import { sendQuoraEvent } from "@/lib/quora/events";
+import { sendTwitterEvent } from "@/lib/twitter/events";
 
 export function ServiceCard({
   service,
@@ -21,14 +23,23 @@ export function ServiceCard({
     onSelect(service);
     const payload = buildFacebookPayloadFromService(service);
     rememberFacebookDpaPayload(payload);
+    const numericPrice = Number(service.price.replace(/[^0-9.]/g, ""));
+    const value = Number.isFinite(numericPrice) ? numericPrice : undefined;
+    const currency = value ? "USD" : undefined;
     if (typeof window !== "undefined" && window.fbTrack) {
       window.fbTrack("AddToCart", payload);
     }
-    const numericPrice = Number(service.price.replace(/[^0-9.]/g, ""));
-    const value = Number.isFinite(numericPrice) ? numericPrice : undefined;
-    sendQuoraEvent("AddToCart", {
+    if (typeof window !== "undefined" && window.rdtTrack) {
+      window.rdtTrack("AddToCart", {
+        value,
+        currency,
+        content_id: service.id,
+        content_name: service.title,
+      });
+    }
+    sendTwitterEvent("AddToCart", {
       value,
-      currency: value ? "USD" : undefined,
+      currency,
       contents: [
         {
           content_id: service.id,
@@ -38,6 +49,23 @@ export function ServiceCard({
         },
       ],
       content_ids: [service.id],
+    });
+    sendQuoraEvent("AddToCart", {
+      value,
+      currency,
+      contents: [
+        {
+          content_id: service.id,
+          content_name: service.title,
+          content_price: value,
+          num_items: 1,
+        },
+      ],
+      content_ids: [service.id],
+    });
+    void sendLinkedInAddToCart({
+      value,
+      currency,
     });
     sendQuoraEvent("InitiateCheckout", { step: "cal.com_open", content_id: service.id });
     const el = document.getElementById("book");
