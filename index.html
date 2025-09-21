@@ -14,30 +14,53 @@
           }
         })();
 
-        const rawEnvQuoraId = "%VITE_QUORA_PIXEL_ID%";
-        const envQuoraPixelId =
-          typeof rawEnvQuoraId === 'string' && rawEnvQuoraId && rawEnvQuoraId !== '%VITE_QUORA_PIXEL_ID%'
-            ? rawEnvQuoraId.trim()
-            : undefined;
+        function normaliseEnv(raw) {
+          if (typeof raw !== 'string') return undefined;
+          const trimmed = raw.trim();
+          if (!trimmed || trimmed === 'undefined' || trimmed === 'null') {
+            return undefined;
+          }
+          return trimmed;
+        }
+
+        const envSupabaseUrl = normaliseEnv("<%= import.meta.env.VITE_SUPABASE_URL %>");
+        const envSupabaseAnonKey = normaliseEnv("<%= import.meta.env.VITE_SUPABASE_ANON_KEY %>");
+        const envQuoraPixelId = normaliseEnv("<%= import.meta.env.VITE_QUORA_PIXEL_ID %>");
+        const envEnableQuoraPixel = normaliseEnv("<%= import.meta.env.VITE_ENABLE_QUORA_PIXEL %>");
 
         const defaultConfig = {
-          SUPABASE_URL: "https://gnkuikentdtnatazeriu.supabase.co",
-          SUPABASE_ANON_KEY: "sb_publishable_Yu_Gv0Xfve27udk78CyT3w_qrbMR3Cn",
           REDDIT_PIXEL_ID: "a2_hisg7r10d2ta", // Default Reddit Pixel ID
           LINKEDIN_SITE_PAGE_VIEW_ID: null,
           LINKEDIN_LEAD_CONVERSION_ID: null,
           LINKEDIN_SIGNUP_CONVERSION_ID: null,
           LINKEDIN_PURCHASE_CONVERSION_ID: null,
           LINKEDIN_ADD_TO_CART_CONVERSION_ID: null,
-          QUORA_PIXEL_ID: undefined,
         };
 
         const config = Object.assign({}, defaultConfig, existing);
+
+        if (envSupabaseUrl) {
+          config.SUPABASE_URL = envSupabaseUrl;
+        }
+
+        if (envSupabaseAnonKey) {
+          config.SUPABASE_ANON_KEY = envSupabaseAnonKey;
+        }
+
         if (
           (!config.QUORA_PIXEL_ID || typeof config.QUORA_PIXEL_ID !== 'string' || !config.QUORA_PIXEL_ID.trim()) &&
           envQuoraPixelId
         ) {
           config.QUORA_PIXEL_ID = envQuoraPixelId;
+        }
+
+        if (typeof envEnableQuoraPixel === 'string') {
+          const lowered = envEnableQuoraPixel.toLowerCase();
+          if (lowered === 'true' || lowered === '1') {
+            config.ENABLE_QUORA_PIXEL = true;
+          } else if (lowered === 'false' || lowered === '0') {
+            config.ENABLE_QUORA_PIXEL = false;
+          }
         }
 
         const normaliseUrl = (value) =>
@@ -407,12 +430,31 @@
 
     <!-- Quora Pixel Code (Base) -->
     <script>
-!function(q,e,v,n,t,s){if(q.qp) return; n=q.qp=function(){n.qp?n.qp.apply(n,arguments):n.queue.push(arguments);}; n.queue=[];
-t=document.createElement(e);t.async=!0;t.src=v; s=document.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t,s);
-}(window,'script','https://a.quora.com/qevents.js');
+      (function loadQuoraPixelBase() {
+        var enable = "<%= import.meta.env.VITE_ENABLE_QUORA_PIXEL %>" === "true";
+        var pidRaw = "<%= import.meta.env.VITE_QUORA_PIXEL_ID %>";
+        var pid = typeof pidRaw === 'string' ? pidRaw.trim() : '';
+
+        if (!enable || !pid || pid === 'undefined') {
+          return;
+        }
+
+        (function (q, e, v, n, t, s) {
+          if (q.qp) return;
+          n = q.qp = function () {
+            n.qp ? n.qp.apply(n, arguments) : n.queue.push(arguments);
+          };
+          n.queue = [];
+          t = document.createElement(e);
+          t.async = !0;
+          t.src = v;
+          s = document.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t, s);
+        })(window, 'script', 'https://a.quora.com/qevents.js');
+        qp('init', pid);
+        qp('track', 'ViewContent');
+      })();
     </script>
-    <noscript><img height="1" width="1" style="display:none"
-      src="https://q.quora.com/_/ad/%VITE_QUORA_PIXEL_ID%/pixel?tag=ViewContent&noscript=1"/></noscript>
     <!-- End of Quora Pixel Code -->
     <script>
       (function(){
