@@ -25,6 +25,9 @@
 
         const envSupabaseUrl = normaliseEnv("<%= import.meta.env.VITE_SUPABASE_URL %>");
         const envSupabaseAnonKey = normaliseEnv("<%= import.meta.env.VITE_SUPABASE_ANON_KEY %>");
+        const envSupabaseFunctionUrl = normaliseEnv(
+          "<%= import.meta.env.VITE_SUPABASE_FUNCTION_URL %>"
+        );
         const envQuoraPixelId = normaliseEnv("<%= import.meta.env.VITE_QUORA_PIXEL_ID %>");
         const envEnableQuoraPixel = normaliseEnv("<%= import.meta.env.VITE_ENABLE_QUORA_PIXEL %>");
 
@@ -45,6 +48,10 @@
 
         if (envSupabaseAnonKey) {
           config.SUPABASE_ANON_KEY = envSupabaseAnonKey;
+        }
+
+        if (envSupabaseFunctionUrl) {
+          config.SUPABASE_FUNCTION_URL = envSupabaseFunctionUrl;
         }
 
         if (
@@ -81,6 +88,22 @@
 
         const anonKey = config.SUPABASE_ANON_KEY;
 
+        const supabaseOrigin = (function deriveSupabaseOrigin() {
+          try {
+            return supabaseUrl ? new URL(supabaseUrl).origin : null;
+          } catch (_) {
+            return null;
+          }
+        })();
+
+        const functionsOrigin = (function deriveFunctionsOrigin() {
+          try {
+            return functionsUrl ? new URL(functionsUrl).origin : null;
+          } catch (_) {
+            return null;
+          }
+        })();
+
         function normaliseFunctionPath(path) {
           const trimmed = path.replace(/^\/+/, '');
           return trimmed.startsWith('functions/v1/')
@@ -88,14 +111,56 @@
             : trimmed;
         }
 
+        function buildTargetFromRelative(path) {
+          try {
+            const parsed = new URL(path.replace(/^\/+/, ''), 'https://placeholder.local/');
+            const normalised = normaliseFunctionPath(parsed.pathname);
+            let target = `${functionsUrl}/${normalised}`;
+            if (parsed.search) target += parsed.search;
+            if (parsed.hash) target += parsed.hash;
+            return target;
+          } catch (_) {
+            return `${functionsUrl}/${normaliseFunctionPath(path)}`;
+          }
+        }
+
         window.__supabaseFunctionFetch = function(path, init) {
           if (!functionsUrl) {
             return Promise.reject(new Error('Supabase functions URL is not configured'));
           }
 
-          const target = typeof path === 'string' && /^https?:/i.test(path)
-            ? path
-            : `${functionsUrl}/${normaliseFunctionPath(typeof path === 'string' ? path : '')}`;
+          function resolveInput(raw) {
+            if (typeof raw === 'string') return raw;
+            if (raw && typeof raw === 'object') {
+              if (typeof raw.url === 'string') return raw.url;
+            }
+            return '';
+          }
+
+          const candidate = resolveInput(path);
+
+          let target;
+          if (candidate && /^https?:/i.test(candidate)) {
+            try {
+              const parsed = new URL(candidate);
+              const normalisedPath = normaliseFunctionPath(parsed.pathname);
+              const shouldRewrite =
+                normalisedPath &&
+                parsed.pathname.startsWith('/functions/') &&
+                ((supabaseOrigin && parsed.origin === supabaseOrigin) ||
+                  (functionsOrigin && parsed.origin === functionsOrigin));
+
+              if (shouldRewrite) {
+                target = `${functionsUrl}/${normalisedPath}${parsed.search}${parsed.hash}`;
+              } else {
+                target = candidate;
+              }
+            } catch (_) {
+              target = buildTargetFromRelative(candidate);
+            }
+          } else {
+            target = buildTargetFromRelative(candidate);
+          }
 
           const requestInit = Object.assign({}, init);
           const headerBag = new Headers(requestInit.headers || {});
