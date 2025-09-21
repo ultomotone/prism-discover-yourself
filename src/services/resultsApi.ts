@@ -41,7 +41,10 @@ function normalizeProfile(profile: ResultsProfilePayload): ResultsProfilePayload
   };
 }
 
-async function executeRequest(body: Record<string, unknown>, headers: HeadersInit): Promise<ResultsFetchPayload> {
+async function executeRequest(
+  body: Record<string, unknown>,
+  headers: HeadersInit
+): Promise<ResultsFetchPayload> {
   const url = `${resolveSupabaseFunctionsBase()}/get-results-by-session`;
   const response = await fetch(url, {
     method: "POST",
@@ -89,9 +92,10 @@ function baseHeaders(): Record<string, string> {
   });
 }
 
+/** SHARE flow (no Authorization header) */
 export async function fetchSharedResultBySession(
   sessionId: string,
-  shareToken: string,
+  shareToken: string
 ): Promise<ResultsFetchPayload> {
   if (!sessionId) {
     throw new ResultsApiError("sessionId is required", 400);
@@ -106,11 +110,14 @@ export async function fetchSharedResultBySession(
       session_id: sessionId,
       share_token: shareToken.trim(),
     },
-    headers,
+    headers
   );
 }
 
-export async function fetchOwnerResultBySession(sessionId: string): Promise<ResultsFetchPayload> {
+/** OWNER flow (Authorization required) */
+export async function fetchOwnerResultBySession(
+  sessionId: string
+): Promise<ResultsFetchPayload> {
   if (!sessionId) {
     throw new ResultsApiError("sessionId is required", 400);
   }
@@ -121,13 +128,13 @@ export async function fetchOwnerResultBySession(sessionId: string): Promise<Resu
   if (!authorization) {
     throw new ResultsApiError("Authorization required", 401);
   }
-  headers.Authorization = authorization;
+  (headers as any).Authorization = authorization;
 
   return executeRequest(
     {
       session_id: sessionId,
     },
-    headers,
+    headers
   );
 }
 
