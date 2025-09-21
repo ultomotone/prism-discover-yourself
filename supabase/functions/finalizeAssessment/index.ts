@@ -10,25 +10,16 @@ import {
 } from "../_shared/finalizeAssessmentCore.ts";
 import { buildCompletionLog } from "../_shared/observability.ts";
 import { emitMetric, withTimer } from "../../../lib/metrics.ts";
+import { corsHeaders, json, resolveOrigin } from "../_shared/cors.ts";
+import { rateLimit, ipFrom } from "../_shared/rateLimit.ts";
+import { sendConversions } from "../../../src/services/conversions.ts";
+import { logger } from "../../../src/lib/logger.ts";
 
 const url = Deno.env.get("SUPABASE_URL")!;
 const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(url, key);
 
 await ensureResultsVersion(supabase);
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Cache-Control": "no-store",
-};
-
-const json = (body: any, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json", ...corsHeaders },
-  });
 
 interface SupabaseProfileRow extends ProfileRow {
   created_at?: string | null;
@@ -150,7 +141,16 @@ function resolveSiteUrl(req: Request): string {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const origin = resolveOrigin(req);
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: { ...corsHeaders(origin), "Cache-Control": "no-store" } });
+  }
+  const clientIp = ipFrom(req);
+  const rl = rateLimit(`finalize:${clientIp}`);
+  if (!rl.allowed) {
+    logger.warn("assessment.finalize.rate_limited", { ip: clientIp });
+    return json(origin, { status: "error", error: "rate_limited" }, 429);
+  }
   let sessionId: string | undefined;
   try {
     const body = await req.json();
@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
         session_id: null,
         RESULTS_VERSION,
       });
-      return json({ status: "error", error: "session_id required" }, 400);
+      return json(origin, { status: "error", error: "session_id required" }, 400);
     }
 
     const timed = await withTimer(() =>
@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
           buildResultsUrl: (baseUrl, resultId, token, scoringVersion) =>
             buildResultsLink(baseUrl, resultId, token, { scoringVersion }),
           now: () => new Date(),
-          log: (payload) => console.log(JSON.stringify(payload)),
+          log: (payload) => logger.info("assessment.finalize.core", payload),
         },
         {
           sessionId,
@@ -204,32 +204,37 @@ Deno.serve(async (req) => {
       extra: { path },
     });
 
-    console.log(JSON.stringify(logPayload));
+    logger.info("assessment.finalize.complete", logPayload);
 
     await emitMetric("assessment.finalize.success", {
       session_id: sessionId,
       RESULTS_VERSION,
     });
 
-    return json({ ...responseBody, status: "success", session_id: sessionId });
+    await sendConversions({
+      name: "assessment_completed",
+      sessionId,
+      userId: finalizedSession.user_id ?? undefined,
+      userAgent: req.headers.get("user-agent") ?? undefined,
+      ip: clientIp,
+    });
+
+    return json(origin, { ...responseBody, status: "success", session_id: sessionId });
   } catch (e: any) {
     await emitMetric("assessment.finalize.error", {
       session_id: sessionId ?? null,
       RESULTS_VERSION,
     });
     if (e instanceof FinalizeAssessmentError) {
-      console.log(JSON.stringify({ event: "assessment.error", session_id: sessionId, error: e.message }));
-      return json({ status: "error", error: e.message }, 422);
+      logger.warn("assessment.finalize.validation_error", { session_id: sessionId, error: e.message });
+      return json(origin, { status: "error", error: e.message }, 422);
     }
     const durationMs = typeof e === "object" && e && "__durationMs" in e ? Math.round(Number(e.__durationMs)) : undefined;
-    console.log(
-      JSON.stringify({
-        event: "assessment.error",
-        session_id: sessionId,
-        error: e?.message || String(e),
-        duration_ms: durationMs,
-      }),
-    );
-    return json({ status: "error", error: e?.message || "Internal server error" }, 500);
+    logger.error("assessment.finalize.error", {
+      session_id: sessionId,
+      error: e?.message || String(e),
+      duration_ms: durationMs,
+    });
+    return json(origin, { status: "error", error: e?.message || "Internal server error" }, 500);
   }
 });
