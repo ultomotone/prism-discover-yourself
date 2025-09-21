@@ -5,7 +5,21 @@
     <meta http-equiv="Permissions-Policy" content="attribution-reporting=()" />
     <script>
       (function configureSupabase() {
-        const existing = window.__APP_CONFIG__ || {};
+        const existing = (function readExistingConfig() {
+          try {
+            const candidate = window.__APP_CONFIG__;
+            return candidate && typeof candidate === 'object' ? candidate : {};
+          } catch (_) {
+            return {};
+          }
+        })();
+
+        const rawEnvQuoraId = "%VITE_QUORA_PIXEL_ID%";
+        const envQuoraPixelId =
+          typeof rawEnvQuoraId === 'string' && rawEnvQuoraId && rawEnvQuoraId !== '%VITE_QUORA_PIXEL_ID%'
+            ? rawEnvQuoraId.trim()
+            : undefined;
+
         const defaultConfig = {
           SUPABASE_URL: "https://gnkuikentdtnatazeriu.supabase.co",
           SUPABASE_ANON_KEY: "sb_publishable_Yu_Gv0Xfve27udk78CyT3w_qrbMR3Cn",
@@ -15,8 +29,16 @@
           LINKEDIN_SIGNUP_CONVERSION_ID: null,
           LINKEDIN_PURCHASE_CONVERSION_ID: null,
           LINKEDIN_ADD_TO_CART_CONVERSION_ID: null,
+          QUORA_PIXEL_ID: undefined,
         };
+
         const config = Object.assign({}, defaultConfig, existing);
+        if (
+          (!config.QUORA_PIXEL_ID || typeof config.QUORA_PIXEL_ID !== 'string' || !config.QUORA_PIXEL_ID.trim()) &&
+          envQuoraPixelId
+        ) {
+          config.QUORA_PIXEL_ID = envQuoraPixelId;
+        }
 
         const normaliseUrl = (value) =>
           typeof value === 'string' ? value.replace(/\/+$/, '') : undefined;
@@ -390,11 +412,23 @@ t=document.createElement(e);t.async=!0;t.src=v; s=document.getElementsByTagName(
 }(window,'script','https://a.quora.com/qevents.js');
     </script>
     <noscript><img height="1" width="1" style="display:none"
-      src="https://q.quora.com/_/ad/3b47052b877e48a5b43d5f0d775d8e06/pixel?tag=ViewContent&noscript=1"/></noscript>
+      src="https://q.quora.com/_/ad/%VITE_QUORA_PIXEL_ID%/pixel?tag=ViewContent&noscript=1"/></noscript>
     <!-- End of Quora Pixel Code -->
     <script>
       (function(){
-        const PIXEL_ID = '3b47052b877e48a5b43d5f0d775d8e06';
+        function readPixelId(){
+          try {
+            const config = window.__APP_CONFIG__;
+            if (config && typeof config.QUORA_PIXEL_ID === 'string') {
+              const trimmed = config.QUORA_PIXEL_ID.trim();
+              if (trimmed) return trimmed;
+            }
+          } catch (_) {}
+          return undefined;
+        }
+
+        const configuredPixelId = readPixelId();
+        const PIXEL_ID = configuredPixelId || undefined;
         const RESULTS_RE = /\/results(\/|$)/i;
         const ALLOW_RESULTS_FLAG = '__allowResults';
         const DEBUG = /\bqdebug=1\b/.test(location.search);
@@ -409,6 +443,10 @@ t=document.createElement(e);t.async=!0;t.src=v; s=document.getElementsByTagName(
 
         function initQuora(email){
           try {
+            if (!PIXEL_ID) {
+              if (DEBUG) console.warn('[Quora] disabled – no QUORA_PIXEL_ID configured');
+              return;
+            }
             if (configured || !window.qp) return;
             if (email) { qp('init', PIXEL_ID, { email: email }); }
             else { qp('init', PIXEL_ID); }
@@ -420,6 +458,7 @@ t=document.createElement(e);t.async=!0;t.src=v; s=document.getElementsByTagName(
         // Defer init until consent is granted
         function tryConfigure(){
           if (configured) return true;
+          if (!PIXEL_ID) return false;
           if (!hasAnalyticsConsent() || typeof window.qp !== 'function') return false;
           // Optionally pass known email for advanced matching (hashed by Quora)
           const knownEmail = (window.__knownUser && window.__knownUser.email) || undefined;

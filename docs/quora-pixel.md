@@ -2,6 +2,7 @@
 
 ## Overview
 - Consent-gated Quora Pixel initialised from `index.html` via `qpTrack` helper.
+- Pixel ID sourced from runtime config (`window.__APP_CONFIG__.QUORA_PIXEL_ID`) or build env (`VITE_QUORA_PIXEL_ID`).
 - SPA-aware page view tracking pipes through `src/lib/route-tracking.ts` and `sendQuoraPageView` to keep URLs accurate.
 - Business events wired from `src/lib/analytics.ts`, `src/components/ServiceCard.tsx`, and `src/components/CalEmbed.tsx`.
 - Optional Conversions API edge function lives at `supabase/functions/quora-capi` and reuses client `conversion_id` values for dedupe.
@@ -25,7 +26,7 @@ Results routes remain suppressed unless `allowOnResults` is passed via `sendQuor
 - Helper auto-attaches `conversion_id` (UUID) and posts to `/functions/v1/quora-capi` for server dedupe when consent is granted.
 
 ## Conversions API
-- Edge function expects `QUORA_TOKEN` (bearer token) and optional `QUORA_PIXEL_ID` env vars.
+- Edge function expects `QUORA_TOKEN` (bearer token) and `QUORA_PIXEL_ID` env vars.
 - Request payload: `{ event_name, conversion_id, value?, currency?, email?, contents?, content_ids?, event_time?, client_ip?, user_agent? }`.
 - Email is normalised + SHA-256 hashed server-side via `_shared/crypto.ts`.
 - Retries (3x exponential backoff) on 429 / 5xx responses, returns `{ ok, status, eventId }`.

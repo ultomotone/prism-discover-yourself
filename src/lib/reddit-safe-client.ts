@@ -1,4 +1,5 @@
 import { createTrackingClient } from '@/lib/supabaseClient';
+import { getConfiguredRedditPixelId } from '@/lib/reddit/config';
 
 // Safe Reddit tracking client that handles missing env vars gracefully
 let trackingClient: ReturnType<typeof createTrackingClient> | null = null;
@@ -16,7 +17,7 @@ let safeClientCustomWarned = false;
 export const safeTrackRedditEvent = async (eventName: string, payload: any = {}) => {
   try {
     // Check if Reddit tracking is configured
-    const redditAppId = localStorage.getItem('reddit_app_id');
+    const redditAppId = getConfiguredRedditPixelId();
     if (!redditAppId) {
       console.log('Reddit tracking not configured, skipping event:', eventName);
       return;

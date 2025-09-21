@@ -1,22 +1,41 @@
+// deno-lint-ignore-file no-explicit-any
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { emitMetric } from "../../../lib/metrics.ts";
 
-type AuthContext = "token" | "owner";
-
+// ---- CORS helpers (preview + prod domains, wildcard support) ----
 const defaultOrigin = Deno.env.get("RESULTS_ALLOWED_ORIGIN") ?? "https://prismpersonality.com";
-const allowedOrigins = new Set([
+
+const ORIGIN_ALLOWLIST: Array<string | RegExp> = [
   defaultOrigin,
   "https://prismpersonality.com",
   "https://www.prismpersonality.com",
   "http://localhost:3000",
   "http://127.0.0.1:3000",
-]);
+  "https://lovable.dev",
+  /\.lovable\.app$/i,
+  /\.lovableproject\.com$/i,
+];
+
+function isAllowedOrigin(origin: string): boolean {
+  return ORIGIN_ALLOWLIST.some((rule) =>
+    typeof rule === "string" ? rule === origin : (rule as RegExp).test(origin)
+  );
+}
+
+function normalizeOrigin(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    const { origin } = new URL(value);
+    return origin;
+  } catch {
+    return null;
+  }
+}
 
 function resolveOrigin(req: Request): string {
-  const origin = req.headers.get("origin");
-  if (origin && allowedOrigins.has(origin)) {
-    return origin;
+  const originHeader = normalizeOrigin(req.headers.get("origin"));
+  if (originHeader && isAllowedOrigin(originHeader)) {
+    return originHeader;
   }
   return defaultOrigin;
 }
@@ -24,9 +43,10 @@ function resolveOrigin(req: Request): string {
 function buildCorsHeaders(origin: string): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    Vary: "Origin",
+    "Vary": "Origin, Authorization",
   };
 }
 
@@ -44,14 +64,10 @@ function jsonResponse(origin: string, body: unknown, status = 200): Response {
 function createAuthedClient(
   supabaseUrl: string,
   anonKey: string,
-  authorization: string
+  authorization: string,
 ): SupabaseClient {
   return createClient(supabaseUrl, anonKey, {
-    global: {
-      headers: {
-        Authorization: authorization,
-      },
-    },
+    global: { headers: { Authorization: authorization } },
     auth: { persistSession: false },
   });
 }
@@ -60,221 +76,206 @@ serve(async (req) => {
   const origin = resolveOrigin(req);
 
   if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: {
-        ...buildCorsHeaders(origin),
-        "Cache-Control": "no-store",
-      },
-    });
+    return new Response("ok", { headers: { ...buildCorsHeaders(origin), "Cache-Control": "no-store" } });
   }
 
+  let payload: Record<string, unknown>;
   try {
-    const body = await req.json();
-    const sessionId: string | undefined = body.session_id ?? body.sessionId;
-    const shareToken: string | null = body.share_token ?? body.shareToken ?? null;
-    const hasToken = !!shareToken;
+    payload = await req.json();
+  } catch {
+    return jsonResponse(origin, { ok: false, error: "invalid json body" }, 400);
+  }
 
-    const respondError = async (status: number, message: string) => {
-      await emitMetric("results.fetch.error", {
-        session_id: sessionId ?? null,
-        http_status: status,
-        has_token: hasToken,
-      });
-      return jsonResponse(origin, { ok: false, error: message }, status);
-    };
+  const sessionIdRaw = payload.session_id ?? payload.sessionId;
+  const shareTokenRaw = payload.share_token ?? payload.shareToken ?? null;
 
-    console.log(
-      JSON.stringify({
-        evt: "results_v2_start",
-        session_id: sessionId,
-        has_token: !!shareToken,
-        timestamp: new Date().toISOString(),
-      }),
-    );
+  if (typeof sessionIdRaw !== "string" || !sessionIdRaw.trim()) {
+    return jsonResponse(origin, { ok: false, error: "session_id required" }, 400);
+  }
 
-    if (!sessionId) {
-      return respondError(400, "session_id required");
-    }
+  const sessionId = sessionIdRaw.trim();
+  const shareToken =
+    typeof shareTokenRaw === "string" && shareTokenRaw.trim().length > 0
+      ? shareTokenRaw.trim()
+      : null;
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
 
-    if (!supabaseUrl || !serviceKey || !anonKey) {
-      console.error("Missing Supabase configuration");
-      return respondError(500, "configuration error");
-    }
+  if (!supabaseUrl || !serviceKey || !anonKey) {
+    console.error(JSON.stringify({
+      evt: "results_v3_start",
+      session_id: sessionId,
+      error: "missing_supabase_env",
+      timestamp: new Date().toISOString(),
+    }));
+    return jsonResponse(origin, { ok: false, error: "configuration error" }, 500);
+  }
 
-    const serviceClient = createClient(supabaseUrl, serviceKey, {
-      auth: { persistSession: false },
-    });
+  const serviceClient = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
 
-    let dataClient: SupabaseClient = serviceClient;
-    let authContext: AuthContext = "token";
+  let dataClient: SupabaseClient = serviceClient;
+  let authContext: "share" | "owner" = "share";
 
-    if (!shareToken) {
-      const authorization = req.headers.get("authorization");
-      if (!authorization || !authorization.startsWith("Bearer ")) {
-        return respondError(401, "authorization required");
-      }
-
-      const authedClient = createAuthedClient(supabaseUrl, anonKey, authorization);
-      const { data: userResponse, error: userError } = await authedClient.auth.getUser();
-
-      if (userError) {
-        console.error("Failed to load authenticated user", userError);
-        return respondError(401, "unauthorized");
-      }
-
-      const user = userResponse?.user;
-      if (!user) {
-        return respondError(401, "unauthorized");
-      }
-
-      const { data: sessionRow, error: sessionError } = await authedClient
-        .from("assessment_sessions")
-        .select("id")
-        .eq("id", sessionId)
-        .maybeSingle();
-
-      if (sessionError) {
-        console.error("session lookup failed", sessionError);
-        return respondError(500, "session lookup failed");
-      }
-
-      if (!sessionRow) {
-        return respondError(403, "forbidden");
-      }
-
-      dataClient = authedClient;
-      authContext = "owner";
-    } else {
-      const { data: sess, error: sessionError } = await serviceClient
-        .from("assessment_sessions")
-        .select("share_token")
-        .eq("id", sessionId)
-        .maybeSingle();
-
-      if (sessionError) {
-        console.error("share token lookup failed", sessionError);
-        return respondError(500, "session lookup failed");
-      }
-
-      if (!sess || sess.share_token !== shareToken) {
-        return respondError(401, "invalid token");
-      }
-    }
-
-    try {
-      const { data, error } = await dataClient.rpc("get_results_v2", {
-        p_session_id: sessionId,
-        p_share_token: shareToken,
-      });
-
-      if (!error && Array.isArray(data) && data.length > 0) {
-        const result = data[0];
-        const { session, profile, types, functions, state } = result as Record<string, unknown>;
-
-        if (
-          Array.isArray(types) &&
-          types.length === 16 &&
-          Array.isArray(functions) &&
-          functions.length === 8 &&
-          Array.isArray(state) &&
-          state.length > 0
-        ) {
-          console.log(
-            JSON.stringify({
-              evt: "results_v2_complete",
-              session_id: sessionId,
-              auth_context: authContext,
-              types_count: types.length,
-              functions_count: functions.length,
-              state_count: state.length,
-              timestamp: new Date().toISOString(),
-            }),
-          );
-
-          return jsonResponse(origin, {
-            ok: true,
-            results_version: "v2",
-            session,
-            profile,
-            types,
-            functions,
-            state,
-          });
-        }
-      }
-    } catch (rpcError) {
-      const errorMessage = rpcError instanceof Error ? rpcError.message : String(rpcError);
-      console.log(
-        JSON.stringify({
-          evt: "results_v2_rpc_error",
-          session_id: sessionId,
-          error: errorMessage,
-          timestamp: new Date().toISOString(),
-        }),
-      );
-    }
-
-    const { data: profile, error: profileError } = await dataClient
-      .from("profiles")
-      .select(
-        `
-        session_id, type_code, base_func, creative_func, top_types, top_3_fits,
-        score_fit_raw, score_fit_calibrated, fit_band, top_gap, close_call,
-        strengths, dimensions, blocks_norm, overlay, conf_raw, conf_calibrated,
-        confidence, results_version, created_at
-      `,
-      )
-      .eq("session_id", sessionId)
+  if (shareToken) {
+    // SHARE path: validate token with service role
+    const { data, error } = await serviceClient
+      .from("assessment_sessions")
+      .select("share_token")
+      .eq("id", sessionId)
       .maybeSingle();
 
-    if (profileError) {
-      console.log(
-        JSON.stringify({
-          evt: "results_fallback_missing",
-          session_id: sessionId,
-          error: profileError.message,
-          timestamp: new Date().toISOString(),
-        }),
-      );
-      return respondError(404, "no results found");
-    }
-
-    if (!profile) {
-      return respondError(404, "no results found");
-    }
-
-    const typedProfile = profile as Record<string, unknown>;
-
-    console.log(
-      JSON.stringify({
-        evt: "results_v1_fallback",
+    if (error) {
+      console.error(JSON.stringify({
+        evt: "results_v3_missing",
         session_id: sessionId,
         auth_context: authContext,
+        reason: "token_lookup_failed",
+        error: error.message,
         timestamp: new Date().toISOString(),
-      }),
-    );
+      }));
+      return jsonResponse(origin, { ok: false, error: "session lookup failed" }, 500);
+    }
 
-    return jsonResponse(origin, {
-      ok: true,
-      results_version: (typedProfile.results_version as string | undefined) ?? "v1.2.1",
-      session: { id: sessionId, created_at: typedProfile.created_at },
-      profile,
-      types: null,
-      functions: null,
-      state: null,
+    if (!data || data.share_token !== shareToken) {
+      return jsonResponse(origin, { ok: false, error: "invalid token" }, 401);
+    }
+  } else {
+    // OWNER path: require Authorization, use authed client with RLS
+    const authorization = req.headers.get("authorization");
+    if (!authorization || !authorization.toLowerCase().startsWith("bearer ")) {
+      return jsonResponse(origin, { ok: false, error: "authorization required" }, 401);
+    }
+
+    const authedClient = createAuthedClient(supabaseUrl, anonKey, authorization);
+    const { data, error } = await authedClient
+      .from("assessment_sessions")
+      .select("id")
+      .eq("id", sessionId)
+      .maybeSingle();
+
+    if (error) {
+      console.error(JSON.stringify({
+        evt: "results_v3_missing",
+        session_id: sessionId,
+        auth_context: "owner",
+        reason: "session_lookup_failed",
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      }));
+      return jsonResponse(origin, { ok: false, error: "session lookup failed" }, 500);
+    }
+
+    if (!data) {
+      return jsonResponse(origin, { ok: false, error: "forbidden" }, 403);
+    }
+
+    dataClient = authedClient;
+    authContext = "owner";
+  }
+
+  console.log(JSON.stringify({
+    evt: "results_v3_start",
+    session_id: sessionId,
+    auth_context: authContext,
+    has_share_token: Boolean(shareToken),
+    timestamp: new Date().toISOString(),
+  }));
+
+  try {
+    const { data, error } = await dataClient.rpc("get_results_v2", {
+      p_session_id: sessionId,
+      p_share_token: shareToken,
     });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("Error in get-results-by-session:", message);
-    await emitMetric("results.fetch.error", {
-      session_id: undefined,
-      http_status: 500,
-      has_token: false,
-    });
-    return jsonResponse(origin, { ok: false, error: message || "Internal server error" }, 500);
+
+    if (error) {
+      console.log(JSON.stringify({
+        evt: "results_v3_rpc_error",
+        session_id: sessionId,
+        auth_context: authContext,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      }));
+      return jsonResponse(origin, { ok: false, code: "SCORING_ROWS_MISSING" });
+    }
+
+    const result = Array.isArray(data) && data.length > 0 ? (data[0] as Record<string, unknown>) : null;
+
+    const profile = result?.profile as Record<string, unknown> | null | undefined;
+    const types = Array.isArray(result?.types) ? (result!.types as unknown[]) : [];
+    const functions = Array.isArray(result?.functions) ? (result!.functions as unknown[]) : [];
+    const state = Array.isArray(result?.state) ? (result!.state as unknown[]) : [];
+
+    const isComplete =
+      profile &&
+      Array.isArray(types) && types.length === 16 &&
+      Array.isArray(functions) && functions.length === 8 &&
+      Array.isArray(state) && state.length > 0;
+
+    if (isComplete && result) {
+      const resultsVersionRaw = (result as any).results_version;
+      const resultsVersion =
+        typeof resultsVersionRaw === "string" && resultsVersionRaw.trim()
+          ? resultsVersionRaw.trim()
+          : "v2";
+      const scoringVersionRaw =
+        typeof (result as any).scoring_version === "string"
+          ? (result as any).scoring_version
+          : typeof (profile?.results_version) === "string"
+            ? (profile!.results_version as string)
+            : resultsVersion;
+      const scoringVersion = scoringVersionRaw.trim();
+      const sessionPayload = (result as any).session ?? null;
+      const resultIdRaw =
+        typeof (result as any).result_id === "string" && (result as any).result_id.trim().length > 0
+          ? (result as any).result_id.trim()
+          : typeof (sessionPayload as Record<string, unknown> | null)?.id === "string"
+            ? ((sessionPayload as Record<string, unknown>).id as string)
+            : sessionId;
+
+      console.log(JSON.stringify({
+        evt: "results_v3_complete",
+        session_id: sessionId,
+        auth_context: authContext,
+        result_id: resultIdRaw,
+        scoring_version: scoringVersion,
+        timestamp: new Date().toISOString(),
+      }));
+
+      return jsonResponse(origin, {
+        ok: true,
+        results_version: resultsVersion,
+        result_id: resultIdRaw,
+        scoring_version: scoringVersion,
+        session: sessionPayload,
+        profile,
+        types,
+        functions,
+        state,
+      });
+    }
+
+    console.log(JSON.stringify({
+      evt: "results_v3_missing",
+      session_id: sessionId,
+      auth_context: authContext,
+      reason: result ? "incomplete_payload" : "no_rows",
+      types_length: Array.isArray(types) ? types.length : null,
+      functions_length: Array.isArray(functions) ? functions.length : null,
+      state_length: Array.isArray(state) ? state.length : null,
+      timestamp: new Date().toISOString(),
+    }));
+
+    return jsonResponse(origin, { ok: false, code: "SCORING_ROWS_MISSING" });
+  } catch (err) {
+    console.log(JSON.stringify({
+      evt: "results_v3_rpc_error",
+      session_id: sessionId,
+      auth_context: authContext,
+      error: err instanceof Error ? err.message : String(err),
+      timestamp: new Date().toISOString(),
+    }));
+    return jsonResponse(origin, { ok: false, code: "SCORING_ROWS_MISSING" });
   }
 });

@@ -18,9 +18,14 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { trackResultsViewed } from "@/lib/analytics";
 import { classifyRpcError, type RpcErrorCategory } from "@/features/results/errorClassifier";
-import { fetchResultsBySession } from "@/services/resultsApi";
-import { ensureSessionLinked } from "@/services/sessionLinking";
+import {
+  fetchOwnerResultBySession,
+  fetchSharedResultBySession,
+  type ResultsFetchPayload,
+  type ResultsSuccessPayload,
+} from "@/services/resultsApi";
 import { IS_PREVIEW } from "@/lib/env";
+import { ensureSessionLinked } from "@/services/sessionLinking";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { resultsQueryKeys } from "@/features/results/queryKeys";
 
@@ -35,18 +40,14 @@ type ResultsProfile = {
 };
 
 type ResultsPayload = {
-  session: { id: string; status: string };
+  session: Record<string, any> | null;
   profile?: ResultsProfile;
   types?: any[];
   functions?: any[];
   state?: any[];
   results_version?: string;
-};
-
-type ResultsResponse = ResultsPayload & {
-  ok?: boolean;
-  code?: string;
-  error?: string;
+  scoring_version?: string;
+  result_id?: string;
 };
 
 type ResultsComponents = {
@@ -67,10 +68,7 @@ export default function Results({ components }: ResultsProps = {}) {
   const ResultsView = components?.ResultsView ?? ResultsV2;
   const { sessionId: paramId } = useParams<{ sessionId: string }>();
   const location = useLocation();
-  const query = useMemo(
-    () => new URLSearchParams(location.search),
-    [location.search]
-  );
+  const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -101,41 +99,42 @@ export default function Results({ components }: ResultsProps = {}) {
     );
   }
 
-  const [shareToken, setShareToken] = useState<string | null>(
-    query.get("t") ?? null
-  );
-  const versionParam = useMemo(() => query.get("sv"), [query]);
-  const [resultsVersionKey, setResultsVersionKey] = useState<string | null>(
-    () => versionParam ?? null
-  );
+  const [shareToken, setShareToken] = useState<string | null>(query.get("t") ?? null);
+  const scoringVersionParam = useMemo(() => {
+    const raw = query.get("sv");
+    return raw && raw.trim().length > 0 ? raw.trim() : undefined;
+  }, [query]);
+
   const hasShareToken = useMemo(
     () => typeof shareToken === "string" && shareToken.trim().length > 0,
     [shareToken]
   );
-  const identityKey = useMemo(
-    () => (hasShareToken ? `token:${shareToken}` : "owner"),
+  const tokenKey = useMemo(
+    () => (hasShareToken ? shareToken!.trim() : "no-token"),
     [hasShareToken, shareToken]
   );
+
   const [hasAuthSession, setHasAuthSession] = useState(false);
+  const [authStateResolved, setAuthStateResolved] = useState(false);
+
   useEffect(() => {
     setShareToken(query.get("t") ?? null);
   }, [query]);
-  useEffect(() => {
-    setResultsVersionKey((current) => {
-      const normalized = versionParam ?? null;
-      return current === normalized ? current : normalized;
-    });
-  }, [versionParam]);
+
   useEffect(() => {
     let active = true;
     (async () => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (active) {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!active) return;
         setHasAuthSession(Boolean(sessionData?.session?.access_token));
+      } finally {
+        if (active) setAuthStateResolved(true);
       }
     })();
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setHasAuthSession(Boolean(session?.access_token));
+      setAuthStateResolved(true);
     });
     return () => {
       active = false;
@@ -145,7 +144,6 @@ export default function Results({ components }: ResultsProps = {}) {
 
   const [rotating, setRotating] = useState(false);
   const linkAttemptedRef = useRef(false);
-
 
   const downloadPDF = async () => {
     const node = document.getElementById("results-content");
@@ -173,68 +171,55 @@ export default function Results({ components }: ResultsProps = {}) {
     pdf.save("PRISM_Profile.pdf");
   };
 
-  const resultsQuery = useQuery<ResultsResponse | null>({
-    queryKey: resultsQueryKeys.session(sessionId, identityKey, resultsVersionKey),
-    queryFn: () =>
-      fetchResultsBySession(sessionId, hasShareToken ? shareToken : null) as Promise<ResultsResponse>,
-    enabled: Boolean(sessionId),
+  const resultsQuery = useQuery<ResultsFetchPayload | undefined>({
+    queryKey: resultsQueryKeys.session(sessionId, tokenKey, scoringVersionParam),
+    queryFn: () => {
+      if (!sessionId) throw new Error("sessionId is required");
+      if (hasShareToken) return fetchSharedResultBySession(sessionId, shareToken!.trim());
+      return fetchOwnerResultBySession(sessionId);
+    },
+    // enable when we either have a token OR we have resolved auth (so owner fetch can succeed/fail)
+    enabled: Boolean(sessionId && (hasShareToken || authStateResolved)),
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchInterval: (currentData) => {
-      const data = currentData as ResultsResponse | undefined;
-      if (!data) return 2500;
-      if (data.ok === false && data.code === "SCORING_ROWS_MISSING" && !data.profile) {
-        return 2500;
+      const data = currentData as ResultsFetchPayload | undefined;
+      if (!data) return 2000;
+      if (data.ok === false && data.code === "SCORING_ROWS_MISSING") return 2000;
+      if (
+        scoringVersionParam &&
+        data.ok === true &&
+        data.scoring_version &&
+        data.scoring_version !== scoringVersionParam
+      ) {
+        return 2000;
       }
-      if (!data.profile) {
-        return 2500;
-      }
+      if (scoringVersionParam && data.ok === true && !data.scoring_version) return 2000;
       return false;
     },
     retry: (failureCount, error) => {
       const kind = classifyRpcError(error);
-      if (kind === "expired_or_invalid_token" || kind === "not_authorized") {
-        return false;
-      }
-      if (kind === "transient") {
-        return failureCount < 4;
-      }
+      if (kind === "expired_or_invalid_token" || kind === "not_authorized") return false;
+      if (kind === "transient") return failureCount < 4;
       return false;
     },
     gcTime: 1000 * 60 * 10,
     staleTime: 0,
+    keepPreviousData: false,
   });
 
+  const successResult =
+    resultsQuery.data && resultsQuery.data.ok === true
+      ? (resultsQuery.data as ResultsSuccessPayload)
+      : null;
+  const scoringPending =
+    resultsQuery.data?.ok === false && resultsQuery.data.code === "SCORING_ROWS_MISSING";
+
   const derivedState = useMemo(() => {
-    const result = resultsQuery.data as ResultsResponse | undefined;
-    if (!result) {
-      return { data: null as ResultsPayload | null, err: null as string | null };
-    }
-
-    if (result.ok === false) {
-      if (result.code === "SCORING_ROWS_MISSING" && result.profile) {
-        return { data: result, err: null };
-      }
-      if (result.code === "SCORING_ROWS_MISSING") {
-        return { data: null, err: "Results updating—recompute required." };
-      }
-      return { data: null, err: result.error ?? "Failed to load results" };
-    }
-
-    if (!result.profile) {
-      return { data: null, err: "Profile not found" };
-    }
-
-    return { data: result, err: null };
-  }, [resultsQuery.data]);
-
-  useEffect(() => {
-    const nextVersion = resultsQuery.data?.results_version ?? null;
-    if (!nextVersion) {
-      return;
-    }
-    setResultsVersionKey((current) => (current === nextVersion ? current : nextVersion));
-  }, [resultsQuery.data?.results_version]);
+    if (successResult) return { data: successResult as ResultsPayload, err: null as string | null };
+    if (scoringPending) return { data: null as ResultsPayload | null, err: "Results updating—recompute required." };
+    return { data: null as ResultsPayload | null, err: null as string | null };
+  }, [successResult, scoringPending]);
 
   let err: string | null = derivedState.err;
   let errKind: RpcErrorCategory | null = null;
@@ -242,6 +227,7 @@ export default function Results({ components }: ResultsProps = {}) {
 
   if (resultsQuery.error) {
     let kind = classifyRpcError(resultsQuery.error);
+    // If share token missing but user is logged in, call it not_authorized (owner path)
     if (kind === "expired_or_invalid_token" && !hasShareToken && hasAuthSession) {
       kind = "not_authorized";
     }
@@ -259,7 +245,19 @@ export default function Results({ components }: ResultsProps = {}) {
     }
   }
 
-  const loading = resultsQuery.isPending && !data && !err && !errKind;
+  // If neither share token nor (resolved) owner auth, show unauthorized
+  const fetchPreconditionError: RpcErrorCategory | null = useMemo(() => {
+    if (hasShareToken) return null;
+    if (!sessionId) return null;
+    if (!authStateResolved) return null;
+    if (!hasAuthSession) return "not_authorized";
+    return null;
+  }, [authStateResolved, hasAuthSession, hasShareToken, sessionId]);
+
+  if (!errKind && fetchPreconditionError) errKind = fetchPreconditionError;
+
+  const isAuthResolving = !hasShareToken && !authStateResolved;
+  const loading = (resultsQuery.isPending || isAuthResolving) && !data && !err && !errKind;
 
   if (data?.profile) {
     data = {
@@ -275,30 +273,30 @@ export default function Results({ components }: ResultsProps = {}) {
 
   const sessionShareToken = useMemo(() => {
     const raw = (data?.session as { share_token?: string } | undefined)?.share_token;
-    if (typeof raw !== "string") {
-      return null;
-    }
+    if (typeof raw !== "string") return null;
     const trimmed = raw.trim();
     return trimmed.length > 0 ? trimmed : null;
   }, [data?.session]);
 
-  const navigationShareToken = hasShareToken ? shareToken : null;
+  const navigationShareToken = hasShareToken ? shareToken!.trim() : null;
   const displayShareToken = navigationShareToken ?? sessionShareToken ?? null;
 
-  const resultsVersion = useMemo(
-    () => data?.results_version ?? resultsVersionKey ?? null,
-    [data?.results_version, resultsVersionKey]
-  );
+  const scoringVersion = useMemo(() => {
+    if (successResult?.scoring_version && successResult.scoring_version.trim().length > 0) {
+      return successResult.scoring_version.trim();
+    }
+    if (scoringVersionParam) return scoringVersionParam;
+    if (successResult?.results_version && successResult.results_version.trim().length > 0) {
+      return successResult.results_version.trim();
+    }
+    return null;
+  }, [successResult?.results_version, successResult?.scoring_version, scoringVersionParam]);
 
   const buildResultsPath = useCallback(
     (token: string | null, version: string | null) => {
       const params = new URLSearchParams();
-      if (token && token.trim().length > 0) {
-        params.set("t", token.trim());
-      }
-      if (version && version.trim().length > 0) {
-        params.set("sv", version.trim());
-      }
+      if (token && token.trim().length > 0) params.set("t", token.trim());
+      if (version && version.trim().length > 0) params.set("sv", version.trim());
       const queryString = params.toString();
       return queryString ? `/results/${sessionId}?${queryString}` : `/results/${sessionId}`;
     },
@@ -306,20 +304,17 @@ export default function Results({ components }: ResultsProps = {}) {
   );
 
   const resultsUrl = useMemo(() => {
-    const path = buildResultsPath(displayShareToken, resultsVersion);
-    if (typeof window === "undefined") {
-      return path;
-    }
+    const path = buildResultsPath(displayShareToken, scoringVersion);
+    if (typeof window === "undefined") return path;
     return `${window.location.origin}${path}`;
-  }, [buildResultsPath, displayShareToken, resultsVersion]);
+  }, [buildResultsPath, displayShareToken, scoringVersion]);
 
   const copyResultsLink = async () => {
     try {
       await navigator.clipboard.writeText(resultsUrl);
       toast({
         title: "Secure link copied!",
-        description:
-          "Your private results link has been copied to your clipboard.",
+        description: "Your private results link has been copied to your clipboard.",
       });
     } catch {
       const textArea = document.createElement("textarea");
@@ -330,8 +325,7 @@ export default function Results({ components }: ResultsProps = {}) {
       document.body.removeChild(textArea);
       toast({
         title: "Secure link copied!",
-        description:
-          "Your private results link has been copied to your clipboard.",
+        description: "Your private results link has been copied to your clipboard.",
       });
     }
   };
@@ -343,16 +337,11 @@ export default function Results({ components }: ResultsProps = {}) {
     }
     setRotating(true);
     try {
-      const { data, error } = await supabase.rpc(
-        "rotate_results_share_token",
-        { p_session_id: sessionId }
-      );
+      const { data, error } = await supabase.rpc("rotate_results_share_token", { p_session_id: sessionId });
 
       if (error) {
         if (error.code === "403" || (error as any).status === 403) {
-          toast({
-            title: "You must be signed in as the session owner to rotate the link.",
-          });
+          toast({ title: "You must be signed in as the session owner to rotate the link." });
         } else if (error.code === "404" || (error as any).status === 404) {
           toast({ title: "Session not found." });
         } else {
@@ -369,7 +358,7 @@ export default function Results({ components }: ResultsProps = {}) {
 
       queryClient.removeQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId) });
       setShareToken(newToken);
-      const nextPath = buildResultsPath(newToken, resultsVersion);
+      const nextPath = buildResultsPath(newToken, scoringVersion);
       navigate(nextPath, { replace: true });
       toast({ title: "New secure link generated." });
     } catch {
@@ -377,19 +366,19 @@ export default function Results({ components }: ResultsProps = {}) {
     } finally {
       setRotating(false);
     }
-  }, [buildResultsPath, navigate, queryClient, resultsVersion, sessionId]);
+  }, [buildResultsPath, navigate, queryClient, scoringVersion, sessionId]);
 
+  // Keep URL in sync once version is known
   useEffect(() => {
     if (!sessionId) return;
-    if (!resultsVersion) return;
-    const desiredPath = buildResultsPath(navigationShareToken, resultsVersion);
+    if (!scoringVersion) return;
+    const desiredPath = buildResultsPath(navigationShareToken, scoringVersion);
     const currentPath = `${location.pathname}${location.search}`;
-    if (currentPath === desiredPath) {
-      return;
-    }
+    if (currentPath === desiredPath) return;
     navigate(desiredPath, { replace: true });
-  }, [buildResultsPath, location.pathname, location.search, navigationShareToken, navigate, resultsVersion, sessionId]);
+  }, [buildResultsPath, location.pathname, location.search, navigationShareToken, navigate, scoringVersion, sessionId]);
 
+  // Live updates: invalidate queries on relevant table changes
   useEffect(() => {
     if (!sessionId) return;
 
@@ -398,37 +387,27 @@ export default function Results({ components }: ResultsProps = {}) {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "assessment_sessions", filter: `id=eq.${sessionId}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId), exact: false });
-        }
+        () => queryClient.invalidateQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId), exact: false })
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "profiles", filter: `session_id=eq.${sessionId}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId), exact: false });
-        }
+        () => queryClient.invalidateQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId), exact: false })
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "scoring_results_types", filter: `session_id=eq.${sessionId}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId), exact: false });
-        }
+        () => queryClient.invalidateQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId), exact: false })
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "scoring_results_functions", filter: `session_id=eq.${sessionId}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId), exact: false });
-        }
+        () => queryClient.invalidateQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId), exact: false })
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "scoring_results_state", filter: `session_id=eq.${sessionId}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId), exact: false });
-        }
+        () => queryClient.invalidateQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId), exact: false })
       )
       .subscribe();
 
@@ -437,24 +416,19 @@ export default function Results({ components }: ResultsProps = {}) {
     };
   }, [queryClient, sessionId]);
 
+  // Analytics
   useEffect(() => {
-    if (profile) {
-      trackResultsViewed(sessionId, (profile as any)?.type_code);
-    }
+    if (profile) trackResultsViewed(sessionId, (profile as any)?.type_code);
   }, [profile, sessionId]);
 
-  useEffect(() => {
-    linkAttemptedRef.current = false;
-  }, [sessionId]);
-
+  // Ensure owner session is linked (non-preview, owner mode)
   useEffect(() => {
     if (IS_PREVIEW) return;
-    if (shareToken) return;
+    if (hasShareToken) return;
     if (!data) return;
     if (linkAttemptedRef.current) return;
 
     let cancelled = false;
-
     (async () => {
       const { data: authData } = await supabase.auth.getUser();
       const user = authData?.user;
@@ -468,23 +442,20 @@ export default function Results({ components }: ResultsProps = {}) {
       });
     })();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [data, sessionId, shareToken]);
+    return () => { cancelled = true; };
+  }, [data, sessionId, hasShareToken]);
 
+  // ----- Render states -----
   if (errKind) {
     const content =
       errKind === "expired_or_invalid_token"
         ? {
             title: "This results link has expired or was rotated",
-            message:
-              "Ask the owner for a fresh link, or sign in (if you’re the owner) to view your results.",
+            message: "Ask the owner for a fresh link, or sign in (if you’re the owner) to view your results.",
           }
         : {
             title: "You’re not authorized to view these results",
-            message:
-              "Sign in with the account that owns this assessment, or request a share link from the owner.",
+            message: "Sign in with the account that owns this assessment, or request a share link from the owner.",
           };
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
@@ -496,10 +467,7 @@ export default function Results({ components }: ResultsProps = {}) {
               <Button onClick={() => navigate(`/login?redirect=/results/${sessionId}`)}>
                 Sign in to view
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/assessment?start=true")}
-              >
+              <Button variant="outline" onClick={() => navigate("/assessment?start=true")}>
                 Retake assessment
               </Button>
             </div>
@@ -508,6 +476,7 @@ export default function Results({ components }: ResultsProps = {}) {
       </div>
     );
   }
+
   if (err) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
@@ -522,13 +491,8 @@ export default function Results({ components }: ResultsProps = {}) {
     );
   }
 
-  if (loading && !data) {
-    return <div className="p-8">Loading…</div>;
-  }
-
-  if (!data) {
-    return <div className="p-8">No results available.</div>;
-  }
+  if (loading && !data) return <div className="p-8">Loading…</div>;
+  if (!data) return <div className="p-8">No results available.</div>;
 
   const fullResults = (
     <div className="min-h-screen bg-background">
