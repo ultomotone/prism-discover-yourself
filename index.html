@@ -10,6 +10,11 @@
           SUPABASE_URL: "https://gnkuikentdtnatazeriu.supabase.co",
           SUPABASE_ANON_KEY: "sb_publishable_Yu_Gv0Xfve27udk78CyT3w_qrbMR3Cn",
           REDDIT_PIXEL_ID: "a2_hisg7r10d2ta", // Default Reddit Pixel ID
+          LINKEDIN_SITE_PAGE_VIEW_ID: null,
+          LINKEDIN_LEAD_CONVERSION_ID: null,
+          LINKEDIN_SIGNUP_CONVERSION_ID: null,
+          LINKEDIN_PURCHASE_CONVERSION_ID: null,
+          LINKEDIN_ADD_TO_CART_CONVERSION_ID: null,
         };
         const config = Object.assign({}, defaultConfig, existing);
 
@@ -378,28 +383,6 @@
     </script>
     <!-- End LinkedIn Insight Tag (init) -->
 
-    <!-- LinkedIn Insight Tag helpers: SPA route tracking -->
-    <script>
-      (function() {
-        function onRoute() {
-          const path = (location.pathname || '').toLowerCase();
-          if (path.startsWith('/assessment')) {
-            window.lintrk && window.lintrk('track', { conversion_id: 7877778 });
-          }
-        }
-        onRoute();
-        ['pushState','replaceState'].forEach(method => {
-          const orig = history[method];
-          history[method] = function() {
-            const ret = orig.apply(this, arguments);
-            setTimeout(onRoute, 0);
-            return ret;
-          };
-        });
-        addEventListener('popstate', onRoute);
-      })();
-    </script>
-    <!-- End LinkedIn Insight Tag helpers -->
     <!-- Quora Pixel Code (Base) -->
     <script>
 !function(q,e,v,n,t,s){if(q.qp) return; n=q.qp=function(){n.qp?n.qp.apply(n,arguments):n.queue.push(arguments);}; n.queue=[];

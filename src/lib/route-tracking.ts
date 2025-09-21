@@ -1,54 +1,171 @@
-// SPA route change tracking for Reddit and other analytics platforms
+// SPA route change tracking for analytics vendors
 
+import { sendLinkedInLead, sendLinkedInPageView, sendLinkedInSignupEvent } from './linkedin/track';
 import { sendQuoraEvent, sendQuoraPageView } from './quora/events';
 import { sendTwitterEvent, sendTwitterPageView } from './twitter/events';
+
+interface RouteTrackingContext {
+  consent: boolean;
+  knownEmail?: string;
+}
+
+const RESULTS_ROUTE_PATTERN = /\bresults\b/;
+
+const ANALYTICS_AUDIT_SUMMARY: Array<{ vendor: string; status: string; updates: string }> = [
+  {
+    vendor: 'Quora',
+    status: '✓',
+    updates: 'Consent-gated qpTrack helper + SPA page views and lead mapping',
+  },
+  {
+    vendor: 'Twitter',
+    status: '✓',
+    updates: 'Consent-aware twqTrack wrapper + PageView + Lead hooks',
+  },
+  {
+    vendor: 'LinkedIn',
+    status: '✓',
+    updates: 'Config-driven Site Page View + Lead/Signup/Purchase helpers',
+  },
+  {
+    vendor: 'Facebook',
+    status: '✓',
+    updates: 'SPA PageView + Lead/Signup parity via route tracker',
+  },
+  {
+    vendor: 'Reddit',
+    status: '✓',
+    updates: 'SPA PageVisit + Lead/Signup parity via route tracker',
+  },
+  {
+    vendor: 'GA4',
+    status: '✓',
+    updates: 'Route-aware page_path updates via gtag config',
+  },
+];
+
+let summaryLogged = false;
+
+function hasAnalyticsConsent(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const consent = window.__consent;
+    return Boolean(consent && typeof consent === 'object' && consent.analytics === true);
+  } catch (_) {
+    return false;
+  }
+}
+
+function getKnownUserEmail(): string | undefined {
+  if (typeof window === 'undefined') return undefined;
+  const candidate = (window as any).__knownUser;
+  if (candidate && typeof candidate.email === 'string' && candidate.email.trim().length > 0) {
+    return candidate.email.trim();
+  }
+  return undefined;
+}
+
+function logAnalyticsSummary(): void {
+  if (summaryLogged) return;
+  summaryLogged = true;
+  if (typeof console === 'undefined' || typeof console.table !== 'function') return;
+  console.table(ANALYTICS_AUDIT_SUMMARY);
+}
+
+function trackRouteSpecificEvents(path: string, context: RouteTrackingContext) {
+  if (typeof window === 'undefined') return;
+
+  const normalizedPath = path.toLowerCase();
+  const onResultsRoute = RESULTS_ROUTE_PATTERN.test(normalizedPath);
+
+  if (!onResultsRoute && normalizedPath.startsWith('/assessment')) {
+    if (context.consent && typeof window.rdtTrack === 'function') {
+      window.rdtTrack('Lead', { content_name: 'PRISM Assessment', page_path: path });
+    }
+    if (context.consent && typeof window.fbTrack === 'function') {
+      window.fbTrack('Lead', { content_name: 'PRISM Assessment' });
+    }
+    sendTwitterEvent('Lead', { content_name: 'PRISM Assessment', page_path: path });
+    sendQuoraEvent('GenerateLead', { content_name: 'PRISM Assessment', page_path: path });
+    void sendLinkedInLead({
+      consentGranted: context.consent,
+      alsoFireClient: true,
+    });
+    if (context.consent && typeof window.gtag === 'function') {
+      window.gtag('event', 'generate_lead', { page_path: path });
+    }
+  }
+
+  if (!onResultsRoute && (
+    normalizedPath.startsWith('/signup/complete') ||
+    normalizedPath.startsWith('/welcome') ||
+    normalizedPath.includes('/account/create/complete')
+  )) {
+    if (context.consent && typeof window.rdtTrack === 'function') {
+      window.rdtTrack('SignUp');
+    }
+    if (context.consent && typeof window.fbTrack === 'function') {
+      window.fbTrack('CompleteRegistration');
+    }
+    sendTwitterEvent('SignUp', { page_path: path });
+    sendQuoraEvent('CompleteRegistration', { page_path: path });
+    if (context.knownEmail) {
+      void sendLinkedInSignupEvent({
+        email: context.knownEmail,
+        consentGranted: context.consent,
+        alsoFireClient: true,
+      });
+    }
+    if (context.consent && typeof window.gtag === 'function') {
+      window.gtag('event', 'sign_up', { method: 'assessment', page_path: path });
+    }
+  }
+}
 
 // Track route changes for SPA navigation
 export const trackRouteChange = (path: string) => {
   if (typeof window === 'undefined') return;
 
-  const debug = window.__TW_DEBUG__ === true;
+  const consent = hasAnalyticsConsent();
+  const knownEmail = getKnownUserEmail();
 
-  // Track page view for Reddit
-  if (window.rdtTrack) {
+  if (consent && typeof window.rdtTrack === 'function') {
     window.rdtTrack('PageVisit');
   }
 
-  // Track page view for Facebook
-  if (window.fbTrack) {
+  if (consent && typeof window.fbTrack === 'function') {
     window.fbTrack('PageView');
   }
 
   sendTwitterPageView(path);
   sendQuoraPageView(path);
+  if (consent) {
+    sendLinkedInPageView();
+  }
 
-  if (debug) {
+  if (window.__TW_DEBUG__ === true) {
     console.info('[Twitter Pixel] PageView fired', { path });
   }
 
-  // Track page view for Google Analytics
-  if (window.gtag) {
+  if (consent && typeof window.gtag === 'function') {
     window.gtag('config', 'G-J2XXMC9VWV', {
-      page_path: path
+      page_path: path,
     });
   }
 
-  trackRouteSpecificEvents(path);
+  trackRouteSpecificEvents(path, { consent, knownEmail });
 };
 
 // Set up SPA route tracking listeners
 export const initializeRouteTracking = () => {
   if (typeof window === 'undefined') return;
 
-  // Track initial page load
   trackRouteChange(window.location.pathname);
 
-  // Override history methods to track programmatic navigation
-  ['pushState', 'replaceState'].forEach(method => {
-    const original = history[method as keyof History] as Function;
-    (history as any)[method] = function(...args: any[]) {
+  ['pushState', 'replaceState'].forEach((method) => {
+    const original = history[method as keyof History] as (...args: unknown[]) => unknown;
+    (history as any)[method] = function patchedHistoryMethod(this: History, ...args: unknown[]) {
       const result = original.apply(this, args);
-      // Use setTimeout to ensure the navigation has completed
       setTimeout(() => {
         trackRouteChange(window.location.pathname);
       }, 0);
@@ -56,67 +173,23 @@ export const initializeRouteTracking = () => {
     };
   });
 
-  // Track browser back/forward navigation
   window.addEventListener('popstate', () => {
     trackRouteChange(window.location.pathname);
   });
+
+  setTimeout(logAnalyticsSummary, 0);
 
   if (window.__TW_DEBUG__ === true) {
     console.log('✅ SPA route tracking initialized');
   }
 };
 
-// Route-specific event tracking
-export function trackRouteSpecificEvents(path: string) {
-  if (typeof window === 'undefined') return;
-
-  const normalizedPath = path.toLowerCase();
-
-  // Assessment start tracking
-  if (normalizedPath.startsWith('/assessment')) {
-    if (window.rdtTrack) {
-      window.rdtTrack('ViewContent', { content_name: 'Assessment' });
-    }
-    if (window.fbTrack) {
-      window.fbTrack('ViewContent', { content_name: 'Assessment' });
-    }
-    sendTwitterEvent('ContentView', { content_name: 'Assessment' });
-    sendQuoraEvent('GenerateLead', { content_name: 'Assessment' });
-  }
-
-  // Results page tracking
-  if (normalizedPath.includes('/results/')) {
-    if (window.rdtTrack) {
-      window.rdtTrack('ViewContent', { content_name: 'PRISM Results' });
-    }
-    if (window.fbTrack) {
-      window.fbTrack('ViewContent', { content_name: 'PRISM Results' });
-    }
-    sendTwitterEvent(
-      'ContentView',
-      { content_name: 'PRISM Results' },
-      { allowOnResults: true },
-    );
-    sendQuoraEvent(
-      'ViewContent',
-      { content_name: 'PRISM Results' },
-      { allowOnResults: true },
-    );
-  }
-
-  // Sign-up completion tracking
-  if (
-    normalizedPath.startsWith('/signup/complete') ||
-    normalizedPath.startsWith('/welcome') ||
-    normalizedPath.includes('/account/create/complete')
-  ) {
-    if (window.rdtTrack) {
-      window.rdtTrack('SignUp');
-    }
-    if (window.fbTrack) {
-      window.fbTrack('CompleteRegistration');
-    }
-    sendTwitterEvent('SignUp', {});
-    sendQuoraEvent('CompleteRegistration', {});
+declare global {
+  interface Window {
+    __consent?: { analytics?: boolean };
+    __knownUser?: { email?: string };
+    rdtTrack?: (eventName: string, props?: Record<string, unknown>) => void;
+    fbTrack?: (eventName: string, props?: Record<string, unknown>) => void;
+    gtag?: (...args: unknown[]) => void;
   }
 }

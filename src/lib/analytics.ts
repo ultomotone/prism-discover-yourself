@@ -1,5 +1,6 @@
 // Google Analytics tracking utility
 import { IS_PREVIEW } from './env';
+import { sendLinkedInLead, sendLinkedInPurchase, sendLinkedInSignupEvent } from './linkedin/track';
 import { sendQuoraEvent } from './quora/events';
 import { sendTwitterEvent } from './twitter/events';
 import {
@@ -19,7 +20,28 @@ declare global {
     fbq: (...args: any[]) => void;
     fbTrack: (eventName: string, props?: any) => string;
     fbSetUser: (props: { email?: string }) => void;
+    __consent?: { analytics?: boolean };
+    __knownUser?: { email?: string };
   }
+}
+
+function getAnalyticsConsent(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const consent = window.__consent;
+    return Boolean(consent && typeof consent === 'object' && consent.analytics === true);
+  } catch (_) {
+    return false;
+  }
+}
+
+function getKnownEmail(): string | undefined {
+  if (typeof window === 'undefined') return undefined;
+  const candidate = window.__knownUser;
+  if (candidate && typeof candidate.email === 'string' && candidate.email.trim().length > 0) {
+    return candidate.email.trim();
+  }
+  return undefined;
 }
 
 export const trackEvent = (action: string, category: string, label?: string, value?: number) => {
@@ -40,6 +62,7 @@ export const trackLead = (email?: string, metadata: Record<string, any> = {}) =>
 
   if (typeof window !== 'undefined') {
     const w = window as any;
+    const consentGranted = getAnalyticsConsent();
 
     if (email) {
       if (w.rdtSetUser) w.rdtSetUser({ email });
@@ -58,6 +81,10 @@ export const trackLead = (email?: string, metadata: Record<string, any> = {}) =>
     sendQuoraEvent('GenerateLead', {
       email: email || undefined,
       ...metadata,
+    });
+    void sendLinkedInLead({
+      email: email || getKnownEmail(),
+      consentGranted,
     });
   }
 };
@@ -82,6 +109,10 @@ export const trackAssessmentStart = (sessionId: string) => {
   sendQuoraEvent('GenerateLead', {
     content_name: 'PRISM Assessment',
     session_id: sessionId,
+  });
+  void sendLinkedInLead({
+    consentGranted: getAnalyticsConsent(),
+    email: getKnownEmail(),
   });
 
   // Fire custom event for Reddit S2S tracking
@@ -125,6 +156,13 @@ export const trackAssessmentComplete = (sessionId: string, totalQuestions: numbe
     session_id: sessionId,
     question_count: totalQuestions,
   });
+  const knownEmail = getKnownEmail();
+  if (knownEmail) {
+    void sendLinkedInSignupEvent({
+      email: knownEmail,
+      consentGranted: getAnalyticsConsent(),
+    });
+  }
 
   // Fire app event that other trackers can listen to
   if (typeof window !== 'undefined') {
@@ -157,6 +195,10 @@ export const trackAccountCreation = (email: string, sessionId?: string) => {
   sendQuoraEvent('CompleteRegistration', {
     email,
     session_id: sessionId,
+  });
+  void sendLinkedInSignupEvent({
+    email,
+    consentGranted: getAnalyticsConsent(),
   });
 
   // Fire app event that other trackers can listen to
@@ -244,6 +286,12 @@ export const trackPaymentSuccess = (
     currency,
     transaction_id: transactionId,
     session_id: sessionId,
+  });
+  void sendLinkedInPurchase({
+    value,
+    currency,
+    email: getKnownEmail(),
+    consentGranted: getAnalyticsConsent(),
   });
 
   if (typeof window !== 'undefined' && window.fbTrack) {

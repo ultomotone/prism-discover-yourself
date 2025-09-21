@@ -35,10 +35,14 @@ test("renders Book button, triggers onSelect, and fires AddToCart", () => {
   const calls: Array<{ event: string; payload: Record<string, unknown> }> = [];
   (window as unknown as {
     fbTrack?: (eventName: string, payload?: Record<string, unknown>) => string;
+    rdtTrack?: (eventName: string, payload?: Record<string, unknown>) => string;
   }).fbTrack = (eventName, payload = {}) => {
     calls.push({ event: eventName, payload });
     return "evt";
   };
+  (window as unknown as {
+    rdtTrack?: (eventName: string, payload?: Record<string, unknown>) => string;
+  }).rdtTrack = () => "rdt";
 
   render(<ServiceCard service={svc} onSelect={onSelect} />);
 
