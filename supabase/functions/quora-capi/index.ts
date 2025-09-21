@@ -15,7 +15,16 @@ const corsHeaders = {
   "Cache-Control": "no-store",
 };
 
-const PIXEL_ID = Deno.env.get("QUORA_PIXEL_ID") ?? "3b47052b877e48a5b43d5f0d775d8e06";
+const PIXEL_ID = (() => {
+  const raw = Deno.env.get("QUORA_PIXEL_ID");
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (trimmed.length > 0) {
+      return trimmed;
+    }
+  }
+  return undefined;
+})();
 const QUORA_ENDPOINT = "https://q.quora.com/conversion_api/event";
 const MAX_ATTEMPTS = 3;
 const BASE_RETRY_DELAY_MS = 250;
@@ -197,7 +206,13 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
   if (req.method === "GET" && url.searchParams.get("status") === "1") {
-    return okResponse({ ok: true, hasToken: true, pixelId: PIXEL_ID, env: resolveEnvironment() });
+    return okResponse({
+      ok: true,
+      hasToken: true,
+      hasPixel: Boolean(PIXEL_ID),
+      pixelId: PIXEL_ID ?? null,
+      env: resolveEnvironment(),
+    });
   }
 
   if (req.method !== "POST") {
@@ -214,6 +229,11 @@ Deno.serve(async (req) => {
   const consent = consentBody ?? consentHeader;
   if (consent === false) {
     return new Response(null, { status: 204, headers: corsHeaders });
+  }
+
+  const pixelId = PIXEL_ID;
+  if (!pixelId) {
+    return errorResponse({ ok: false, code: "missing_pixel_id" }, 500);
   }
 
   const eventName = parseString(rawBody.event_name);
@@ -236,7 +256,7 @@ Deno.serve(async (req) => {
   const hashedEmail = await ensureHashedEmail(rawBody.email);
 
   const buildInput: BuildQuoraPayloadInput = {
-    pixelId: PIXEL_ID,
+    pixelId,
     eventName,
     eventTime,
     conversionId,
