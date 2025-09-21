@@ -149,7 +149,9 @@ Deno.serve(async (req) => {
   const rl = rateLimit(`finalize:${clientIp}`);
   if (!rl.allowed) {
     logger.warn("assessment.finalize.rate_limited", { ip: clientIp });
-    return json(origin, { status: "error", error: "rate_limited" }, 429);
+    const response = json(origin, { status: "error", error: "rate_limited" }, 429);
+    response.headers.set("Retry-After", String(rl.retryAfter ?? 60));
+    return response;
   }
   let sessionId: string | undefined;
   try {

@@ -169,16 +169,13 @@ class ErrorBoundary extends React.Component<
 
 const queryClient = new QueryClient();
 
-const isLovablePreviewHost = () => {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  const host = window.location.host.toLowerCase();
-  return host.includes("lovable.app") || host.includes("lovableproject.com");
-};
+function isPreviewHost(hostname: string) {
+  const host = hostname.toLowerCase();
+  return host.includes("lovable.app") || host.includes("lovableproject.com") || host === "lovable.dev";
+}
 
 const RouterProvider = ({ children }: { children: React.ReactNode }) => {
-  if (isLovablePreviewHost()) {
+  if (typeof window !== "undefined" && isPreviewHost(window.location.hostname)) {
     return <HashRouter>{children}</HashRouter>;
   }
   return (
