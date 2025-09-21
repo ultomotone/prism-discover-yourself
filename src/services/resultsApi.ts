@@ -65,41 +65,13 @@ function logFailure(sessionId: string, shareToken: string | null | undefined, st
   });
 }
 
-export async function fetchResultsBySession(
+async function executeRequest(
   sessionId: string,
-  shareToken?: string | null
+  body: Record<string, unknown>,
+  headers: Record<string, string>,
+  shareToken: string | null
 ): Promise<ResultsFetchPayload> {
-  if (!sessionId) {
-    throw new Error("sessionId is required");
-  }
-
-  const normalizedToken = shareToken?.trim() ?? "";
-
   const url = `${resolveSupabaseFunctionsBase()}/get-results-by-session`;
-  const headers = buildEdgeRequestHeaders({
-    "Content-Type": "application/json",
-    "Cache-Control": "no-store",
-  });
-
-  const body: Record<string, unknown> = {
-    session_id: sessionId,
-  };
-
-  if (normalizedToken) {
-    body.share_token = normalizedToken;
-  }
-
-  if (!IS_PREVIEW) {
-    const authHeaders = await buildAuthHeaders();
-    if (authHeaders.Authorization) {
-      headers.Authorization = authHeaders.Authorization;
-    }
-  }
-
-  if (!normalizedToken && !headers.Authorization) {
-    logFailure(sessionId, shareToken ?? null, 401);
-    throw new ResultsApiError("Authorization required", 401);
-  }
 
   try {
     const response = await fetch(url, {
@@ -119,7 +91,7 @@ export async function fetchResultsBySession(
         typeof payload.error === "string" && payload.error.length > 0
           ? payload.error
           : `get-results-by-session ${response.status}`;
-      logFailure(sessionId, shareToken ?? null, response.status);
+      logFailure(sessionId, shareToken, response.status);
       throw new ResultsApiError(message, response.status);
     }
 
@@ -140,12 +112,78 @@ export async function fetchResultsBySession(
       throw error;
     }
     if (error instanceof Error) {
-      logFailure(sessionId, shareToken ?? null, (error as ResultsApiError).status);
+      logFailure(sessionId, shareToken, (error as ResultsApiError).status);
       throw error;
     }
-    logFailure(sessionId, shareToken ?? null, undefined);
+    logFailure(sessionId, shareToken, undefined);
     throw new ResultsApiError("Failed to fetch results");
   }
+}
+
+export async function fetchResultsByShareToken(
+  sessionId: string,
+  shareToken: string
+): Promise<ResultsFetchPayload> {
+  if (!sessionId) {
+    throw new Error("sessionId is required");
+  }
+
+  const normalizedToken = shareToken.trim();
+  if (!normalizedToken) {
+    throw new ResultsApiError("Share token required", 400);
+  }
+
+  const headers = buildEdgeRequestHeaders({
+    "Content-Type": "application/json",
+    "Cache-Control": "no-store",
+  });
+
+  const body: Record<string, unknown> = {
+    session_id: sessionId,
+    share_token: normalizedToken,
+  };
+
+  return executeRequest(sessionId, body, headers, normalizedToken);
+}
+
+export async function fetchResultsAsOwner(sessionId: string): Promise<ResultsFetchPayload> {
+  if (!sessionId) {
+    throw new Error("sessionId is required");
+  }
+
+  const headers = buildEdgeRequestHeaders({
+    "Content-Type": "application/json",
+    "Cache-Control": "no-store",
+  });
+
+  if (!IS_PREVIEW) {
+    const authHeaders = await buildAuthHeaders();
+    if (authHeaders.Authorization) {
+      headers.Authorization = authHeaders.Authorization;
+    }
+  }
+
+  if (!headers.Authorization) {
+    logFailure(sessionId, null, 401);
+    throw new ResultsApiError("Authorization required", 401);
+  }
+
+  const body: Record<string, unknown> = {
+    session_id: sessionId,
+  };
+
+  return executeRequest(sessionId, body, headers, null);
+}
+
+export async function fetchResultsBySession(
+  sessionId: string,
+  shareToken?: string | null
+): Promise<ResultsFetchPayload> {
+  const normalizedToken = shareToken?.trim() ?? "";
+  if (normalizedToken) {
+    return fetchResultsByShareToken(sessionId, normalizedToken);
+  }
+  return fetchResultsAsOwner(sessionId);
 }
 
 export async function markResultsPaid(sessionId: string): Promise<void> {

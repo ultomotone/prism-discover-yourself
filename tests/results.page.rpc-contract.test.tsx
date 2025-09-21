@@ -182,7 +182,7 @@ test("Results page → missing token renders expired state without RPC", async (
   const queryClient = renderResultsRoute(["/results/sess-missing"]);
 
   await waitFor(() => {
-    assert.ok(screen.getByText(/This results link has expired or was rotated/i));
+    assert.ok(screen.getByText(/you.?re not signed in/i));
   });
   const edgeCalls = calls.filter((call) => call.url.endsWith("/get-results-by-session"));
   assert.equal(edgeCalls.length, 0);

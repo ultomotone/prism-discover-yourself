@@ -18,7 +18,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { trackResultsViewed } from "@/lib/analytics";
 import { classifyRpcError, type RpcErrorCategory } from "@/features/results/errorClassifier";
-import { fetchResultsBySession } from "@/services/resultsApi";
+import { fetchResultsAsOwner, fetchResultsByShareToken } from "@/services/resultsApi";
 import { ensureSessionLinked } from "@/services/sessionLinking";
 import { IS_PREVIEW } from "@/lib/env";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -112,11 +112,30 @@ export default function Results({ components }: ResultsProps = {}) {
     () => typeof shareToken === "string" && shareToken.trim().length > 0,
     [shareToken]
   );
-  const identityKey = useMemo(
-    () => (hasShareToken ? `token:${shareToken}` : "owner"),
-    [hasShareToken, shareToken]
+  const [authStatus, setAuthStatus] = useState<"unknown" | "authenticated" | "unauthenticated">(
+    "unknown"
   );
-  const [hasAuthSession, setHasAuthSession] = useState(false);
+  const identityKey = useMemo(() => {
+    if (hasShareToken) {
+      return `token:${shareToken}`;
+    }
+    if (authStatus === "authenticated") {
+      return "owner";
+    }
+    return "guest";
+  }, [authStatus, hasShareToken, shareToken]);
+  const fetchMode = useMemo(() => {
+    if (hasShareToken) {
+      return "share" as const;
+    }
+    if (authStatus === "authenticated") {
+      return "owner" as const;
+    }
+    if (authStatus === "unauthenticated") {
+      return "unauthorized" as const;
+    }
+    return "pending" as const;
+  }, [authStatus, hasShareToken]);
   useEffect(() => {
     setShareToken(query.get("t") ?? null);
   }, [query]);
@@ -131,11 +150,11 @@ export default function Results({ components }: ResultsProps = {}) {
     (async () => {
       const { data: sessionData } = await supabase.auth.getSession();
       if (active) {
-        setHasAuthSession(Boolean(sessionData?.session?.access_token));
+        setAuthStatus(sessionData?.session?.access_token ? "authenticated" : "unauthenticated");
       }
     })();
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setHasAuthSession(Boolean(session?.access_token));
+      setAuthStatus(session?.access_token ? "authenticated" : "unauthenticated");
     });
     return () => {
       active = false;
@@ -175,9 +194,20 @@ export default function Results({ components }: ResultsProps = {}) {
 
   const resultsQuery = useQuery<ResultsResponse | null>({
     queryKey: resultsQueryKeys.session(sessionId, identityKey, resultsVersionKey),
-    queryFn: () =>
-      fetchResultsBySession(sessionId, hasShareToken ? shareToken : null) as Promise<ResultsResponse>,
-    enabled: Boolean(sessionId),
+    queryFn: () => {
+      if (fetchMode === "share") {
+        const token = shareToken ?? "";
+        if (!token.trim()) {
+          throw new Error("Share token required for share-mode fetch");
+        }
+        return fetchResultsByShareToken(sessionId, token) as Promise<ResultsResponse>;
+      }
+      if (fetchMode === "owner") {
+        return fetchResultsAsOwner(sessionId) as Promise<ResultsResponse>;
+      }
+      throw new Error("Unsupported fetch mode");
+    },
+    enabled: Boolean(sessionId) && (fetchMode === "share" || fetchMode === "owner"),
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchInterval: (currentData) => {
@@ -242,7 +272,7 @@ export default function Results({ components }: ResultsProps = {}) {
 
   if (resultsQuery.error) {
     let kind = classifyRpcError(resultsQuery.error);
-    if (kind === "expired_or_invalid_token" && !hasShareToken && hasAuthSession) {
+    if (kind === "expired_or_invalid_token" && !hasShareToken && authStatus === "authenticated") {
       kind = "not_authorized";
     }
     if (kind === "expired_or_invalid_token" || kind === "not_authorized") {
@@ -259,7 +289,8 @@ export default function Results({ components }: ResultsProps = {}) {
     }
   }
 
-  const loading = resultsQuery.isPending && !data && !err && !errKind;
+  const loading =
+    (fetchMode === "pending" || resultsQuery.isPending) && !data && !err && !errKind;
 
   if (data?.profile) {
     data = {
@@ -472,6 +503,29 @@ export default function Results({ components }: ResultsProps = {}) {
       cancelled = true;
     };
   }, [data, sessionId, shareToken]);
+
+  if (fetchMode === "unauthorized") {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 space-y-4 text-center">
+            <h2 className="text-lg font-semibold">You’re not signed in</h2>
+            <p className="text-muted-foreground">
+              Sign in to view your assessment results, or request a share link from the owner.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+              <Button onClick={() => navigate(`/login?redirect=/results/${sessionId}`)}>
+                Sign in to view
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/assessment?start=true")}>
+                Retake assessment
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (errKind) {
     const content =

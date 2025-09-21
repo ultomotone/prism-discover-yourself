@@ -5,17 +5,34 @@ import { emitMetric } from "../../../lib/metrics.ts";
 type AuthContext = "token" | "owner";
 
 const defaultOrigin = Deno.env.get("RESULTS_ALLOWED_ORIGIN") ?? "https://prismpersonality.com";
-const allowedOrigins = new Set([
-  defaultOrigin,
+
+const ORIGIN_ALLOWLIST: Array<string | RegExp> = [
   "https://prismpersonality.com",
   "https://www.prismpersonality.com",
   "http://localhost:3000",
   "http://127.0.0.1:3000",
-]);
+  "https://lovable.dev",
+  /\.lovable\.app$/i,
+  /\.lovableproject\.com$/i,
+];
+
+function isAllowedOrigin(origin: string): boolean {
+  try {
+    const { origin: normalized } = new URL(origin);
+    if (normalized === defaultOrigin) {
+      return true;
+    }
+    return ORIGIN_ALLOWLIST.some((rule) =>
+      typeof rule === "string" ? rule === normalized : rule.test(normalized)
+    );
+  } catch {
+    return false;
+  }
+}
 
 function resolveOrigin(req: Request): string {
-  const origin = req.headers.get("origin");
-  if (origin && allowedOrigins.has(origin)) {
+  const origin = req.headers.get("origin") ?? "";
+  if (origin && isAllowedOrigin(origin)) {
     return origin;
   }
   return defaultOrigin;
@@ -26,7 +43,7 @@ function buildCorsHeaders(origin: string): Record<string, string> {
     "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    Vary: "Origin",
+    Vary: "Origin, Authorization",
   };
 }
 

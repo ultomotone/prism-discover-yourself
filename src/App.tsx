@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import Footer from "./components/Footer";
@@ -169,6 +169,26 @@ class ErrorBoundary extends React.Component<
 
 const queryClient = new QueryClient();
 
+const isLovablePreviewHost = (): boolean => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  const host = window.location.host.toLowerCase();
+  return host.includes("lovable.app") || host.includes("lovableproject.com");
+};
+
+const RouterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  if (isLovablePreviewHost()) {
+    return <HashRouter>{children}</HashRouter>;
+  }
+
+  return (
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      {children}
+    </BrowserRouter>
+  );
+};
+
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
@@ -176,7 +196,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <RouterProvider>
             <div className="min-h-screen flex flex-col bg-background">
               <Header />
               <main className="flex-1 pt-16">
@@ -403,7 +423,7 @@ const App = () => (
               </main>
               <Footer />
             </div>
-          </BrowserRouter>
+          </RouterProvider>
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
