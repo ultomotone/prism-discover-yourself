@@ -43,7 +43,7 @@ export interface FinalizeAssessmentDeps {
   getSession(sessionId: string): Promise<SessionRow | null>;
   upsertSession(sessionId: string, patch: Partial<SessionRow>): Promise<void>;
   generateShareToken(): string;
-  buildResultsUrl(baseUrl: string, sessionId: string, token: string): string;
+  buildResultsUrl(baseUrl: string, sessionId: string, token: string, version: string): string;
   now(): Date;
   log(payload: Record<string, unknown>): void;
 }
@@ -148,7 +148,7 @@ export async function finalizeAssessmentCore(
         updated_at: now.toISOString(),
       });
 
-      const resultsUrl = deps.buildResultsUrl(siteUrl, sessionId, shareToken);
+      const resultsUrl = deps.buildResultsUrl(siteUrl, sessionId, shareToken, RESULTS_VERSION);
       return {
         ok: true,
         profile: normalized,
@@ -187,7 +187,7 @@ export async function finalizeAssessmentCore(
       updated_at: now.toISOString(),
     });
 
-    const resultsUrl = deps.buildResultsUrl(siteUrl, sessionId, shareToken);
+    const resultsUrl = deps.buildResultsUrl(siteUrl, sessionId, shareToken, RESULTS_VERSION);
     return {
       ok: true,
       profile: normalized,

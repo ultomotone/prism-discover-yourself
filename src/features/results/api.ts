@@ -69,11 +69,11 @@ function mapUnknown(e: unknown): FetchResultsError {
 async function rpcCall(
   client: SupabaseClient,
   sessionId: string,
-  shareToken: string,
+  shareToken?: string | null,
 ): Promise<FetchResultsResponse> {
   const { data, error } = await client.functions.invoke<FetchResultsResponse>(
     'get-results-by-session',
-    { body: { session_id: sessionId, share_token: shareToken } },
+    { body: { session_id: sessionId, share_token: shareToken ?? null } },
   );
   if (error) {
     const status = (error as any)?.code;
@@ -122,18 +122,26 @@ async function executeWithRetry<T>(
 }
 
 export async function fetchResultsBySession(
-  { sessionId, shareToken }: { sessionId: string; shareToken: string },
+  { sessionId, shareToken }: { sessionId: string; shareToken?: string | null },
   client: SupabaseClient = supabase,
 ): Promise<FetchResultsResponse> {
-  if (!shareToken || shareToken.trim() === '') {
-    console.error('results-fetch-failure', {
-      sessionId,
-      hasToken: false,
-      httpStatus: 401,
-    });
-    throw new FetchResultsError('unauthorized', 'share token required');
+  const normalizedToken = shareToken?.trim() ?? '';
+  if (!normalizedToken) {
+    let hasSession = false;
+    if (client.auth && typeof client.auth.getSession === 'function') {
+      const { data: sessionData } = await client.auth.getSession();
+      hasSession = Boolean(sessionData?.session?.access_token);
+    }
+    if (!hasSession) {
+      console.error('results-fetch-failure', {
+        sessionId,
+        hasToken: false,
+        httpStatus: 401,
+      });
+      throw new FetchResultsError('unauthorized', 'share token or auth required');
+    }
   }
-  const key = `${sessionId}|${shareToken}`;
+  const key = `${sessionId}|${normalizedToken || 'owner'}`;
   const existing = inFlight.get(key);
   if (existing) return existing.promise;
 
@@ -141,7 +149,7 @@ export async function fetchResultsBySession(
   const promise = (async () => {
     try {
       return await executeWithRetry(
-        () => rpcCall(client, sessionId, shareToken),
+        () => rpcCall(client, sessionId, normalizedToken || null),
         controller
       );
     } finally {
@@ -154,8 +162,9 @@ export async function fetchResultsBySession(
 }
 
 // Optional: let callers proactively cancel a specific in-flight call
-export function cancelFetchResults(sessionId: string, shareToken?: string) {
-  const key = `${sessionId}|${shareToken ?? ''}`;
+export function cancelFetchResults(sessionId: string, shareToken?: string | null) {
+  const normalizedToken = shareToken?.trim() ?? '';
+  const key = `${sessionId}|${normalizedToken || 'owner'}`;
   const entry = inFlight.get(key);
   if (entry) entry.controller.abort();
 }
