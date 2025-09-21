@@ -5,23 +5,60 @@ const nodeEnv = (typeof process !== "undefined" ? process.env ?? {} : {}) as Rec
 
 let cachedFunctionsBase: string | null = null;
 
-function normalizeBaseUrl(raw: string | null | undefined): string | null {
+const FUNCTIONS_V1_SUFFIX = "/functions/v1" as const;
+
+function trimTrailingSlashes(value: string): string {
+  return value.replace(/\/*$/, "");
+}
+
+function normalizeFunctionsBase(raw: string | null | undefined): string | null {
   if (!raw) return null;
-  const trimmed = raw.trim();
+  const trimmed = trimTrailingSlashes(raw.trim());
   if (!trimmed) return null;
-  if (trimmed.endsWith("/functions/v1")) {
+
+  if (trimmed.includes(".functions.supabase.co")) {
     return trimmed;
   }
-  return `${trimmed.replace(/\/$/, "")}/functions/v1`;
+
+  if (trimmed.endsWith(FUNCTIONS_V1_SUFFIX)) {
+    const base = trimTrailingSlashes(trimmed.slice(0, -FUNCTIONS_V1_SUFFIX.length));
+    if (base.includes(".supabase.co")) {
+      return base.replace(".supabase.co", ".functions.supabase.co");
+    }
+    return `${base}${FUNCTIONS_V1_SUFFIX}`;
+  }
+
+  if (trimmed.includes(".supabase.co")) {
+    return trimmed.replace(".supabase.co", ".functions.supabase.co");
+  }
+
+  return trimmed;
 }
 
 function resolveEnvFunctionsUrl(): string | null {
-  const explicit =
-    nodeEnv.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL ??
-    nodeEnv.VITE_SUPABASE_FUNCTIONS_URL ??
-    (viteEnv.VITE_SUPABASE_FUNCTIONS_URL as string | undefined) ??
-    null;
-  return normalizeBaseUrl(explicit);
+  const explicitCandidates = [
+    nodeEnv.NEXT_PUBLIC_SUPABASE_FUNCTION_URL,
+    nodeEnv.VITE_SUPABASE_FUNCTION_URL,
+    (viteEnv.VITE_SUPABASE_FUNCTION_URL as string | undefined) ?? null,
+    nodeEnv.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL,
+    nodeEnv.VITE_SUPABASE_FUNCTIONS_URL,
+    (viteEnv.VITE_SUPABASE_FUNCTIONS_URL as string | undefined) ?? null,
+  ];
+
+  for (const candidate of explicitCandidates) {
+    const normalized = normalizeFunctionsBase(candidate ?? null);
+    if (normalized) return normalized;
+  }
+
+  return null;
+}
+
+function deriveFromSupabaseUrl(): string {
+  const base = trimTrailingSlashes(SUPABASE_URL);
+  if (base.includes(".supabase.co")) {
+    return base.replace(".supabase.co", ".functions.supabase.co");
+  }
+  return `${base}${FUNCTIONS_V1_SUFFIX}`;
 }
 
 export function resolveSupabaseFunctionsBase(): string {
@@ -33,7 +70,7 @@ export function resolveSupabaseFunctionsBase(): string {
     return cachedFunctionsBase;
   }
 
-  const fallback = `${SUPABASE_URL.replace(/\/$/, "")}/functions/v1`;
+  const fallback = normalizeFunctionsBase(deriveFromSupabaseUrl()) ?? deriveFromSupabaseUrl();
   cachedFunctionsBase = fallback;
   return cachedFunctionsBase;
 }
