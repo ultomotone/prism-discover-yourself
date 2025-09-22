@@ -1,6 +1,7 @@
 // Reddit Pixel + Conversions API client-side tracking utility
 
 import { IS_PREVIEW } from "@/lib/env";
+import { invokeEdge } from "@/lib/edge-functions";
 import { getConfiguredRedditPixelId } from "@/lib/reddit/config";
 
 export interface AttributionContext {
@@ -93,22 +94,23 @@ export async function trackRedditS2S(
       return;
     }
     
-    await fetch('/functions/v1/reddit-conversions', {
+    await invokeEdge('reddit-conversions', {
       method: 'POST',
-      headers: { 
-        'content-type': 'application/json',
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdua3Vpa2VudGR0bmF0YXplcml1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3MzI2MDQsImV4cCI6MjA2OTMwODYwNH0.wCk8ngoDqGW4bMIAjH5EttXsoBwdk4xnIViJZCezs-U'
+      headers: {
+        'content-type': 'application/json'
       },
-      body: JSON.stringify({ 
-        event_name, 
-        ctx, 
-        payload 
+      body: JSON.stringify({
+        event_name,
+        ctx,
+        payload
       }),
       keepalive: true
     });
   } catch (error) {
     // Never break UX - just log and continue silently
-    console.log('Reddit S2S tracking skipped:', error?.message || 'endpoint not available');
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Reddit S2S tracking skipped:', error);
+    }
   }
 }
 
