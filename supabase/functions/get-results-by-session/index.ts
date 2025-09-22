@@ -29,7 +29,8 @@ serve(async (req) => {
   }
 
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: { ...corsHeaders(origin), "Cache-Control": "no-store" } });
+    // reflect access-control-request-headers if present
+    return new Response(null, { headers: corsHeaders(origin, req) });
   }
 
   let payload: Record<string, unknown>;

@@ -29,7 +29,10 @@ await ensureResultsVersion(db);
 
 serve(async (req) => {
   const origin = resolveOrigin(req);
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders(origin) });
+  if (req.method === "OPTIONS") {
+    // reflect access-control-request-headers if present
+    return new Response(null, { headers: corsHeaders(origin, req) });
+  }
 
   let session_id: string | undefined;
 

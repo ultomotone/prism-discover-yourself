@@ -13,7 +13,8 @@ serve(async (req) => {
 
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders(origin) });
+    // reflect access-control-request-headers if present
+    return new Response(null, { headers: corsHeaders(origin, req) });
   }
 
   try {

@@ -25,7 +25,10 @@ await ensureResultsVersion(supabase);
 
 serve(async (req) => {
   const origin = resolveOrigin(req);
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders(origin) });
+  if (req.method === "OPTIONS") {
+    // reflect access-control-request-headers if present
+    return new Response(null, { headers: corsHeaders(origin, req) });
+  }
 
   try {
     const { session_id, basis = "functions", version = "v1.2" } = await req.json();

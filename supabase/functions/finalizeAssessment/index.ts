@@ -143,7 +143,8 @@ function resolveSiteUrl(req: Request): string {
 Deno.serve(async (req) => {
   const origin = resolveOrigin(req);
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: { ...corsHeaders(origin), "Cache-Control": "no-store" } });
+    // reflect access-control-request-headers if present
+    return new Response(null, { headers: corsHeaders(origin, req) });
   }
   const clientIp = ipFrom(req);
   const rl = rateLimit(`finalize:${clientIp}`);
