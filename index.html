@@ -173,6 +173,19 @@
           requestInit.headers = headerBag;
           return fetch(target, requestInit);
         };
+
+        window.__invokeSupabaseEdge = function(path, init) {
+          const normalised = normaliseFunctionPath(String(path || ''));
+          try {
+            const invoker = window.__supabaseFunctionFetch;
+            if (typeof invoker === 'function') {
+              return invoker(normalised, init);
+            }
+          } catch (_err) {
+            // fall back to direct fetch when helper unavailable
+          }
+          return fetch(`/functions/v1/${normalised}`, init);
+        };
       })();
     </script>
     <script>
@@ -737,11 +750,9 @@
             keepalive: true,
           };
           try {
-            const invoke = window.__supabaseFunctionFetch;
-            if (typeof invoke === 'function') {
-              invoke('reddit-capi', requestInit).catch(() => {});
-            } else {
-              fetch('/functions/v1/reddit-capi', requestInit).catch(() => {});
+            const promise = window.__invokeSupabaseEdge && window.__invokeSupabaseEdge('reddit-capi', requestInit);
+            if (promise && typeof promise.catch === 'function') {
+              promise.catch(() => {});
             }
           } catch (e) {
             // no-op
