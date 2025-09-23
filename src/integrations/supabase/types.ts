@@ -203,6 +203,7 @@ export type Database = {
       }
       assessment_sessions: {
         Row: {
+          attempt_no: number | null
           completed_at: string | null
           completed_at_original: string | null
           completed_questions: number | null
@@ -214,6 +215,9 @@ export type Database = {
           id: string
           ip_hash: string | null
           metadata: Json | null
+          paid_at: string | null
+          parent_session: string | null
+          payment_status: string | null
           session_type: string
           share_token: string
           share_token_expires_at: string | null
@@ -226,6 +230,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          attempt_no?: number | null
           completed_at?: string | null
           completed_at_original?: string | null
           completed_questions?: number | null
@@ -237,6 +242,9 @@ export type Database = {
           id?: string
           ip_hash?: string | null
           metadata?: Json | null
+          paid_at?: string | null
+          parent_session?: string | null
+          payment_status?: string | null
           session_type?: string
           share_token: string
           share_token_expires_at?: string | null
@@ -249,6 +257,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          attempt_no?: number | null
           completed_at?: string | null
           completed_at_original?: string | null
           completed_questions?: number | null
@@ -260,6 +269,9 @@ export type Database = {
           id?: string
           ip_hash?: string | null
           metadata?: Json | null
+          paid_at?: string | null
+          parent_session?: string | null
+          payment_status?: string | null
           session_type?: string
           share_token?: string
           share_token_expires_at?: string | null
@@ -717,6 +729,7 @@ export type Database = {
           overlay: string | null
           overlay_neuro: string | null
           overlay_state: string | null
+          paid: boolean
           parent_session_id: string | null
           person_key: string | null
           prev_session_id: string | null
@@ -777,6 +790,7 @@ export type Database = {
           overlay?: string | null
           overlay_neuro?: string | null
           overlay_state?: string | null
+          paid?: boolean
           parent_session_id?: string | null
           person_key?: string | null
           prev_session_id?: string | null
@@ -837,6 +851,7 @@ export type Database = {
           overlay?: string | null
           overlay_neuro?: string | null
           overlay_state?: string | null
+          paid?: boolean
           parent_session_id?: string | null
           person_key?: string | null
           prev_session_id?: string | null
@@ -1294,6 +1309,33 @@ export type Database = {
         }
         Relationships: []
       }
+      test_results: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          session_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          id?: string
+          session_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          session_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       type_prototypes: {
         Row: {
           block: string
@@ -1553,6 +1595,14 @@ export type Database = {
             referencedColumns: ["session_id"]
           },
         ]
+      }
+      scoring_version_status: {
+        Row: {
+          code_version: string | null
+          db_version: string | null
+          matches: boolean | null
+        }
+        Relationships: []
       }
       v_activity_country_30d: {
         Row: {
@@ -2696,13 +2746,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_session_id_fkey"
-            columns: ["session_id_1"]
-            isOneToOne: false
-            referencedRelation: "assessment_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_session_id_fkey"
             columns: ["session_id_2"]
             isOneToOne: false
             referencedRelation: "assessment_sessions"
@@ -2712,7 +2755,7 @@ export type Database = {
             foreignKeyName: "profiles_session_id_fkey"
             columns: ["session_id_1"]
             isOneToOne: false
-            referencedRelation: "v_incomplete_sessions"
+            referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -2725,13 +2768,20 @@ export type Database = {
           {
             foreignKeyName: "profiles_session_id_fkey"
             columns: ["session_id_1"]
+            isOneToOne: false
+            referencedRelation: "v_incomplete_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_session_id_fkey"
+            columns: ["session_id_2"]
             isOneToOne: false
             referencedRelation: "v_user_sessions_chrono"
             referencedColumns: ["session_id"]
           },
           {
             foreignKeyName: "profiles_session_id_fkey"
-            columns: ["session_id_2"]
+            columns: ["session_id_1"]
             isOneToOne: false
             referencedRelation: "v_user_sessions_chrono"
             referencedColumns: ["session_id"]
@@ -3360,6 +3410,7 @@ export type Database = {
           overlay: string | null
           overlay_neuro: string | null
           overlay_state: string | null
+          paid: boolean
           parent_session_id: string | null
           person_key: string | null
           prev_session_id: string | null
@@ -3388,9 +3439,26 @@ export type Database = {
           version: string | null
         }[]
       }
+      assert_results_version: {
+        Args: { p_expected: string }
+        Returns: boolean
+      }
       calculate_scores: {
         Args: { p_session_id: string }
         Returns: Json
+      }
+      can_start_new_session: {
+        Args: {
+          p_email: string
+          p_max_per_window?: number
+          p_user: string
+          p_window_days?: number
+        }
+        Returns: {
+          allowed: boolean
+          next_eligible_at: string
+          recent_count: number
+        }[]
       }
       check_question_library_integrity: {
         Args: { p_fc_expected_min?: number }
@@ -3419,6 +3487,10 @@ export type Database = {
       compute_session_responses_hash: {
         Args: { p_session: string }
         Returns: string
+      }
+      count_recent_attempts: {
+        Args: { p_user: string; p_window_days: number }
+        Returns: number
       }
       example_rate_limited_function: {
         Args: { client_ip: string }
@@ -3517,7 +3589,7 @@ export type Database = {
         }[]
       }
       get_profile_by_session: {
-        Args: { p_session_id: string; p_share_token: string }
+        Args: { p_session: string; p_share_token: string }
         Returns: {
           base_func: string | null
           baseline_session_id: string | null
@@ -3551,6 +3623,7 @@ export type Database = {
           overlay: string | null
           overlay_neuro: string | null
           overlay_state: string | null
+          paid: boolean
           parent_session_id: string | null
           person_key: string | null
           prev_session_id: string | null
@@ -3665,6 +3738,10 @@ export type Database = {
           types: Json
         }[]
       }
+      get_results_version: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_sessions_with_emails_for_finalize: {
         Args: { limit_count?: number; min_questions?: number }
         Returns: {
@@ -3672,6 +3749,10 @@ export type Database = {
           id: string
           share_token: string
         }[]
+      }
+      get_user_assessment_attempts: {
+        Args: { p_user_id: string }
+        Returns: Json
       }
       get_user_assessment_scores: {
         Args: { p_session_id: string }
@@ -3755,6 +3836,7 @@ export type Database = {
           overlay: string | null
           overlay_neuro: string | null
           overlay_state: string | null
+          paid: boolean
           parent_session_id: string | null
           person_key: string | null
           prev_session_id: string | null
@@ -3817,6 +3899,17 @@ export type Database = {
       update_dashboard_statistics_range: {
         Args: { end_date: string; start_date: string }
         Returns: undefined
+      }
+      upsert_test_result: {
+        Args: { p_payload: Json; p_session_id: string; p_user_id: string }
+        Returns: {
+          created_at: string
+          data: Json
+          id: string
+          session_id: string
+          updated_at: string
+          user_id: string
+        }
       }
       your_function_name: {
         Args: { client_ip: string; param1?: string; param2?: number }

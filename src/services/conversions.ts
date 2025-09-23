@@ -12,8 +12,9 @@ type ConversionEvent =
 
 function readEnv(name: string): string | undefined {
   try {
-    if (typeof Deno !== "undefined" && typeof Deno.env?.get === "function") {
-      const value = Deno.env.get(name);
+    // Skip Deno env access in client-side code
+    if (typeof window === "undefined" && typeof process !== "undefined" && typeof process.env === "object") {
+      const value = (process.env as Record<string, string | undefined>)[name];
       if (value != null) return value;
     }
   } catch {

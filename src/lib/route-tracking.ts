@@ -186,10 +186,14 @@ export const initializeRouteTracking = () => {
 
 declare global {
   interface Window {
+    gtag: (...args: unknown[]) => void;
+    rdt: (...args: unknown[]) => void;
+    rdtTrack: (eventName: string, props?: Record<string, unknown>) => void;
+    rdtSetUser: (props: { email?: string }) => void;
+    fbq: (...args: unknown[]) => void;
+    fbTrack: (eventName: string, props?: Record<string, unknown>) => void;
+    fbSetUser: (props: { email?: string }) => void;
     __consent?: { analytics?: boolean };
     __knownUser?: { email?: string };
-    rdtTrack?: (eventName: string, props?: Record<string, unknown>) => void;
-    fbTrack?: (eventName: string, props?: Record<string, unknown>) => void;
-    gtag?: (...args: unknown[]) => void;
   }
 }

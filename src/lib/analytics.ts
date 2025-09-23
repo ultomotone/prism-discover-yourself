@@ -13,12 +13,12 @@ import {
 
 declare global {
   interface Window {
-    gtag: (...args: any[]) => void;
-    rdt: (...args: any[]) => void;
-    rdtTrack: (eventName: string, props?: any) => string;
+    gtag: (...args: unknown[]) => void;
+    rdt: (...args: unknown[]) => void;
+    rdtTrack: (eventName: string, props?: Record<string, unknown>) => void;
     rdtSetUser: (props: { email?: string }) => void;
-    fbq: (...args: any[]) => void;
-    fbTrack: (eventName: string, props?: any) => string;
+    fbq: (...args: unknown[]) => void;
+    fbTrack: (eventName: string, props?: Record<string, unknown>) => void;
     fbSetUser: (props: { email?: string }) => void;
     __consent?: { analytics?: boolean };
     __knownUser?: { email?: string };

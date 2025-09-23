@@ -10,8 +10,8 @@ const GA4_MEASUREMENT_ID = 'G-J2XXMC9VWV';
 
 declare global {
   interface Window {
-    gtag: (...args: any[]) => void;
-    dataLayer: any[];
+    gtag: (...args: unknown[]) => void;
+    dataLayer: unknown[];
   }
 }
 
@@ -30,7 +30,7 @@ export const initializeGA4 = () => {
 
   // Initialize gtag
   window.dataLayer = window.dataLayer || [];
-  function gtag(...args: any[]) {
+  function gtag(...args: unknown[]) {
     window.dataLayer.push(args);
   }
   window.gtag = gtag;

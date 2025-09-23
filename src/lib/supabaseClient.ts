@@ -38,7 +38,7 @@ const getStorage = (): Storage => {
 
 const existing = (globalThis as any).__prism_supabase as ReturnType<typeof createClient> | undefined;
 
-const authConfig: SupabaseClientOptions["auth"] = {
+const authConfig: SupabaseClientOptions<'public'>["auth"] = {
   persistSession: !IS_PREVIEW,
   autoRefreshToken: !IS_PREVIEW,
   storageKey: "prism-auth",

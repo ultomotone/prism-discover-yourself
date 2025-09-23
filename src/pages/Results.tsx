@@ -183,7 +183,7 @@ export default function Results({ components }: ResultsProps = {}) {
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchInterval: (currentData) => {
-      const data = currentData as ResultsFetchPayload | undefined;
+      const data = currentData as any;
       if (!data) return 2000;
       if (data.ok === false && data.code === "SCORING_ROWS_MISSING") return 2000;
       if (
@@ -205,15 +205,15 @@ export default function Results({ components }: ResultsProps = {}) {
     },
     gcTime: 1000 * 60 * 10,
     staleTime: 0,
-    keepPreviousData: false,
+    placeholderData: undefined,
   });
 
   const successResult =
-    resultsQuery.data && resultsQuery.data.ok === true
+    resultsQuery.data && (resultsQuery.data as any).ok === true
       ? (resultsQuery.data as ResultsSuccessPayload)
       : null;
   const scoringPending =
-    resultsQuery.data?.ok === false && resultsQuery.data.code === "SCORING_ROWS_MISSING";
+    (resultsQuery.data as any)?.ok === false && (resultsQuery.data as any).code === "SCORING_ROWS_MISSING";
 
   const derivedState = useMemo(() => {
     if (successResult) return { data: successResult as ResultsPayload, err: null as string | null };
@@ -512,7 +512,7 @@ export default function Results({ components }: ResultsProps = {}) {
       <div className="py-8 px-4 space-y-6">
         <div id="results-content">
           <ResultsView
-            profile={profile}
+            profile={profile as any}
             types={data.types}
             functions={data.functions}
             state={data.state}

@@ -664,7 +664,7 @@ function Strengths({ p, functions }:{ p:Profile; functions?: any[] }){
   const medianStrength = strengthValues.sort((a, b) => a - b)[Math.floor(strengthValues.length / 2)];
   const suppressedThreshold = medianStrength - 1; // >1 SD below median (simplified)
 
-  const fcSupportData = (p.meta?.fc_support ?? p.meta?.diagnostics?.fc_support) as Record<string, number | undefined> | undefined;
+  const fcSupportData = (p.meta as any)?.fc_support ?? (p.meta as any)?.diagnostics?.fc_support as Record<string, number | undefined> | undefined;
   const missingFcSupport = new Set<string>();
   const resolveFcSupport = (func: Func): number | undefined => {
     if (!fcSupportData) return undefined;

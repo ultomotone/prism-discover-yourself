@@ -28,7 +28,7 @@ function sanitize(obj: unknown): unknown {
 
 function log(level: "info" | "warn" | "error" | "debug", msg: string, fields?: Fields) {
   const base = { level, msg, ts: new Date().toISOString() };
-  const payload = fields ? { ...base, ...sanitize(fields) } : base;
+  const payload = fields && typeof fields === 'object' ? { ...base, ...(sanitize(fields) as Record<string, unknown>) } : base;
   // eslint-disable-next-line no-console
   (console as any)[level === "debug" ? "log" : level](JSON.stringify(payload));
 }
