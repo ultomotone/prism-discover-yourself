@@ -20,7 +20,6 @@ async function invokeLink(
 ): Promise<Response> {
   const headers = buildEdgeRequestHeaders({
     "Content-Type": "application/json",
-    "Cache-Control": "no-store",
   });
 
   if (authHeaders.Authorization) {
@@ -45,7 +44,6 @@ async function linkWithSupabaseAuth(
       body: { session_id: sessionId, user_id: authUser.id, email: email ?? authUser.email ?? null },
       headers: {
         ...authHeaders,
-        "Cache-Control": "no-store",
       },
     });
 
