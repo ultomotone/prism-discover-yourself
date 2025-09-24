@@ -85,3 +85,39 @@ test('retake window enforces three attempts then blocks until window resets', as
     global.fetch = originalFetch;
   }
 });
+
+test('retake allowance defaults to allow when edge function missing', async () => {
+  const originalFetch = global.fetch;
+
+  global.fetch = (async (): Promise<Response> =>
+    new Response(JSON.stringify({ error: 'not found' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    })) as typeof fetch;
+
+  try {
+    const allowance = await checkRetakeAllowance({ maxPerWindow: 3, windowDays: 30 });
+    assert.equal(allowance.allowed, true);
+    assert.equal(allowance.nextEligibleDate, null);
+    assert.equal(allowance.attemptNo, undefined);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('retake allowance defaults to allow on network failure', async () => {
+  const originalFetch = global.fetch;
+
+  global.fetch = (async () => {
+    throw new Error('socket hang up');
+  }) as typeof fetch;
+
+  try {
+    const allowance = await checkRetakeAllowance({ maxPerWindow: 3, windowDays: 30 });
+    assert.equal(allowance.allowed, true);
+    assert.equal(allowance.nextEligibleDate, null);
+    assert.equal(allowance.attemptNo, undefined);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});

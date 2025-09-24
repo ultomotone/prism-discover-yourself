@@ -1,4 +1,7 @@
-import { buildEdgeRequestHeaders, resolveSupabaseFunctionsBase } from "@/services/supabaseEdge";
+import {
+  buildEdgeRequestHeaders,
+  resolveSupabaseFunctionsBase,
+} from "@/services/supabaseEdge";
 
 export interface CheckRetakeAllowanceParams {
   userId?: string;
@@ -56,6 +59,14 @@ export async function checkRetakeAllowance({
   maxPerWindow,
   windowDays,
 }: CheckRetakeAllowanceParams): Promise<RetakeAllowanceResult> {
+  const allowByDefault = (reason: string): RetakeAllowanceResult => {
+    console.warn(
+      "[retake] proceeding without allowance guard:",
+      reason,
+    );
+    return { allowed: true, attemptNo: undefined, nextEligibleDate: null };
+  };
+
   const baseUrl = resolveSupabaseFunctionsBase();
   const url = `${baseUrl}/can_start_new_session`;
   const headers = buildEdgeRequestHeaders({
@@ -87,8 +98,10 @@ export async function checkRetakeAllowance({
     });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Failed to reach can_start_new_session";
-    throw new RetakeAllowanceError(message);
+      error instanceof Error
+        ? error.message
+        : "Failed to reach can_start_new_session";
+    return allowByDefault(message);
   }
 
   let json: any = null;
@@ -96,7 +109,7 @@ export async function checkRetakeAllowance({
     json = await response.json();
   } catch (error) {
     if (response.ok) {
-      throw new RetakeAllowanceError("Invalid response payload", { status: response.status });
+      return allowByDefault("invalid allowance payload");
     }
   }
 
@@ -104,6 +117,9 @@ export async function checkRetakeAllowance({
   const nextEligibleDate = normalizeDate(json?.next_eligible_date ?? json?.nextEligibleDate);
 
   if (!response.ok) {
+    if (response.status === 404 || response.status === 401) {
+      return allowByDefault(`edge function unavailable (${response.status})`);
+    }
     const message =
       typeof json?.error === "string" && json.error.trim().length > 0
         ? json.error
