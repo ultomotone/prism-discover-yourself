@@ -1,10 +1,44 @@
-// deno-lint-ignore-file no-explicit-any
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { Hono } from "npm:hono@4.5.11";
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders, json, resolveOrigin } from "../_shared/cors.ts";
+
 import { rateLimit, ipFrom } from "../_shared/rateLimit.ts";
 import { sendConversions } from "../../../src/services/conversions.ts";
 import { logger } from "../../../src/lib/logger.ts";
+
+const STATIC_ORIGINS = new Set([
+  "https://prismpersonality.com",
+  "http://localhost:5173",
+  "http://localhost:3000",
+]);
+
+function isAllowedOrigin(origin: string | null) {
+  if (!origin) return false;
+  if (STATIC_ORIGINS.has(origin)) return true;
+  try {
+    const u = new URL(origin);
+    return (
+      u.hostname.endsWith(".lovable.app") ||
+      u.hostname.endsWith(".lovableproject.com")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function corsHeaders(origin: string | null, req: Request) {
+  const allowedOrigin = isAllowedOrigin(origin) ? origin! : "";
+  const reqHeaders =
+    req.headers.get("Access-Control-Request-Headers") ??
+    "authorization, x-client-info, apikey, content-type";
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Access-Control-Allow-Headers": reqHeaders,
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Max-Age": "86400",
+    "Vary": "Origin, Access-Control-Request-Headers",
+  } as Record<string, string>;
+}
 
 function createAuthedClient(
   supabaseUrl: string,
@@ -17,34 +51,45 @@ function createAuthedClient(
   });
 }
 
-serve(async (req) => {
-  const origin = resolveOrigin(req);
-  const clientIp = ipFrom(req);
+const app = new Hono();
+
+app.options("/*", (c) =>
+  c.newResponse(null, {
+    status: 200,
+    headers: corsHeaders(c.req.header("Origin") || null, c.req.raw),
+  })
+);
+
+app.post("/get-results-by-session", async (c) => {
+  const origin = c.req.header("Origin") || null;
+  const headers = corsHeaders(origin, c.req.raw);
+  if (origin && headers["Access-Control-Allow-Origin"] === "") {
+    return c.json({ ok: false, error: "origin_not_allowed" }, 403, headers);
+  }
+
+  const request = c.req.raw;
+  const clientIp = ipFrom(request);
   const rl = rateLimit(`results:${clientIp}`);
   if (!rl.allowed) {
     logger.warn("results.rate_limited", { ip: clientIp });
-    const response = json(origin, { ok: false, error: "rate_limited" }, 429);
-    response.headers.set("Retry-After", String(rl.retryAfter ?? 60));
-    return response;
-  }
-
-  if (req.method === "OPTIONS") {
-    // reflect access-control-request-headers if present
-    return new Response(null, { headers: corsHeaders(origin, req) });
+    if (rl.retryAfter != null) {
+      headers["Retry-After"] = String(rl.retryAfter);
+    }
+    return c.json({ ok: false, error: "rate_limited" }, 429, headers);
   }
 
   let payload: Record<string, unknown>;
   try {
-    payload = await req.json();
+    payload = await c.req.json();
   } catch {
-    return json(origin, { ok: false, error: "invalid json body" }, 400);
+    return c.json({ ok: false, error: "invalid json body" }, 400, headers);
   }
 
   const sessionIdRaw = payload.session_id ?? payload.sessionId;
   const shareTokenRaw = payload.share_token ?? payload.shareToken ?? null;
 
   if (typeof sessionIdRaw !== "string" || !sessionIdRaw.trim()) {
-    return json(origin, { ok: false, error: "session_id required" }, 400);
+    return c.json({ ok: false, error: "session_id required" }, 400, headers);
   }
 
   const sessionId = sessionIdRaw.trim();
@@ -62,7 +107,7 @@ serve(async (req) => {
       session_id: sessionId,
       error: "missing_supabase_env",
     });
-    return json(origin, { ok: false, error: "configuration error" }, 500);
+    return c.json({ ok: false, error: "configuration error" }, 500, headers);
   }
 
   const serviceClient = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
@@ -71,7 +116,6 @@ serve(async (req) => {
   let authContext: "share" | "owner" = "share";
 
   if (shareToken) {
-    // SHARE path: validate token with service role
     const { data, error } = await serviceClient
       .from("assessment_sessions")
       .select("share_token")
@@ -84,17 +128,16 @@ serve(async (req) => {
         auth_context: authContext,
         error: error.message,
       });
-      return json(origin, { ok: false, error: "session lookup failed" }, 500);
+      return c.json({ ok: false, error: "session lookup failed" }, 500, headers);
     }
 
     if (!data || data.share_token !== shareToken) {
-      return json(origin, { ok: false, error: "invalid token" }, 401);
+      return c.json({ ok: false, error: "invalid token" }, 401, headers);
     }
   } else {
-    // OWNER path: require Authorization, use authed client with RLS
-    const authorization = req.headers.get("authorization");
+    const authorization = request.headers.get("authorization");
     if (!authorization || !authorization.toLowerCase().startsWith("bearer ")) {
-      return json(origin, { ok: false, error: "authorization required" }, 401);
+      return c.json({ ok: false, error: "authorization required" }, 401, headers);
     }
 
     const authedClient = createAuthedClient(supabaseUrl, anonKey, authorization);
@@ -110,11 +153,11 @@ serve(async (req) => {
         auth_context: "owner",
         error: error.message,
       });
-      return json(origin, { ok: false, error: "session lookup failed" }, 500);
+      return c.json({ ok: false, error: "session lookup failed" }, 500, headers);
     }
 
     if (!data) {
-      return json(origin, { ok: false, error: "forbidden" }, 403);
+      return c.json({ ok: false, error: "forbidden" }, 403, headers);
     }
 
     dataClient = authedClient;
@@ -139,7 +182,7 @@ serve(async (req) => {
         auth_context: authContext,
         error: error.message,
       });
-      return json(origin, { ok: false, code: "SCORING_ROWS_MISSING" });
+      return c.json({ ok: false, code: "SCORING_ROWS_MISSING" }, 200, headers);
     }
 
     const result = Array.isArray(data) && data.length > 0 ? (data[0] as Record<string, unknown>) : null;
@@ -186,11 +229,11 @@ serve(async (req) => {
       await sendConversions({
         name: "results_viewed",
         sessionId,
-        userAgent: req.headers.get("user-agent") ?? undefined,
+        userAgent: request.headers.get("user-agent") ?? undefined,
         ip: clientIp,
       });
 
-      return json(origin, {
+      return c.json({
         ok: true,
         results_version: resultsVersion,
         result_id: resultIdRaw,
@@ -200,7 +243,7 @@ serve(async (req) => {
         types,
         functions,
         state,
-      });
+      }, 200, headers);
     }
 
     logger.warn("results.missing", {
@@ -212,13 +255,15 @@ serve(async (req) => {
       state_length: Array.isArray(state) ? state.length : null,
     });
 
-    return json(origin, { ok: false, code: "SCORING_ROWS_MISSING" });
+    return c.json({ ok: false, code: "SCORING_ROWS_MISSING" }, 200, headers);
   } catch (err) {
     logger.error("results.rpc_exception", {
       session_id: sessionId,
       auth_context: authContext,
       error: err instanceof Error ? err.message : String(err),
     });
-    return json(origin, { ok: false, code: "SCORING_ROWS_MISSING" });
+    return c.json({ ok: false, code: "SCORING_ROWS_MISSING" }, 200, headers);
   }
 });
+
+Deno.serve((req) => app.fetch(req));

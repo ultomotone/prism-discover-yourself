@@ -16,6 +16,7 @@ const TEST_FILES = [
   'tests/logs.redaction.test.ts',
   'tests/dashboardUtils.test.ts',
   'tests/recompute.invoke.test.ts',
+  'tests/startAssessment.service.test.ts',
   'tests/resultsLink.test.ts',
   'tests/resultsVersion.test.ts',
   'tests/top3.fallback.test.ts',

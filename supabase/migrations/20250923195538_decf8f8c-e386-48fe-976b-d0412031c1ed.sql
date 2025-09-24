@@ -10,3 +10,10 @@ $$;
 
 -- Grant execute permissions
 GRANT EXECUTE ON FUNCTION public.get_user_assessment_attempts(uuid) TO anon, authenticated;
+
+-- Force PostgREST to reload the schema so the RPC is available immediately
+SELECT pg_notify('pgrst', 'reload schema');
+
+-- Ensure row level security is enforced on critical tables
+ALTER TABLE public.scoring_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.assessment_responses ENABLE ROW LEVEL SECURITY;
