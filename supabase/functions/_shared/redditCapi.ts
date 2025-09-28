@@ -20,7 +20,10 @@ function getEnv(key: string): string | undefined {
 
 function b64(str: string): string {
   if (typeof btoa === "function") return btoa(str);
-  return Buffer.from(str, "utf8").toString("base64");
+  // For Deno environment, use built-in btoa or TextEncoder
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  return btoa(String.fromCharCode(...data));
 }
 
 export async function sendRedditCapiEvent(evt: RedditEvent, fetchImpl: typeof fetch = fetch): Promise<void> {

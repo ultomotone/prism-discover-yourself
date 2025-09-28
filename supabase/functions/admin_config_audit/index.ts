@@ -136,8 +136,8 @@ serve(async (req) => {
           result.recommendation = `Expected boolean, got ${typeof currentValue}`;
         }
         // Check required fields for objects
-        else if (schema.type === 'object' && schema.required) {
-          const missingFields = schema.required.filter(field => !(field in currentValue));
+        else if (schema.type === 'object' && 'required' in schema && schema.required) {
+          const missingFields = schema.required.filter((field: string) => !(field in currentValue));
           if (missingFields.length > 0) {
             result.status = 'invalid';
             result.recommendation = `Missing required fields: ${missingFields.join(', ')}`;
@@ -145,11 +145,11 @@ serve(async (req) => {
         }
         // Check numeric ranges
         else if (schema.type === 'number' && typeof currentValue === 'number') {
-          if (schema.min !== undefined && currentValue < schema.min) {
+          if ('min' in schema && schema.min !== undefined && currentValue < schema.min) {
             result.status = 'invalid';
             result.recommendation = `Value ${currentValue} below minimum ${schema.min}`;
           }
-          if (schema.max !== undefined && currentValue > schema.max) {
+          if ('max' in schema && schema.max !== undefined && currentValue > schema.max) {
             result.status = 'invalid';
             result.recommendation = `Value ${currentValue} above maximum ${schema.max}`;
           }
@@ -228,7 +228,7 @@ serve(async (req) => {
             fixes.push({ key, status: 'success', message: 'Configuration updated' });
           }
         } catch (error) {
-          fixes.push({ key, status: 'error', message: error.message });
+          fixes.push({ key, status: 'error', message: (error as Error).message || 'Unknown error' });
         }
       }
 
@@ -272,7 +272,7 @@ serve(async (req) => {
     console.error('Config audit error:', error);
     return new Response(JSON.stringify({
       error: 'Internal server error',
-      details: error.message
+      details: (error as Error).message || 'Unknown error'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

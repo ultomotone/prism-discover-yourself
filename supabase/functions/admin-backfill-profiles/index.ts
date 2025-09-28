@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const results = [];
+    const results: any[] = [];
     let processed = 0;
     
     // Process in batches with concurrency limit

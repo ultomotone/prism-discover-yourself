@@ -12,8 +12,7 @@ import { buildCompletionLog } from "../_shared/observability.ts";
 import { emitMetric, withTimer } from "../_shared/metrics.ts";
 import { corsHeaders, json, resolveOrigin } from "../_shared/cors.ts";
 import { rateLimit, ipFrom } from "../_shared/rateLimit.ts";
-import { sendConversions } from "../../../src/services/conversions.ts";
-import { logger } from "../../../src/lib/logger.ts";
+// Remove invalid imports - these files don't exist in edge function context
 
 const url = Deno.env.get("SUPABASE_URL")!;
 const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -149,7 +148,7 @@ Deno.serve(async (req) => {
   const clientIp = ipFrom(req);
   const rl = rateLimit(`finalize:${clientIp}`);
   if (!rl.allowed) {
-    logger.warn("assessment.finalize.rate_limited", { ip: clientIp });
+    console.warn("assessment.finalize.rate_limited", { ip: clientIp });
     const response = json(origin, { status: "error", error: "rate_limited" }, 429);
     response.headers.set("Retry-After", String(rl.retryAfter ?? 60));
     return response;
@@ -181,7 +180,7 @@ Deno.serve(async (req) => {
           buildResultsUrl: (baseUrl, resultId, token, scoringVersion) =>
             buildResultsLink(baseUrl, resultId, token, { scoringVersion }),
           now: () => new Date(),
-          log: (payload) => logger.info("assessment.finalize.core", payload),
+          log: (payload) => console.info("assessment.finalize.core", payload),
         },
         {
           sessionId,
@@ -207,20 +206,15 @@ Deno.serve(async (req) => {
       extra: { path },
     });
 
-    logger.info("assessment.finalize.complete", logPayload);
+    console.info("assessment.finalize.complete", logPayload);
 
     await emitMetric("assessment.finalize.success", {
       session_id: sessionId,
       RESULTS_VERSION,
     });
 
-    await sendConversions({
-      name: "assessment_completed",
-      sessionId,
-      userId: finalizedSession.user_id ?? undefined,
-      userAgent: req.headers.get("user-agent") ?? undefined,
-      ip: clientIp,
-    });
+    // Remove sendConversions call - function doesn't exist in edge function context
+    // This functionality should be handled differently in the edge function environment
 
     return json(origin, { ...responseBody, status: "success", session_id: sessionId });
   } catch (e: any) {
@@ -229,11 +223,11 @@ Deno.serve(async (req) => {
       RESULTS_VERSION,
     });
     if (e instanceof FinalizeAssessmentError) {
-      logger.warn("assessment.finalize.validation_error", { session_id: sessionId, error: e.message });
+      console.warn("assessment.finalize.validation_error", { session_id: sessionId, error: e.message });
       return json(origin, { status: "error", error: e.message }, 422);
     }
     const durationMs = typeof e === "object" && e && "__durationMs" in e ? Math.round(Number(e.__durationMs)) : undefined;
-    logger.error("assessment.finalize.error", {
+    console.error("assessment.finalize.error", {
       session_id: sessionId,
       error: e?.message || String(e),
       duration_ms: durationMs,

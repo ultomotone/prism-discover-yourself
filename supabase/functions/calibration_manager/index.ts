@@ -168,9 +168,9 @@ serve(async (req) => {
         const toDelete = [];
         for (const [stratum, models] of modelsByStratum) {
           if (models.length > keep_versions) {
-            const sortedModels = models.sort((a, b) => new Date(b.trained_at).getTime() - new Date(a.trained_at).getTime());
+            const sortedModels = models.sort((a: any, b: any) => new Date(b.trained_at).getTime() - new Date(a.trained_at).getTime());
             const oldModels = sortedModels.slice(keep_versions);
-            toDelete.push(...oldModels.map(m => ({ id: m.id, stratum, trained_at: m.trained_at })));
+            toDelete.push(...oldModels.map((m: any) => ({ id: m.id, stratum, trained_at: m.trained_at })));
           }
         }
 

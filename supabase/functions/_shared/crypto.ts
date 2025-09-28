@@ -10,7 +10,11 @@ function toHex(buffer: ArrayBuffer): string {
 }
 
 async function subtleDigest(data: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", data);
+  // Create a proper ArrayBuffer copy to avoid SharedArrayBuffer issues
+  const buffer = new ArrayBuffer(data.length);
+  const view = new Uint8Array(buffer);
+  view.set(data);
+  const digest = await crypto.subtle.digest("SHA-256", buffer);
   return toHex(digest);
 }
 

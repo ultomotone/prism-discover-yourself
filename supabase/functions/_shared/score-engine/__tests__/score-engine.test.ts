@@ -4,7 +4,7 @@ import { readFileSync, readdirSync } from "fs";
 import path from "path";
 import { scoreAssessment, ForcedChoiceScoresMissingError } from "../index.ts";
 
-const goldDir = path.join(import.meta.dirname, "goldens");
+const goldDir = path.join(import.meta.dirname || ".", "goldens");
 const pairs = readdirSync(goldDir)
   .filter((f) => f.endsWith('.input.json'))
   .map((f) => f.replace('.input.json', ''));
