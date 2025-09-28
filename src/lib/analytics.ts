@@ -1,5 +1,4 @@
 // Google Analytics tracking utility
-import { IS_PREVIEW } from './env';
 import { sendLinkedInLead, sendLinkedInPurchase, sendLinkedInSignupEvent } from './linkedin/track';
 import { sendQuoraEvent } from './quora/events';
 import { sendTwitterEvent } from './twitter/events';
@@ -11,6 +10,11 @@ import {
   type FacebookProduct,
 } from './facebook';
 import { initPlausible, trackPlausibleEvent } from './plausible-analytics';
+
+// Environment flag for preview mode
+const IS_PREVIEW = typeof window !== 'undefined' && 
+  (window.location.hostname.includes('lovableproject.com') || 
+   window.location.hostname === 'localhost');
 
 declare global {
   interface Window {
