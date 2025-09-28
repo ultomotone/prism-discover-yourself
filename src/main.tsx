@@ -3,6 +3,10 @@ import App from './App.tsx'
 import './index.css'
 import { initializeRouteTracking } from './lib/route-tracking'
 import { initializeRedditSPATracking } from './lib/reddit/spa-tracker'
+import { initAnalytics } from './lib/analytics'
+
+// Initialize analytics
+initAnalytics()
 
 // Initialize route tracking for SPA navigation
 initializeRouteTracking()

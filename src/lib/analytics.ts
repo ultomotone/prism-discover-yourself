@@ -10,6 +10,7 @@ import {
   rememberFacebookDpaPayload,
   type FacebookProduct,
 } from './facebook';
+import { initPlausible, trackPlausibleEvent } from './plausible-analytics';
 
 declare global {
   interface Window {
@@ -42,6 +43,13 @@ function getKnownEmail(): string | undefined {
     return candidate.email.trim();
   }
   return undefined;
+}
+
+// Initialize analytics
+export function initAnalytics() {
+  // Initialize Plausible Analytics
+  initPlausible();
+  console.log('Analytics initialized');
 }
 
 export const trackEvent = (action: string, category: string, label?: string, value?: number) => {
@@ -94,6 +102,11 @@ export const trackAssessmentStart = (sessionId: string) => {
   if (IS_PREVIEW) return;
   trackEvent('assessment_started', 'assessment', sessionId);
   
+  // Track with Plausible
+  trackPlausibleEvent('Assessment Start', {
+    props: { session_id: sessionId }
+  });
+  
   // Track Reddit Lead event for assessment start (legacy pixel method)
   if (typeof window !== 'undefined' && window.rdtTrack) {
     window.rdtTrack('Lead', {
@@ -137,6 +150,14 @@ export const trackAssessmentProgress = (questionIndex: number, totalQuestions: n
 export const trackAssessmentComplete = (sessionId: string, totalQuestions: number) => {
   if (IS_PREVIEW) return;
   trackEvent('assessment_completed', 'assessment', sessionId, totalQuestions);
+  
+  // Track with Plausible
+  trackPlausibleEvent('Assessment Complete', {
+    props: { 
+      session_id: sessionId,
+      question_count: totalQuestions 
+    }
+  });
   
   // Track Reddit CompleteRegistration for 248+ question completion
   if (totalQuestions >= 248 && typeof window !== 'undefined' && window.rdtTrack) {
@@ -212,6 +233,14 @@ export const trackAccountCreation = (email: string, sessionId?: string) => {
 export const trackResultsViewed = (sessionId: string, typeCode?: string) => {
   if (IS_PREVIEW) return;
   trackEvent('results_viewed', 'assessment', typeCode || 'unknown');
+
+  // Track with Plausible
+  trackPlausibleEvent('Results Viewed', {
+    props: { 
+      session_id: sessionId,
+      type_code: typeCode || 'unknown'
+    }
+  });
 
   // Track Reddit ViewContent for results page (legacy pixel method)
   if (typeof window !== 'undefined' && window.rdtTrack) {
