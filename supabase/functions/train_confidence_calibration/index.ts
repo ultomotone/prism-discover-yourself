@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceKey);
-    const calibration = new PrismCalibration(supabase);
+    const calibration = new PrismCalibration(supabase as any);
 
     // Get scoring version from config
     const { data: versionData } = await supabase.from('scoring_config').select('value').eq('key', 'results_version').maybeSingle();
@@ -140,7 +140,12 @@ Deno.serve(async (req) => {
       // Split data for validation if enough samples
       const useValidation = cleanPoints.length >= 20;
       let trainPoints = cleanPoints;
-      let validationPoints = [];
+      interface ValidationPoint {
+        x: number;
+        y: number;
+        weight?: number;
+      }
+      let validationPoints: ValidationPoint[] = [];
       
       if (useValidation) {
         const splitIndex = Math.floor(cleanPoints.length * (1 - config.validation_split));
@@ -257,11 +262,12 @@ Deno.serve(async (req) => {
       headers: {...corsHeaders, 'Content-Type': 'application/json'}
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error('❌ Error in train_confidence_calibration:', error);
     return new Response(JSON.stringify({
       success: false,
-      error: error.message
+      error: message
     }), {
       status: 500,
       headers: {...corsHeaders, 'Content-Type': 'application/json'}

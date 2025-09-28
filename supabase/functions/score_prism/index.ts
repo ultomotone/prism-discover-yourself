@@ -34,12 +34,15 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders(origin, req) });
   }
 
-  let session_id: string | undefined;
+  let session_id: string = "unknown";
 
   try {
     const parsed = await req.json();
-    session_id = parsed?.session_id;
-    if (!session_id) return json(origin, { status: "error", error: "session_id required" }, 400);
+    const rawSessionId = parsed?.session_id;
+    if (!rawSessionId || typeof rawSessionId !== 'string') {
+      return json(origin, { status: "error", error: "session_id required" }, 400);
+    }
+    session_id = rawSessionId; // TypeScript now knows this is a string
 
     // Pull responses (latest per question)
     const { data: rows, error: respErr } = await db
@@ -248,7 +251,7 @@ serve(async (req) => {
     const completionLog = buildCompletionLog({
       event: "scoring.completed",
       sessionId: session_id,
-      profile: scoringResult.profileRow as ProfileRow,
+      profile: scoringResult.profileRow as unknown as any,
       session: (sessionRow as SessionRow | null) ?? null,
       resultsVersion: RESULTS_VERSION,
       durationMs: timed.durationMs,
@@ -263,7 +266,7 @@ serve(async (req) => {
     console.log(
       JSON.stringify({
         event: "scoring.error",
-        session_id: session_id ?? e?.session_id,
+        session_id: session_id,
         error: e?.message || String(e),
         duration_ms: durationMs,
       }),

@@ -18,8 +18,9 @@ export function validateJSON(value: any, fieldName: string, fallback: any = null
     try {
       const parsed = JSON.parse(value);
       return parsed;
-    } catch (error) {
-      console.warn(`JSON validation failed for ${fieldName}:`, error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`JSON validation failed for ${fieldName}:`, message);
       return fallback;
     }
   }

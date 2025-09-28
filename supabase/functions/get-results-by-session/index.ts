@@ -1,7 +1,6 @@
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 import { rateLimit, ipFrom } from "../_shared/rateLimit.ts";
-import { sendConversions } from "../../../src/services/conversions.ts";
 import { logger } from "../../../src/lib/logger.ts";
 
 const STATIC_ORIGINS = new Set([
@@ -228,16 +227,9 @@ Deno.serve(async (request) => {
       
       // Check if this is a cached result
       if (result.ok === true && result.source === 'cache') {
-        logger.info("results.cache_hit", {
+        console.log("results.cache_hit", {
           session_id: sessionId,
           auth_context: authContext,
-        });
-
-        await sendConversions({
-          name: "results_viewed",
-          sessionId,
-          userAgent: request.headers.get("user-agent") ?? undefined,
-          ip: clientIp,
         });
 
         return new Response(JSON.stringify({

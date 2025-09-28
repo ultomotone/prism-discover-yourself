@@ -141,12 +141,13 @@ serve(async (req) => {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error('Error in start_assessment:', error);
     return new Response(JSON.stringify({
       success: false,
       error: 'Internal server error',
-      details: error.message
+      details: message
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },

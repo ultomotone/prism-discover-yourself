@@ -128,10 +128,11 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error('❌ Steady-state setup failed:', error);
     return new Response(JSON.stringify({
-      error: error.message,
+      error: message,
       timestamp: new Date().toISOString()
     }), {
       status: 500,

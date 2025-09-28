@@ -157,7 +157,7 @@ function analyzeProfile(profile: any): any {
   
   // Check strengths computation
   const strengths = profile.strengths || {};
-  const strengthValues = Object.values(strengths);
+  const strengthValues = Object.values(strengths) as number[];
   const allTypical = strengthValues.every((s: any) => Math.abs(s - 3.0) < 0.1);
   if (allTypical || strengthValues.every((s: any) => s === 0)) {
     issues.push("🚨 PLACEHOLDER STRENGTHS: All strengths are 3.0 or 0");
