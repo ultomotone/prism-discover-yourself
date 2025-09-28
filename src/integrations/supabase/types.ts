@@ -14,18 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      _write_probe: {
-        Row: {
-          ts: string | null
-        }
-        Insert: {
-          ts?: string | null
-        }
-        Update: {
-          ts?: string | null
-        }
-        Relationships: []
-      }
       assessment_questions: {
         Row: {
           created_at: string
@@ -139,20 +127,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "v_incomplete_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "v_user_sessions_chrono"
-            referencedColumns: ["session_id"]
           },
         ]
       }
@@ -483,6 +457,13 @@ export type Database = {
             referencedRelation: "fc_options"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fc_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
         ]
       }
       fn_logs: {
@@ -490,18 +471,24 @@ export type Database = {
           at: string | null
           evt: string
           id: number
+          level: string | null
+          msg: string | null
           payload: Json | null
         }
         Insert: {
           at?: string | null
           evt: string
           id?: number
+          level?: string | null
+          msg?: string | null
           payload?: Json | null
         }
         Update: {
           at?: string | null
           evt?: string
           id?: number
+          level?: string | null
+          msg?: string | null
           payload?: Json | null
         }
         Relationships: []
@@ -578,24 +565,6 @@ export type Database = {
         }
         Relationships: []
       }
-      rate_limits: {
-        Row: {
-          count: number
-          key: string
-          window_ends_at: string
-        }
-        Insert: {
-          count?: number
-          key: string
-          window_ends_at: string
-        }
-        Update: {
-          count?: number
-          key?: string
-          window_ends_at?: string
-        }
-        Relationships: []
-      }
       scoring_config: {
         Row: {
           key: string
@@ -656,24 +625,6 @@ export type Database = {
         }
         Relationships: []
       }
-      users: {
-        Row: {
-          email: string
-          id: string
-          name: string
-        }
-        Insert: {
-          email: string
-          id?: string
-          name: string
-        }
-        Update: {
-          email?: string
-          id?: string
-          name?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       admin_throughput_last_14d: {
@@ -687,270 +638,6 @@ export type Database = {
         Row: {
           n: number | null
           primary_type: string | null
-        }
-        Relationships: []
-      }
-      v_dim_coverage: {
-        Row: {
-          d_items: number | null
-          func: string | null
-          session_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "assessment_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "v_incomplete_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "v_user_sessions_chrono"
-            referencedColumns: ["session_id"]
-          },
-        ]
-      }
-      v_fc_coverage: {
-        Row: {
-          answered_count: number | null
-          fc_count: number | null
-          session_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "assessment_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "v_incomplete_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "v_user_sessions_chrono"
-            referencedColumns: ["session_id"]
-          },
-        ]
-      }
-      v_incomplete_sessions: {
-        Row: {
-          completed_at: string | null
-          completed_questions: number | null
-          created_at: string | null
-          email: string | null
-          id: string | null
-          status: string | null
-          total_questions: number | null
-          user_id: string | null
-        }
-        Insert: {
-          completed_at?: string | null
-          completed_questions?: number | null
-          created_at?: string | null
-          email?: string | null
-          id?: string | null
-          status?: string | null
-          total_questions?: number | null
-          user_id?: string | null
-        }
-        Update: {
-          completed_at?: string | null
-          completed_questions?: number | null
-          created_at?: string | null
-          email?: string | null
-          id?: string | null
-          status?: string | null
-          total_questions?: number | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      v_item_stats: {
-        Row: {
-          mean_val: number | null
-          n: number | null
-          question_id: number | null
-          reverse_scored: boolean | null
-          scale_type:
-            | Database["public"]["Enums"]["assessment_scale_type"]
-            | null
-          sd_val: number | null
-          section: string | null
-          social_desirability: boolean | null
-          tag: string | null
-        }
-        Relationships: []
-      }
-      v_method_agreement_prep: {
-        Row: {
-          answer_array: string[] | null
-          answer_numeric: number | null
-          function_name: string | null
-          question_id: number | null
-          scale_type:
-            | Database["public"]["Enums"]["assessment_scale_type"]
-            | null
-          session_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "assessment_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "v_incomplete_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "v_user_sessions_chrono"
-            referencedColumns: ["session_id"]
-          },
-        ]
-      }
-      v_recent_assessments_safe: {
-        Row: {
-          country_display: string | null
-          created_at: string | null
-          fit_indicator: string | null
-          overlay: string | null
-          time_period: string | null
-          type_prefix: string | null
-        }
-        Relationships: []
-      }
-      v_section_progress: {
-        Row: {
-          answered: number | null
-          section: string | null
-          session_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "assessment_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "v_incomplete_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "v_user_sessions_chrono"
-            referencedColumns: ["session_id"]
-          },
-        ]
-      }
-      v_section_time: {
-        Row: {
-          median_seconds: number | null
-          section: string | null
-        }
-        Relationships: []
-      }
-      v_section_times: {
-        Row: {
-          drop_rate: number | null
-          median_sec: number | null
-          section: string | null
-          session_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "assessment_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "v_incomplete_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "v_user_sessions_chrono"
-            referencedColumns: ["session_id"]
-          },
-        ]
-      }
-      v_state_index: {
-        Row: {
-          session_id: string | null
-          state_items_count: number | null
-          state_mean: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "assessment_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "v_incomplete_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assessment_responses_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "v_user_sessions_chrono"
-            referencedColumns: ["session_id"]
-          },
-        ]
-      }
-      v_user_sessions_chrono: {
-        Row: {
-          email: string | null
-          gap_minutes: number | null
-          prev_session_id: string | null
-          session_id: string | null
-          started_at: string | null
-          user_id: string | null
         }
         Relationships: []
       }
