@@ -232,6 +232,24 @@ serve(async (req) => {
 
       await persistResultsV2(db, session_id, { types, functions, state });
 
+      // Also store in the new scoring_results table for frontend compatibility
+      const scoringResultData = {
+        session_id,
+        user_id: sessionRow?.user_id || null,
+        result_data: {
+          profile: profileRow,
+          types,
+          functions,
+          state,
+          session: sessionRow,
+          results_version: RESULTS_VERSION
+        },
+        results_version: RESULTS_VERSION,
+        computed_at: new Date().toISOString()
+      };
+
+      await db.from("scoring_results").upsert(scoringResultData, { onConflict: "session_id" });
+
       return {
         profileRow,
         responseBody: {
