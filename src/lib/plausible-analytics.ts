@@ -75,7 +75,70 @@ export function trackPlausiblePageView(props?: PlausibleEventProps) {
   trackPlausibleEvent('pageview', { props });
 }
 
-// Track assessment events
+// Content view goals
+export function trackContentView(section: string, props?: PlausibleEventProps) {
+  const goalMap: Record<string, string> = {
+    'signals': 'View:Signals',
+    'dimensionality': 'View:Dimensionality', 
+    'blocks': 'View:Blocks',
+    'core-alignments': 'View:CoreAlignments',
+    'how-it-works': 'View:HowItWorks',
+    'real-time-type': 'View:RealTimeType',
+    'profiles': 'View:Profiles',
+    'roadmap': 'View:Roadmap',
+    'typing-lab': 'View:TypingLab'
+  };
+
+  const goalName = goalMap[section];
+  if (goalName) {
+    trackPlausibleEvent(goalName, { 
+      props: { 
+        section,
+        ...props 
+      } 
+    });
+  }
+}
+
+// CTA tracking
+export function trackCTAClick(
+  action: 'StartAssessment' | 'Subscribe' | 'Share' | 'Contact',
+  ctaId?: string,
+  section?: string,
+  props?: PlausibleEventProps
+) {
+  trackPlausibleEvent(`CTA:${action}`, {
+    props: {
+      cta_id: ctaId,
+      section,
+      ...props
+    }
+  });
+}
+
+// Engagement tracking
+export function trackEngagement(
+  type: 'Read75' | 'Read50' | 'Read25' | 'Read100',
+  section?: string,
+  signal?: string,
+  props?: PlausibleEventProps
+) {
+  trackPlausibleEvent(`Engagement:${type}`, {
+    props: {
+      section,
+      signal,
+      reading_depth: type.replace('Read', ''),
+      ...props
+    }
+  });
+}
+
+// Lead tracking
+export function trackLead(type: 'Contact' | 'Subscribe', props?: PlausibleEventProps) {
+  trackPlausibleEvent(`Lead:${type}`, { props });
+}
+
+// Assessment events
 export function trackAssessmentEvent(
   action: 'start' | 'complete' | 'abandon',
   props?: PlausibleEventProps
@@ -83,15 +146,15 @@ export function trackAssessmentEvent(
   trackPlausibleEvent(`Assessment ${action}`, { props });
 }
 
-// Track result views
+// Result views
 export function trackResultView(props?: PlausibleEventProps) {
   trackPlausibleEvent('Result View', { props });
 }
 
-// Track conversions with revenue
-export function trackConversion(
+// Revenue tracking
+export function trackRevenue(
   eventName: string,
-  revenue?: PlausibleRevenue,
+  revenue: PlausibleRevenue,
   props?: PlausibleEventProps
 ) {
   trackPlausibleEvent(eventName, { revenue, props });

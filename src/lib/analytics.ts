@@ -9,7 +9,9 @@ import {
   rememberFacebookDpaPayload,
   type FacebookProduct,
 } from './facebook';
-import { initPlausible, trackPlausibleEvent } from './plausible-analytics';
+import { initPlausible, trackPlausibleEvent, trackContentView, trackCTAClick } from './plausible-analytics';
+import { initScrollTracking } from './scroll-tracker';
+import { initCTATracking } from './cta-tracker';
 
 // Environment flag for preview mode
 const IS_PREVIEW = typeof window !== 'undefined' && 
@@ -49,11 +51,72 @@ function getKnownEmail(): string | undefined {
   return undefined;
 }
 
-// Initialize analytics
+// Initialize analytics with enhanced Plausible tracking
 export function initAnalytics() {
   // Initialize Plausible Analytics
   initPlausible();
-  console.log('Analytics initialized');
+  
+  // Initialize automatic tracking
+  if (typeof window !== 'undefined') {
+    // Auto-track CTAs globally
+    initCTATracking({ autoTrack: true });
+    
+    // Auto-track scroll depth based on current page
+    const path = window.location.pathname;
+    const section = getSectionFromPath(path);
+    
+    if (['signals', 'dimensionality', 'blocks'].includes(section)) {
+      initScrollTracking({ section });
+    }
+  }
+  
+  console.log('Analytics initialized with enhanced Plausible tracking');
+}
+
+// Helper to determine section from URL path
+function getSectionFromPath(path: string): string {
+  if (path.includes('/signals')) return 'signals';
+  if (path.includes('/dimensionality')) return 'dimensionality';
+  if (path.includes('/blocks')) return 'blocks';
+  if (path.includes('/core-alignments')) return 'core-alignments';
+  if (path.includes('/how-it-works')) return 'how-it-works';
+  if (path.includes('/real-time-type')) return 'real-time-type';
+  if (path.includes('/profiles')) return 'profiles';
+  if (path.includes('/roadmap')) return 'roadmap';
+  if (path.includes('/typing-lab')) return 'typing-lab';
+  return 'unknown';
+}
+
+// Enhanced page view tracking with content view goals
+export function trackPageView(path: string) {
+  const section = getSectionFromPath(path);
+  
+  // Track basic page view
+  trackEvent('page_view', 'Navigation', path);
+  
+  // Track content view goals for specific sections
+  if (section !== 'unknown') {
+    trackContentView(section, {
+      source_type: getTrafficSource()
+    });
+  }
+}
+
+// Get traffic source for enhanced tracking
+function getTrafficSource(): string {
+  if (typeof window === 'undefined') return 'unknown';
+  
+  const params = new URLSearchParams(window.location.search);
+  const utm_medium = params.get('utm_medium');
+  const utm_source = params.get('utm_source');
+  
+  if (utm_medium === 'email') return 'email';
+  if (utm_medium === 'social') return 'social';
+  if (utm_medium === 'cpc' || utm_medium === 'paid') return 'paid';
+  if (document.referrer && !document.referrer.includes(window.location.hostname)) return 'referral';
+  if (utm_source || utm_medium) return 'organic';
+  
+  return 'direct';
 }
 
 export const trackEvent = (action: string, category: string, label?: string, value?: number) => {
