@@ -1,6 +1,6 @@
 // supabase/functions/_shared/cors.ts
-export const DEFAULT_ORIGIN =
-  (typeof Deno !== "undefined" && Deno.env?.get?.("RESULTS_ALLOWED_ORIGIN")) ??
+export const DEFAULT_ORIGIN: string =
+  (typeof Deno !== "undefined" && Deno.env?.get?.("RESULTS_ALLOWED_ORIGIN")) ||
   "https://prismpersonality.com";
 
 const ORIGIN_ALLOWLIST: (string | RegExp)[] = [
@@ -18,7 +18,7 @@ function normalizeOrigin(o?: string | null) {
   try { return new URL(o).origin; } catch { return null; }
 }
 
-export function resolveOrigin(req: Request) {
+export function resolveOrigin(req: Request): string {
   const o = normalizeOrigin(req.headers.get("origin"));
   return o && ORIGIN_ALLOWLIST.some(r => typeof r === "string" ? r === o : (r as RegExp).test(o))
     ? o

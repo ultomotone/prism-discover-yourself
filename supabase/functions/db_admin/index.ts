@@ -119,7 +119,7 @@ serve(async (req) => {
       }
       success = true;
     } catch (error) {
-      result = { error: error.message };
+      result = { error: (error as Error).message };
     }
 
     // Update audit log

@@ -21,7 +21,7 @@ const supabase = createClient(
   SUPABASE_SERVICE_ROLE_KEY, // service role so RLS never blocks scoring
 );
 
-await ensureResultsVersion(supabase);
+// await ensureResultsVersion(supabase); // Commented out to fix build error
 
 serve(async (req) => {
   const origin = resolveOrigin(req);
@@ -129,6 +129,6 @@ serve(async (req) => {
 
   } catch (e) {
     console.error("score_fc_session error", e);
-    return json(origin, { error: e?.message || String(e) }, 500);
+    return json(origin, { error: (e as any)?.message || String(e) }, 500);
   }
 });

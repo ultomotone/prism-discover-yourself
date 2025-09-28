@@ -46,7 +46,7 @@ serve(async (req) => {
     if (csv_data && typeof csv_data === 'string') {
       console.log('Parsing CSV data...');
       try {
-        const records = parse(csv_data, { skipFirstRow: true, columns: true });
+        const records = parse(csv_data, { skipFirstRow: true, columns: [] });
         for (const row of records as any[]) {
           const q: any = {};
           for (const [k, v] of Object.entries(row)) {
@@ -204,7 +204,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in import_questions function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

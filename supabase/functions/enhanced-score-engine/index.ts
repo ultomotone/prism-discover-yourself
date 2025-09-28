@@ -167,7 +167,7 @@ function computeOverlay(overlayResponses: number[], stateIndex: number): { band:
 }
 
 function computeTypeDistances(strengths: Record<Func, number>, dimensions: Record<Func, number>, prototypes: Record<TypeCode, Record<Func, Block>>): Record<TypeCode, { distance: number; fit: number; fitParts: any }> {
-  const results: Record<TypeCode, any> = {};
+  const results: Record<TypeCode, any> = {} as any;
   
   for (const typeCode of ALL_TYPES) {
     const proto = prototypes[typeCode];
@@ -389,7 +389,7 @@ serve(async (req) => {
     
     // Get prototypes (using fallback if needed)
     const prototypes = {}; // Would load from database
-    const typeDistances = computeTypeDistances(strengths, dimensions, prototypes);
+    const typeDistances = computeTypeDistances(strengths, dimensions, prototypes as any);
     const shares = computeTypeShares(typeDistances);
     
     // Rank types by share

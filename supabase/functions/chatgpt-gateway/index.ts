@@ -545,19 +545,19 @@ serve(async (req) => {
           .maybeSingle();
         
         if (error) {
-          console.warn('v_quality_summary unavailable, falling back to v_kpi_quality:', error.message);
+          console.warn('v_quality_summary unavailable, falling back to v_kpi_quality:', (error as Error).message);
           const { data: fallbackData, error: fallbackError } = await supabase
             .from('v_kpi_quality')
             .select('*')
             .maybeSingle();
           if (fallbackError) throw fallbackError;
-          return new Response(JSON.stringify({ summary: fallbackData, source: 'v_kpi_quality' }), { headers });
+          return new Response(JSON.stringify({ summary: fallbackData, source: 'v_kpi_quality' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
         
         return new Response(JSON.stringify({ 
           summary: data, 
           source: 'v_quality_summary' 
-        }), { headers });
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
       // GET /types - Type distribution for dashboard  
@@ -568,7 +568,7 @@ serve(async (req) => {
         
         if (error) throw error;
         
-        return new Response(JSON.stringify({ data }), { headers });
+        return new Response(JSON.stringify({ data }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
       // GET /config - Scoring configuration
@@ -843,7 +843,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('ChatGPT Gateway error:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: (error as Error).message,
       details: 'Check function logs for more information'
     }), {
       status: 500,

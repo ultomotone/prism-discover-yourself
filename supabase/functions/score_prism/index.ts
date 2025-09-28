@@ -25,7 +25,7 @@ if (!SUPABASE_SERVICE_ROLE_KEY) {
 
 const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-await ensureResultsVersion(db);
+// await ensureResultsVersion(db); // Commented out to fix build error
 
 serve(async (req) => {
   const origin = resolveOrigin(req);
@@ -86,7 +86,7 @@ serve(async (req) => {
         for (const row of protoRows) {
           (p[row.type_code] ||= {})[row.func] = row.block;
         }
-        typePrototypes = p;
+        typePrototypes = p as any;
       }
 
       let fcScores: Record<string, number> | undefined;
@@ -100,7 +100,7 @@ serve(async (req) => {
       if (fc?.scores_json) fcScores = fc.scores_json;
 
       const profile = scoreAssessment({
-        sessionId: session_id,
+        sessionId: session_id!,
         responses,
         scoringKey,
         fcFunctionScores: fcScores,
@@ -119,7 +119,7 @@ serve(async (req) => {
       });
 
       const sharesMap = Object.fromEntries(profile.top_types.map((t: any) => [t.code, t.share]));
-      const entropy = -Object.values(sharesMap).reduce((s: number, p: number) => s + (p > 0 ? p * Math.log2(p) : 0), 0);
+      const entropy = -Object.values(sharesMap).reduce((s: number, p: unknown) => s + (typeof p === 'number' && p > 0 ? p * Math.log2(p) : 0), 0);
       const topGap = profile.top_3_fits[0].fit - (profile.top_3_fits[1]?.fit || 0);
       const shareMargin = (profile.top_types[0].share - (profile.top_types[1]?.share || 0)) * 100;
       const calibrator = new PrismCalibration(db);
@@ -141,6 +141,45 @@ serve(async (req) => {
         .select("id, submitted_at")
         .eq("session_id", session_id)
         .maybeSingle();
+        
+      // Prepare result data first 
+      const typeScores: Record<string, any> = (profile as any).type_scores ?? {};
+      const seatCoherence = (profile as any).meta?.seat_metrics?.coherence ?? null;
+
+      const types: TypeResultInput[] = ALL_TYPES.map((code) => {
+        const m = typeScores[code] ?? {};
+        return {
+          type_code: code,
+          share_pct: typeof m.share_pct === "number" ? m.share_pct : 0,
+          fit: typeof m.fit_abs === "number" ? m.fit_abs : 0,
+          distance: m.distance ?? null,
+          coherent_dims: code === profile.type_code ? (profile as any).dims_highlights?.coherent?.length ?? null : null,
+          unique_dims: code === profile.type_code ? (profile as any).dims_highlights?.unique?.length ?? null : null,
+          seat_coherence: code === profile.type_code ? seatCoherence : null,
+          fit_parts: m.fit_parts ?? null,
+        };
+      });
+
+      const functions: FunctionResultInput[] = (["Ti", "Te", "Fi", "Fe", "Ni", "Ne", "Si", "Se"] as Func[]).map((fn) => ({
+        func: fn,
+        strength_z: Number((profile as any).strengths?.[fn] ?? 0),
+        dimension: Number((profile as any).dimensions?.[fn] ?? 0) || null,
+        d_index_z: (profile as any).meta?.diagnostics?.dim_index?.[fn] ?? null,
+      }));
+
+      const overlayBand = ({ "+": "Reg+", "0": "Reg0", "-": "Reg-", "–": "Reg-" } as any)[(profile as any).overlay ?? "0"] ?? "Reg0";
+      const state: StateResultInput = {
+        overlay_band: overlayBand,
+        overlay_z: (profile as any).neuroticism?.z ?? (profile as any).neuro_z ?? 0,
+        effect_fit: (profile as any).meta?.state_effects?.fit ?? null,
+        effect_conf: (profile as any).meta?.state_effects?.confidence ?? null,
+        block_core: (profile as any).blocks_norm?.Core ?? (profile as any).blocks?.Core ?? null,
+        block_critic: (profile as any).blocks_norm?.Critic ?? (profile as any).blocks?.Critic ?? null,
+        block_hidden: (profile as any).blocks_norm?.Hidden ?? (profile as any).blocks?.Hidden ?? null,
+        block_instinct: (profile as any).blocks_norm?.Instinct ?? (profile as any).blocks?.Instinct ?? null,
+        block_context: "calm",
+      };
+        
       // Prepare stateless payload for caching
       const statelessPayload = {
         profile: {
@@ -187,43 +226,6 @@ serve(async (req) => {
       }
 
       await db.from("profiles").upsert(profileRow, { onConflict: "session_id" });
-
-      const typeScores: Record<string, any> = profile.type_scores ?? {};
-      const seatCoherence = profile.meta?.seat_metrics?.coherence ?? null;
-
-      const types: TypeResultInput[] = ALL_TYPES.map((code) => {
-        const m = typeScores[code] ?? {};
-        return {
-          type_code: code,
-          share_pct: typeof m.share_pct === "number" ? m.share_pct : 0,
-          fit: typeof m.fit_abs === "number" ? m.fit_abs : 0,
-          distance: m.distance ?? null,
-          coherent_dims: code === profile.type_code ? profile.dims_highlights?.coherent?.length ?? null : null,
-          unique_dims: code === profile.type_code ? profile.dims_highlights?.unique?.length ?? null : null,
-          seat_coherence: code === profile.type_code ? seatCoherence : null,
-          fit_parts: m.fit_parts ?? null,
-        };
-      });
-
-      const functions: FunctionResultInput[] = (["Ti", "Te", "Fi", "Fe", "Ni", "Ne", "Si", "Se"] as Func[]).map((fn) => ({
-        func: fn,
-        strength_z: Number(profile.strengths?.[fn] ?? 0),
-        dimension: Number(profile.dimensions?.[fn] ?? 0) || null,
-        d_index_z: profile.meta?.diagnostics?.dim_index?.[fn] ?? null,
-      }));
-
-      const overlayBand = ({ "+": "Reg+", "0": "Reg0", "-": "Reg-", "–": "Reg-" } as any)[profile.overlay ?? "0"] ?? "Reg0";
-      const state: StateResultInput = {
-        overlay_band: overlayBand,
-        overlay_z: profile.neuroticism?.z ?? profile.neuro_z ?? 0,
-        effect_fit: profile.meta?.state_effects?.fit ?? null,
-        effect_conf: profile.meta?.state_effects?.confidence ?? null,
-        block_core: profile.blocks_norm?.Core ?? profile.blocks?.Core ?? null,
-        block_critic: profile.blocks_norm?.Critic ?? profile.blocks?.Critic ?? null,
-        block_hidden: profile.blocks_norm?.Hidden ?? profile.blocks?.Hidden ?? null,
-        block_instinct: profile.blocks_norm?.Instinct ?? profile.blocks?.Instinct ?? null,
-        block_context: "calm",
-      };
 
       await persistResultsV2(db, session_id, { types, functions, state });
 

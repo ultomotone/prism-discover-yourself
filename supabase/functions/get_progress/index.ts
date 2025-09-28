@@ -79,7 +79,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         status: "error", 
-        error: String(e?.message || e) 
+        error: String((e as any)?.message || e) 
       }),
       {
         status: 500,

@@ -219,17 +219,36 @@ serve(async (req) => {
         }
 
         // Calculate calibration metrics
-        const byBand = { High: [], Moderate: [], Low: [] };
-        recentProfiles.forEach(profile => {
-          if (profile.conf_band && byBand[profile.conf_band]) {
-            byBand[profile.conf_band].push({
+        interface ConfidenceData {
+          raw: number;
+          calibrated: number;
+        }
+        
+        type BandData = {
+          High: ConfidenceData[];
+          Moderate: ConfidenceData[];
+          Low: ConfidenceData[];
+        };
+        
+        const byBand: BandData = { High: [], Moderate: [], Low: [] };
+        recentProfiles.forEach((profile: any) => {
+          if (profile.conf_band && profile.conf_band in byBand) {
+            byBand[profile.conf_band as keyof BandData].push({
               raw: profile.conf_raw,
               calibrated: profile.conf_calibrated
             });
           }
         });
 
-        const bandMetrics = {};
+        interface BandMetrics {
+          sample_size: number;
+          avg_raw_confidence: number;
+          avg_calibrated_confidence: number;
+          calibration_shift: number;
+          percentage: number;
+        }
+
+        const bandMetrics: Record<string, BandMetrics> = {};
         for (const [band, values] of Object.entries(byBand)) {
           if (values.length > 0) {
             const avgRaw = values.reduce((sum, v) => sum + v.raw, 0) / values.length;
@@ -252,11 +271,11 @@ serve(async (req) => {
           total_profiles: recentProfiles.length,
           band_metrics: bandMetrics,
           summary: {
-            avg_calibration_shift: Number(Object.values(bandMetrics)
-              .reduce((sum, m: any) => sum + (m.calibration_shift * m.sample_size), 0) / recentProfiles.length)
-              .toFixed(4),
+            avg_calibration_shift: Number((Object.values(bandMetrics)
+              .reduce((sum: number, m: BandMetrics) => sum + (m.calibration_shift * m.sample_size), 0) / recentProfiles.length)
+              .toFixed(4)),
             confidence_distribution: Object.fromEntries(
-              Object.entries(bandMetrics).map(([band, metrics]: [string, any]) => 
+              Object.entries(bandMetrics).map(([band, metrics]) => 
                 [band, `${metrics.percentage}%`]
               )
             )
@@ -280,7 +299,7 @@ serve(async (req) => {
     console.error('Calibration manager error:', error);
     return new Response(JSON.stringify({
       error: 'Internal server error',
-      details: error.message
+      details: (error as Error).message
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

@@ -180,7 +180,7 @@ serve(async (req) => {
           await new Promise(resolve => setTimeout(resolve, 100));
 
         } catch (err) {
-          console.error(`evt:exception,session:${profile.session_id},error:${err.message}`);
+          console.error(`evt:exception,session:${profile.session_id},error:${(err as Error).message}`);
           processed++;
           errors++;
         }
@@ -206,7 +206,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('evt:fatal_error', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

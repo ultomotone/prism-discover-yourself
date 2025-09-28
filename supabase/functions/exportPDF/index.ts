@@ -47,7 +47,7 @@ serve(async (req) => {
     // In production, this would use Puppeteer or similar to generate actual PDF
     const pdfContent = generateSimplePDF(profileData);
     
-    return new Response(pdfContent, {
+    return new Response(pdfContent as BodyInit, {
       status: 200,
       headers: {
         ...corsHeaders,
@@ -58,7 +58,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in exportPDF function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
