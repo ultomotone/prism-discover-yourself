@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import postgres from "npm:postgres@3.4.3";
+import postgres from "https://esm.sh/postgres@3.4.3";
 import { z } from "npm:zod@3.25.76";
 
 const URL   = Deno.env.get("SUPABASE_URL")!;

@@ -1,4 +1,4 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+// import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { buildResultsLink } from "../_shared/results-link.ts";
 import { ensureResultsVersion, RESULTS_VERSION } from "../_shared/resultsVersion.ts";
@@ -9,7 +9,7 @@ import {
   type SessionRow,
 } from "../_shared/finalizeAssessmentCore.ts";
 import { buildCompletionLog } from "../_shared/observability.ts";
-import { emitMetric, withTimer } from "../../../lib/metrics.ts";
+import { emitMetric, withTimer } from "../_shared/metrics.ts";
 import { corsHeaders, json, resolveOrigin } from "../_shared/cors.ts";
 import { rateLimit, ipFrom } from "../_shared/rateLimit.ts";
 import { sendConversions } from "../../../src/services/conversions.ts";

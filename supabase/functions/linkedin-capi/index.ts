@@ -1,4 +1,4 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+// import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { sha256HexLower } from "../_shared/crypto.ts";
 import {
   buildLinkedInRequestBody,

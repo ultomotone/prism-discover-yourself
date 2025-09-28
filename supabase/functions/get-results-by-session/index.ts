@@ -1,4 +1,3 @@
-import { Hono } from "npm:hono@4.5.11";
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 import { rateLimit, ipFrom } from "../_shared/rateLimit.ts";
@@ -51,23 +50,31 @@ function createAuthedClient(
   });
 }
 
-const app = new Hono();
-
-app.options("/*", (c) =>
-  c.newResponse(null, {
-    status: 200,
-    headers: corsHeaders(c.req.header("Origin") || null, c.req.raw),
-  })
-);
-
-app.post("/get-results-by-session", async (c) => {
-  const origin = c.req.header("Origin") || null;
-  const headers = corsHeaders(origin, c.req.raw);
-  if (origin && headers["Access-Control-Allow-Origin"] === "") {
-    return c.json({ ok: false, error: "origin_not_allowed" }, 403, headers);
+Deno.serve(async (request) => {
+  const origin = request.headers.get("Origin") || null;
+  const headers = corsHeaders(origin, request);
+  
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 200,
+      headers,
+    });
   }
 
-  const request = c.req.raw;
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({ ok: false, error: "method_not_allowed" }), {
+      status: 405,
+      headers: { ...headers, 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (origin && headers["Access-Control-Allow-Origin"] === "") {
+    return new Response(JSON.stringify({ ok: false, error: "origin_not_allowed" }), {
+      status: 403,
+      headers: { ...headers, 'Content-Type': 'application/json' },
+    });
+  }
+
   const clientIp = ipFrom(request);
   const rl = rateLimit(`results:${clientIp}`);
   if (!rl.allowed) {
@@ -75,21 +82,30 @@ app.post("/get-results-by-session", async (c) => {
     if (rl.retryAfter != null) {
       headers["Retry-After"] = String(rl.retryAfter);
     }
-    return c.json({ ok: false, error: "rate_limited" }, 429, headers);
+    return new Response(JSON.stringify({ ok: false, error: "rate_limited" }), {
+      status: 429,
+      headers: { ...headers, 'Content-Type': 'application/json' },
+    });
   }
 
   let payload: Record<string, unknown>;
   try {
-    payload = await c.req.json();
+    payload = await request.json();
   } catch {
-    return c.json({ ok: false, error: "invalid json body" }, 400, headers);
+    return new Response(JSON.stringify({ ok: false, error: "invalid json body" }), {
+      status: 400,
+      headers: { ...headers, 'Content-Type': 'application/json' },
+    });
   }
 
   const sessionIdRaw = payload.session_id ?? payload.sessionId;
   const shareTokenRaw = payload.share_token ?? payload.shareToken ?? null;
 
   if (typeof sessionIdRaw !== "string" || !sessionIdRaw.trim()) {
-    return c.json({ ok: false, error: "session_id required" }, 400, headers);
+    return new Response(JSON.stringify({ ok: false, error: "session_id required" }), {
+      status: 400,
+      headers: { ...headers, 'Content-Type': 'application/json' },
+    });
   }
 
   const sessionId = sessionIdRaw.trim();
@@ -107,7 +123,10 @@ app.post("/get-results-by-session", async (c) => {
       session_id: sessionId,
       error: "missing_supabase_env",
     });
-    return c.json({ ok: false, error: "configuration error" }, 500, headers);
+    return new Response(JSON.stringify({ ok: false, error: "configuration error" }), {
+      status: 500,
+      headers: { ...headers, 'Content-Type': 'application/json' },
+    });
   }
 
   const serviceClient = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
@@ -128,16 +147,25 @@ app.post("/get-results-by-session", async (c) => {
         auth_context: authContext,
         error: error.message,
       });
-      return c.json({ ok: false, error: "session lookup failed" }, 500, headers);
+      return new Response(JSON.stringify({ ok: false, error: "session lookup failed" }), {
+        status: 500,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
     }
 
     if (!data || data.share_token !== shareToken) {
-      return c.json({ ok: false, error: "invalid token" }, 401, headers);
+      return new Response(JSON.stringify({ ok: false, error: "invalid token" }), {
+        status: 401,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
     }
   } else {
     const authorization = request.headers.get("authorization");
     if (!authorization || !authorization.toLowerCase().startsWith("bearer ")) {
-      return c.json({ ok: false, error: "authorization required" }, 401, headers);
+      return new Response(JSON.stringify({ ok: false, error: "authorization required" }), {
+        status: 401,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
     }
 
     const authedClient = createAuthedClient(supabaseUrl, anonKey, authorization);
@@ -153,11 +181,17 @@ app.post("/get-results-by-session", async (c) => {
         auth_context: "owner",
         error: error.message,
       });
-      return c.json({ ok: false, error: "session lookup failed" }, 500, headers);
+      return new Response(JSON.stringify({ ok: false, error: "session lookup failed" }), {
+        status: 500,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
     }
 
     if (!data) {
-      return c.json({ ok: false, error: "forbidden" }, 403, headers);
+      return new Response(JSON.stringify({ ok: false, error: "forbidden" }), {
+        status: 403,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
     }
 
     dataClient = authedClient;
@@ -182,7 +216,10 @@ app.post("/get-results-by-session", async (c) => {
         auth_context: authContext,
         error: error.message,
       });
-      return c.json({ ok: false, code: "SCORING_ROWS_MISSING" }, 200, headers);
+      return new Response(JSON.stringify({ ok: false, code: "SCORING_ROWS_MISSING" }), {
+        status: 200,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
     }
 
     // Handle the response format from our updated RPC
@@ -203,7 +240,7 @@ app.post("/get-results-by-session", async (c) => {
           ip: clientIp,
         });
 
-        return c.json({
+        return new Response(JSON.stringify({
           ok: true,
           results_version: result.results_version || "v1.2.1",
           result_id: result.result_id || sessionId,
@@ -213,7 +250,10 @@ app.post("/get-results-by-session", async (c) => {
           types: result.types,
           functions: result.functions,
           state: result.state,
-        }, 200, headers);
+        }), {
+          status: 200,
+          headers: { ...headers, 'Content-Type': 'application/json' },
+        });
       }
       
       // Cache miss - need to trigger scoring
@@ -224,7 +264,10 @@ app.post("/get-results-by-session", async (c) => {
         });
         
         // Return the appropriate response to trigger scoring
-        return c.json({ ok: false, code: "SCORING_ROWS_MISSING" }, 200, headers);
+        return new Response(JSON.stringify({ ok: false, code: "SCORING_ROWS_MISSING" }), {
+          status: 200,
+          headers: { ...headers, 'Content-Type': 'application/json' },
+        });
       }
     }
 
@@ -235,15 +278,19 @@ app.post("/get-results-by-session", async (c) => {
       data_type: typeof data,
     });
 
-    return c.json({ ok: false, code: "SCORING_ROWS_MISSING" }, 200, headers);
+    return new Response(JSON.stringify({ ok: false, code: "SCORING_ROWS_MISSING" }), {
+      status: 200,
+      headers: { ...headers, 'Content-Type': 'application/json' },
+    });
   } catch (err) {
     logger.error("results.rpc_exception", {
       session_id: sessionId,
       auth_context: authContext,
       error: err instanceof Error ? err.message : String(err),
     });
-    return c.json({ ok: false, code: "SCORING_ROWS_MISSING" }, 200, headers);
+    return new Response(JSON.stringify({ ok: false, code: "SCORING_ROWS_MISSING" }), {
+      status: 200,
+      headers: { ...headers, 'Content-Type': 'application/json' },
+    });
   }
 });
-
-Deno.serve((req) => app.fetch(req));

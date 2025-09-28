@@ -1,4 +1,4 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+// import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { sendRedditCapiEvent, RedditEvent } from "../_shared/redditCapi.ts";
 
 const corsHeaders = {

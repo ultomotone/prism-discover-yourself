@@ -1,4 +1,4 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+// import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { sendTikTokEvent, TikTokEvent } from "../_shared/tiktokCapi.ts";
 
 const corsHeaders = {

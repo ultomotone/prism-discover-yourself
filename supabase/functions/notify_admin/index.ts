@@ -1,5 +1,5 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { Resend } from "npm:resend@4.0.0";
+// import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { Resend } from "https://esm.sh/resend@4.0.0";
 import { buildResultsLink } from "../_shared/results-link.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);

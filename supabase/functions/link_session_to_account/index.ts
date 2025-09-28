@@ -1,4 +1,3 @@
-import { Hono } from "npm:hono@4.5.11";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const STATIC_ORIGINS = new Set([
@@ -36,28 +35,40 @@ function corsHeaders(origin: string | null, req: Request) {
   } as Record<string, string>;
 }
 
-const app = new Hono();
+Deno.serve(async (request) => {
+  const origin = request.headers.get("Origin") || null;
+  const headers = corsHeaders(origin, request);
+  
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 200,
+      headers,
+    });
+  }
 
-app.options("/*", (c) =>
-  c.newResponse(null, {
-    status: 200,
-    headers: corsHeaders(c.req.header("Origin") || null, c.req.raw),
-  })
-);
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({ success: false, error: "method_not_allowed" }), {
+      status: 405,
+      headers: { ...headers, 'Content-Type': 'application/json' },
+    });
+  }
 
-app.post("/link_session_to_account", async (c) => {
-  const origin = c.req.header("Origin") || null;
-  const headers = corsHeaders(origin, c.req.raw);
   if (origin && headers["Access-Control-Allow-Origin"] === "") {
-    return c.json({ success: false, error: "origin_not_allowed" }, 403, headers);
+    return new Response(JSON.stringify({ success: false, error: "origin_not_allowed" }), {
+      status: 403,
+      headers: { ...headers, 'Content-Type': 'application/json' },
+    });
   }
 
   try {
     let body: { session_id?: string; account_id?: string; email?: string | null };
     try {
-      body = await c.req.json();
+      body = await request.json();
     } catch {
-      return c.json({ success: false, error: "invalid_json" }, 400, headers);
+      return new Response(JSON.stringify({ success: false, error: "invalid_json" }), {
+        status: 400,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
     }
 
     const sessionId = body.session_id;
@@ -65,12 +76,18 @@ app.post("/link_session_to_account", async (c) => {
     const email = body.email ?? null;
 
     if (!sessionId || !accountId) {
-      return c.json({ success: false, error: "missing_params" }, 400, headers);
+      return new Response(JSON.stringify({ success: false, error: "missing_params" }), {
+        status: 400,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
     }
 
-    const authorization = c.req.header("Authorization") ?? c.req.header("authorization");
+    const authorization = request.headers.get("Authorization") ?? request.headers.get("authorization");
     if (!authorization || !authorization.startsWith("Bearer ")) {
-      return c.json({ success: false, error: "unauthorized" }, 401, headers);
+      return new Response(JSON.stringify({ success: false, error: "unauthorized" }), {
+        status: 401,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -79,7 +96,10 @@ app.post("/link_session_to_account", async (c) => {
 
     if (!supabaseUrl || !serviceKey || !anonKey) {
       console.error("Missing Supabase configuration");
-      return c.json({ success: false, error: "configuration_error" }, 500, headers);
+      return new Response(JSON.stringify({ success: false, error: "configuration_error" }), {
+        status: 500,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
     }
 
     const authedClient = createClient(supabaseUrl, anonKey, {
@@ -90,16 +110,25 @@ app.post("/link_session_to_account", async (c) => {
     const { data: userResult, error: userError } = await authedClient.auth.getUser();
     if (userError) {
       console.error("Failed to load authenticated user", userError);
-      return c.json({ success: false, error: "unauthorized" }, 401, headers);
+      return new Response(JSON.stringify({ success: false, error: "unauthorized" }), {
+        status: 401,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
     }
 
     const authUser = userResult?.user;
     if (!authUser) {
-      return c.json({ success: false, error: "unauthorized" }, 401, headers);
+      return new Response(JSON.stringify({ success: false, error: "unauthorized" }), {
+        status: 401,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
     }
 
     if (authUser.id !== accountId) {
-      return c.json({ success: false, error: "user_mismatch" }, 403, headers);
+      return new Response(JSON.stringify({ success: false, error: "user_mismatch" }), {
+        status: 403,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
     }
 
     const supabase = createClient(supabaseUrl, serviceKey, {
@@ -108,43 +137,62 @@ app.post("/link_session_to_account", async (c) => {
 
     const { data: sess, error: lookupError } = await supabase
       .from("assessment_sessions")
-      .select("account_id, user_id")
+      .select("user_id")
       .eq("id", sessionId)
       .maybeSingle();
 
     if (lookupError) {
       console.error("Session lookup failed", lookupError);
-      return c.json({ success: false, error: "lookup_failed" }, 500, headers);
+      return new Response(JSON.stringify({ success: false, error: "lookup_failed" }), {
+        status: 500,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
     }
 
     if (!sess) {
-      return c.json({ success: false, error: "not_found" }, 404, headers);
+      return new Response(JSON.stringify({ success: false, error: "not_found" }), {
+        status: 404,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
     }
 
-    const existingOwner = sess.user_id ?? sess.account_id ?? null;
+    const existingOwner = sess.user_id ?? null;
     if (existingOwner && existingOwner !== accountId) {
-      return c.json({ success: false, code: "ALREADY_LINKED" }, 409, headers);
+      return new Response(JSON.stringify({ success: false, code: "ALREADY_LINKED" }), {
+        status: 409,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
     }
 
     if (existingOwner === accountId) {
-      return c.json({ success: true, note: "already linked" }, 200, headers);
+      return new Response(JSON.stringify({ success: true, note: "already linked" }), {
+        status: 200,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
     }
 
     const { error: updateError } = await supabase
       .from("assessment_sessions")
-      .update({ user_id: accountId, account_id: accountId, email })
+      .update({ user_id: accountId, email })
       .eq("id", sessionId);
 
     if (updateError) {
       console.error("Update error:", updateError);
-      return c.json({ success: false, error: "link_failed" }, 500, headers);
+      return new Response(JSON.stringify({ success: false, error: "link_failed" }), {
+        status: 500,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
     }
 
-    return c.json({ success: true }, 200, headers);
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { ...headers, 'Content-Type': 'application/json' },
+    });
   } catch (e) {
     console.error("link_session_to_account error:", e instanceof Error ? e.message : String(e));
-    return c.json({ success: false, error: "link_failed" }, 500, headers);
+    return new Response(JSON.stringify({ success: false, error: "link_failed" }), {
+      status: 500,
+      headers: { ...headers, 'Content-Type': 'application/json' },
+    });
   }
 });
-
-Deno.serve((req) => app.fetch(req));

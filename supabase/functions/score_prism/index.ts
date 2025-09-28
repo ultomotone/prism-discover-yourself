@@ -7,7 +7,7 @@ import { PrismCalibration } from "../_shared/calibration.ts";
 import { RESULTS_VERSION, ensureResultsVersion, parseResultsVersion } from "../_shared/resultsVersion.ts";
 import type { ProfileRow, SessionRow } from "../_shared/finalizeAssessmentCore.ts";
 import { buildCompletionLog } from "../_shared/observability.ts";
-import { withTimer } from "../../../lib/metrics.ts";
+import { withTimer } from "../_shared/metrics.ts";
 import { corsHeaders, json, resolveOrigin } from "../_shared/cors.ts";
 
 const ALL_TYPES: string[] = ["LIE","ILI","ESE","SEI","LII","ILE","ESI","SEE","LSE","SLI","EIE","IEI","LSI","SLE","EII","IEE"];
