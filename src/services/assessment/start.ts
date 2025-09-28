@@ -15,16 +15,16 @@ export type AssessmentSessionRecord = {
 
 async function insertSession(accountId: string): Promise<AssessmentSessionRecord> {
   const { data, error } = await supabase
-    .from<AssessmentSessionRecord>("assessment_sessions")
+    .from("assessment_sessions")
     .insert({ account_id: accountId, status: "started" })
     .select()
     .single();
 
   if (error || !data) {
-    throw new Error(error?.message ?? "Failed to create assessment session", { cause: error ?? undefined });
+    throw new Error(error?.message ?? "Failed to create assessment session");
   }
 
-  return data;
+  return data as AssessmentSessionRecord;
 }
 
 async function buildAuthToken(): Promise<string> {
