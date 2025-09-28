@@ -1,7 +1,6 @@
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 import { rateLimit, ipFrom } from "../_shared/rateLimit.ts";
-import { logger } from "../../../src/lib/logger.ts";
 
 const STATIC_ORIGINS = new Set([
   "https://prismpersonality.com",
@@ -77,7 +76,7 @@ Deno.serve(async (request) => {
   const clientIp = ipFrom(request);
   const rl = rateLimit(`results:${clientIp}`);
   if (!rl.allowed) {
-    logger.warn("results.rate_limited", { ip: clientIp });
+    console.warn("results.rate_limited", { ip: clientIp });
     if (rl.retryAfter != null) {
       headers["Retry-After"] = String(rl.retryAfter);
     }
@@ -118,7 +117,7 @@ Deno.serve(async (request) => {
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
 
   if (!supabaseUrl || !serviceKey || !anonKey) {
-    logger.error("results.config_missing", {
+    console.error("results.config_missing", {
       session_id: sessionId,
       error: "missing_supabase_env",
     });
@@ -141,7 +140,7 @@ Deno.serve(async (request) => {
       .maybeSingle();
 
     if (error) {
-      logger.error("results.share_token_lookup_failed", {
+      console.error("results.share_token_lookup_failed", {
         session_id: sessionId,
         auth_context: authContext,
         error: error.message,
@@ -175,7 +174,7 @@ Deno.serve(async (request) => {
       .maybeSingle();
 
     if (error) {
-      logger.error("results.owner_lookup_failed", {
+      console.error("results.owner_lookup_failed", {
         session_id: sessionId,
         auth_context: "owner",
         error: error.message,
@@ -197,7 +196,7 @@ Deno.serve(async (request) => {
     authContext = "owner";
   }
 
-  logger.info("results.start", {
+  console.info("results.start", {
     session_id: sessionId,
     auth_context: authContext,
     has_share_token: Boolean(shareToken),
@@ -210,7 +209,7 @@ Deno.serve(async (request) => {
     });
 
     if (error) {
-      logger.error("results.rpc_error", {
+      console.error("results.rpc_error", {
         session_id: sessionId,
         auth_context: authContext,
         error: error.message,
@@ -250,7 +249,7 @@ Deno.serve(async (request) => {
       
       // Cache miss - need to trigger scoring
       if (result.ok === false && result.code === 'SCORING_ROWS_MISSING') {
-        logger.info("results.cache_miss_scoring_needed", {
+        console.info("results.cache_miss_scoring_needed", {
           session_id: sessionId,
           auth_context: authContext,
         });
@@ -264,7 +263,7 @@ Deno.serve(async (request) => {
     }
 
     // Fallback for any other case
-    logger.warn("results.unexpected_response", {
+    console.warn("results.unexpected_response", {
       session_id: sessionId,
       auth_context: authContext,
       data_type: typeof data,
@@ -275,7 +274,7 @@ Deno.serve(async (request) => {
       headers: { ...headers, 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    logger.error("results.rpc_exception", {
+    console.error("results.rpc_exception", {
       session_id: sessionId,
       auth_context: authContext,
       error: err instanceof Error ? err.message : String(err),
