@@ -61,7 +61,7 @@ Deno.serve(async (request) => {
   }
 
   try {
-    let body: { session_id?: string; account_id?: string; email?: string | null };
+    let body: { session_id?: string; user_id?: string; account_id?: string; email?: string | null };
     try {
       body = await request.json();
     } catch {
@@ -72,7 +72,7 @@ Deno.serve(async (request) => {
     }
 
     const sessionId = body.session_id;
-    const accountId = body.account_id;
+    const accountId = body.user_id || body.account_id; // Accept both user_id and account_id
     const email = body.email ?? null;
 
     if (!sessionId || !accountId) {
