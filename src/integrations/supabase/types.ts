@@ -670,6 +670,47 @@ export type Database = {
         }
         Relationships: []
       }
+      scoring_results: {
+        Row: {
+          computed_at: string
+          created_at: string
+          id: string
+          result_data: Json
+          results_version: string
+          session_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          computed_at?: string
+          created_at?: string
+          id?: string
+          result_data: Json
+          results_version?: string
+          session_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          computed_at?: string
+          created_at?: string
+          id?: string
+          result_data?: Json
+          results_version?: string
+          session_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scoring_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scoring_results_functions: {
         Row: {
           created_at: string | null
@@ -1006,6 +1047,15 @@ export type Database = {
           type_code: string
         }[]
       }
+      get_dashboard_results_by_email: {
+        Args: { p_email: string }
+        Returns: {
+          computed_at: string
+          result_data: Json
+          results_version: string
+          session_id: string
+        }[]
+      }
       get_live_assessments_v2: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1102,6 +1152,10 @@ export type Database = {
         }[]
       }
       get_user_assessment_attempts: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
+      get_user_assessment_scores: {
         Args: { p_user_id: string }
         Returns: Json
       }
