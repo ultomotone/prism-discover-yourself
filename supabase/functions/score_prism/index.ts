@@ -141,16 +141,46 @@ serve(async (req) => {
         .select("id, submitted_at")
         .eq("session_id", session_id)
         .maybeSingle();
+      // Prepare stateless payload for caching
+      const statelessPayload = {
+        profile: {
+          ...profile,
+          session_id,
+          results_version: RESULTS_VERSION,
+          version: RESULTS_VERSION,
+        },
+        types,
+        functions,
+        state,
+        session: sessionRow,
+        results_version: RESULTS_VERSION,
+        scoring_version: RESULTS_VERSION
+      };
+
+      // Cache the results in profiles table
       const profileRow = {
-        ...profile,
         session_id,
-        submitted_at: existing?.submitted_at || now,
-        recomputed_at: existing ? now : null,
+        type_code: profile.type_code,
+        confidence: profile.conf_calibrated,
+        payload: statelessPayload,
+        scoring_version: RESULTS_VERSION,
+        computed_at: now,
+        
+        // Compatibility fields for existing UI
         created_at: existing?.submitted_at || now,
         updated_at: now,
+        share_token: (sessionRow as any)?.share_token,
         results_version: RESULTS_VERSION,
         version: RESULTS_VERSION,
-      } as ProfileRow;
+        overlay: profile.overlay,
+        conf_calibrated: profile.conf_calibrated,
+        score_fit_calibrated: profile.score_fit_calibrated,
+        top_types: profile.top_types,
+        fit_band: profile.fit_band,
+        validity_status: profile.validity_status,
+        top_gap: profile.top_gap,
+        conf_raw: profile.conf_raw
+      };
 
       if (typeof fc?.blocks_answered === "number") {
         (profileRow as Record<string, unknown>).fc_answered_ct = fc.blocks_answered;

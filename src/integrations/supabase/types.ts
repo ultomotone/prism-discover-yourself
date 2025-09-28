@@ -565,6 +565,75 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          computed_at: string
+          conf_calibrated: number | null
+          conf_raw: number | null
+          confidence: number | null
+          created_at: string | null
+          fit_band: string | null
+          id: string | null
+          overlay: string | null
+          payload: Json
+          results_version: string | null
+          score_fit_calibrated: number | null
+          scoring_version: string
+          session_id: string
+          share_token: string | null
+          top_gap: number | null
+          top_types: Json | null
+          type_code: string | null
+          updated_at: string | null
+          validity_status: string | null
+          version: string | null
+        }
+        Insert: {
+          computed_at?: string
+          conf_calibrated?: number | null
+          conf_raw?: number | null
+          confidence?: number | null
+          created_at?: string | null
+          fit_band?: string | null
+          id?: string | null
+          overlay?: string | null
+          payload: Json
+          results_version?: string | null
+          score_fit_calibrated?: number | null
+          scoring_version: string
+          session_id: string
+          share_token?: string | null
+          top_gap?: number | null
+          top_types?: Json | null
+          type_code?: string | null
+          updated_at?: string | null
+          validity_status?: string | null
+          version?: string | null
+        }
+        Update: {
+          computed_at?: string
+          conf_calibrated?: number | null
+          conf_raw?: number | null
+          confidence?: number | null
+          created_at?: string | null
+          fit_band?: string | null
+          id?: string | null
+          overlay?: string | null
+          payload?: Json
+          results_version?: string | null
+          score_fit_calibrated?: number | null
+          scoring_version?: string
+          session_id?: string
+          share_token?: string | null
+          top_gap?: number | null
+          top_types?: Json | null
+          type_code?: string | null
+          updated_at?: string | null
+          validity_status?: string | null
+          version?: string | null
+        }
+        Relationships: []
+      }
       scoring_config: {
         Row: {
           key: string
@@ -600,6 +669,159 @@ export type Database = {
           version?: string
         }
         Relationships: []
+      }
+      scoring_results_functions: {
+        Row: {
+          created_at: string | null
+          d_index_z: number | null
+          dimension: number | null
+          func: string
+          results_version: string
+          session_id: string
+          strength_z: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          d_index_z?: number | null
+          dimension?: number | null
+          func: string
+          results_version?: string
+          session_id: string
+          strength_z?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          d_index_z?: number | null
+          dimension?: number | null
+          func?: string
+          results_version?: string
+          session_id?: string
+          strength_z?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scoring_results_functions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      scoring_results_state: {
+        Row: {
+          block_context: string
+          block_core: number | null
+          block_critic: number | null
+          block_hidden: number | null
+          block_instinct: number | null
+          created_at: string | null
+          effect_conf: number | null
+          effect_fit: number | null
+          overlay_band: string | null
+          overlay_z: number | null
+          results_version: string
+          session_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          block_context?: string
+          block_core?: number | null
+          block_critic?: number | null
+          block_hidden?: number | null
+          block_instinct?: number | null
+          created_at?: string | null
+          effect_conf?: number | null
+          effect_fit?: number | null
+          overlay_band?: string | null
+          overlay_z?: number | null
+          results_version?: string
+          session_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          block_context?: string
+          block_core?: number | null
+          block_critic?: number | null
+          block_hidden?: number | null
+          block_instinct?: number | null
+          created_at?: string | null
+          effect_conf?: number | null
+          effect_fit?: number | null
+          overlay_band?: string | null
+          overlay_z?: number | null
+          results_version?: string
+          session_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scoring_results_state_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      scoring_results_types: {
+        Row: {
+          coherent_dims: number | null
+          created_at: string | null
+          distance: number | null
+          fit: number | null
+          fit_parts: Json | null
+          rank: number | null
+          results_version: string
+          seat_coherence: number | null
+          session_id: string
+          share: number | null
+          type_code: string
+          unique_dims: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          coherent_dims?: number | null
+          created_at?: string | null
+          distance?: number | null
+          fit?: number | null
+          fit_parts?: Json | null
+          rank?: number | null
+          results_version?: string
+          seat_coherence?: number | null
+          session_id: string
+          share?: number | null
+          type_code: string
+          unique_dims?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          coherent_dims?: number | null
+          created_at?: string | null
+          distance?: number | null
+          fit?: number | null
+          fit_parts?: Json | null
+          rank?: number | null
+          results_version?: string
+          seat_coherence?: number | null
+          session_id?: string
+          share?: number | null
+          type_code?: string
+          unique_dims?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scoring_results_types_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
       type_prototypes: {
         Row: {
@@ -862,6 +1084,10 @@ export type Database = {
       get_results_url: {
         Args: { p_session: string }
         Returns: string
+      }
+      get_results_v2: {
+        Args: { session_id: string }
+        Returns: Json
       }
       get_results_version: {
         Args: Record<PropertyKey, never>

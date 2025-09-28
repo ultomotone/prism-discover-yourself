@@ -171,9 +171,9 @@ app.post("/get-results-by-session", async (c) => {
   });
 
   try {
+    // Call the correct RPC function with the right parameter
     const { data, error } = await dataClient.rpc("get_results_v2", {
-      p_session_id: sessionId,
-      p_share_token: shareToken,
+      session_id: sessionId,
     });
 
     if (error) {
@@ -185,74 +185,54 @@ app.post("/get-results-by-session", async (c) => {
       return c.json({ ok: false, code: "SCORING_ROWS_MISSING" }, 200, headers);
     }
 
-    const result = Array.isArray(data) && data.length > 0 ? (data[0] as Record<string, unknown>) : null;
+    // Handle the response format from our updated RPC
+    if (data && typeof data === 'object') {
+      const result = data as Record<string, unknown>;
+      
+      // Check if this is a cached result
+      if (result.ok === true && result.source === 'cache') {
+        logger.info("results.cache_hit", {
+          session_id: sessionId,
+          auth_context: authContext,
+        });
 
-    const profile = result?.profile as Record<string, unknown> | null | undefined;
-    const types = Array.isArray(result?.types) ? (result!.types as unknown[]) : [];
-    const functions = Array.isArray(result?.functions) ? (result!.functions as unknown[]) : [];
-    const state = Array.isArray(result?.state) ? (result!.state as unknown[]) : [];
+        await sendConversions({
+          name: "results_viewed",
+          sessionId,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+          ip: clientIp,
+        });
 
-    const isComplete =
-      profile &&
-      Array.isArray(types) && types.length === 16 &&
-      Array.isArray(functions) && functions.length === 8 &&
-      Array.isArray(state) && state.length > 0;
-
-    if (isComplete && result) {
-      const resultsVersionRaw = (result as any).results_version;
-      const resultsVersion =
-        typeof resultsVersionRaw === "string" && resultsVersionRaw.trim()
-          ? resultsVersionRaw.trim()
-          : "v2";
-      const scoringVersionRaw =
-        typeof (result as any).scoring_version === "string"
-          ? (result as any).scoring_version
-          : typeof (profile?.results_version) === "string"
-            ? (profile!.results_version as string)
-            : resultsVersion;
-      const scoringVersion = scoringVersionRaw.trim();
-      const sessionPayload = (result as any).session ?? null;
-      const resultIdRaw =
-        typeof (result as any).result_id === "string" && (result as any).result_id.trim().length > 0
-          ? (result as any).result_id.trim()
-          : typeof (sessionPayload as Record<string, unknown> | null)?.id === "string"
-            ? ((sessionPayload as Record<string, unknown>).id as string)
-            : sessionId;
-
-      logger.info("results.complete", {
-        session_id: sessionId,
-        auth_context: authContext,
-        result_id: resultIdRaw,
-        scoring_version: scoringVersion,
-      });
-
-      await sendConversions({
-        name: "results_viewed",
-        sessionId,
-        userAgent: request.headers.get("user-agent") ?? undefined,
-        ip: clientIp,
-      });
-
-      return c.json({
-        ok: true,
-        results_version: resultsVersion,
-        result_id: resultIdRaw,
-        scoring_version: scoringVersion,
-        session: sessionPayload,
-        profile,
-        types,
-        functions,
-        state,
-      }, 200, headers);
+        return c.json({
+          ok: true,
+          results_version: result.results_version || "v1.2.1",
+          result_id: result.result_id || sessionId,
+          scoring_version: result.results_version || "v1.2.1",
+          session: result.session,
+          profile: result.profile,
+          types: result.types,
+          functions: result.functions,
+          state: result.state,
+        }, 200, headers);
+      }
+      
+      // Cache miss - need to trigger scoring
+      if (result.ok === false && result.code === 'SCORING_ROWS_MISSING') {
+        logger.info("results.cache_miss_scoring_needed", {
+          session_id: sessionId,
+          auth_context: authContext,
+        });
+        
+        // Return the appropriate response to trigger scoring
+        return c.json({ ok: false, code: "SCORING_ROWS_MISSING" }, 200, headers);
+      }
     }
 
-    logger.warn("results.missing", {
+    // Fallback for any other case
+    logger.warn("results.unexpected_response", {
       session_id: sessionId,
       auth_context: authContext,
-      reason: result ? "incomplete_payload" : "no_rows",
-      types_length: Array.isArray(types) ? types.length : null,
-      functions_length: Array.isArray(functions) ? functions.length : null,
-      state_length: Array.isArray(state) ? state.length : null,
+      data_type: typeof data,
     });
 
     return c.json({ ok: false, code: "SCORING_ROWS_MISSING" }, 200, headers);
