@@ -492,6 +492,36 @@ export type Database = {
           },
         ]
       }
+      fc_scores: {
+        Row: {
+          blocks_answered: number | null
+          created_at: string | null
+          fc_kind: string
+          scores_json: Json
+          session_id: string
+          updated_at: string | null
+          version: string
+        }
+        Insert: {
+          blocks_answered?: number | null
+          created_at?: string | null
+          fc_kind?: string
+          scores_json?: Json
+          session_id: string
+          updated_at?: string | null
+          version?: string
+        }
+        Update: {
+          blocks_answered?: number | null
+          created_at?: string | null
+          fc_kind?: string
+          scores_json?: Json
+          session_id?: string
+          updated_at?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
       fn_logs: {
         Row: {
           at: string | null

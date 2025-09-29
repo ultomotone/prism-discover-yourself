@@ -9,24 +9,19 @@ export async function persistNormalizedAnswers(
 ) {
   if (!rows.length) return;
   
-  // Upsert per response
-  const updates = rows.map(r => ({
-    session_id,
-    question_id: r.question_id,
-    normalized_value: r.normalized_value,
-    reverse_applied: r.reverse_applied,
-    normalize_version,
-    normalized_at: new Date().toISOString()
-  }));
-  
-  // Batch by chunks to avoid payload limits
-  const CHUNK = 500;
-  for (let i = 0; i < updates.length; i += CHUNK) {
+  // Update only the normalization fields, don't touch other required fields
+  for (const row of rows) {
     const { error } = await db
       .from("assessment_responses")
-      .upsert(updates.slice(i, i + CHUNK), {
-        onConflict: "session_id,question_id"
-      });
+      .update({
+        normalized_value: row.normalized_value,
+        reverse_applied: row.reverse_applied,
+        normalize_version,
+        normalized_at: new Date().toISOString()
+      })
+      .eq("session_id", session_id)
+      .eq("question_id", row.question_id);
+      
     if (error) throw error;
   }
 }
