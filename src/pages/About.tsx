@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Brain, BarChart3, Zap, Shield, ArrowRight, CheckCircle, HelpCircle, ThumbsUp } from "lucide-react";
+import { Brain, BarChart3, Zap, Shield, ArrowRight, CheckCircle, HelpCircle, ThumbsUp, Users, Heart } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTypingLabLikes } from "@/features/typing-lab/hooks/useTypingLabLikes";
@@ -121,21 +121,37 @@ const About = () => {
           {/* PRISM Overview - Modern Visual */}
           <Card className="mb-16 prism-shadow-card">
             <CardContent className="p-8">
-              <h2 className="prism-heading-md text-primary mb-6 text-center">What PRISM Dynamics Maps</h2>
+              <h2 className="prism-heading-md text-primary mb-6 text-center">What PRISM Dynamics™ Maps</h2>
               <p className="prism-body text-muted-foreground text-center max-w-3xl mx-auto mb-8">
-                PRISM Dynamics shows what drives your choices, what changes when life turns up the pressure, and how to use that knowledge to communicate better, decide more wisely, and grow with intention.
+                PRISM Dynamics™ maps how you process information—through Information Elements, Core Alignments, 
+                Dimensionality, Block Dynamics, State Overlay, and Relationship Fit—to predict your best-fit type.
               </p>
               
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <Card className="prism-hover-lift border-2 border-secondary/20">
                   <CardContent className="p-6 text-center">
                     <div className="w-12 h-12 prism-gradient-secondary rounded-full flex items-center justify-center mx-auto mb-4">
                       <Brain className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="font-semibold text-primary mb-2">Information Signals</h3>
+                    <h3 className="font-semibold text-primary mb-2">Information Elements</h3>
                     <p className="text-sm text-muted-foreground">The 8 mental "languages" your brain uses to process the world</p>
                     <Button variant="ghost" size="sm" asChild className="mt-2">
                       <a href="/signals" className="flex items-center gap-1">
+                        Explore <ArrowRight className="h-3 w-3" />
+                      </a>
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="prism-hover-lift border-2 border-primary/20">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-12 h-12 prism-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Users className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="font-semibold text-primary mb-2">Core Alignments</h3>
+                    <p className="text-sm text-muted-foreground">How your cognitive functions naturally combine to form your type</p>
+                    <Button variant="ghost" size="sm" asChild className="mt-2">
+                      <a href="/disambiguation" className="flex items-center gap-1">
                         Explore <ArrowRight className="h-3 w-3" />
                       </a>
                     </Button>
@@ -177,10 +193,25 @@ const About = () => {
                     <div className="w-12 h-12 prism-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
                       <Shield className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="font-semibold text-primary mb-2">State Overlay (±)</h3>
+                    <h3 className="font-semibold text-primary mb-2">State Overlay</h3>
                     <p className="text-sm text-muted-foreground">A reactivity lens that explains day-to-day variations</p>
                     <Button variant="ghost" size="sm" asChild className="mt-2">
                       <a href="/state-overlay" className="flex items-center gap-1">
+                        Explore <ArrowRight className="h-3 w-3" />
+                      </a>
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="prism-hover-lift border-2 border-secondary/20">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-12 h-12 prism-gradient-secondary rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Heart className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="font-semibold text-primary mb-2">Relationship Fit</h3>
+                    <p className="text-sm text-muted-foreground">Understand compatibility dynamics and relational exchange patterns</p>
+                    <Button variant="ghost" size="sm" asChild className="mt-2">
+                      <a href="/prism-relational-fit" className="flex items-center gap-1">
                         Explore <ArrowRight className="h-3 w-3" />
                       </a>
                     </Button>
