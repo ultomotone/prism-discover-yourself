@@ -42,19 +42,48 @@ serve(async (req) => {
     const ipHashHex = Array.from(new Uint8Array(ipHash)).map(b => b.toString(16).padStart(2, '0')).join('');
     const uaHashHex = Array.from(new Uint8Array(uaHash)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-    // If email provided, check for existing sessions
-    if (email && !force_new) {
-      const { data: existingSession, error: existingError } = await supabase
-        .from('assessment_sessions')
-        .select('id, status, completed_questions, total_questions, created_at')
-        .eq('email', email)
-        .eq('status', 'in_progress')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+    // Check for existing sessions by user_id (authenticated users) or email
+    if (!force_new) {
+      let existingSession = null;
+      
+      // First check by user_id if authenticated
+      if (user_id) {
+        const { data } = await supabase
+          .from('assessment_sessions')
+          .select('id, status, completed_questions, total_questions, created_at, email')
+          .eq('user_id', user_id)
+          .eq('status', 'in_progress')
+          .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        existingSession = data;
+      }
+      
+      // If no session found by user_id, check by email
+      if (!existingSession && email) {
+        const { data } = await supabase
+          .from('assessment_sessions')
+          .select('id, status, completed_questions, total_questions, created_at')
+          .eq('email', email)
+          .eq('status', 'in_progress')
+          .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+          
+        existingSession = data;
+      }
 
       if (existingSession) {
-        console.log('Found existing session for email:', email);
+        console.log('Found existing session:', {
+          session_id: existingSession.id,
+          found_by: user_id ? 'user_id' : 'email',
+          user_id,
+          email: existingSession.email || email
+        });
+        
         return new Response(JSON.stringify({
           success: true,
           session_id: existingSession.id,
@@ -69,13 +98,21 @@ serve(async (req) => {
       }
     }
 
-    // If force_new and email exists, mark old sessions as abandoned
-    if (email && force_new) {
-      await supabase
-        .from('assessment_sessions')
-        .update({ status: 'abandoned' })
-        .eq('email', email)
-        .eq('status', 'in_progress');
+    // If force_new, mark old sessions as abandoned
+    if (force_new) {
+      if (user_id) {
+        await supabase
+          .from('assessment_sessions')
+          .update({ status: 'abandoned' })
+          .eq('user_id', user_id)
+          .eq('status', 'in_progress');
+      } else if (email) {
+        await supabase
+          .from('assessment_sessions')
+          .update({ status: 'abandoned' })
+          .eq('email', email)
+          .eq('status', 'in_progress');
+      }
     }
 
     // Check for recent completion to avoid spam
