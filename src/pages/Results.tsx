@@ -9,6 +9,7 @@ import React, {
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { ResultsV2 } from "@/components/assessment/ResultsV2";
+import { SimpleResults } from "@/components/assessment/SimpleResults";
 import { PaywallGuard } from "@/components/PaywallGuard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -299,16 +300,54 @@ export default function Results({ components }: ResultsProps = {}) {
   }
 
   if (err) {
+    // Check if it's a scoring issue and show simple results as fallback
+    if (err.includes("scoring_needed") || err.includes("SCORING_ROWS_MISSING") || scoringPending) {
+      return (
+        <div className="min-h-screen bg-background">
+          <div className="max-w-4xl mx-auto py-8 px-4">
+            {/* Show processing message */}
+            <Card className="mb-6 bg-blue-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                  <div>
+                    <p className="font-medium text-blue-800">Results Processing</p>
+                    <p className="text-sm text-blue-600">
+                      Your full assessment results are being computed. Showing basic results below...
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Show simple results as fallback */}
+            <SimpleResults sessionId={sessionId} />
+            
+            {/* Action buttons */}
+            <div className="mt-6 flex flex-col sm:flex-row gap-2 justify-center">
+              <Button onClick={() => window.location.reload()}>
+                Check for Full Results
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => triggerScoring(sessionId)}
+                disabled={!sessionId}
+              >
+                Refresh Scoring
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // For other errors, show the original error UI
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardContent className="p-6 space-y-4 text-center">
             <h2 className="text-lg font-semibold">Processing Your Results</h2>
-            <p className="text-muted-foreground">
-              {err.includes("scoring_needed") || err.includes("SCORING_ROWS_MISSING") || scoringPending
-                ? "Your assessment results are being computed. This usually takes 10-30 seconds..."
-                : err}
-            </p>
+            <p className="text-muted-foreground">{err}</p>
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
               <Button onClick={() => window.location.reload()}>
                 Refresh page
