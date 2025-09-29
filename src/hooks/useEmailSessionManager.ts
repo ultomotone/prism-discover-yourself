@@ -107,13 +107,16 @@ export function useEmailSessionManager() {
         } satisfies StartAssessmentSessionResult;
       }
 
-      console.log('Calling supabase.rpc with start_assessment_with_cleanup...');
-      const { data, error } = await supabase.rpc('start_assessment_with_cleanup', {
-        p_email: email,
-        p_user_id: userId
+      console.log('Calling start_assessment edge function...');
+      const { data, error } = await supabase.functions.invoke('start_assessment', {
+        body: {
+          email: email,
+          user_id: userId,
+          force_new: forceNew
+        }
       });
 
-      console.log('Database function response:', { data, error });
+      console.log('Edge function response:', { data, error });
 
       if (error) {
         console.error('Error starting assessment session:', error);
@@ -126,12 +129,14 @@ export function useEmailSessionManager() {
       }
 
       const payload = data as {
+        success?: boolean;
         session_id?: string;
-        share_token?: string; 
-        status?: string;
+        share_token?: string;
+        existing_session?: boolean;
+        recent_completion?: any;
       } | null;
 
-      if (!payload || payload.status !== 'success') {
+      if (!payload || !payload.success) {
         console.error('Assessment session failed:', payload);
         toast({
           title: "Session Error",
@@ -144,8 +149,9 @@ export function useEmailSessionManager() {
       const session: SessionData = {
         session_id: payload.session_id!,
         share_token: payload.share_token,
-        existing_session: false,
+        existing_session: payload.existing_session || false,
         attempt_no: allowance.attemptNo,
+        recent_completion: payload.recent_completion,
       };
 
       console.log('Assessment session started successfully:', session);
