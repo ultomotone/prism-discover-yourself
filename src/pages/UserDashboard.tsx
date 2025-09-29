@@ -63,6 +63,7 @@ const UserDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [attempts, setAttempts] = useState<AssessmentAttempt[]>([]);
   const [retakeBlock, setRetakeBlock] = useState<RetakeBlock | null>(null);
+  const [isMigrating, setIsMigrating] = useState(false);
 
   // Real-time scoring hook
   const {
@@ -148,6 +149,32 @@ const UserDashboard = () => {
     }
   };
 
+  // Function to migrate all sessions to current scoring
+  const handleMigration = async () => {
+    setIsMigrating(true);
+    try {
+      console.log('🚀 Starting migration to current scoring...');
+      const { data, error } = await supabase.functions.invoke('migrate-all-scoring', {
+        body: {}
+      });
+
+      if (error) {
+        console.error('❌ Migration failed:', error);
+        alert(`Migration failed: ${error.message}`);
+      } else {
+        console.log('✅ Migration completed successfully:', data);
+        alert(`Migration completed! ${data.summary?.successful_migrations || 0} sessions migrated to current scoring.`);
+        // Refresh the dashboard data
+        fetchUserData();
+      }
+    } catch (err) {
+      console.error('💥 Migration error:', err);
+      alert('Migration failed - check console for details');
+    } finally {
+      setIsMigrating(false);
+    }
+  };
+
   const handleRetake = async () => {
     if (!user) {
       return;
@@ -194,9 +221,23 @@ const UserDashboard = () => {
                   </p>
                 </div>
                 <div className="flex gap-2">
+                  <Button
+                    onClick={handleMigration}
+                    disabled={isMigrating}
+                    variant="outline"
+                    size="sm"
+                    className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  >
+                    {isMigrating ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Zap className="h-4 w-4 mr-2" />
+                    )}
+                    {isMigrating ? 'Migrating...' : 'Migrate Scoring'}
+                  </Button>
                   <DirectDeleteButton />
                   <CleanupSessionsButton />
-                  <Button 
+                  <Button
                     onClick={signOut}
                     variant="outline"
                     className="bg-white/10 border-white/20 text-white hover:bg-white/20"
