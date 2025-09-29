@@ -99,7 +99,7 @@ const UserDashboard = () => {
 
       // Fetch user's regular assessment sessions with profiles using secure RPC
       const { data: sessionsResult, error: sessionsError } = await supabase
-        .rpc('get_user_sessions_with_profiles', { p_user_id: user.id });
+        .rpc('get_user_sessions_with_scoring', { p_user_id: user.id });
 
       if (sessionsError) {
         console.error('Error fetching user sessions:', sessionsError);
