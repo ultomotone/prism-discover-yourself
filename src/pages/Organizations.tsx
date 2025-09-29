@@ -95,16 +95,16 @@ const Organizations = () => {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">Evidence‑Based Sales Enablement for RevOps</h2>
             <p className="text-lg text-muted-foreground max-w-4xl mx-auto">
-              <strong>PRISM</strong> is an academic‑grade behavioral diagnostics system packaged for revenue operations. 
-              It translates personality and interaction signals into enablement assets your SDR/BDR teams can use 
-              immediately—cadences, talk tracks, channel selection, and rep‑to‑buyer matching—so pipeline moves 
-              faster with higher win consistency.
+              <strong>PRISM</strong> is an academic‑grade behavioral diagnostics system for <strong>organization‑wide performance</strong>—from SDR/BDR and <strong>AE</strong> to <strong>Sales Leadership, Marketing, CS, Product, and HR</strong>. 
+              It translates personality and interaction signals into enablement assets teams can use 
+              immediately—cadences, talk tracks, <strong>discovery maps, demo narratives, handoff notes</strong>, and manager prompts—so pipeline moves 
+              faster with higher win and retention.
             </p>
           </div>
           
           <div className="bg-primary/10 border-l-4 border-primary p-6 rounded-r-lg">
             <p className="text-lg font-medium">
-              Front‑of‑house: research‑driven. Back‑of‑house: revenue outcomes.
+              Front‑of‑house: research‑driven. Back‑of‑house: revenue and alignment outcomes across GTM.
             </p>
           </div>
         </div>
@@ -151,36 +151,52 @@ const Organizations = () => {
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-3xl font-bold mb-12 text-center">Outcomes Snapshot</h2>
           
-          <div className="grid md:grid-cols-4 gap-6">
-            <Card className="text-center p-6">
-              <TrendingUp className="h-12 w-12 text-green-500 mx-auto mb-4" />
-              <h3 className="font-semibold mb-2">Ramp Time ↓</h3>
-              <p className="text-sm text-muted-foreground">
-                Via matched talk tracks and channels
+          <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <Card className="text-center p-4">
+              <TrendingUp className="h-8 w-8 text-green-500 mx-auto mb-2" />
+              <h3 className="font-semibold mb-1 text-sm">Ramp Time ↓</h3>
+              <p className="text-xs text-muted-foreground">
+                Via matched talk tracks and channels for SDR/BDR <strong>and AE</strong>
               </p>
             </Card>
             
-            <Card className="text-center p-6">
-              <Target className="h-12 w-12 text-blue-500 mx-auto mb-4" />
-              <h3 className="font-semibold mb-2">Stage Conversion ↑</h3>
-              <p className="text-sm text-muted-foreground">
-                Through archetype‑specific discovery & objections
+            <Card className="text-center p-4">
+              <Target className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+              <h3 className="font-semibold mb-1 text-sm">Stage Conversion ↑</h3>
+              <p className="text-xs text-muted-foreground">
+                Through archetype‑specific discovery & objections (SDR→AE qualification integrity)
               </p>
             </Card>
             
-            <Card className="text-center p-6">
-              <Clock className="h-12 w-12 text-purple-500 mx-auto mb-4" />
-              <h3 className="font-semibold mb-2">Cycle Time ↓</h3>
-              <p className="text-sm text-muted-foreground">
-                By channel selection keyed to buyer preference
+            <Card className="text-center p-4">
+              <Clock className="h-8 w-8 text-purple-500 mx-auto mb-2" />
+              <h3 className="font-semibold mb-1 text-sm">Cycle Time ↓</h3>
+              <p className="text-xs text-muted-foreground">
+                By channel and <strong>demo style</strong> keyed to buyer preference
               </p>
             </Card>
             
-            <Card className="text-center p-6">
-              <Users className="h-12 w-12 text-orange-500 mx-auto mb-4" />
-              <h3 className="font-semibold mb-2">Retention & Expansion ↑</h3>
-              <p className="text-sm text-muted-foreground">
-                With motivators & risk flags passed to CS
+            <Card className="text-center p-4">
+              <BarChart3 className="h-8 w-8 text-orange-500 mx-auto mb-2" />
+              <h3 className="font-semibold mb-1 text-sm">Win Rate ↑</h3>
+              <p className="text-xs text-muted-foreground">
+                From AE discovery maps and objection matrices aligned to profiles
+              </p>
+            </Card>
+            
+            <Card className="text-center p-4">
+              <Users className="h-8 w-8 text-pink-500 mx-auto mb-2" />
+              <h3 className="font-semibold mb-1 text-sm">Retention & Expansion ↑</h3>
+              <p className="text-xs text-muted-foreground">
+                With CS receiving motivators/risk flags and success plans
+              </p>
+            </Card>
+            
+            <Card className="text-center p-4">
+              <MessageSquare className="h-8 w-8 text-cyan-500 mx-auto mb-2" />
+              <h3 className="font-semibold mb-1 text-sm">MQL→SQL Consistency ↑</h3>
+              <p className="text-xs text-muted-foreground">
+                Via Marketing message labs mapped to buyer cognition
               </p>
             </Card>
           </div>
@@ -244,7 +260,7 @@ const Organizations = () => {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">The People System Architect™ (PSA)</h2>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              <strong>The role that installs and maintains PRISM across your revenue stack.</strong>
+              <strong>The role that installs and maintains PRISM across your revenue stack and departments.</strong>
             </p>
           </div>
           
@@ -254,19 +270,19 @@ const Organizations = () => {
               <ul className="space-y-3">
                 <li className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>Designs buyer‑aligned motion (SDR/BDR → AE → CS)</span>
+                  <span>Designs buyer‑aligned motion (<strong>SDR/BDR → AE → CS</strong>) and cross‑functional interfaces (<strong>Marketing ↔ Sales ↔ Product ↔ HR</strong>)</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>Standardizes enablement assets by buyer archetype</span>
+                  <span>Standardizes enablement assets by buyer archetype: cadences, discovery maps, <strong>demo narratives</strong>, success plans</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>Owns instrumentation: stage criteria & conversion gates</span>
+                  <span>Owns instrumentation: stage criteria, conversion gates, <strong>handoff quality</strong>, enablement adoption</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>Partners with RevOps to automate routing, scoring, reporting</span>
+                  <span>Partners with RevOps to automate routing, scoring, reporting; partners with HR for hiring calibration</span>
                 </li>
               </ul>
             </div>
@@ -285,59 +301,96 @@ const Organizations = () => {
         </div>
       </section>
 
-      {/* What SDR/BDR Teams Actually Get */}
+      {/* What GTM Teams Actually Get */}
       <section className="py-16 bg-muted/30">
         <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl font-bold mb-12 text-center">What SDR/BDR Teams Actually Get</h2>
+          <h2 className="text-3xl font-bold mb-12 text-center">What GTM Teams Actually Get (SDR/BDR, AE, Managers, CS, Marketing)</h2>
           
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="space-y-6">
-              <Card className="p-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <Mail className="h-6 w-6 text-primary" />
-                  <h3 className="text-lg font-semibold">Cadence Kits per archetype</h3>
-                </div>
-                <p className="text-muted-foreground">Email, phone, social, video sequences tailored to buyer personalities</p>
-              </Card>
-              
-              <Card className="p-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <MessageSquare className="h-6 w-6 text-primary" />
-                  <h3 className="text-lg font-semibold">Talk‑Track Library</h3>
-                </div>
-                <p className="text-muted-foreground">Openers, discovery prompts, objection angles, CTAs by archetype</p>
-              </Card>
-              
-              <Card className="p-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <Users className="h-6 w-6 text-primary" />
-                  <h3 className="text-lg font-semibold">Persona‑to‑Rep Matching</h3>
-                </div>
-                <p className="text-muted-foreground">Optional routing + coaching based on cognitive compatibility</p>
-              </Card>
-              
-              <Card className="p-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <BarChart3 className="h-6 w-6 text-primary" />
-                  <h3 className="text-lg font-semibold">Manager Console</h3>
-                </div>
-                <p className="text-muted-foreground">Scoreboard + call‑coaching prompts by archetype</p>
-              </Card>
-            </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <Mail className="h-6 w-6 text-primary" />
+                <h3 className="text-lg font-semibold">Cadence Kits per archetype</h3>
+              </div>
+              <p className="text-muted-foreground">Email, phone, social, video sequences for SDR/BDR</p>
+            </Card>
             
-            <div className="flex flex-col justify-center">
-              <Card className="p-8 text-center bg-primary/5">
-                <h3 className="text-xl font-semibold mb-4">See It In Action</h3>
-                <p className="text-muted-foreground mb-6">
-                  View a complete cadence kit for "The Analyst" archetype - including email sequences, 
-                  call scripts, and objection handling.
-                </p>
-                <Button onClick={() => setCadenceModalOpen(true)}>
-                  <Play className="mr-2 h-4 w-4" />
-                  See a Cadence Kit
-                </Button>
-              </Card>
-            </div>
+            <Card className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <Search className="h-6 w-6 text-primary" />
+                <h3 className="text-lg font-semibold">AE Discovery Maps</h3>
+              </div>
+              <p className="text-muted-foreground">Problem frames, proof sequences, trap questions by archetype</p>
+            </Card>
+            
+            <Card className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <Play className="h-6 w-6 text-primary" />
+                <h3 className="text-lg font-semibold">Demo by Persona guides</h3>
+              </div>
+              <p className="text-muted-foreground">Narrative flow, emphasis, risk cues for AEs/SEs</p>
+            </Card>
+            
+            <Card className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <MessageSquare className="h-6 w-6 text-primary" />
+                <h3 className="text-lg font-semibold">Talk‑Track Library</h3>
+              </div>
+              <p className="text-muted-foreground">Openers, discovery prompts, objection angles, CTAs</p>
+            </Card>
+            
+            <Card className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <Users className="h-6 w-6 text-primary" />
+                <h3 className="text-lg font-semibold">Persona‑to‑Rep Matching</h3>
+              </div>
+              <p className="text-muted-foreground">Optional routing + coaching</p>
+            </Card>
+            
+            <Card className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <ArrowRight className="h-6 w-6 text-primary" />
+                <h3 className="text-lg font-semibold">Handoff Playbook</h3>
+              </div>
+              <p className="text-muted-foreground">SDR → AE → CS notes: motivators, objections, next‑best‑action</p>
+            </Card>
+            
+            <Card className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <TrendingUp className="h-6 w-6 text-primary" />
+                <h3 className="text-lg font-semibold">CS Renewal/Expansion Prompts</h3>
+              </div>
+              <p className="text-muted-foreground">Value recap, risk mitigation, expansion triggers</p>
+            </Card>
+            
+            <Card className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <Target className="h-6 w-6 text-primary" />
+                <h3 className="text-lg font-semibold">Marketing Message Lab templates</h3>
+              </div>
+              <p className="text-muted-foreground">Headline, proof, CTA variants by archetype</p>
+            </Card>
+            
+            <Card className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <BarChart3 className="h-6 w-6 text-primary" />
+                <h3 className="text-lg font-semibold">Manager Console</h3>
+              </div>
+              <p className="text-muted-foreground">Scoreboard + call‑coaching prompts keyed to archetype patterns</p>
+            </Card>
+          </div>
+          
+          <div className="flex flex-wrap justify-center gap-4 mt-12">
+            <Button onClick={() => setCadenceModalOpen(true)}>
+              <Play className="mr-2 h-4 w-4" />
+              See a Cadence Kit
+            </Button>
+            <Button variant="outline" onClick={() => alert('AE Discovery Map preview coming soon')}>
+              Preview an AE Discovery Map
+            </Button>
+            <Button variant="outline" onClick={() => alert('CS Success Plan preview coming soon')}>
+              View a CS Success Plan
+            </Button>
           </div>
         </div>
       </section>
@@ -624,9 +677,9 @@ const Organizations = () => {
 
             {/* Track C - Revenue Enablement */}
             <Card className="p-6">
-              <h3 className="text-xl font-semibold mb-4">Track C — Revenue Enablement</h3>
+              <h3 className="text-xl font-semibold mb-4">Track C — Revenue Enablement (SDR/BDR, <strong>AE</strong>, Managers)</h3>
               <p className="text-sm text-muted-foreground mb-6">
-                Designed to map cognition to commercial conversations and pipeline creation.
+                Designed to map cognition to commercial conversations across prospecting <strong>and</strong> closing.
               </p>
               
               <div className="space-y-4">
@@ -641,6 +694,34 @@ const Organizations = () => {
                     onClick={() => setCadenceModalOpen(true)}
                   >
                     See a Cadence Kit
+                  </Button>
+                </div>
+                
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-2">AE Discovery Deep Dive</h4>
+                  <p className="text-sm text-muted-foreground mb-2">Build discovery maps, trap questions, and proof sequences by persona.</p>
+                  <Badge variant="outline" className="mb-2">60m</Badge>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => alert('Discovery Map preview coming soon')}
+                  >
+                    Preview Discovery Map
+                  </Button>
+                </div>
+
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-2">Demo by Persona Workshop</h4>
+                  <p className="text-sm text-muted-foreground mb-2">Design demo narrative and emphasis by buyer profile.</p>
+                  <Badge variant="outline" className="mb-2">90m</Badge>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => alert('Demo Narrative preview coming soon')}
+                  >
+                    See Demo Narrative
                   </Button>
                 </div>
                 

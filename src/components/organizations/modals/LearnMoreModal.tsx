@@ -42,6 +42,38 @@ const modalContent = {
     deliverables: ["Weekly sprint sessions", "Performance KPIs tracking", "Retrospective playbook"],
     nextStep: "Transition to Operationalize phase",
     description: "Intensive program to rapidly improve team effectiveness with measurable outcomes and sustainable practices."
+  },
+  "ae-discovery": {
+    title: "AE Discovery Deep Dive",
+    duration: "60m",
+    outcome: "Consistent discovery that advances deals faster",
+    deliverables: ["Persona discovery map", "Trap questions by archetype", "Proof sequence templates"],
+    nextStep: "Demo by Persona Workshop",
+    description: "Build discovery maps, trap questions, and proof sequences tailored to different buyer archetypes for more effective AE conversations."
+  },
+  "demo-persona": {
+    title: "Demo by Persona Workshop",
+    duration: "90m",
+    outcome: "Higher demo→proposal conversion with tailored narrative",
+    deliverables: ["Demo storyboard by archetype", "Emphasis matrix", "Follow‑up CTA set"],
+    nextStep: "Quarterly Rollout",
+    description: "Design demo narrative and emphasis patterns tailored to different buyer profiles for more engaging and effective demonstrations."
+  },
+  "marketing-message": {
+    title: "Marketing Message Lab",
+    duration: "75m",
+    outcome: "MQL→SQL consistency and higher reply rates",
+    deliverables: ["Persona headlines", "Proof blocks by archetype", "CTA variants", "Content brief templates"],
+    nextStep: "Connect to Sales Persona Play and Org Rollout",
+    description: "Create messaging frameworks that align marketing content with buyer archetypes for better lead quality and sales handoffs."
+  },
+  "cs-renewal": {
+    title: "CS Renewal/Expansion Play",
+    duration: "60m",
+    outcome: "Improved renewals and expansion via proactive cues",
+    deliverables: ["Success plan template", "Risk/trigger matrix", "Email scripts by archetype"],
+    nextStep: "Feed learnings back to Marketing Message Lab",
+    description: "Develop customer success strategies tailored to different personality types for better retention and expansion outcomes."
   }
 };
 
