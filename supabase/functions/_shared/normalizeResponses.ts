@@ -12,23 +12,27 @@ export async function getNormalizedAnswers(
   db: SupabaseClient<any>,
   session_id: string
 ): Promise<NormalizedAnswer[]> {
-  // Pull raw answers + scoring key in one go
-  const { data, error } = await db
-    .from("assessment_responses")
-    .select(`
-      question_id, 
-      answer_value, 
-      answer_numeric,
-      session_id,
-      assessment_scoring_key!inner(reverse_scored, scale_type)
-    `)
-    .eq("session_id", session_id);
+  // Fetch responses and scoring keys separately, then join in code
+  const [responsesRes, scoringKeysRes] = await Promise.all([
+    db.from("assessment_responses")
+      .select("question_id, answer_value, answer_numeric, session_id")
+      .eq("session_id", session_id),
+    db.from("assessment_scoring_key")
+      .select("question_id, reverse_scored, scale_type")
+  ]);
 
-  if (error) throw error;
+  if (responsesRes.error) throw responsesRes.error;
+  if (scoringKeysRes.error) throw scoringKeysRes.error;
 
-  return (data ?? []).map(row => {
+  // Create a lookup map for scoring keys
+  const scoringKeyMap = (scoringKeysRes.data ?? []).reduce((acc, key) => {
+    acc[key.question_id] = key;
+    return acc;
+  }, {} as Record<number, any>);
+
+  return (responsesRes.data ?? []).map(row => {
     const raw = row.answer_numeric ?? Number(row.answer_value);
-    const key = Array.isArray(row.assessment_scoring_key) ? row.assessment_scoring_key[0] : row.assessment_scoring_key;
+    const key = scoringKeyMap[row.question_id];
     const scale = key?.scale_type ?? "LIKERT_1_5";
     const reverse = !!key?.reverse_scored;
 
