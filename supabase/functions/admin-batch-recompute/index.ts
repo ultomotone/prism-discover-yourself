@@ -81,7 +81,7 @@ serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SERVICE_ROLE_KEY}`
+        'Authorization': SERVICE_ROLE_KEY
       },
       body: JSON.stringify({ limit, since, dry_run })
     });

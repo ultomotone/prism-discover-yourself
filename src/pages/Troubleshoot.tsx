@@ -266,7 +266,15 @@ const Troubleshoot: React.FC = () => {
           {session.completed_at && (
             <div>Completed: {new Date(session.completed_at).toLocaleDateString()}</div>
           )}
-          <div>Questions: {session.completed_questions || 0}/{session.total_questions || 'N/A'}</div>
+          <div>
+            Questions: {session.completed_questions || 0}/{session.total_questions || 'N/A'}
+            {session.completed_questions === 0 && session.status === 'in_progress' && (
+              <span className="text-red-600 ml-2">⚠️ No responses</span>
+            )}
+            {session.completed_questions === 0 && session.status === 'completed' && (
+              <span className="text-yellow-600 ml-2">⚠️ Completed but no data</span>
+            )}
+          </div>
           {session.confidence && (
             <div>Confidence: {session.confidence.toFixed(4)}</div>
           )}
