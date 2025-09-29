@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trigger Recompute</title>
+</head>
+<body>
+    <h1>Triggering Session Recompute</h1>
+    <div id="status">Starting...</div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        async function triggerRecompute() {
+            const statusDiv = document.getElementById('status');
+            
+            try {
+                statusDiv.innerHTML = 'Calling recompute function...';
+                
+                const { createClient } = supabase;
+                const client = createClient(
+                    'https://de95f929-2a16-4b73-9441-1460cd22bde1.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlOTVmOTI5LTJhMTYtNGI3My05NDQxLTE0NjBjZDIyYmRlMSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzI3NTg0Mzc4LCJleHAiOjIwNDMxNjAzNzh9.tJ2nBqUTpiHNxcCRUINMXheXvr5RkjbFR7ld29Vo82E'
+                );
+                
+                const { data, error } = await client.functions.invoke('force-recompute-session', {
+                    body: { 
+                        session_id: '11652dac-e085-4dd6-85f6-b9a660932345',
+                        dry_run: false 
+                    }
+                });
+                
+                if (error) {
+                    statusDiv.innerHTML = `Error: ${JSON.stringify(error)}`;
+                    console.error('Recompute error:', error);
+                } else {
+                    statusDiv.innerHTML = `Success: ${JSON.stringify(data, null, 2)}`;
+                    console.log('Recompute success:', data);
+                    
+                    // Reload the results page after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = '/#/results/11652dac-e085-4dd6-85f6-b9a660932345';
+                    }, 2000);
+                }
+            } catch (e) {
+                statusDiv.innerHTML = `Exception: ${e.message}`;
+                console.error('Exception:', e);
+            }
+        }
+        
+        // Auto-trigger on load
+        window.onload = triggerRecompute;
+    </script>
+</body>
+</html>
