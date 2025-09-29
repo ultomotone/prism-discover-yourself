@@ -70,7 +70,7 @@ const About = () => {
           {/* Hero */}
           <div className="text-center mb-16">
             <h1 className="prism-heading-lg text-primary mb-6">
-              The PRISM Model & Methods
+              The PRISM Dynamics™ Model & Methods
             </h1>
             <p className="prism-body-lg text-muted-foreground max-w-4xl mx-auto mb-8">
               A modern, evidence-minded framework that maps how you think and decide—plus how your expression shifts under stress and in flow.
@@ -104,15 +104,15 @@ const About = () => {
           <section className="mb-16">
             <Card className="prism-shadow-card">
               <CardContent className="p-8">
-                <h2 className="prism-heading-md text-primary mb-6">What is PRISM?</h2>
+                <h2 className="prism-heading-md text-primary mb-6">What is PRISM Dynamics?</h2>
                 <p className="prism-body text-muted-foreground mb-4">
-                  <strong className="text-primary">PRISM stands for Personality • Regulation • Information System Mapping.</strong>
+                  <strong className="text-primary">PRISM Dynamics™ stands for Personality • Regulation • Information System Mapping.</strong>
                 </p>
                 <p className="prism-body text-muted-foreground mb-4">
                   It's a practical map of your mind's preferred information signals (from Socionics Model A), how capable and flexible those signals are (dimensionality), how they reconfigure in real situations (block dynamics), and how a state overlay (±) can shift your expression on any given day.
                 </p>
                 <p className="prism-body text-primary font-medium">
-                  In plain English: PRISM shows what drives your decisions, what changes when you're stressed or in flow, and how to use that knowledge to communicate better, choose wisely, and grow intentionally.
+                  In plain English: PRISM Dynamics shows what drives your decisions, what changes when you're stressed or in flow, and how to use that knowledge to communicate better, choose wisely, and grow intentionally.
                 </p>
               </CardContent>
             </Card>
@@ -121,9 +121,9 @@ const About = () => {
           {/* PRISM Overview - Modern Visual */}
           <Card className="mb-16 prism-shadow-card">
             <CardContent className="p-8">
-              <h2 className="prism-heading-md text-primary mb-6 text-center">What PRISM Maps</h2>
+              <h2 className="prism-heading-md text-primary mb-6 text-center">What PRISM Dynamics Maps</h2>
               <p className="prism-body text-muted-foreground text-center max-w-3xl mx-auto mb-8">
-                PRISM shows what drives your choices, what changes when life turns up the pressure, and how to use that knowledge to communicate better, decide more wisely, and grow with intention.
+                PRISM Dynamics shows what drives your choices, what changes when life turns up the pressure, and how to use that knowledge to communicate better, decide more wisely, and grow with intention.
               </p>
               
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">

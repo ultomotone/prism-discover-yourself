@@ -119,10 +119,10 @@ const PrismModel = () => {
       <div className="prism-container">
         <div className="text-center mb-16">
           <h2 className="prism-heading-lg text-primary mb-6">
-            The PRISM Information System
+            The PRISM Dynamics™ Information System
           </h2>
           <p className="prism-body-lg text-muted-foreground max-w-4xl mx-auto">
-            PRISM maps the eight fundamental ways your mind processes information, 
+            PRISM Dynamics maps the eight fundamental ways your mind processes information, 
             how skilled you are with each one, and how they reorganize under different states.
           </p>
         </div>
@@ -220,7 +220,7 @@ const PrismModel = () => {
                 Discover Your Information Processing Profile
               </h3>
               <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                Take the comprehensive PRISM assessment to understand your unique cognitive signature, 
+                Take the comprehensive PRISM Dynamics assessment to understand your unique cognitive signature, 
                 dimensionality levels, and how you adapt under different conditions.
               </p>
               <Button 
@@ -228,7 +228,7 @@ const PrismModel = () => {
                 size="lg"
                 onClick={() => navigate('/assessment')}
               >
-                Take the PRISM Assessment
+                Start the Test
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardContent>

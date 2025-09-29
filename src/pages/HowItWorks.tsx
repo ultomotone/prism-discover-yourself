@@ -29,13 +29,13 @@ const HowItWorks = () => {
         {/* Hero Section */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold tracking-tight mb-4">
-            The PRISM Assessment – How It Works
+            The PRISM Dynamics™ Assessment – How It Works
           </h1>
           <p className="text-xl text-muted-foreground mb-2">
             Multi-method design. State-aware scoring. Confidence-based reporting.
           </p>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            The PRISM assessment was built to be more than a personality quiz. It's a measurement instrument—designed to be reliable, bias-resistant, and transparent about its certainty.
+            The PRISM Dynamics assessment was built to be more than a personality quiz. It's a measurement instrument—designed to be reliable, bias-resistant, and transparent about its certainty.
           </p>
         </div>
 
@@ -52,14 +52,14 @@ const HowItWorks = () => {
               Most personality assessments rely on a single method—usually a self-rating questionnaire. That makes them easier to "game" (consciously or unconsciously), and vulnerable to mood, context, and social desirability effects.
             </p>
             <p>
-              PRISM uses multi-method measurement and state calibration to capture a truer, more stable picture of your personality—without ignoring the fact that humans change from moment to moment.
+              PRISM Dynamics uses multi-method measurement and state calibration to capture a truer, more stable picture of your personality—without ignoring the fact that humans change from moment to moment.
             </p>
           </CardContent>
         </Card>
 
         {/* The PRISM Method */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-6">The PRISM Method</h2>
+          <h2 className="text-3xl font-bold mb-6">The PRISM Dynamics Method</h2>
           
           <div className="grid gap-6">
             {/* Multi-Method Items */}
@@ -271,7 +271,7 @@ const HowItWorks = () => {
           <CardContent className="pt-6 text-center">
             <h3 className="text-2xl font-bold mb-4">Next step:</h3>
             <p className="text-lg mb-6">
-              Take the PRISM Assessment now and see the difference a state-aware, confidence-based approach makes.
+              Start the PRISM Dynamics assessment now and see the difference a state-aware, confidence-based approach makes.
             </p>
             <Button 
               size="lg"

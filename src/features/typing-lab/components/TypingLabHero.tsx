@@ -12,7 +12,7 @@ export const TypingLabHero = () => {
             Typing Lab: Evidence-based hypotheses of famous figures
           </h1>
           <p className="mt-6 text-lg text-muted-foreground">
-            Powered by the PRISM Scoring Engine—an AI analyst that maps public behavior and language to information-processing
+            Powered by the PRISM Dynamics™ Scoring Engine—an AI analyst that maps public behavior and language to information-processing
             patterns.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">

@@ -39,16 +39,16 @@ const Footer = () => {
     <footer className="bg-indigo-900 text-white py-12">
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-10 text-sm">
         
-        {/* About PRISM */}
+        {/* About PRISM Dynamics */}
         <div>
           <div className="flex items-center space-x-2 mb-4">
             <button onClick={() => navigate('/')} className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
               <div className="bg-white text-indigo-900 font-bold rounded w-6 h-6 flex items-center justify-center">P</div>
-              <h2 className="font-bold text-lg">PRISM</h2>
+              <h2 className="font-bold text-lg">PRISM Dynamics</h2>
             </button>
           </div>
           <p className="mb-4 text-gray-300">
-            Empowering individuals and teams through scientifically-backed personality insights.
+            Predict your type on the first pass. Information-processing patterns mapped through flow and pressure.
           </p>
           <div className="space-y-2 text-gray-400">
             <div className="flex items-center space-x-2">
@@ -81,13 +81,13 @@ const Footer = () => {
           <h3 className="font-semibold mb-4">Resources</h3>
           <ul className="space-y-2 text-gray-300">
             <li>
-              <button onClick={() => navigate('/real-time-type')} className="hover:text-white transition-colors text-left">
-                Real-time Type
+              <button onClick={() => navigate('/methods-accuracy')} className="hover:text-white transition-colors text-left">
+                Methods & Accuracy
               </button>
             </li>
             <li>
-              <button onClick={() => navigate('/roadmap')} className="hover:text-white transition-colors text-left">
-                Roadmap
+              <button onClick={() => navigate('/disambiguation')} className="hover:text-white transition-colors text-left">
+                Disambiguation
               </button>
             </li>
             {popularLinks.support.map((link) => (
@@ -178,8 +178,9 @@ const Footer = () => {
         </div>
       </div>
 
-      <div className="text-center text-gray-400 text-xs mt-12">
-        © 2025 PRISM. All rights reserved.
+      <div className="text-center text-gray-400 text-xs mt-12 space-y-2">
+        <p>Looking for a different PRISM? We're a distinct product. <button onClick={() => navigate('/disambiguation')} className="underline hover:text-white">See Disambiguation</button>.</p>
+        <p>© 2025 PRISM Dynamics™. All rights reserved.</p>
       </div>
     </footer>
   );
