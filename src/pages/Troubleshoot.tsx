@@ -354,7 +354,27 @@ const Troubleshoot: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="recompute" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-red-600">⚠️ Recompute ALL Sessions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Recompute ALL sessions in the database (no time limit). Use with caution.
+                </p>
+                <Button
+                  onClick={() => recomputeBatch(50000)}
+                  disabled={recomputeLoading}
+                  variant="destructive"
+                  className="w-full"
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  {recomputeLoading ? "Processing..." : "Recompute ALL Sessions"}
+                </Button>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Recompute Last 90 Days</CardTitle>
@@ -367,41 +387,57 @@ const Troubleshoot: React.FC = () => {
                   onClick={() => {
                     const date90DaysAgo = new Date();
                     date90DaysAgo.setDate(date90DaysAgo.getDate() - 90);
-                    recomputeBatch(1000, date90DaysAgo.toISOString().split('T')[0]);
+                    recomputeBatch(2000, date90DaysAgo.toISOString().split('T')[0]);
                   }}
                   disabled={recomputeLoading}
                   className="w-full"
                 >
                   <RotateCcw className="h-4 w-4 mr-2" />
-                  Recompute Last 90 Days
+                  {recomputeLoading ? "Processing..." : "Recompute Last 90 Days"}
                 </Button>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Custom Batch Recompute</CardTitle>
+                <CardTitle>Batch Options</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Recompute a specific number of recent sessions.
+                  Quick batch recompute options.
                 </p>
-                <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
                   <Button
                     onClick={() => recomputeBatch(100)}
                     disabled={recomputeLoading}
                     variant="outline"
-                    className="w-full"
+                    size="sm"
                   >
-                    Recompute Last 100
+                    Last 100
                   </Button>
                   <Button
                     onClick={() => recomputeBatch(500)}
                     disabled={recomputeLoading}
                     variant="outline"
-                    className="w-full"
+                    size="sm"
                   >
-                    Recompute Last 500
+                    Last 500
+                  </Button>
+                  <Button
+                    onClick={() => recomputeBatch(1000)}
+                    disabled={recomputeLoading}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Last 1000
+                  </Button>
+                  <Button
+                    onClick={() => recomputeBatch(5000, "2024-01-01")}
+                    disabled={recomputeLoading}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Since 2024
                   </Button>
                 </div>
               </CardContent>
