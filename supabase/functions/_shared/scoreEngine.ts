@@ -144,6 +144,138 @@ function softmax(scores: Record<string, number>, temp: number): Record<string, n
   return exps;
 }
 
+/**
+ * Compute dimensional highlights based on thresholds
+ */
+function computeDimsHighlights(
+  dimensions: Record<string,number>, 
+  thresholds: {coherent: number; unique: number}
+): { coherent: string[]; unique: string[] } {
+  const coherent_dims = Object.entries(dimensions)
+    .filter(([,v]) => v >= thresholds.coherent)
+    .map(([k]) => k);
+    
+  const unique_dims = Object.entries(dimensions)
+    .filter(([,v]) => v >= thresholds.unique)
+    .map(([k]) => k);
+    
+  return { coherent: coherent_dims, unique: unique_dims };
+}
+
+/**
+ * Compute seat coherence - how well strengths align with expected Model A positions
+ */
+function computeSeatCoherence(
+  topType: string, 
+  strengths: Record<string,number>, 
+  proto: Record<string, Record<string,string>>
+): number {
+  const typeProto = proto[topType];
+  if (!typeProto) return 0;
+  
+  let aligned = 0;
+  let total = 0;
+  
+  for (const [func, strength] of Object.entries(strengths)) {
+    const expectedBlock = typeProto[func];
+    let expectedStrength = 3; // default mid-range
+    
+    // Map block positions to expected strength ranges
+    if (expectedBlock === 'base') expectedStrength = 4.5;
+    else if (expectedBlock === 'creative') expectedStrength = 3.5;
+    else expectedStrength = 2.5;
+    
+    // Count as aligned if within 0.75 points of expected
+    if (Math.abs(strength - expectedStrength) <= 0.75) {
+      aligned++;
+    }
+    total++;
+  }
+  
+  return total > 0 ? aligned / total : 0;
+}
+
+/**
+ * Compute fit parts breakdown - weights used in scoring
+ */
+function computeFitParts(params: {
+  wStrengths: number; 
+  wDims: number; 
+  wFc: number; 
+  wOpp: number;
+}): { strengths_weight: number; dims_weight: number; fc_weight: number; penalty_opp: number } {
+  return {
+    strengths_weight: params.wStrengths,
+    dims_weight: params.wDims,
+    fc_weight: params.wFc,
+    penalty_opp: params.wOpp
+  };
+}
+
+/**
+ * Blend block scores from different sources
+ */
+function blendBlocks(
+  likert: Record<string,number>, 
+  fc: Record<string,number>, 
+  wl: number, 
+  wf: number
+): { 
+  blended: Record<"Core"|"Critic"|"Hidden"|"Instinct", number>;
+  likert: Record<"Core"|"Critic"|"Hidden"|"Instinct", number>;
+  fc: Record<"Core"|"Critic"|"Hidden"|"Instinct", number>;
+} {
+  const normalizeToPercent = (scores: Record<string,number>) => {
+    const sum = Object.values(scores).reduce((a,b) => a + b, 0) || 1;
+    const normalized: any = {};
+    for (const block of ["Core", "Critic", "Hidden", "Instinct"]) {
+      normalized[block] = Number((100 * (scores[block] || 0) / sum).toFixed(1));
+    }
+    return normalized;
+  };
+  
+  const nl = normalizeToPercent(likert);
+  const nf = normalizeToPercent(fc);
+  
+  const blended: any = {};
+  const totalWeight = wl + wf || 1;
+  
+  for (const block of ["Core", "Critic", "Hidden", "Instinct"]) {
+    const likertScore = nl[block] || 0;
+    const fcScore = nf[block] || 0;
+    blended[block] = Number(((wl * likertScore + wf * fcScore) / totalWeight).toFixed(1));
+  }
+  
+  return { blended, likert: nl, fc: nf };
+}
+
+/**
+ * Build distance metrics for all types
+ */
+function buildDistanceMetrics(
+  typeScores: Record<string,number>,
+  maxScore: number = 6.5
+): Array<{ code: string; raw: number; dist: number; norm: number }> {
+  const entries = Object.entries(typeScores);
+  const scores = entries.map(([,score]) => score);
+  const mean = scores.reduce((a,b) => a + b, 0) / scores.length;
+  
+  return entries.map(([code, raw]) => {
+    // Euclidean distance from mean
+    const dist = Math.abs(raw - mean);
+    
+    // Normalize raw score to 0-1 range
+    const norm = Math.min(1, Math.max(0, raw / maxScore));
+    
+    return {
+      code,
+      raw: Number(raw.toFixed(3)),
+      dist: Number(dist.toFixed(3)),
+      norm: Number(norm.toFixed(4))
+    };
+  });
+}
+
 // Main engine --------------------------------------------------------------
 export function scoreAssessment(input: ProfileInput): ProfileResult {
   const { responses, scoringKey, config, fcFunctionScores } = input;
@@ -242,6 +374,34 @@ export function scoreAssessment(input: ProfileInput): ProfileResult {
     : 0;
   const coverage = fc_answered_ct >= (input.fc_expected ?? config.fc_expected_min) ? 'full' : 'low';
 
+  // Enhanced computations
+  const dimensions = FUNCS.reduce((acc,f)=>{
+    // Simple dimension calculation - can be enhanced based on your model
+    acc[f] = Number((strengths[f] * 0.8).toFixed(3));
+    return acc;
+  }, {} as Record<Func,number>);
+  
+  const dims_highlights = computeDimsHighlights(dimensions, {
+    coherent: 3.0, // threshold for coherent dims
+    unique: 3.5    // threshold for unique dims  
+  });
+  
+  const seat_coherence = computeSeatCoherence(top.code, strengths, prototypes);
+  
+  const fit_parts = computeFitParts({
+    wStrengths: 0.7,
+    wDims: 0.2, 
+    wFc: fcFunctionScores ? 0.1 : 0,
+    wOpp: 0.05
+  });
+  
+  const distance_metrics = buildDistanceMetrics(typeScores);
+  
+  // Enhanced block calculations
+  const likertBlocks = { Core: 25, Critic: 25, Hidden: 25, Instinct: 25 }; // placeholder
+  const fcBlocks = { Core: 25, Critic: 25, Hidden: 25, Instinct: 25 }; // placeholder
+  const blocks_enhanced = blendBlocks(likertBlocks, fcBlocks, 0.7, 0.3);
+
   const result: ProfileResult = {
     type_code: top.code,
     base_func: TYPE_MAP[top.code].base,
@@ -254,9 +414,17 @@ export function scoreAssessment(input: ProfileInput): ProfileResult {
     top_gap: Number(shareGap.toFixed(3)),
     close_call: shareGap < 0.05,
     strengths: FUNCS.reduce((acc,f)=>{acc[f]=Number(strengths[f].toFixed(3));return acc;}, {} as Record<Func,number>),
-    dimensions: FUNCS.reduce((acc,f)=>{acc[f]=0;return acc;}, {} as Record<Func,number>),
-    dims_highlights:{ coherent: [], unique: [] },
-    blocks_norm:{ Core:0, Critic:0, Hidden:0, Instinct:0 },
+    dimensions,
+    dims_highlights,
+    seat_coherence: Number(seat_coherence.toFixed(3)),
+    fit_parts,
+    distance_metrics,
+    blocks_norm: {
+      ...blocks_enhanced.blended, 
+      blended: blocks_enhanced.blended,
+      likert: blocks_enhanced.likert,
+      fc: blocks_enhanced.fc
+    },
     neuro_mean:0,
     neuro_z:0,
     overlay_neuro:'none',

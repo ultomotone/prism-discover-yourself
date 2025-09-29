@@ -1,12 +1,46 @@
 // supabase/functions/_shared/persistResultsV3.ts
-// Unified persistence layer for scoring results
+// Unified persistence layer for scoring results with validation
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import type { ScoringPayload, PersistResultsV3Params } from "./types.results.ts";
 import { persistResultsV2, type PersistResultsV2Payload } from "./persistResultsV2.ts";
+import Ajv from "https://esm.sh/ajv@8";
 
 // Toggle for legacy table writes - controlled by env var for safer production rollouts
 const WRITE_EXPLODED = (Deno.env.get("PRISM_WRITE_EXPLODED") ?? "false") === "true";
+
+// Basic schema validation - validate core required fields
+const coreRequiredFields = [
+  'version', 'results_version'
+];
+
+const profileRequiredFields = [
+  'session_id', 'type_code', 'confidence'
+];
+
+function validatePayload(payload: ScoringPayload): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  // Check top-level fields
+  for (const field of coreRequiredFields) {
+    if (!payload[field as keyof ScoringPayload]) {
+      errors.push(`Missing required field: ${field}`);
+    }
+  }
+  
+  // Check profile fields
+  if (!payload.profile) {
+    errors.push('Missing profile object');
+  } else {
+    for (const field of profileRequiredFields) {
+      if (!payload.profile[field]) {
+        errors.push(`Missing required profile field: ${field}`);
+      }
+    }
+  }
+  
+  return { valid: errors.length === 0, errors };
+}
 
 export async function persistResultsV3(
   db: SupabaseClient,
@@ -14,6 +48,18 @@ export async function persistResultsV3(
 ): Promise<void> {
   const startTime = Date.now();
   const { session_id, user_id, payload } = params;
+
+  // Validate payload
+  const validation = validatePayload(payload);
+  if (!validation.valid) {
+    console.error(JSON.stringify({
+      evt: "persistResultsV3_validation_failed",
+      session_id,
+      errors: validation.errors
+    }));
+    throw new Error(`Payload validation failed: ${validation.errors.join(", ")}`);
+  }
+
   const scoring_version = payload.version || payload.results_version;
   const type_code = payload.profile?.type_code ?? null;
   const confidence = payload.profile?.confidence ?? null;
@@ -30,7 +76,7 @@ export async function persistResultsV3(
         payload,
         type_code,
         confidence,
-        computed_at: new Date().toISOString()
+        computed_at: payload.profile?.computed_at || new Date().toISOString()
       },
       { onConflict: "session_id" }
     );
@@ -46,13 +92,19 @@ export async function persistResultsV3(
     throw new Error(`persistResultsV3: unified table upsert failed: ${upsertErr.message}`);
   }
 
-  // Log performance metrics
+  // Log performance metrics with new field tracking
+  const profile = payload.profile || {};
   console.log(JSON.stringify({
     evt: "persistResultsV3_unified_success",
     session_id,
     scoring_version,
     upsert_ms: upsertMs,
-    write_exploded: WRITE_EXPLODED
+    write_exploded: WRITE_EXPLODED,
+    had_dims_highlights: !!profile.dims_highlights,
+    had_distance_metrics: !!profile.distance_metrics,
+    had_seat_coherence: typeof profile.seat_coherence === 'number',
+    had_fit_parts: !!profile.fit_parts,
+    had_blocks_norm_blended: !!(profile.blocks_norm as any)?.blended
   }));
 
   if (!WRITE_EXPLODED) {
@@ -69,51 +121,27 @@ export async function persistResultsV3(
 
   // 2) Legacy/exploded writes (best-effort; do not throw)
   try {
-    // Write to profiles table
+    // Write to profiles table - convert to legacy format
     const profileData = {
-      ...payload.profile, // spread profile fields first
       session_id,
+      type_code: profile.type_code,
+      confidence: profile.confidence,
       scoring_version,
-      payload, // if column exists
-      computed_at: new Date().toISOString()
+      computed_at: profile.computed_at || new Date().toISOString(),
+      payload: payload, // store full payload as well
+      // Map new fields to legacy columns
+      conf_raw: profile.conf_raw,
+      conf_calibrated: profile.conf_calibrated,
+      score_fit_calibrated: payload.types?.[0]?.fit || profile.score_fit_calibrated || 0,
+      top_gap: profile.top_gap,
+      fit_band: profile.fit_band,
+      validity_status: profile.validity_status,
+      overlay: profile.overlay,
+      top_types: payload.types?.slice(0, 3) || [], // Store top 3 as JSONB
+      results_version: payload.results_version
     };
 
     await db.from("profiles").upsert(profileData, { onConflict: "session_id" });
-
-    // Convert to legacy format for persistResultsV2
-    if (payload.types?.length && payload.functions?.length && payload.state) {
-      const legacyPayload: PersistResultsV2Payload = {
-        types: payload.types.map(t => ({
-          type_code: t.type_code,
-          share_pct: t.share ?? 0,
-          fit: t.fit,
-          distance: t.distance ?? null,
-          coherent_dims: t.coherent_dims ?? null,
-          unique_dims: t.unique_dims ?? null,
-          seat_coherence: t.seat_coherence ?? null,
-          fit_parts: t.fit_parts ?? null
-        })),
-        functions: payload.functions.map(f => ({
-          func: f.func_code as "Ti"|"Te"|"Fi"|"Fe"|"Ni"|"Ne"|"Si"|"Se",
-          strength_z: f.strength,
-          dimension: f.dimension ?? null,
-          d_index_z: f.d_index_z ?? null
-        })),
-        state: {
-          overlay_band: (payload.state.overlay_band as "Reg+"|"Reg0"|"Reg-") ?? "Reg0",
-          overlay_z: payload.state.overlay_z ?? null,
-          effect_fit: payload.state.effect_fit ?? null,
-          effect_conf: payload.state.effect_conf ?? null,
-          block_core: payload.state.block_core ?? null,
-          block_critic: payload.state.block_critic ?? null,
-          block_hidden: payload.state.block_hidden ?? null,
-          block_instinct: payload.state.block_instinct ?? null,
-          block_context: (payload.state.block_context as "calm"|"stress"|"flow") ?? "calm"
-        }
-      };
-
-      await persistResultsV2(db, session_id, legacyPayload);
-    }
 
     console.log(JSON.stringify({
       evt: "persistResultsV3_legacy_success",
