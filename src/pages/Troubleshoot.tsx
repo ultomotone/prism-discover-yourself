@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Bug, Wrench, Database, RotateCcw, ExternalLink } from 'lucide-react';
+import { Search, Bug, Wrench, Database, RotateCcw, ExternalLink, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -37,6 +37,8 @@ const Troubleshoot: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(false);
   const [recomputeLoading, setRecomputeLoading] = useState(false);
+  const [cleanupLoading, setCleanupLoading] = useState(false);
+  const [duplicateResults, setDuplicateResults] = useState<any>(null);
 
   // Check admin access
   if (!user || !ADMIN_EMAILS.includes(user.email || '')) {
@@ -256,6 +258,51 @@ const Troubleshoot: React.FC = () => {
     }
   };
 
+  const cleanupDuplicates = async (dryRun: boolean = true, targetUserId?: string, targetEmail?: string) => {
+    setCleanupLoading(true);
+    setDuplicateResults(null);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: "Authentication required", variant: "destructive" });
+        return;
+      }
+
+      const payload: any = { dry_run: dryRun };
+      if (targetUserId) payload.user_id = targetUserId;
+      if (targetEmail) payload.email = targetEmail;
+
+      const response = await fetch(`https://gnkuikentdtnatazeriu.supabase.co/functions/v1/cleanup-duplicate-sessions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        setDuplicateResults(result);
+        toast({ 
+          title: dryRun ? "Duplicate scan completed!" : "Duplicate cleanup completed!", 
+          description: `Found: ${result.duplicates_found} users with duplicates, ${dryRun ? 'Would clean' : 'Cleaned'}: ${result.sessions_cleaned} sessions` 
+        });
+        
+        if (!dryRun) {
+          loadRecentSessions(); // Refresh session list
+        }
+      } else {
+        toast({ title: "Error in duplicate cleanup", description: result.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "Network error", variant: "destructive" });
+    } finally {
+      setCleanupLoading(false);
+    }
+
   useEffect(() => {
     loadRecentSessions();
   }, []);
@@ -332,7 +379,7 @@ const Troubleshoot: React.FC = () => {
       </div>
 
       <Tabs defaultValue="search" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="search">
             <Search className="h-4 w-4 mr-2" />
             Session Search
@@ -340,6 +387,10 @@ const Troubleshoot: React.FC = () => {
           <TabsTrigger value="sessions">
             <Database className="h-4 w-4 mr-2" />
             Recent Sessions
+          </TabsTrigger>
+          <TabsTrigger value="duplicates">
+            <Users className="h-4 w-4 mr-2" />
+            Duplicate Cleanup
           </TabsTrigger>
           <TabsTrigger value="recompute">
             <RotateCcw className="h-4 w-4 mr-2" />
@@ -395,6 +446,114 @@ const Troubleshoot: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="duplicates" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-blue-600">🔍 Scan for Duplicates</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Find users with multiple in-progress sessions and see which ones would be cleaned up.
+                </p>
+                <Button
+                  onClick={() => cleanupDuplicates(true)}
+                  disabled={cleanupLoading}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  {cleanupLoading ? "Scanning..." : "Scan for Duplicates (Dry Run)"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-orange-600">⚡ Clean Up Duplicates</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Remove duplicate sessions, keeping the one with the most progress for each user.
+                </p>
+                <Button
+                  onClick={() => cleanupDuplicates(false)}
+                  disabled={cleanupLoading || !duplicateResults}
+                  variant="secondary"
+                  className="w-full"
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  {cleanupLoading ? "Cleaning..." : "Clean Up Duplicates"}
+                </Button>
+                {!duplicateResults && (
+                  <p className="text-xs text-muted-foreground">
+                    Run a scan first to see what would be cleaned up
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {duplicateResults && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Duplicate Cleanup Results</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="bg-muted p-3 rounded">
+                      <div className="font-semibold">Users with Duplicates</div>
+                      <div className="text-2xl font-bold text-blue-600">{duplicateResults.duplicates_found}</div>
+                    </div>
+                    <div className="bg-muted p-3 rounded">
+                      <div className="font-semibold">Sessions to Clean</div>
+                      <div className="text-2xl font-bold text-orange-600">{duplicateResults.sessions_cleaned}</div>
+                    </div>
+                    <div className="bg-muted p-3 rounded">
+                      <div className="font-semibold">Mode</div>
+                      <div className="text-sm font-bold text-green-600">
+                        {duplicateResults.dry_run ? 'DRY RUN' : 'EXECUTED'}
+                      </div>
+                    </div>
+                    <div className="bg-muted p-3 rounded">
+                      <div className="font-semibold">Status</div>
+                      <div className="text-sm font-bold text-green-600">SUCCESS</div>
+                    </div>
+                  </div>
+
+                  {duplicateResults.cleanup_details && duplicateResults.cleanup_details.length > 0 && (
+                    <div className="max-h-96 overflow-y-auto space-y-2">
+                      <h4 className="font-semibold">Cleanup Details:</h4>
+                      {duplicateResults.cleanup_details.map((detail: any, index: number) => (
+                        <div key={index} className="border p-3 rounded text-xs">
+                          <div className="font-semibold mb-2">User: {detail.user_identifier}</div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-green-600 font-medium">✓ Kept Session:</div>
+                              <div>ID: {detail.kept_session.id.slice(0, 8)}...</div>
+                              <div>Questions: {detail.kept_session.completed_questions}</div>
+                              <div>Started: {new Date(detail.kept_session.started_at).toLocaleString()}</div>
+                            </div>
+                            <div>
+                              <div className="text-red-600 font-medium">✗ Removed Sessions:</div>
+                              {detail.removed_sessions.map((removed: any, i: number) => (
+                                <div key={i} className="mb-1">
+                                  <div>ID: {removed.id.slice(0, 8)}... ({removed.completed_questions} questions)</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="recompute" className="space-y-4">
