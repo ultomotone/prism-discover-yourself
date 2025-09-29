@@ -4,9 +4,9 @@ import { MilestoneProgress } from "@/components/ui/milestone-progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, ResponsiveContainer } from "recharts";
-import { Search, RefreshCw, Clock, Users, Globe, ExternalLink } from "lucide-react";
+import { Search, RefreshCw, Clock, Users, Globe, ExternalLink, Eye, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import { CountryDistributionChart } from "@/components/CountryDistributionChart";
@@ -28,6 +28,8 @@ const Dashboard = () => {
   const [selectedOverlay, setSelectedOverlay] = useState<string>("all");
   const [page, setPage] = useState(0);
   const [data, setData] = useState<DashboardData | null>(null);
+  const [userSessions, setUserSessions] = useState<any[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
 
   const {
     typeDistribution,
@@ -110,6 +112,73 @@ const Dashboard = () => {
 
     fetchDashboardStats();
   }, [toast]);
+
+  // Fetch user's own sessions
+  useEffect(() => {
+    const fetchUserSessions = async () => {
+      setLoadingSessions(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: sessions, error } = await supabase
+            .rpc('get_user_sessions_with_scoring', { p_user_id: user.id });
+          
+          if (error) throw error;
+          setUserSessions((sessions as any)?.sessions || []);
+        }
+      } catch (error) {
+        console.error('Error fetching user sessions:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load your sessions",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingSessions(false);
+      }
+    };
+
+    fetchUserSessions();
+  }, [toast]);
+
+  const recomputeSession = async (sessionId: string) => {
+    try {
+      toast({
+        title: "Recomputing Session",
+        description: "Updating with enhanced scoring metrics...",
+      });
+
+      const { data, error } = await supabase.functions.invoke('recompute-new-metrics', {
+        body: { session_ids: [sessionId] }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Session recomputed with enhanced metrics!",
+      });
+
+      // Refresh user sessions
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: sessions } = await supabase
+          .rpc('get_user_sessions_with_scoring', { p_user_id: user.id });
+        setUserSessions((sessions as any)?.sessions || []);
+      }
+    } catch (error) {
+      console.error('Recompute error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to recompute session",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const viewResults = (sessionId: string) => {
+    window.open(`/results/${sessionId}`, '_blank');
+  };
 
   // Filtered assessments for table with defensive null checks
   const filteredAssessments = (latestAssessments || []).filter(assessment => {
@@ -294,108 +363,198 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Latest Assessments - Full Width */}
-        <Card className="mb-8">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-base font-medium">Latest Assessments</CardTitle>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-40"
-              />
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={refreshData}
-                disabled={loading}
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="flex items-center space-x-4">
-                    <div className="h-4 bg-muted rounded w-20 animate-pulse"></div>
-                    <div className="h-4 bg-muted rounded w-16 animate-pulse"></div>
-                    <div className="h-4 bg-muted rounded w-24 animate-pulse"></div>
-                    <div className="h-4 bg-muted rounded w-12 animate-pulse"></div>
+        {/* Tabbed Content Area */}
+        <Tabs defaultValue="latest" className="mb-8">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="latest">Latest Assessments</TabsTrigger>
+            <TabsTrigger value="my-sessions">My Sessions</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="latest" className="space-y-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-base font-medium">Latest Assessments</CardTitle>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Search..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-40"
+                  />
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={refreshData}
+                    disabled={loading}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="space-y-2">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="flex items-center space-x-4">
+                        <div className="h-4 bg-muted rounded w-20 animate-pulse"></div>
+                        <div className="h-4 bg-muted rounded w-16 animate-pulse"></div>
+                        <div className="h-4 bg-muted rounded w-24 animate-pulse"></div>
+                        <div className="h-4 bg-muted rounded w-12 animate-pulse"></div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            ) : filteredAssessments.length > 0 ? (
-              <div className="space-y-2 max-h-80 overflow-y-auto">
-                {filteredAssessments.slice(page * 10, (page + 1) * 10).map((assessment, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <Badge variant="outline" className="text-xs">
-                        {assessment.type_code || 'Unknown'}
-                      </Badge>
-                      {assessment.overlay && (
-                        <Badge variant={assessment.overlay === '+' ? 'default' : 'secondary'} className="text-xs">
-                          N{assessment.overlay}
-                        </Badge>
-                      )}
-                      <span className="text-sm text-muted-foreground">
-                        {assessment.country || 'Unknown'}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {assessment.fit_band && (
-                        <Badge 
-                          variant={assessment.fit_band === 'Great' ? 'default' : 
-                                 assessment.fit_band === 'Good' ? 'secondary' : 'outline'}
-                          className="text-xs"
+                ) : filteredAssessments.length > 0 ? (
+                  <div className="space-y-2 max-h-80 overflow-y-auto">
+                    {filteredAssessments.slice(page * 10, (page + 1) * 10).map((assessment, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center space-x-4">
+                          <Badge variant="outline" className="text-xs">
+                            {assessment.type_code || 'Unknown'}
+                          </Badge>
+                          {assessment.overlay && (
+                            <Badge variant={assessment.overlay === '+' ? 'default' : 'secondary'} className="text-xs">
+                              N{assessment.overlay}
+                            </Badge>
+                          )}
+                          <span className="text-sm text-muted-foreground">
+                            {assessment.country || 'Unknown'}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {assessment.fit_band && (
+                            <Badge 
+                              variant={assessment.fit_band === 'Great' ? 'default' : 
+                                     assessment.fit_band === 'Good' ? 'secondary' : 'outline'}
+                              className="text-xs"
+                            >
+                              {assessment.fit_band}
+                            </Badge>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(assessment.finished_at || assessment.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {filteredAssessments.length > 10 && (
+                      <div className="flex justify-center space-x-2 pt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPage(Math.max(0, page - 1))}
+                          disabled={page === 0}
                         >
-                          {assessment.fit_band}
-                        </Badge>
-                      )}
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(assessment.finished_at || assessment.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
+                          Previous
+                        </Button>
+                        <span className="py-2 px-3 text-sm">
+                          Page {page + 1} of {Math.ceil(filteredAssessments.length / 10)}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPage(Math.min(Math.ceil(filteredAssessments.length / 10) - 1, page + 1))}
+                          disabled={page >= Math.ceil(filteredAssessments.length / 10) - 1}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                ))}
-                
-                {filteredAssessments.length > 10 && (
-                  <div className="flex justify-center space-x-2 pt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage(Math.max(0, page - 1))}
-                      disabled={page === 0}
-                    >
-                      Previous
-                    </Button>
-                    <span className="py-2 px-3 text-sm">
-                      Page {page + 1} of {Math.ceil(filteredAssessments.length / 10)}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage(Math.min(Math.ceil(filteredAssessments.length / 10) - 1, page + 1))}
-                      disabled={page >= Math.ceil(filteredAssessments.length / 10) - 1}
-                    >
-                      Next
-                    </Button>
+                ) : analyticsError ? (
+                  <div className="text-center py-8 text-destructive">
+                    Error loading assessments: {analyticsError}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No recent assessments found
                   </div>
                 )}
-              </div>
-            ) : analyticsError ? (
-              <div className="text-center py-8 text-destructive">
-                Error loading assessments: {analyticsError}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                No recent assessments found
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="my-sessions" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base font-medium">My Assessment Sessions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingSessions ? (
+                  <div className="space-y-2">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="flex items-center space-x-4 p-4 border rounded-lg">
+                        <div className="h-4 bg-muted rounded w-20 animate-pulse"></div>
+                        <div className="h-4 bg-muted rounded w-16 animate-pulse"></div>
+                        <div className="h-4 bg-muted rounded w-24 animate-pulse"></div>
+                        <div className="h-4 bg-muted rounded w-20 animate-pulse"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : userSessions.length > 0 ? (
+                  <div className="space-y-4">
+                    {userSessions.map((session) => (
+                      <div key={session.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center space-x-4">
+                          <Badge variant="outline" className="text-xs">
+                            {session.profile?.type_code || 'Processing'}
+                          </Badge>
+                          {session.profile?.overlay && session.profile.overlay !== '0' && (
+                            <Badge variant={session.profile.overlay === '+' ? 'default' : 'secondary'} className="text-xs">
+                              N{session.profile.overlay}
+                            </Badge>
+                          )}
+                          <Badge variant="secondary" className="text-xs">
+                            {session.profile?.fit_band || 'Unknown'}
+                          </Badge>
+                          <div className="text-sm text-muted-foreground">
+                            <div>Completed: {new Date(session.completed_at).toLocaleDateString()}</div>
+                            <div className="text-xs">
+                              ID: {session.id.substring(0, 8)}... • 
+                              Questions: {session.completed_questions}/{session.total_questions}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => viewResults(session.id)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            View Results
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => recomputeSession(session.id)}
+                            title="Recompute with enhanced scoring metrics"
+                          >
+                            <Zap className="h-4 w-4 mr-1" />
+                            Enhance
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No assessment sessions found.</p>
+                    <p className="text-sm mt-2">
+                      <Button 
+                        variant="link" 
+                        onClick={() => window.open('/assessment', '_blank')}
+                        className="p-0 h-auto"
+                      >
+                        Take your first assessment
+                      </Button>
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Country Distribution */}
         {data?.countryDistribution && data.countryDistribution.length > 0 && (
