@@ -48,32 +48,34 @@ serve(async (req) => {
       
       // First check by user_id if authenticated
       if (user_id) {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('assessment_sessions')
           .select('id, status, completed_questions, total_questions, created_at, email')
           .eq('user_id', user_id)
           .eq('status', 'in_progress')
-          .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
         
-        existingSession = data;
+        if (!error && data) {
+          existingSession = data;
+        }
       }
       
       // If no session found by user_id, check by email
       if (!existingSession && email) {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('assessment_sessions')
-          .select('id, status, completed_questions, total_questions, created_at')
+          .select('id, status, completed_questions, total_questions, created_at, email')
           .eq('email', email)
           .eq('status', 'in_progress')
-          .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
           
-        existingSession = data;
+        if (!error && data) {
+          existingSession = data;
+        }
       }
 
       if (existingSession) {
