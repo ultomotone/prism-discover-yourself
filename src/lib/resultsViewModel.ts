@@ -149,9 +149,22 @@ export function safeArray<T>(value: any, defaultValue: T[] = []): T[] {
   return Array.isArray(value) ? value : defaultValue;
 }
 
-/**
- * Safe object accessor with default empty object
- */
-export function safeObject<T extends Record<string, any>>(value: any, defaultValue: T = {} as T): T {
-  return value && typeof value === 'object' && !Array.isArray(value) ? value : defaultValue;
+// Utility function to ensure top_types are always objects
+export function safeTopTypes(topTypes: any[]): Array<{code: string; fit: number; share: number}> {
+  if (!Array.isArray(topTypes)) return [];
+  
+  return topTypes.map((item, index) => {
+    if (typeof item === 'string') {
+      // Convert legacy string format to object
+      return { code: item, fit: 0, share: 0 };
+    } else if (typeof item === 'object' && item !== null) {
+      // Ensure object has required fields
+      return {
+        code: item.code || `Unknown${index}`,
+        fit: typeof item.fit === 'number' ? item.fit : 0,
+        share: typeof item.share === 'number' ? item.share : 0
+      };
+    }
+    return { code: `Unknown${index}`, fit: 0, share: 0 };
+  });
 }

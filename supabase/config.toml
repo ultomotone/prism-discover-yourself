@@ -15,6 +15,9 @@ verify_jwt = false
 [functions.migrate-all-scoring]
 verify_jwt = false
 
+[functions.recompute-new-metrics]
+verify_jwt = false
+
 [functions.cleanup-duplicate-sessions]
 verify_jwt = false
 

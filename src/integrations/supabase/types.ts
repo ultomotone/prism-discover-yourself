@@ -1036,6 +1036,36 @@ export type Database = {
           },
         ]
       }
+      v_results_missing_new_fields: {
+        Row: {
+          computed_at: string | null
+          session_id: string | null
+        }
+        Insert: {
+          computed_at?: string | null
+          session_id?: string | null
+        }
+        Update: {
+          computed_at?: string | null
+          session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scoring_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scoring_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_sessions_for_recompute"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
       v_session_answer_counts: {
         Row: {
           answer_count: number | null

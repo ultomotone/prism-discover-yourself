@@ -72,7 +72,33 @@ export interface ProfileResult {
   strengths: Record<Func, number>;
   dimensions: Record<Func, number>;
   dims_highlights: { coherent: string[]; unique: string[] };
-  blocks_norm: { Core: number; Critic: number; Hidden: number; Instinct: number };
+  
+  // NEW: Enhanced metrics
+  seat_coherence: number;
+  fit_parts: {
+    strengths_weight: number;
+    dims_weight: number; 
+    fc_weight: number;
+    penalty_opp: number;
+  };
+  distance_metrics: Array<{
+    code: string;
+    raw: number;
+    dist: number; 
+    norm: number;
+  }>;
+  
+  // Block analysis - enhanced structure
+  blocks_norm: { 
+    Core: number; 
+    Critic: number; 
+    Hidden: number; 
+    Instinct: number;
+    // NEW: Structured breakdown
+    blended?: { Core: number; Critic: number; Hidden: number; Instinct: number };
+    likert?: { Core: number; Critic: number; Hidden: number; Instinct: number };
+    fc?: { Core: number; Critic: number; Hidden: number; Instinct: number };
+  };
   neuro_mean: number;
   neuro_z: number;
   overlay_neuro: string;
@@ -420,7 +446,10 @@ export function scoreAssessment(input: ProfileInput): ProfileResult {
     fit_parts,
     distance_metrics,
     blocks_norm: {
-      ...blocks_enhanced.blended, 
+      Core: blocks_enhanced.blended.Core,
+      Critic: blocks_enhanced.blended.Critic,
+      Hidden: blocks_enhanced.blended.Hidden,
+      Instinct: blocks_enhanced.blended.Instinct,
       blended: blocks_enhanced.blended,
       likert: blocks_enhanced.likert,
       fc: blocks_enhanced.fc
