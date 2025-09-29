@@ -437,8 +437,9 @@ function WhyNotSecond({ profile }: { profile: Profile }) {
   
   if (!profile.top_types || profile.top_types.length < 2) return null;
   
-  const top1 = profile.top_types[0];
-  const top2 = profile.top_types[1];
+  // Handle both string array and object array formats for top_types
+  const top1 = typeof profile.top_types[0] === 'string' ? profile.top_types[0] : (profile.top_types[0] as any)?.code;
+  const top2 = typeof profile.top_types[1] === 'string' ? profile.top_types[1] : (profile.top_types[1] as any)?.code;
   const top1Score = profile.type_scores?.[top1];
   const top2Score = profile.type_scores?.[top2];
   
@@ -487,7 +488,11 @@ function WhyNotSecond({ profile }: { profile: Profile }) {
 
 //  Enhanced retest banner with v1.1 calibrated thresholds
 function RetestBanner({ profile }: { profile: Profile }) {
-  const topFit = profile.score_fit_calibrated ?? (profile.type_scores?.[profile.top_types?.[0]]?.fit_abs || 0);
+  // Handle both string array and object array formats for top_types
+  const primaryType = typeof profile.top_types?.[0] === 'string' 
+    ? profile.top_types[0] 
+    : (profile.top_types?.[0] as any)?.code;
+  const topFit = profile.score_fit_calibrated ?? (profile.type_scores?.[primaryType]?.fit_abs || 0);
   const topGap = profile.top_gap || 0;
   const confidence = profile.confidence;
   const fitBand = profile.fit_band;
@@ -526,7 +531,7 @@ function Top3({ p, types }:{ p:Profile; types?: any[] }){
       }))
     : getTop3List(p);
 
-  const primary = topItems[0]?.code || p.top_types?.[0] || p.type_code || '';
+  const primary = topItems[0]?.code || (typeof p.top_types?.[0] === 'string' ? p.top_types[0] : (p.top_types?.[0] as any)?.code) || p.type_code || '';
   const strengthValues = Object.values(p.strengths ?? {});
   const sortedStrengths = [...strengthValues].sort((a, b) => a - b);
   const medianStrength = sortedStrengths.length
@@ -1325,7 +1330,7 @@ export const ResultsV2: React.FC<{
   // Show banner if not v2 or missing v2 data
   const showV2Banner = resultsVersion === "v2" && !hasV2;
   
-  const primary = p.top_types?.[0] || p.type_code;
+  const primary = (typeof p.top_types?.[0] === 'string' ? p.top_types[0] : (p.top_types?.[0] as any)?.code) || p.type_code;
   const overlay = p.overlay ?? '';
   
   // Early return for missing primary type
