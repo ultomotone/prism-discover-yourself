@@ -45,7 +45,10 @@
             }
         }
         
-        // Auto-trigger on load
+        // Add timestamp to force fresh execution
+        console.log('Debug recompute at:', new Date().toISOString());
+        
+        // Auto-trigger on load  
         window.onload = triggerRecompute;
     </script>
 </body>

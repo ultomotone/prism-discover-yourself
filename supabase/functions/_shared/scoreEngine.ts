@@ -407,6 +407,17 @@ export function scoreAssessment(input: ProfileInput): ProfileResult {
     return acc;
   }, {} as Record<Func,number>);
   
+  // Debug logging
+  console.log(JSON.stringify({
+    evt: "scoreEngine_debug",
+    session_id: input.sessionId,
+    top_type: top.code,
+    has_prototypes: !!prototypes,
+    prototype_keys: Object.keys(prototypes || {}),
+    dimensions_count: Object.keys(dimensions).length,
+    strengths_count: Object.keys(strengths).length
+  }));
+
   const dims_highlights = computeDimsHighlights(dimensions, { coherent: 3.5, unique: 4.2 });
   const seat_coherence = computeSeatCoherence(top.code, strengths, prototypes);
   const fit_parts = computeFitParts({ wStrengths: 0.7, wDims: 0.2, wFc: fcFunctionScores ? 0.1 : 0, wOpp: 0.05 });
@@ -414,6 +425,16 @@ export function scoreAssessment(input: ProfileInput): ProfileResult {
 
   // Map eight seats → four blocks for the chosen top type
   const seats = prototypes[top.code]; // { Ti:'base', Fe:'role', ... }
+  
+  console.log(JSON.stringify({
+    evt: "scoreEngine_computed_metrics",
+    session_id: input.sessionId,
+    has_dims_highlights: !!dims_highlights,
+    has_seat_coherence: typeof seat_coherence === 'number',
+    has_fit_parts: !!fit_parts,
+    has_distance_metrics: !!distance_metrics,
+    has_seats: !!seats
+  }));
   const blockOf = (func: Func) => {
     const seat = seats[func];
     if (seat === 'base' || seat === 'creative') return 'Core';
