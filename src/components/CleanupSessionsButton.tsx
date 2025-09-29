@@ -3,9 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const CleanupSessionsButton = () => {
+  const { user } = useAuth();
   const [isRunning, setIsRunning] = useState(false);
+
+  // Only show for daniel.joseph.speiss@gmail.com
+  if (user?.email !== 'daniel.joseph.speiss@gmail.com') {
+    return null;
+  }
 
   const runCleanup = async () => {
     setIsRunning(true);
@@ -14,18 +21,20 @@ export const CleanupSessionsButton = () => {
       const { data, error } = await supabase.functions.invoke('cleanup-sessions');
       
       if (error) {
-        throw error;
+        console.error("❌ Cleanup error:", error);
+        toast.error(`Cleanup failed: ${error.message}`);
+        return;
       }
 
-      if (data.success) {
-        toast.success(`Cleanup completed! Deleted ${data.deleted_count} old sessions`);
+      if (data && data.success) {
+        toast.success(`✅ Cleanup completed! Deleted ${data.deleted_count} old sessions`);
         console.log('🧹 Sessions cleaned up:', data);
       } else {
-        toast.error(data.message || 'Cleanup failed');
+        toast.error(data?.message || 'Cleanup failed - no data returned');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Cleanup error:', error);
-      toast.error('Failed to run cleanup');
+      toast.error(`Failed to run cleanup: ${error.message || 'Unknown error'}`);
     } finally {
       setIsRunning(false);
     }
