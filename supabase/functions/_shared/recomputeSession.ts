@@ -172,7 +172,9 @@ export async function recomputeSession(
       func_code: func,
       strength,
       dimension: scoredResult.dimensions[func as keyof typeof scoredResult.dimensions] || null,
-      d_index_z: scoredResult.distance_metrics?.find(d => d.code === func)?.norm || null
+      d_index_z: scoredResult.dimensions[func as keyof typeof scoredResult.dimensions] 
+        ? Number(((scoredResult.dimensions[func as keyof typeof scoredResult.dimensions] - 2.5) / 0.5).toFixed(3))
+        : null
     }));
 
     const state = {
