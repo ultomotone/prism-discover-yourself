@@ -187,6 +187,24 @@ export async function recomputeSession(
       block_context: "calm"
     };
 
+    // Transform functions array to objects that client expects
+    const strengths = functions.reduce((acc, func) => {
+      acc[func.func_code] = func.strength;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const dimensions = functions.reduce((acc, func) => {
+      acc[func.func_code] = func.dimension || 0;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const blocks_norm = {
+      Core: state.block_core,
+      Critic: state.block_critic,
+      Hidden: state.block_hidden,
+      Instinct: state.block_instinct
+    };
+
     // Prepare payload for persistResultsV3 with correct structure
     const payload = {
       version: RESULTS_VERSION,
@@ -200,7 +218,11 @@ export async function recomputeSession(
         validity_status: scoredResult.validity_status,
         top_gap: scoredResult.top_gap,
         score_fit_calibrated: scoredResult.score_fit_calibrated,
-        conf_calibrated: scoredResult.conf_calibrated
+        conf_calibrated: scoredResult.conf_calibrated,
+        // Add the fields the client expects
+        strengths,
+        dimensions,
+        blocks_norm
       },
       types,
       functions,
