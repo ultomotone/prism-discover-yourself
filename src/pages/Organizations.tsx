@@ -500,7 +500,289 @@ const Organizations = () => {
               </Card>
             </div>
 
-            {/* More sections would follow the same pattern */}
+            {/* Block Dynamics */}
+            <div id="block-dynamics" className="grid md:grid-cols-3 gap-6">
+              <div className="md:col-span-2">
+                <Card className="p-6 h-full">
+                  <h3 className="text-xl font-semibold mb-4">Block Dynamics</h3>
+                  <p className="text-muted-foreground mb-4">
+                    How cognitive states shift in real-life situations under pressure, stress, or changing conditions. 
+                    Understanding these dynamics helps time interactions and adjust approaches appropriately.
+                  </p>
+                  <Button variant="outline" size="sm" onClick={() => openLearnMore('block-dynamics')}>
+                    Learn more
+                  </Button>
+                </Card>
+              </div>
+              <Card className="p-6 bg-primary/5">
+                <h4 className="font-semibold mb-3 text-primary">What this means for RevOps</h4>
+                <p className="text-sm text-muted-foreground">
+                  Cadence timing & follow‑up rules when states change—stressed buyers need simpler messages, 
+                  while confident buyers can handle complex proposals.
+                </p>
+              </Card>
+            </div>
+
+            {/* Profiles */}
+            <div id="profiles" className="grid md:grid-cols-3 gap-6">
+              <div className="md:col-span-2">
+                <Card className="p-6 h-full">
+                  <h3 className="text-xl font-semibold mb-4">Profiles</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Example buyer archetypes like Analyst, Driver, and Synthesizer that represent common 
+                    cognitive patterns in B2B decision-making processes and communication preferences.
+                  </p>
+                  <Button variant="outline" size="sm" onClick={() => openLearnMore('profiles')}>
+                    Learn more
+                  </Button>
+                </Card>
+              </div>
+              <Card className="p-6 bg-primary/5">
+                <h4 className="font-semibold mb-3 text-primary">What this means for RevOps</h4>
+                <p className="text-sm text-muted-foreground">
+                  Talk‑track & channel picks per archetype—Analysts prefer detailed emails, 
+                  Drivers respond to direct phone calls, Synthesizers need collaborative demos.
+                </p>
+              </Card>
+            </div>
+
+            {/* Roadmap */}
+            <div id="roadmap" className="grid md:grid-cols-3 gap-6">
+              <div className="md:col-span-2">
+                <Card className="p-6 h-full">
+                  <h3 className="text-xl font-semibold mb-4">Roadmap</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Product milestones and validation timeline showing ongoing research, feature development, 
+                    and integration improvements to enhance RevOps capabilities and measurement precision.
+                  </p>
+                  <Button variant="outline" size="sm" onClick={() => openLearnMore('roadmap')}>
+                    Learn more
+                  </Button>
+                </Card>
+              </div>
+              <Card className="p-6 bg-primary/5">
+                <h4 className="font-semibold mb-3 text-primary">What this means for RevOps</h4>
+                <p className="text-sm text-muted-foreground">
+                  What's coming for RevOps dashboards & integrations—advanced analytics, 
+                  CRM automation, and predictive coaching recommendations.
+                </p>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Organization Training System */}
+      <section className="py-16 bg-gradient-to-b from-background to-muted/30">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Organization Training System</h2>
+            <p className="text-lg text-muted-foreground max-w-4xl mx-auto">
+              <strong>Beyond Sales Enablement:</strong> institutionalize shared language and decision habits across Sales, AE, Marketing, CS, Product, and HR. 
+              The goal isn't one-off workshops—it's an <strong>operating system for how the org communicates, decides, and improves.</strong>
+            </p>
+          </div>
+
+          {/* PRISM Academy */}
+          <div className="mb-12">
+            <h3 className="text-2xl font-semibold mb-6">PRISM Academy (Org‑wide Curriculum)</h3>
+            <div className="grid md:grid-cols-3 gap-6">
+              <Card className="p-6">
+                <BookOpen className="h-8 w-8 text-primary mb-3" />
+                <h4 className="font-semibold mb-2">Foundations (All‑hands, 60m)</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Core alignments, signals, block dynamics, profiles.
+                </p>
+                <div className="bg-primary/10 p-3 rounded text-sm">
+                  <strong>Outcome:</strong> A shared mental model and vocabulary.
+                </div>
+              </Card>
+
+              <Card className="p-6">
+                <Users className="h-8 w-8 text-primary mb-3" />
+                <h4 className="font-semibold mb-2">Role Paths (90–120m each)</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  SDR/BDR, <strong>AE</strong>, CS, Marketing, Product, Managers, Execs.
+                </p>
+                <div className="bg-primary/10 p-3 rounded text-sm">
+                  <strong>Outcome:</strong> Role‑specific plays (discovery maps, demo narratives, success plans, message briefs).
+                </div>
+              </Card>
+
+              <Card className="p-6">
+                <Lightbulb className="h-8 w-8 text-primary mb-3" />
+                <h4 className="font-semibold mb-2">Cross‑Functional Labs (120m)</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Sales↔Marketing, Sales↔CS, Product↔GTM alignment sessions.
+                </p>
+                <div className="bg-primary/10 p-3 rounded text-sm">
+                  <strong>Outcome:</strong> MQL→SQL consistency, handoff quality, feedback loops.
+                </div>
+              </Card>
+            </div>
+          </div>
+
+          {/* Train-the-Trainer */}
+          <div className="mb-12">
+            <h3 className="text-2xl font-semibold mb-6">Train‑the‑Trainer (PSA Program)</h3>
+            <div className="grid md:grid-cols-2 gap-8">
+              <Card className="p-6">
+                <UserCog className="h-8 w-8 text-primary mb-4" />
+                <h4 className="font-semibold mb-3">Internal PSA Certification</h4>
+                <ul className="text-sm text-muted-foreground space-y-2">
+                  <li>• Facilitator guides and slide decks</li>
+                  <li>• Exercise templates and scorecards</li>
+                  <li>• Adoption guardrails and refresh cadence</li>
+                  <li>• Office hours and ongoing support</li>
+                </ul>
+              </Card>
+              
+              <Card className="p-6 bg-primary/5">
+                <h4 className="font-semibold mb-3">Certification Outcomes</h4>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                    <span>Run foundations workshops quarterly</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                    <span>Facilitate cross-functional labs</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                    <span>Maintain knowledge and adoption metrics</span>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+
+          {/* Operating Rhythms & KPIs */}
+          <div className="grid lg:grid-cols-2 gap-8">
+            <Card className="p-6">
+              <h3 className="text-xl font-semibold mb-4">Operating Rhythms (Change That Sticks)</h3>
+              <div className="space-y-4">
+                <div className="border-l-4 border-primary pl-4">
+                  <h4 className="font-semibold text-sm">Enablement Council (monthly)</h4>
+                  <p className="text-xs text-muted-foreground">RevOps + PSA + functional leads review adoption, blockers, A/B learnings</p>
+                </div>
+                <div className="border-l-4 border-primary pl-4">
+                  <h4 className="font-semibold text-sm">Role‑based Coaching Loops (weekly)</h4>
+                  <p className="text-xs text-muted-foreground">Manager prompts tied to current campaigns/personas</p>
+                </div>
+                <div className="border-l-4 border-primary pl-4">
+                  <h4 className="font-semibold text-sm">Post‑Mortems (as‑needed)</h4>
+                  <p className="text-xs text-muted-foreground">Use archetype language to speed root‑cause analysis</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6">
+              <h3 className="text-xl font-semibold mb-4">Org‑Level KPIs (Culture & Execution)</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary" />
+                  <span><strong>Time‑to‑Role Competence</strong> (new hire to baseline proficiency)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ArrowRight className="h-4 w-4 text-primary" />
+                  <span><strong>Cross‑Functional Handoff Quality</strong> (SDR→AE→CS notes completeness)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-primary" />
+                  <span><strong>Meeting Effectiveness Index</strong> (decisions made per meeting)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 text-primary" />
+                  <span><strong>Message Consistency Score</strong> (Marketing briefs vs. AE discovery alignment)</span>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          <div className="text-center mt-8">
+            <div className="flex flex-wrap justify-center gap-4">
+              <Button variant="outline" onClick={() => alert('Academy Syllabus coming soon')}>
+                See the Academy Syllabus
+              </Button>
+              <Button variant="outline" onClick={() => alert('Train-the-Trainer Pack coming soon')}>
+                <Download className="mr-2 h-4 w-4" />
+                Download Train‑the‑Trainer Pack
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Implementation Timeline */}
+      <section className="py-16 bg-muted/30">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-3xl font-bold mb-12 text-center">Implementation Timeline</h2>
+          
+          <div className="space-y-6">
+            <Card className="p-6">
+              <div className="flex items-center gap-4 mb-3">
+                <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                <h3 className="text-lg font-semibold">Week 1: Data ingest, baseline metrics, PSA alignment</h3>
+              </div>
+            </Card>
+            
+            <Card className="p-6">
+              <div className="flex items-center gap-4 mb-3">
+                <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                <h3 className="text-lg font-semibold">Week 2: Assessments, mapping, first Cadence Kits</h3>
+              </div>
+            </Card>
+            
+            <Card className="p-6">
+              <div className="flex items-center gap-4 mb-3">
+                <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold">3-4</div>
+                <h3 className="text-lg font-semibold">Weeks 3–4: Workshops, Manager Console, dashboards</h3>
+              </div>
+            </Card>
+            
+            <Card className="p-6">
+              <div className="flex items-center gap-4 mb-3">
+                <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold">5+</div>
+                <h3 className="text-lg font-semibold">Week 5+: A/Bs, learning loops, automation</h3>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Case Vignettes */}
+      <section className="py-16">
+        <div className="max-w-6xl mx-auto px-6">
+          <h2 className="text-3xl font-bold mb-12 text-center">Case Vignettes</h2>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="p-6">
+              <Badge className="mb-4">SaaS Mid‑Market</Badge>
+              <h3 className="text-lg font-semibold mb-3">Reply rate +28%, meetings +22%</h3>
+              <p className="text-sm text-muted-foreground">
+                Analyst archetype targeting with social‑led openers increased engagement 
+                across technical buyer segments.
+              </p>
+            </Card>
+            
+            <Card className="p-6">
+              <Badge className="mb-4">B2B Services</Badge>
+              <h3 className="text-lg font-semibold mb-3">Ramp down 12 → 8 weeks</h3>
+              <p className="text-sm text-muted-foreground">
+                PSA micro‑coaching reduced new hire time‑to‑productivity through 
+                personalized learning paths.
+              </p>
+            </Card>
+            
+            <Card className="p-6">
+              <Badge className="mb-4">Cybersecurity</Badge>
+              <h3 className="text-lg font-semibold mb-3">Cycle time −17%</h3>
+              <p className="text-sm text-muted-foreground">
+                Driver archetype identification enabled phone + video first approach, 
+                accelerating decision timelines.
+              </p>
+            </Card>
           </div>
         </div>
       </section>
