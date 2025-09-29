@@ -157,8 +157,8 @@ export async function recomputeSession(
       share: fit.share,
       rank: index + 1,
       distance: scoredResult.distance_metrics?.find(d => d.code === fit.code)?.dist || null,
-      coherent_dims: scoredResult.dims_highlights?.coherent?.length || null,
-      unique_dims: scoredResult.dims_highlights?.unique?.length || null,
+      coherent_dims: scoredResult.dims_highlights?.coherent?.length > 0 ? scoredResult.dims_highlights.coherent.length : null,
+      unique_dims: scoredResult.dims_highlights?.unique?.length > 0 ? scoredResult.dims_highlights.unique.length : null,
       seat_coherence: scoredResult.seat_coherence || null,
       fit_parts: scoredResult.fit_parts ? {
         strengths_weight: scoredResult.fit_parts.strengths_weight,
