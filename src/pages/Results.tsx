@@ -12,8 +12,10 @@ import { ResultsV2 } from "@/components/assessment/ResultsV2";
 import { SimpleResults } from "@/components/assessment/SimpleResults";
 import { PaywallGuard } from "@/components/PaywallGuard";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Link as LinkIcon, Copy, Download, RotateCcw } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Link as LinkIcon, Copy, Download, RotateCcw, Bug, ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -63,6 +65,185 @@ async function triggerScoring(sessionId: string): Promise<void> {
       variant: "destructive"
     });
   }
+}
+
+// Function to force recompute using the new edge function
+async function forceRecompute(sessionId: string): Promise<void> {
+  try {
+    console.log(`🔄 Force recomputing session: ${sessionId}`);
+    
+    const { data, error } = await supabase.functions.invoke('force-recompute-session', {
+      body: { session_id: sessionId, force_recompute: true }
+    });
+
+    if (error) {
+      console.error('❌ Force recompute failed:', error);
+      toast({
+        title: "Recompute Error", 
+        description: "Failed to force recompute. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    console.log('✅ Force recompute successful:', data);
+    toast({
+      title: "Results Recomputed",
+      description: `Successfully recomputed session. Version: ${data?.version || 'unknown'}`,
+    });
+    
+  } catch (error) {
+    console.error('❌ Force recompute error:', error);
+    toast({
+      title: "Recompute Error",
+      description: "Unable to force recompute process.",
+      variant: "destructive"
+    });
+  }
+}
+
+// Debug Panel Component
+function DebugPanel({ data, error, sessionId, hasShareToken, shareToken, queryClient }: {
+  data: any;
+  error: any;
+  sessionId: string;
+  hasShareToken: boolean;
+  shareToken: string | null;
+  queryClient: any;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isRecomputing, setIsRecomputing] = useState(false);
+
+  const handleClearCache = () => {
+    queryClient.invalidateQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId) });
+    queryClient.removeQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId) });
+    toast({
+      title: "Cache Cleared",
+      description: "Query cache has been invalidated. Page will refetch data.",
+    });
+  };
+
+  const handleHardRefresh = () => {
+    // Clear all results cache
+    queryClient.invalidateQueries({ queryKey: resultsQueryKeys.all });
+    // Force browser cache clear with timestamp
+    const url = new URL(window.location.href);
+    url.searchParams.set('_t', Date.now().toString());
+    window.location.href = url.toString();
+  };
+
+  const handleForceRecompute = async () => {
+    setIsRecomputing(true);
+    try {
+      await forceRecompute(sessionId);
+      // Clear cache after recompute
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId) });
+        queryClient.refetchQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId) });
+      }, 2000);
+    } finally {
+      setIsRecomputing(false);
+    }
+  };
+
+  return (
+    <Card className="mb-4 border-yellow-200 bg-yellow-50">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger asChild>
+          <CardHeader className="cursor-pointer hover:bg-yellow-100 transition-colors">
+            <CardTitle className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <Bug className="h-4 w-4" />
+                Debug Info & Cache Controls
+              </div>
+              {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </CardTitle>
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent className="space-y-4">
+            {/* Current State */}
+            <div>
+              <h4 className="font-medium text-sm mb-2">Current State</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                <div>Session ID: <Badge variant="secondary">{sessionId}</Badge></div>
+                <div>Has Share Token: <Badge variant={hasShareToken ? "default" : "secondary"}>{hasShareToken ? "Yes" : "No"}</Badge></div>
+                {shareToken && <div>Share Token: <Badge variant="outline" className="font-mono text-xs">{shareToken.slice(0, 8)}...</Badge></div>}
+                <div>Current Time: <Badge variant="outline">{new Date().toISOString()}</Badge></div>
+              </div>
+            </div>
+
+            {/* Data Information */}
+            {data && (
+              <div>
+                <h4 className="font-medium text-sm mb-2">Data Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                  <div>Type Code: <Badge variant="default">{data.profile?.type_code || 'N/A'}</Badge></div>
+                  <div>Results Version: <Badge variant="secondary">{data.results_version || 'N/A'}</Badge></div>
+                  <div>Scoring Version: <Badge variant="secondary">{data.scoring_version || 'N/A'}</Badge></div>
+                  <div>Result ID: <Badge variant="outline" className="font-mono text-xs">{data.result_id?.slice(0, 8) || 'N/A'}...</Badge></div>
+                </div>
+              </div>
+            )}
+
+            {/* Profile Data */}
+            {data?.profile && (
+              <div>
+                <h4 className="font-medium text-sm mb-2">Profile Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+                  <div>Confidence: <Badge variant="outline">{data.profile.conf_calibrated?.toFixed(4) || 'N/A'}</Badge></div>
+                  <div>Fit Score: <Badge variant="outline">{data.profile.score_fit_calibrated?.toFixed(2) || 'N/A'}</Badge></div>
+                  <div>Paid: <Badge variant={data.profile.paid ? "default" : "secondary"}>{data.profile.paid ? "Yes" : "No"}</Badge></div>
+                </div>
+              </div>
+            )}
+
+            {/* Error Information */}
+            {error && (
+              <div>
+                <h4 className="font-medium text-sm mb-2 text-red-600">Error Information</h4>
+                <div className="bg-red-50 p-2 rounded text-xs">
+                  <pre className="whitespace-pre-wrap">{JSON.stringify(error, null, 2)}</pre>
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div>
+              <h4 className="font-medium text-sm mb-2">Cache & Refresh Actions</h4>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={handleClearCache}>
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Clear Cache
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleHardRefresh}>
+                  <RotateCcw className="h-3 w-3 mr-1" />
+                  Hard Refresh
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="default" 
+                  onClick={handleForceRecompute}
+                  disabled={isRecomputing}
+                >
+                  <RefreshCw className={`h-3 w-3 mr-1 ${isRecomputing ? 'animate-spin' : ''}`} />
+                  Force Recompute
+                </Button>
+              </div>
+            </div>
+
+            {/* Raw Data */}
+            <div>
+              <h4 className="font-medium text-sm mb-2">Raw Response Data</h4>
+              <div className="bg-gray-100 p-2 rounded text-xs max-h-32 overflow-y-auto">
+                <pre className="whitespace-pre-wrap">{JSON.stringify(data, null, 2)}</pre>
+              </div>
+            </div>
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
+  );
 }
 
 type ResultsProfile = {
@@ -399,6 +580,16 @@ export default function Results({ components }: ResultsProps = {}) {
     <PaywallGuard profile={profile} sessionId={sessionId}>
       <div className="min-h-screen bg-background">
         <div className="py-8 px-4 space-y-6">
+          {/* Debug Panel */}
+          <DebugPanel 
+            data={data}
+            error={resultsQuery.error}
+            sessionId={sessionId}
+            hasShareToken={hasShareToken}
+            shareToken={shareToken}
+            queryClient={queryClient}
+          />
+          
           <div id="results-content">
             <ResultsView
               profile={profile as any}
