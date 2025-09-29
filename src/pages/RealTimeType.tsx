@@ -153,6 +153,14 @@ const RealTimeType: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:py-10">
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Real-Time Assessment Analytics</h1>
+        <p className="mt-2 text-gray-600 dark:text-gray-300">
+          Live dashboard showing PRISM personality assessment completions and trends in real-time.
+        </p>
+      </div>
+
       <section className="glass rounded-2xl border border-slate-200/70 p-6 shadow-lg dark:border-slate-800/70">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
           <h2 className="text-lg font-semibold">
@@ -230,8 +238,8 @@ const RealTimeType: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </section>
-    </div>
+        </section>
+      </div>
   );
 };
 

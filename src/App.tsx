@@ -234,6 +234,7 @@ const App = () => (
                   {/* Live + Real-time routes */}
                   <Route path="/live" element={<Live />} />
                   <Route path="/real-time-type" element={<RealTimeType />} />
+                  <Route path="/realtime-type" element={<Navigate to="/real-time-type" replace />} />
                   <Route path="/live-dashboard" element={<LiveDashboard />} />
 
                   <Route
