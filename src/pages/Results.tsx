@@ -28,6 +28,42 @@ import { IS_PREVIEW } from "@/lib/env";
 import { ensureSessionLinked } from "@/services/sessionLinking";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { resultsQueryKeys } from "@/features/results/queryKeys";
+import { fixBrokenSession } from "@/utils/fixBrokenSession";
+
+// Function to trigger scoring for missing results
+async function triggerScoring(sessionId: string): Promise<void> {
+  try {
+    console.log(`🚀 Triggering scoring for session: ${sessionId}`);
+    
+    const { data, error } = await supabase.functions.invoke('force-score-session', {
+      body: { session_id: sessionId }
+    });
+
+    if (error) {
+      console.error('❌ Scoring trigger failed:', error);
+      toast({
+        title: "Scoring Error", 
+        description: "Failed to trigger scoring. Please try refreshing the page.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    console.log('✅ Scoring triggered successfully:', data);
+    toast({
+      title: "Processing Results",
+      description: "Your results are being computed. Please wait a moment...",
+    });
+    
+  } catch (error) {
+    console.error('❌ Scoring trigger error:', error);
+    toast({
+      title: "Scoring Error",
+      description: "Unable to trigger scoring process.",
+      variant: "destructive"
+    });
+  }
+}
 
 type ResultsProfile = {
   paid: boolean;
@@ -478,19 +514,37 @@ export default function Results({ components }: ResultsProps = {}) {
   }
 
   if (err) {
+    // Check if this is a scoring-related error and trigger scoring
+    if (err.includes("Results updating") || err.includes("SCORING_ROWS_MISSING") || 
+        err.includes("cache_miss") || err.includes("scoring_needed")) {
+      triggerScoring(sessionId);
+    }
+    
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardContent className="p-6 space-y-4 text-center">
             <h2 className="text-lg font-semibold">Unable to load results</h2>
             <p className="text-muted-foreground">{err}</p>
-            <Button onClick={() => window.location.reload()}>Retry</Button>
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+              <Button onClick={() => window.location.reload()}>
+                Refresh page
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/assessment?start=true")}>
+                Retake assessment
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => triggerScoring(sessionId)}
+                disabled={!sessionId}
+              >
+                Trigger Scoring
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
     );
-  }
-
   if (loading && !data) return <div className="p-8">Loading…</div>;
   if (!data) return <div className="p-8">No results available.</div>;
 
