@@ -1,5 +1,6 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useEffect } from "react";
 import { ADMIN_MODE } from "@/lib/env";
+import { triggerRecompute } from "@/utils/triggerRecompute";
 
 const LiteAdmin = () => (
   <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -19,6 +20,13 @@ const FullAdmin = lazy(() => import("./FullAdminApp"));
 
 export default function AdminDashboard(): React.ReactElement {
   const full = ADMIN_MODE === "full";
+  
+  // Auto-trigger recompute when dashboard loads
+  useEffect(() => {
+    console.log('🎯 Dashboard loaded - triggering recompute...');
+    triggerRecompute();
+  }, []);
+  
   return (
     <Suspense fallback={<div className="p-6 text-sm">Loading admin…</div>}>
       {full ? <FullAdmin /> : <LiteAdmin />}

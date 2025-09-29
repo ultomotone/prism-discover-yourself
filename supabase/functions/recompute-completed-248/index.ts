@@ -38,12 +38,12 @@ serve(async (req) => {
       dry_run
     }));
 
-    // Find completed sessions with 248+ questions and emails
+    // Find completed sessions with ANY questions and emails (lowered from 248)
     const { data: sessions, error } = await supabase
       .from("assessment_sessions")
       .select("id, email, completed_questions, completed_at")
       .eq("status", "completed")
-      .gte("completed_questions", 248)
+      .gte("completed_questions", 1)  // Changed from 248 to 1
       .not("email", "is", null)
       .neq("email", "")
       .order("completed_at", { ascending: false })

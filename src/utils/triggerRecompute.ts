@@ -1,23 +1,39 @@
-// Simple trigger script for recomputing all sessions
-import { recomputeAllSessions } from './recomputeAllSessions';
+import { invokeEdge } from '@/lib/edge-functions';
 
-async function main() {
-  console.log('🚀 Triggering recompute of all sessions...');
-  const result = await recomputeAllSessions();
+export async function triggerRecompute() {
+  console.log('🚀 Starting recompute process...');
   
-  if (result.success) {
-    console.log(`🎉 Successfully processed ${result.processed}/${result.total} sessions`);
-    if (result.failed && result.failed.length > 0) {
-      console.warn(`⚠️  ${result.failed.length} sessions failed to recompute`);
+  try {
+    const response = await invokeEdge('recompute-completed-248', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        limit: 100,
+        dry_run: false
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Recompute failed:', response.status, errorText);
+      return { success: false, error: errorText };
     }
-  } else {
-    console.error('❌ Recompute failed:', result.error);
+    
+    const result = await response.json();
+    console.log('✅ Recompute completed successfully!');
+    console.log('📊 Results:', result);
+    
+    return { success: true, data: result };
+    
+  } catch (error) {
+    console.error('❌ Recompute error:', error);
+    return { success: false, error: error.message };
   }
 }
 
-// Execute if run directly
-if (require.main === module) {
-  main().catch(console.error);
+// Auto-trigger on import for immediate execution
+if (typeof window !== 'undefined') {
+  triggerRecompute();
 }
-
-export { main as triggerRecompute };
