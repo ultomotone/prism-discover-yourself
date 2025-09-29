@@ -12,6 +12,9 @@ verify_jwt = false
 [functions.start_assessment]
 verify_jwt = false
 
+[functions.send-assessment-reminders]
+verify_jwt = false
+
 [functions.complete-near-finished-sessions]
 verify_jwt = false
 
