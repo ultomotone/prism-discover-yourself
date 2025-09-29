@@ -102,17 +102,24 @@ async function forceRecompute(sessionId: string): Promise<void> {
   }
 }
 
-// Debug Panel Component
-function DebugPanel({ data, error, sessionId, hasShareToken, shareToken, queryClient }: {
+// Debug Panel Component - Only visible to admin users
+function DebugPanel({ data, error, sessionId, hasShareToken, shareToken, queryClient, userEmail }: {
   data: any;
   error: any;
   sessionId: string;
   hasShareToken: boolean;
   shareToken: string | null;
   queryClient: any;
+  userEmail?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isRecomputing, setIsRecomputing] = useState(false);
+
+  // Only show for admin users
+  const ADMIN_EMAILS = ['daniel.joseph.speiss@gmail.com'];
+  if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
+    return null;
+  }
 
   const handleClearCache = () => {
     queryClient.invalidateQueries({ queryKey: resultsQueryKeys.sessionScope(sessionId) });

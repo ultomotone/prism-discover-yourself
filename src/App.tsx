@@ -12,6 +12,7 @@ import Assessment from "./pages/Assessment";
 import Results from "./pages/Results";
 import History from "./pages/History";
 import UserDashboard from "./pages/UserDashboard";
+import Troubleshoot from "./pages/Troubleshoot";
 import RealTimeType from "./pages/RealTimeType";
 import LiveDashboard from "./pages/LiveDashboard";
 import Live from "./pages/Live";
@@ -224,6 +225,7 @@ const App = () => (
                   />
                   <Route path="/history" element={<History />} />
                   <Route path="/dashboard" element={<UserDashboard />} />
+                  <Route path="/troubleshoot" element={<Troubleshoot />} />
 
                   {/* Live + Real-time routes */}
                   <Route path="/live" element={<Live />} />

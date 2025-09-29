@@ -2,9 +2,12 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Menu, X, ChevronDown, User, LogOut } from "lucide-react";
+import { Menu, X, ChevronDown, User, LogOut, Bug } from "lucide-react";
 import { prismTypes } from "@/data/prismTypes";
 import { useAuth } from "@/contexts/AuthContext";
+
+// Access control - only for admin users
+const ADMIN_EMAILS = ['daniel.joseph.speiss@gmail.com'];
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -149,10 +152,18 @@ const Header = () => {
                       <ChevronDown className="h-3 w-3" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuContent align="end" className="w-48 bg-background border border-border shadow-lg z-50">
                     <DropdownMenuItem asChild>
                       <Link to="/dashboard" className="w-full">Dashboard</Link>
                     </DropdownMenuItem>
+                    {ADMIN_EMAILS.includes(user.email || '') && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/troubleshoot" className="w-full">
+                          <Bug className="h-4 w-4 mr-2" />
+                          Troubleshoot
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={signOut} className="text-destructive">
                       <LogOut className="h-4 w-4 mr-2" />
