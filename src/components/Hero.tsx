@@ -14,16 +14,11 @@ const Hero = () => {
           <div className="space-y-8">
             <div className="space-y-6">
               <h1 className="prism-heading-xl text-primary">
-                Discover the{" "}
-                <span className="bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">
-                  Science of You
-                </span>{" "}
-                with PRISM
+                Predict your type on the first pass.
               </h1>
               <p className="prism-body-lg text-muted-foreground max-w-2xl">
-                Unlock your authentic self through evidence-based personality insights. 
-                PRISM combines cutting-edge research with practical applications to help 
-                individuals and teams reach their full potential.
+                PRISM Dynamics™ maps how you process information — in flow and under pressure — 
+                to predict your best-fit type before any 1:1 typing.
               </p>
             </div>
 
@@ -35,16 +30,16 @@ const Hero = () => {
                 className="group"
                 onClick={() => navigate('/assessment')}
               >
-                Take the PRISM Assessment
+                Start the Test
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button 
                 variant="outline-primary" 
                 size="lg" 
-                onClick={() => navigate('/roadmap')}
+                onClick={() => navigate('/how-it-works')}
                 className="group"
               >
-                Assessment Roadmap
+                How It Works
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>

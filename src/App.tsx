@@ -336,6 +336,36 @@ const App = () => (
                   <Route path="/core-alignments" element={<CoreAlignments />} />
                   <Route path="/resources" element={<Resources />} />
                   <Route path="/roadmap" element={<Roadmap />} />
+                  <Route path="/membership" element={
+                    <Suspense fallback={<div className="p-6">Loading...</div>}>
+                      {React.createElement(lazy(() => import("./pages/Membership")))}
+                    </Suspense>
+                  } />
+                  <Route path="/disambiguation" element={
+                    <Suspense fallback={<div className="p-6">Loading...</div>}>
+                      {React.createElement(lazy(() => import("./pages/Disambiguation")))}
+                    </Suspense>
+                  } />
+                  <Route path="/methods-accuracy" element={
+                    <Suspense fallback={<div className="p-6">Loading...</div>}>
+                      {React.createElement(lazy(() => import("./pages/MethodsAccuracy")))}
+                    </Suspense>
+                  } />
+                  <Route path="/library/information-elements-vs-traits" element={
+                    <Suspense fallback={<div className="p-6">Loading...</div>}>
+                      {React.createElement(lazy(() => import("./pages/library/InformationElementsVsTraits")))}
+                    </Suspense>
+                  } />
+                  <Route path="/library/dimensionality-range" element={
+                    <Suspense fallback={<div className="p-6">Loading...</div>}>
+                      {React.createElement(lazy(() => import("./pages/library/DimensionalityRange")))}
+                    </Suspense>
+                  } />
+                  <Route path="/library/block-dynamics" element={
+                    <Suspense fallback={<div className="p-6">Loading...</div>}>
+                      {React.createElement(lazy(() => import("./pages/library/BlockDynamics")))}
+                    </Suspense>
+                  } />
                   <Route
                     path="/your-personality-blueprint"
                     element={<YourPersonalityBlueprint />}
