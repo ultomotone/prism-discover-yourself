@@ -4,8 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 
 const Disambiguation = () => {
   const navigate = useNavigate();
@@ -21,8 +19,6 @@ const Disambiguation = () => {
           }
         ]}
       />
-      
-      <Header />
       
       <main className="pt-24 pb-16">
         <div className="prism-container max-w-4xl">
@@ -112,8 +108,6 @@ const Disambiguation = () => {
           </div>
         </div>
       </main>
-      
-      <Footer />
     </div>
   );
 };
