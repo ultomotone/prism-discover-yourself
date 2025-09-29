@@ -156,18 +156,23 @@ export async function recomputeSession(
       fit: fit.fit,
       share: fit.share,
       rank: index + 1,
-      distance: null,
-      coherent_dims: null,
-      unique_dims: null,
-      seat_coherence: null,
-      fit_parts: null
+      distance: scoredResult.distance_metrics?.find(d => d.code === fit.code)?.dist || null,
+      coherent_dims: scoredResult.dims_highlights?.coherent?.length || null,
+      unique_dims: scoredResult.dims_highlights?.unique?.length || null,
+      seat_coherence: scoredResult.seat_coherence || null,
+      fit_parts: scoredResult.fit_parts ? {
+        strengths_weight: scoredResult.fit_parts.strengths_weight,
+        dims_weight: scoredResult.fit_parts.dims_weight,
+        fc_weight: scoredResult.fit_parts.fc_weight,
+        penalty_opp: scoredResult.fit_parts.penalty_opp
+      } : null
     }));
 
     const functions = Object.entries(scoredResult.strengths).map(([func, strength]) => ({
       func_code: func,
       strength,
       dimension: scoredResult.dimensions[func as keyof typeof scoredResult.dimensions] || null,
-      d_index_z: null
+      d_index_z: scoredResult.distance_metrics?.find(d => d.code === func)?.norm || null
     }));
 
     const state = {
