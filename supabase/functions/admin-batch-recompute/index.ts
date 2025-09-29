@@ -77,14 +77,14 @@ serve(async (req) => {
     }));
 
     // Call the actual recompute-batch function with service role key
-    const recomputeResponse = await fetch(`${SUPABASE_URL}/functions/v1/recompute-batch`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': SERVICE_ROLE_KEY
-      },
-      body: JSON.stringify({ limit, since, dry_run })
-    });
+      const recomputeResponse = await fetch(`${SUPABASE_URL}/functions/v1/recompute-batch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SERVICE_ROLE_KEY}`
+        },
+        body: JSON.stringify({ limit, since, dry_run })
+      });
 
     const result = await recomputeResponse.json();
 
