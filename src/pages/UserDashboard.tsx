@@ -25,6 +25,7 @@ import {
   type RetakeBlock,
 } from "@/hooks/useEmailSessionManager";
 import { RetakeLimitNotice } from "@/components/assessment/RetakeLimitNotice";
+import { CleanupSessionsButton } from "@/components/CleanupSessionsButton";
 
 interface UserSession {
   id: string;
@@ -190,14 +191,17 @@ const UserDashboard = () => {
                     Welcome back, {user?.email}
                   </p>
                 </div>
-                <Button 
-                  onClick={signOut}
-                  variant="outline"
-                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
-                </Button>
+                <div className="flex gap-2">
+                  <CleanupSessionsButton />
+                  <Button 
+                    onClick={signOut}
+                    variant="outline"
+                    className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
