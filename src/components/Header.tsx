@@ -5,6 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Menu, X, ChevronDown, User, LogOut, Bug } from "lucide-react";
 import { prismTypes } from "@/data/prismTypes";
 import { useAuth } from "@/contexts/AuthContext";
+import prismLogo from "@/assets/prism-logo.png";
 
 // Access control - only for admin users
 const ADMIN_EMAILS = ['daniel.joseph.speiss@gmail.com'];
@@ -49,10 +50,8 @@ const Header = () => {
         <div className="flex justify-between items-center h-16 px-4">
           {/* Logo */}
           <Link to="/" className="flex items-center hover:opacity-80 prism-transition">
-            <div className="w-9 h-9 prism-gradient-hero rounded-lg flex items-center justify-center mr-3">
-              <span className="text-white font-bold text-xl">P</span>
-            </div>
-            <span className="text-2xl font-bold text-primary tracking-tight">PRISM</span>
+            <img src={prismLogo} alt="PRISM Dynamics Logo" className="w-9 h-9 mr-3" />
+            <span className="text-2xl font-bold text-primary tracking-tight">PRISM Dynamics™</span>
           </Link>
 
           {/* Desktop Navigation */}

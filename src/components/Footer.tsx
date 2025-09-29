@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Mail, Phone, Linkedin, Facebook, Youtube, Users } from "lucide-react";
+import prismLogo from "@/assets/prism-logo.png";
 
 const Footer = () => {
   const navigate = useNavigate();
@@ -43,8 +44,8 @@ const Footer = () => {
         <div>
           <div className="flex items-center space-x-2 mb-4">
             <button onClick={() => navigate('/')} className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-              <div className="bg-white text-indigo-900 font-bold rounded w-6 h-6 flex items-center justify-center">P</div>
-              <h2 className="font-bold text-lg">PRISM Dynamics</h2>
+              <img src={prismLogo} alt="PRISM Dynamics Logo" className="w-6 h-6" />
+              <h2 className="font-bold text-lg">PRISM Dynamics™</h2>
             </button>
           </div>
           <p className="mb-4 text-gray-300">
