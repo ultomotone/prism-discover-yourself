@@ -234,7 +234,12 @@ serve(async (req) => {
       const scoringPayload = {
         version: RESULTS_VERSION,
         results_version: RESULTS_VERSION,
-        profile: profileRow,
+        profile: {
+          ...profileRow,
+          session_id,
+          type_code: profile.type_code,
+          confidence: profile.conf_calibrated ?? profile.conf_raw ?? 0
+        },
         types: types.map(t => ({
           type_code: t.type_code,
           fit: t.fit,

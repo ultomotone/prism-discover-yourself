@@ -23,7 +23,8 @@ function validatePayload(payload: ScoringPayload): { valid: boolean; errors: str
   
   // Check top-level fields
   for (const field of coreRequiredFields) {
-    if (!payload[field as keyof ScoringPayload]) {
+    const v = (payload as any)[field];
+    if (v === undefined || v === null || (typeof v === 'string' && v.trim() === '')) {
       errors.push(`Missing required field: ${field}`);
     }
   }
@@ -33,7 +34,9 @@ function validatePayload(payload: ScoringPayload): { valid: boolean; errors: str
     errors.push('Missing profile object');
   } else {
     for (const field of profileRequiredFields) {
-      if (!payload.profile[field]) {
+      const v = (payload.profile as any)[field];
+      // allow 0 (number) and "0" (string) but disallow null/undefined/empty-string
+      if (v === undefined || v === null || (typeof v === 'string' && v.trim() === '')) {
         errors.push(`Missing required profile field: ${field}`);
       }
     }
@@ -104,7 +107,8 @@ export async function persistResultsV3(
     had_distance_metrics: !!profile.distance_metrics,
     had_seat_coherence: typeof profile.seat_coherence === 'number',
     had_fit_parts: !!profile.fit_parts,
-    had_blocks_norm_blended: !!(profile.blocks_norm as any)?.blended
+    had_blocks_norm_blended: !!(profile.blocks_norm as any)?.blended,
+    had_profile_confidence: typeof confidence === 'number' || typeof confidence === 'string'
   }));
 
   if (!WRITE_EXPLODED) {
