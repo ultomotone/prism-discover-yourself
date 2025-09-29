@@ -12,8 +12,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LogOut, User, Target, ExternalLink, ChevronRight, RefreshCw, Zap, Loader2 } from "lucide-react";
+import { LogOut, User, Target, ExternalLink, ChevronRight, RefreshCw, Zap, Loader2, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
@@ -64,6 +65,7 @@ const UserDashboard = () => {
   const [attempts, setAttempts] = useState<AssessmentAttempt[]>([]);
   const [retakeBlock, setRetakeBlock] = useState<RetakeBlock | null>(null);
   const [isMigrating, setIsMigrating] = useState(false);
+  const { toast } = useToast();
 
   // Real-time scoring hook
   const {
@@ -192,6 +194,36 @@ const UserDashboard = () => {
     }
 
     navigate(`/assessment?start=true&session=${result.session.session_id}`);
+  };
+
+  const recomputeSession = async (sessionId: string) => {
+    try {
+      toast({
+        title: "Recomputing Session",
+        description: "Updating with enhanced scoring metrics...",
+      });
+
+      const { data, error } = await supabase.functions.invoke('recompute-new-metrics', {
+        body: { session_ids: [sessionId] }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Session recomputed with enhanced metrics!",
+      });
+
+      // Refresh data
+      fetchUserData();
+    } catch (error) {
+      console.error('Recompute error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to recompute session",
+        variant: "destructive",
+      });
+    }
   };
 
   const formatTimestamp = (value: string | null) => {
@@ -570,14 +602,25 @@ const UserDashboard = () => {
 
                             <div className="flex gap-2">
                               {isDone ? (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => navigate(`/results/${session.id}`)}
-                                >
-                                  View Results
-                                  <ExternalLink className="h-4 w-4 ml-2" />
-                                </Button>
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => navigate(`/results/${session.id}`)}
+                                  >
+                                    <Eye className="h-4 w-4 mr-1" />
+                                    View Results
+                                  </Button>
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() => recomputeSession(session.id)}
+                                    title="Recompute with enhanced scoring metrics"
+                                  >
+                                    <Zap className="h-4 w-4 mr-1" />
+                                    Enhance
+                                  </Button>
+                                </>
                               ) : (
                                 <Button
                                   size="sm"
