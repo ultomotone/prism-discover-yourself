@@ -78,6 +78,28 @@ export async function recomputeSession(
     return acc;
   }, {} as Record<string, any>);
 
+  // Ensure required config structure for scoring engine
+  if (!config.conf_raw_params) {
+    config.conf_raw_params = { a: 2.5, b: 8.0, c: 1.2 }; // Default values
+  }
+  if (!config.fit_band_thresholds) {
+    config.fit_band_thresholds = { 
+      high_fit: 3.5, 
+      moderate_fit: 2.5, 
+      high_gap: 0.8, 
+      moderate_gap: 0.4 
+    };
+  }
+  if (!config.softmax_temp) {
+    config.softmax_temp = 0.5;
+  }
+  if (!config.fc_expected_min) {
+    config.fc_expected_min = 8;
+  }
+  if (!config.results_version) {
+    config.results_version = "v1.2.0";
+  }
+
   const typePrototypes = prototypesRes.data.reduce((acc, row) => {
     if (!acc[row.type_code]) acc[row.type_code] = {};
     acc[row.type_code][row.func] = row.block;
