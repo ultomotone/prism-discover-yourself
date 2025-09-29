@@ -107,76 +107,61 @@ export function useEmailSessionManager() {
         } satisfies StartAssessmentSessionResult;
       }
 
-      console.log('Calling supabase.functions.invoke with start_assessment...');
-      const { data, error } = await supabase.functions.invoke('start_assessment', {
-        body: {
-          email,
-          user_id: userId,
-          force_new: forceNew
-        }
+      console.log('Calling supabase.rpc with start_assessment_with_cleanup...');
+      const { data, error } = await supabase.rpc('start_assessment_with_cleanup', {
+        p_email: email,
+        p_user_id: userId
       });
 
-      console.log('Edge function response:', { data, error });
+      console.log('Database function response:', { data, error });
 
       if (error) {
         console.error('Error starting assessment session:', error);
         toast({
-          title: "Session Error",
+          title: "Session Error", 
           description: "Failed to start assessment session. Please try again.",
           variant: "destructive",
         });
         return null;
       }
 
-      const payload = data as (SessionData & {
-        success?: boolean;
-        error?: string;
-        attempt_no?: number;
-      }) | null;
+      const payload = data as {
+        session_id?: string;
+        share_token?: string; 
+        status?: string;
+      } | null;
 
-      if (!payload || !payload.success) {
+      if (!payload || payload.status !== 'success') {
         console.error('Assessment session failed:', payload);
         toast({
           title: "Session Error",
-          description: payload?.error || "Failed to start assessment session.",
-          variant: "destructive",
+          description: "Failed to start assessment session.",
+          variant: "destructive", 
         });
         return null;
       }
 
       const session: SessionData = {
-        session_id: payload.session_id,
+        session_id: payload.session_id!,
         share_token: payload.share_token,
-        existing_session: Boolean(payload.existing_session),
-        progress: payload.progress,
-        recent_completion: payload.recent_completion,
-        attempt_no: payload.attempt_no ?? allowance.attemptNo,
+        existing_session: false,
+        attempt_no: allowance.attemptNo,
       };
 
       console.log('Assessment session started successfully:', session);
 
-      // Show appropriate message based on session type
-      if (session.existing_session) {
-        toast({
-          title: "Resuming Assessment",
-          description: `Continuing from question ${(session.progress?.completed || 0) + 1}`,
-        });
-      } else if (session.recent_completion?.has_recent_completion) {
-        const days = Math.round(session.recent_completion.days_since_completion);
-        toast({
-          title: "Recent Assessment Detected",
-          description: `You completed an assessment ${days} day${days !== 1 ? 's' : ''} ago. Starting fresh.`,
-        });
-      } else if (email) {
-        toast({
-          title: "Assessment Started",
-          description: "Your progress will be automatically saved.",
-        });
+      // Show appropriate message based on session type 
+      toast({
+        title: "Assessment Started",
+        description: "Any previous in-progress sessions have been cleaned up. Your progress will be saved.",
+      });
+      
+      if (email) {
         trackLead(email);
       }
 
       return {
-        status: session.existing_session ? 'existing' : 'new',
+        status: 'new',
         session,
       } satisfies StartAssessmentSessionResult;
     } catch (error) {

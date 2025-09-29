@@ -1411,6 +1411,10 @@ export type Database = {
           session_id: string
         }[]
       }
+      start_assessment_with_cleanup: {
+        Args: { p_email: string; p_user_id?: string }
+        Returns: Json
+      }
       trigger_session_cleanup: {
         Args: Record<PropertyKey, never>
         Returns: Json
