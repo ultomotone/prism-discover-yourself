@@ -1,11 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Mail, Phone, Linkedin, Facebook, Youtube, Users } from "lucide-react";
 
 const Footer = () => {
-
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
 
   const handleSubscribe = (e: React.FormEvent) => {
@@ -41,10 +42,10 @@ const Footer = () => {
         {/* About PRISM */}
         <div>
           <div className="flex items-center space-x-2 mb-4">
-            <a href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+            <button onClick={() => navigate('/')} className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
               <div className="bg-white text-indigo-900 font-bold rounded w-6 h-6 flex items-center justify-center">P</div>
               <h2 className="font-bold text-lg">PRISM</h2>
-            </a>
+            </button>
           </div>
           <p className="mb-4 text-gray-300">
             Empowering individuals and teams through scientifically-backed personality insights.
@@ -67,9 +68,9 @@ const Footer = () => {
           <ul className="space-y-2 text-gray-300">
             {popularLinks.components.map((link) => (
               <li key={link.name}>
-                <a href={link.href} className="hover:text-white transition-colors">
+                <button onClick={() => navigate(link.href)} className="hover:text-white transition-colors text-left">
                   {link.name}
-                </a>
+                </button>
               </li>
             ))}
           </ul>
@@ -80,20 +81,20 @@ const Footer = () => {
           <h3 className="font-semibold mb-4">Resources</h3>
           <ul className="space-y-2 text-gray-300">
             <li>
-              <a href="/real-time-type" className="hover:text-white transition-colors">
+              <button onClick={() => navigate('/real-time-type')} className="hover:text-white transition-colors text-left">
                 Real-time Type
-              </a>
+              </button>
             </li>
             <li>
-              <a href="/roadmap" className="hover:text-white transition-colors">
+              <button onClick={() => navigate('/roadmap')} className="hover:text-white transition-colors text-left">
                 Roadmap
-              </a>
+              </button>
             </li>
             {popularLinks.support.map((link) => (
               <li key={link.name}>
-                <a href={link.href} className="hover:text-white transition-colors">
+                <button onClick={() => navigate(link.href)} className="hover:text-white transition-colors text-left">
                   {link.name}
-                </a>
+                </button>
               </li>
             ))}
           </ul>
