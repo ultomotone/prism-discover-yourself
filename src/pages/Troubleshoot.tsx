@@ -302,6 +302,7 @@ const Troubleshoot: React.FC = () => {
     } finally {
       setCleanupLoading(false);
     }
+  };
 
   useEffect(() => {
     loadRecentSessions();
