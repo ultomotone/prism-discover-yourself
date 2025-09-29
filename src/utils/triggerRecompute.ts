@@ -32,8 +32,3 @@ export async function triggerRecompute() {
     return { success: false, error: error.message };
   }
 }
-
-// Auto-trigger on import for immediate execution
-if (typeof window !== 'undefined') {
-  triggerRecompute();
-}
