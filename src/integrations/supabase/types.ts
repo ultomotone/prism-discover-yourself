@@ -194,6 +194,111 @@ export type Database = {
         }
         Relationships: []
       }
+      assessment_scoring_key_backup: {
+        Row: {
+          created_at: string | null
+          fc_map: Json | null
+          pair_group: string | null
+          question_id: number | null
+          question_type: string | null
+          reverse_scored: boolean | null
+          scale_type:
+            | Database["public"]["Enums"]["assessment_scale_type"]
+            | null
+          section: string | null
+          snap_ts: string | null
+          social_desirability: boolean | null
+          tag: string | null
+          updated_at: string | null
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          fc_map?: Json | null
+          pair_group?: string | null
+          question_id?: number | null
+          question_type?: string | null
+          reverse_scored?: boolean | null
+          scale_type?:
+            | Database["public"]["Enums"]["assessment_scale_type"]
+            | null
+          section?: string | null
+          snap_ts?: string | null
+          social_desirability?: boolean | null
+          tag?: string | null
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          fc_map?: Json | null
+          pair_group?: string | null
+          question_id?: number | null
+          question_type?: string | null
+          reverse_scored?: boolean | null
+          scale_type?:
+            | Database["public"]["Enums"]["assessment_scale_type"]
+            | null
+          section?: string | null
+          snap_ts?: string | null
+          social_desirability?: boolean | null
+          tag?: string | null
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Relationships: []
+      }
+      assessment_scoring_key_staging: {
+        Row: {
+          created_at: string | null
+          fc_map: Json | null
+          pair_group: string | null
+          question_id: number | null
+          question_type: string | null
+          reverse_scored: boolean | null
+          scale_type:
+            | Database["public"]["Enums"]["assessment_scale_type"]
+            | null
+          section: string | null
+          social_desirability: boolean | null
+          tag: string | null
+          updated_at: string | null
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          fc_map?: Json | null
+          pair_group?: string | null
+          question_id?: number | null
+          question_type?: string | null
+          reverse_scored?: boolean | null
+          scale_type?:
+            | Database["public"]["Enums"]["assessment_scale_type"]
+            | null
+          section?: string | null
+          social_desirability?: boolean | null
+          tag?: string | null
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          fc_map?: Json | null
+          pair_group?: string | null
+          question_id?: number | null
+          question_type?: string | null
+          reverse_scored?: boolean | null
+          scale_type?:
+            | Database["public"]["Enums"]["assessment_scale_type"]
+            | null
+          section?: string | null
+          social_desirability?: boolean | null
+          tag?: string | null
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Relationships: []
+      }
       assessment_sessions: {
         Row: {
           attempt_no: number | null
@@ -1438,6 +1543,16 @@ export type Database = {
           p_source?: string
         }
         Returns: undefined
+      }
+      scoring_key_lint: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          issue: string
+          number: number
+          question_id: number
+          question_type: string
+          section: string
+        }[]
       }
       sessions_with_min_answers: {
         Args: { days_back?: number; min_answers?: number }
