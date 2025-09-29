@@ -597,13 +597,13 @@ function Top3({ p, types }:{ p:Profile; types?: any[] }){
               {isMain && (
                 <div className="mt-2 text-xs">
                   <div className="mb-1 flex items-center gap-1">
-                    <b>Coherent dims</b>: {p.dims_highlights?.coherent?.join(', ') || '—'}
+                    <b>Coherent dims</b>: {safeArray(p.dims_highlights?.coherent).join(', ') || '—'}
                     <InfoTip title="Coherent Functions">
                       <div>{GLOSSARY.coherent.text}</div>
                     </InfoTip>
                   </div>
                   <div className="flex items-center gap-1">
-                    <b>Unique dims</b>: <span className="text-primary">{p.dims_highlights?.unique?.join(', ') || '—'}</span>
+                    <b>Unique dims</b>: <span className="text-primary">{safeArray(p.dims_highlights?.unique).join(', ') || '—'}</span>
                     <InfoTip title="Unique Functions">
                       <div>{GLOSSARY.unique.text}</div>
                     </InfoTip>

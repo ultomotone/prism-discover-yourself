@@ -379,26 +379,6 @@ const UserDashboard = () => {
                       </div>
                     )}
 
-                    <div className="flex justify-center pt-4">
-                      <Button
-                        onClick={() => recomputeScoring()}
-                        disabled={isRecomputing}
-                        variant="outline"
-                        className="flex items-center gap-2"
-                      >
-                        {isRecomputing ? (
-                          <>
-                            <RefreshCw className="h-4 w-4 animate-spin" />
-                            Recomputing...
-                          </>
-                        ) : (
-                          <>
-                            <Zap className="h-4 w-4" />
-                            Recompute All Scores
-                          </>
-                        )}
-                      </Button>
-                    </div>
                   </CardContent>
                 </Card>
               </div>
