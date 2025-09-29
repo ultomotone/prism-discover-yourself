@@ -1155,6 +1155,13 @@ export type Database = {
         Args: { p_results_version?: string; p_session_id: string }
         Returns: Json
       }
+      cleanup_old_incomplete_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          deleted_count: number
+          session_ids: string[]
+        }[]
+      }
       compute_session_responses_hash: {
         Args: { p_session: string }
         Returns: string
@@ -1399,6 +1406,10 @@ export type Database = {
         Returns: {
           session_id: string
         }[]
+      }
+      trigger_session_cleanup: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       your_function_name: {
         Args: { client_ip: string; param1?: string; param2?: number }
