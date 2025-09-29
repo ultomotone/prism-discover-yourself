@@ -68,7 +68,9 @@ serve(async (req) => {
 
     // Force recompute the session
     try {
-      await recomputeSession(supabase, session_id, false);
+      console.log(`Starting recomputeSession for ${session_id}`);
+      const result = await recomputeSession(supabase, session_id, false);
+      console.log(`recomputeSession completed:`, result);
       
       console.log(`Successfully scored session: ${session_id}`);
       
@@ -76,7 +78,8 @@ serve(async (req) => {
         success: true,
         session_id: session_id,
         response_count: responseCount,
-        message: 'Session scored successfully'
+        message: 'Session scored successfully',
+        result
       }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -84,6 +87,7 @@ serve(async (req) => {
 
     } catch (scoringError: any) {
       console.error(`Scoring failed for session ${session_id}:`, scoringError);
+      console.error(`Error stack:`, scoringError.stack);
       
       return new Response(JSON.stringify({
         error: 'Scoring failed',
