@@ -203,7 +203,37 @@ Deno.serve(async (request) => {
   });
 
   try {
-    // Call the correct RPC function with the right parameter
+    // First try to read from unified scoring_results table
+    const { data: unifiedResult, error: unifiedError } = await dataClient
+      .from("scoring_results")
+      .select("payload, scoring_version, computed_at")
+      .eq("session_id", sessionId)
+      .maybeSingle();
+
+    if (!unifiedError && unifiedResult?.payload) {
+      console.log("results.unified_cache_hit", {
+        session_id: sessionId,
+        auth_context: authContext,
+        scoring_version: unifiedResult.scoring_version
+      });
+
+      return new Response(JSON.stringify({
+        ok: true,
+        source: "unified_cache",
+        ...unifiedResult.payload
+      }), {
+        status: 200,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.info("results.unified_cache_miss", {
+      session_id: sessionId,
+      auth_context: authContext,
+      unified_error: unifiedError?.message
+    });
+
+    // Fallback to legacy RPC function
     const { data, error } = await dataClient.rpc("get_results_v2", {
       session_id: sessionId,
     });

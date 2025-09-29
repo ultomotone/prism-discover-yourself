@@ -230,25 +230,48 @@ serve(async (req) => {
 
       await db.from("profiles").upsert(profileRow, { onConflict: "session_id" });
 
-      await persistResultsV2(db, session_id, { types, functions, state });
-
-      // Also store in the new scoring_results table for frontend compatibility
-      const scoringResultData = {
-        session_id,
-        user_id: sessionRow?.user_id || null,
-        result_data: {
-          profile: profileRow,
-          types,
-          functions,
-          state,
-          session: sessionRow,
-          results_version: RESULTS_VERSION
-        },
+      // Use unified persistence approach
+      const scoringPayload = {
+        version: RESULTS_VERSION,
         results_version: RESULTS_VERSION,
-        computed_at: new Date().toISOString()
+        profile: profileRow,
+        types: types.map(t => ({
+          type_code: t.type_code,
+          fit: t.fit,
+          share: t.share_pct,
+          distance: t.distance,
+          coherent_dims: t.coherent_dims,
+          unique_dims: t.unique_dims,
+          seat_coherence: t.seat_coherence,
+          fit_parts: t.fit_parts
+        })),
+        functions: functions.map(f => ({
+          func_code: f.func,
+          strength: f.strength_z,
+          dimension: f.dimension,
+          d_index_z: f.d_index_z
+        })),
+        state: {
+          overlay_band: state.overlay_band,
+          overlay_z: state.overlay_z,
+          effect_fit: state.effect_fit,
+          effect_conf: state.effect_conf,
+          block_core: state.block_core,
+          block_critic: state.block_critic,
+          block_hidden: state.block_hidden,
+          block_instinct: state.block_instinct,
+          block_context: state.block_context
+        },
+        session: sessionRow
       };
 
-      await db.from("scoring_results").upsert(scoringResultData, { onConflict: "session_id" });
+      const { persistResultsV3 } = await import("../_shared/persistResultsV3.ts");
+      
+      await persistResultsV3(db, {
+        session_id,
+        user_id: sessionRow?.user_id || null,
+        payload: scoringPayload
+      });
 
       return {
         profileRow,

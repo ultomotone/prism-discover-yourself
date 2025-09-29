@@ -673,39 +673,36 @@ export type Database = {
       scoring_results: {
         Row: {
           computed_at: string
-          created_at: string
-          id: string
-          result_data: Json
-          results_version: string
+          confidence: number | null
+          payload: Json
+          scoring_version: string
           session_id: string
-          updated_at: string
+          type_code: string | null
           user_id: string | null
         }
         Insert: {
           computed_at?: string
-          created_at?: string
-          id?: string
-          result_data: Json
-          results_version?: string
+          confidence?: number | null
+          payload: Json
+          scoring_version?: string
           session_id: string
-          updated_at?: string
+          type_code?: string | null
           user_id?: string | null
         }
         Update: {
           computed_at?: string
-          created_at?: string
-          id?: string
-          result_data?: Json
-          results_version?: string
+          confidence?: number | null
+          payload?: Json
+          scoring_version?: string
           session_id?: string
-          updated_at?: string
+          type_code?: string | null
           user_id?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "scoring_results_session_id_fkey"
             columns: ["session_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
           },
