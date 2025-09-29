@@ -184,14 +184,20 @@ const Troubleshoot: React.FC = () => {
   const recomputeBatch = async (limit: number = 100, sinceDate?: string) => {
     setRecomputeLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: "Authentication required", variant: "destructive" });
+        return;
+      }
+
       const payload: any = { limit, dry_run: false };
       if (sinceDate) payload.since = sinceDate;
 
-      const response = await fetch(`https://gnkuikentdtnatazeriu.supabase.co/functions/v1/recompute-batch`, {
+      const response = await fetch(`https://gnkuikentdtnatazeriu.supabase.co/functions/v1/admin-batch-recompute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdua3Vpa2VudGR0bmF0YXplcml1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3MzI2MDQsImV4cCI6MjA2OTMwODYwNH0.wCk8ngoDqGW4bMIAjH5EttXsoBwdk4xnIViJZCezs-U`
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify(payload)
       });
