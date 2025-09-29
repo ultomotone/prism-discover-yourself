@@ -211,26 +211,42 @@ Deno.serve(async (request) => {
       .maybeSingle();
 
     if (!unifiedError && unifiedResult?.payload) {
-      console.log("results.unified_cache_hit", {
-        session_id: sessionId,
-        auth_context: authContext,
-        scoring_version: unifiedResult.scoring_version
-      });
+      // Check for version consistency - recompute if stale
+      const currentVersion = "v1.2.1"; // TODO: get from config
+      const cacheValid = unifiedResult.scoring_version === currentVersion;
+      
+      if (cacheValid) {
+        console.log("results.unified_cache_hit", {
+          session_id: sessionId,
+          auth_context: authContext,
+          scoring_version: unifiedResult.scoring_version,
+          served_from_cache: true
+        });
 
-      return new Response(JSON.stringify({
-        ok: true,
-        source: "unified_cache",
-        ...unifiedResult.payload
-      }), {
-        status: 200,
-        headers: { ...headers, 'Content-Type': 'application/json' },
-      });
+        return new Response(JSON.stringify({
+          ok: true,
+          source: "unified_cache",
+          ...unifiedResult.payload
+        }), {
+          status: 200,
+          headers: { ...headers, 'Content-Type': 'application/json' },
+        });
+      } else {
+        console.info("results.version_mismatch_recompute", {
+          session_id: sessionId,
+          auth_context: authContext,
+          cached_version: unifiedResult.scoring_version,  
+          current_version: currentVersion
+        });
+        // Fall through to recompute
+      }
     }
 
     console.info("results.unified_cache_miss", {
       session_id: sessionId,
       auth_context: authContext,
-      unified_error: unifiedError?.message
+      unified_error: unifiedError?.message,
+      has_result: !!unifiedResult
     });
 
     // Fallback to legacy RPC function

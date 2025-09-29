@@ -901,6 +901,41 @@ export type Database = {
         }
         Relationships: []
       }
+      v_results_min: {
+        Row: {
+          computed_at: string | null
+          confidence: number | null
+          scoring_version: string | null
+          session_id: string | null
+          type_code: string | null
+          user_id: string | null
+        }
+        Insert: {
+          computed_at?: string | null
+          confidence?: number | null
+          scoring_version?: string | null
+          session_id?: string | null
+          type_code?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          computed_at?: string | null
+          confidence?: number | null
+          scoring_version?: string | null
+          session_id?: string | null
+          type_code?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scoring_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       admin_get_confidence_dist_last_30d: {
@@ -1139,6 +1174,20 @@ export type Database = {
       get_results_version: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_scoring_health: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      get_sessions_missing_unified_results: {
+        Args: { limit_count?: number }
+        Returns: {
+          completed_at: string
+          has_profile: boolean
+          has_types: boolean
+          session_id: string
+          status: string
+        }[]
       }
       get_sessions_with_emails_for_finalize: {
         Args: { limit_count?: number; min_questions?: number }

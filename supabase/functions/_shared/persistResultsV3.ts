@@ -5,19 +5,21 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import type { ScoringPayload, PersistResultsV3Params } from "./types.results.ts";
 import { persistResultsV2, type PersistResultsV2Payload } from "./persistResultsV2.ts";
 
-// Toggle for legacy table writes - set to false in Phase 2
-const WRITE_EXPLODED = true;
+// Toggle for legacy table writes - controlled by env var for safer production rollouts
+const WRITE_EXPLODED = (Deno.env.get("PRISM_WRITE_EXPLODED") ?? "false") === "true";
 
 export async function persistResultsV3(
   db: SupabaseClient,
   params: PersistResultsV3Params
 ): Promise<void> {
+  const startTime = Date.now();
   const { session_id, user_id, payload } = params;
   const scoring_version = payload.version || payload.results_version;
   const type_code = payload.profile?.type_code ?? null;
   const confidence = payload.profile?.confidence ?? null;
 
   // 1) Unified table (UPSERT) - this is the primary write
+  const upsertStart = Date.now();
   const { error: upsertErr } = await db
     .from("scoring_results")
     .upsert(
@@ -32,23 +34,36 @@ export async function persistResultsV3(
       },
       { onConflict: "session_id" }
     );
+  const upsertMs = Date.now() - upsertStart;
 
   if (upsertErr) {
     console.error(JSON.stringify({
       evt: "persistResultsV3_unified_failed",
       session_id,
-      error: upsertErr.message
+      error: upsertErr.message,
+      upsert_ms: upsertMs
     }));
     throw new Error(`persistResultsV3: unified table upsert failed: ${upsertErr.message}`);
   }
 
+  // Log performance metrics
   console.log(JSON.stringify({
     evt: "persistResultsV3_unified_success",
     session_id,
-    scoring_version
+    scoring_version,
+    upsert_ms: upsertMs,
+    write_exploded: WRITE_EXPLODED
   }));
 
   if (!WRITE_EXPLODED) {
+    // Log total execution time
+    const totalMs = Date.now() - startTime;
+    console.log(JSON.stringify({
+      evt: "persistResultsV3_complete",
+      session_id,
+      total_ms: totalMs,
+      served_from_cache: false
+    }));
     return; // Phase 2: only write to unified table
   }
 
@@ -102,7 +117,8 @@ export async function persistResultsV3(
 
     console.log(JSON.stringify({
       evt: "persistResultsV3_legacy_success",
-      session_id
+      session_id,
+      total_ms: Date.now() - startTime
     }));
 
   } catch (e) {
