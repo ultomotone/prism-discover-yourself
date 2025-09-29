@@ -63,7 +63,8 @@ const RealTimeType: React.FC = () => {
       }
     }
     const { data: recent, error: recentError } = await supabase.rpc(
-      "get_recent_assessments_safe",
+      "get_recent_assessments_safe_cursor", 
+      { p_limit: 25 }
     );
     if (!recentError && recent) {
       const items = (recent as any[]).map((r) => ({
