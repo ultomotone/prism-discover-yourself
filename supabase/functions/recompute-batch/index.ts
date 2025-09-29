@@ -26,7 +26,16 @@ serve(async (req) => {
 
   // Block browser calls - require service-role authorization
   const auth = req.headers.get("authorization") ?? "";
-  if (!auth.includes(SERVICE_ROLE_KEY.slice(0, 16))) {
+  if (!auth.includes("Bearer ")) {
+    return new Response(
+      JSON.stringify({ error: "Admin-only. Call from server with service-role key." }), 
+      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  
+  // Extract just the token part
+  const token = auth.replace("Bearer ", "");
+  if (!token.includes(SERVICE_ROLE_KEY.slice(0, 16))) {
     return new Response(
       JSON.stringify({ error: "Admin-only. Call from server with service-role key." }), 
       { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }

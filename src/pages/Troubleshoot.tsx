@@ -181,6 +181,42 @@ const Troubleshoot: React.FC = () => {
     }
   };
 
+  const completeNearFinished = async () => {
+    setRecomputeLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: "Authentication required", variant: "destructive" });
+        return;
+      }
+
+      const response = await fetch(`https://gnkuikentdtnatazeriu.supabase.co/functions/v1/complete-near-finished-sessions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ min_questions: 247, dry_run: false })
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        toast({ 
+          title: "Near-finished sessions completed!", 
+          description: `Found: ${result.found}, Completed: ${result.completed}, Recomputed: ${result.recomputed}` 
+        });
+        loadRecentSessions();
+      } else {
+        toast({ title: "Error completing sessions", description: result.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "Network error", variant: "destructive" });
+    } finally {
+      setRecomputeLoading(false);
+    }
+  };
+
   const recomputeBatch = async (limit: number = 100, sinceDate?: string) => {
     setRecomputeLoading(true);
     try {
@@ -363,6 +399,26 @@ const Troubleshoot: React.FC = () => {
 
         <TabsContent value="recompute" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-yellow-600">⚡ Complete Near-Finished Sessions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Complete and recompute sessions with 247+ questions that are stuck.
+                </p>
+                <Button
+                  onClick={() => completeNearFinished()}
+                  disabled={recomputeLoading}
+                  variant="secondary"
+                  className="w-full"
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  {recomputeLoading ? "Processing..." : "Complete 247+ Sessions"}
+                </Button>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle className="text-red-600">⚠️ Recompute ALL Sessions</CardTitle>
