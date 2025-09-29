@@ -36,7 +36,7 @@ export type StartAssessmentSessionResult =
   | { status: 'blocked'; block: RetakeBlock }
   | { status: 'existing' | 'new'; session: SessionData };
 
-const RETAKE_WINDOW = { maxPerWindow: 3, windowDays: 30 } as const;
+const RETAKE_WINDOW = { maxPerWindow: 1, windowDays: 30 } as const;
 
 function readCachedEmail(): string | undefined {
   if (typeof window === 'undefined' || !window.localStorage) {
@@ -151,10 +151,10 @@ export function useEmailSessionManager() {
       console.log('Assessment session started successfully:', session);
 
       // Show appropriate message based on session type 
-      toast({
-        title: "Assessment Started",
-        description: "Any previous in-progress sessions have been cleaned up. Your progress will be saved.",
-      });
+        toast({
+          title: "Assessment Started",
+          description: "You can take one assessment every 30 days. Your progress will be saved.",
+        });
       
       if (email) {
         trackLead(email);

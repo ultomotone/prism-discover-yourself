@@ -498,20 +498,31 @@ const UserDashboard = () => {
                               </div>
 
                               {session.profile ? (
-                                <div className="space-y-1">
+                                <div className="space-y-2">
                                   <div className="flex items-center gap-2">
-                                    <span className="font-semibold text-lg">
+                                    <span className="font-bold text-xl text-primary">
                                       {session.profile.type_code}
                                     </span>
-                                      {(session.profile.overlay ?? '') && (
-                                        <Badge variant="outline" className="text-xs">
-                                          State: {session.profile.overlay ?? ''}
-                                        </Badge>
-                                      )}
+                                    {(session.profile.overlay ?? '') && (
+                                      <Badge variant="outline" className="text-xs bg-secondary">
+                                        State: {session.profile.overlay ?? ''}
+                                      </Badge>
+                                    )}
                                   </div>
-                                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                    <span>Confidence: {session.profile.confidence}</span>
-                                    <span>Fit: {session.profile.fit_band}</span>
+                                  <div className="flex items-center gap-6 text-sm">
+                                    <div className="flex items-center gap-1">
+                                      <span className="font-medium">Core Type:</span>
+                                      <span className="text-primary font-semibold">{session.profile.type_code}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <span className="font-medium">Fit Score:</span>
+                                      <span className="text-primary font-semibold">{session.profile.fit_band || 'N/A'}</span>
+                                    </div>
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    Confidence: {typeof session.profile.confidence === 'number' 
+                                      ? `${Math.round(session.profile.confidence * 100)}%` 
+                                      : session.profile.confidence || 'N/A'}
                                   </div>
                                 </div>
                               ) : (
