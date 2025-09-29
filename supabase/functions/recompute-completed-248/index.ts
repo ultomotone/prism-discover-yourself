@@ -25,7 +25,14 @@ serve(async (req) => {
     );
   }
 
-  // Service role check removed - function is now public
+  // Verify service role key authentication
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader || authHeader !== `Bearer ${SERVICE_ROLE_KEY}`) {
+    return new Response(
+      JSON.stringify({ error: "Admin-only function. Service role key required." }), 
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
 
   try {
     const { limit = 500, dry_run = false } = await req.json().catch(() => ({}));

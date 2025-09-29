@@ -1,34 +1,17 @@
 import { invokeEdge } from '@/lib/edge-functions';
 
 export async function triggerRecompute() {
-  console.log('🚀 Starting recompute process...');
+  console.warn('⚠️ Client-side recompute disabled. Use server-side call with service role key.');
   
-  try {
-    const response = await invokeEdge('recompute-completed-248', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        limit: 100,
-        dry_run: false
-      })
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Recompute failed:', response.status, errorText);
-      return { success: false, error: errorText };
-    }
-    
-    const result = await response.json();
-    console.log('✅ Recompute completed successfully!');
-    console.log('📊 Results:', result);
-    
-    return { success: true, data: result };
-    
-  } catch (error) {
-    console.error('❌ Recompute error:', error);
-    return { success: false, error: error.message };
-  }
+  // Admin functions should only be called server-side with proper authentication
+  // To call this function properly, use:
+  // curl -X POST https://gnkuikentdtnatazeriu.functions.supabase.co/recompute-completed-248 \
+  //   -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \
+  //   -H "Content-Type: application/json" \
+  //   -d '{"limit": 100, "dry_run": false}'
+  
+  return { 
+    success: false, 
+    error: 'Admin function requires server-side call with service role key authentication' 
+  };
 }

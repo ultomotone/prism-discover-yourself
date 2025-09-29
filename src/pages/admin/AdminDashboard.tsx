@@ -43,22 +43,7 @@ const FullAdmin = lazy(() => import("./FullAdminApp"));
 export default function AdminDashboard(): React.ReactElement {
   const full = ADMIN_MODE === "full";
   
-  // Auto-trigger recompute when dashboard loads
-  useEffect(() => {
-    console.log('🎯 Dashboard loaded - triggering recompute...');
-    console.log('ADMIN_MODE:', ADMIN_MODE);
-    
-    // Add error handling
-    try {
-      triggerRecompute().then((result) => {
-        console.log('✅ Recompute result:', result);
-      }).catch((error) => {
-        console.error('❌ Recompute failed:', error);
-      });
-    } catch (error) {
-      console.error('❌ Recompute error:', error);
-    }
-  }, []);
+  // Remove auto-trigger - admin functions should be manually invoked
   
   return (
     <Suspense fallback={<div className="p-6 text-sm">Loading admin…</div>}>
