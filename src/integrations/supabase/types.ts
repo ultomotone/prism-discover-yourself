@@ -70,12 +70,16 @@ export type Database = {
           answer_value: string | null
           created_at: string
           id: string
+          normalize_version: string | null
+          normalized_at: string | null
+          normalized_value: number | null
           pair_group: string | null
           question_id: number
           question_section: string
           question_text: string
           question_type: string
           response_time_ms: number | null
+          reverse_applied: boolean | null
           section_id: string | null
           session_id: string
           updated_at: string | null
@@ -89,12 +93,16 @@ export type Database = {
           answer_value?: string | null
           created_at?: string
           id?: string
+          normalize_version?: string | null
+          normalized_at?: string | null
+          normalized_value?: number | null
           pair_group?: string | null
           question_id: number
           question_section: string
           question_text: string
           question_type: string
           response_time_ms?: number | null
+          reverse_applied?: boolean | null
           section_id?: string | null
           session_id: string
           updated_at?: string | null
@@ -108,12 +116,16 @@ export type Database = {
           answer_value?: string | null
           created_at?: string
           id?: string
+          normalize_version?: string | null
+          normalized_at?: string | null
+          normalized_value?: number | null
           pair_group?: string | null
           question_id?: number
           question_section?: string
           question_text?: string
           question_type?: string
           response_time_ms?: number | null
+          reverse_applied?: boolean | null
           section_id?: string | null
           session_id?: string
           updated_at?: string | null
@@ -127,6 +139,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_sessions_for_recompute"
+            referencedColumns: ["session_id"]
           },
         ]
       }
@@ -464,6 +483,13 @@ export type Database = {
             referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fc_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_sessions_for_recompute"
+            referencedColumns: ["session_id"]
+          },
         ]
       }
       fn_logs: {
@@ -706,6 +732,13 @@ export type Database = {
             referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "scoring_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_sessions_for_recompute"
+            referencedColumns: ["session_id"]
+          },
         ]
       }
       scoring_results_functions: {
@@ -901,6 +934,36 @@ export type Database = {
         }
         Relationships: []
       }
+      v_normalized_responses: {
+        Row: {
+          answer_numeric: number | null
+          normalized_value: number | null
+          question_id: number | null
+          raw_value: string | null
+          reverse_applied: boolean | null
+          scale_type:
+            | Database["public"]["Enums"]["assessment_scale_type"]
+            | null
+          session_id: string | null
+          weight: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_sessions_for_recompute"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
       v_results_min: {
         Row: {
           computed_at: string | null
@@ -934,7 +997,43 @@ export type Database = {
             referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "scoring_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_sessions_for_recompute"
+            referencedColumns: ["session_id"]
+          },
         ]
+      }
+      v_session_answer_counts: {
+        Row: {
+          answer_count: number | null
+          session_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_sessions_for_recompute"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      v_sessions_for_recompute: {
+        Row: {
+          session_created_at: string | null
+          session_id: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {
