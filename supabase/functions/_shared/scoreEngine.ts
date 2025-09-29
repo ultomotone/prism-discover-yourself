@@ -407,32 +407,43 @@ export function scoreAssessment(input: ProfileInput): ProfileResult {
     return acc;
   }, {} as Record<Func,number>);
   
-  const dims_highlights = computeDimsHighlights(dimensions, {
-    coherent: 3.0, // threshold for coherent dims
-    unique: 3.5    // threshold for unique dims  
-  });
-  
+  const dims_highlights = computeDimsHighlights(dimensions, { coherent: 3.5, unique: 4.2 });
   const seat_coherence = computeSeatCoherence(top.code, strengths, prototypes);
-  
-  const fit_parts = computeFitParts({
-    wStrengths: 0.7,
-    wDims: 0.2, 
-    wFc: fcFunctionScores ? 0.1 : 0,
-    wOpp: 0.05
-  });
-  
-  const distance_metrics = buildDistanceMetrics(typeScores);
-  
-  // Enhanced block calculations
-  const likertBlocks = { Core: 25, Critic: 25, Hidden: 25, Instinct: 25 }; // placeholder
-  const fcBlocks = { Core: 25, Critic: 25, Hidden: 25, Instinct: 25 }; // placeholder
-  const blocks_enhanced = blendBlocks(likertBlocks, fcBlocks, 0.7, 0.3);
+  const fit_parts = computeFitParts({ wStrengths: 0.7, wDims: 0.2, wFc: fcFunctionScores ? 0.1 : 0, wOpp: 0.05 });
+  const distance_metrics = buildDistanceMetrics(typeScores, 6.5);
+
+  // Map eight seats → four blocks for the chosen top type
+  const seats = prototypes[top.code]; // { Ti:'base', Fe:'role', ... }
+  const blockOf = (func: Func) => {
+    const seat = seats[func];
+    if (seat === 'base' || seat === 'creative') return 'Core';
+    if (seat === 'role' || seat === 'vulnerable') return 'Critic';
+    if (seat === 'suggestive' || seat === 'mobilizing') return 'Hidden';
+    return 'Instinct'; // ignoring/demonstrative
+  };
+
+  // Build Likert-only and FC-only block maps
+  const likertBlocks: Record<'Core'|'Critic'|'Hidden'|'Instinct', number> = { Core:0, Critic:0, Hidden:0, Instinct:0 };
+  const fcBlocks: Record<'Core'|'Critic'|'Hidden'|'Instinct', number> = { Core:0, Critic:0, Hidden:0, Instinct:0 };
+  const cnt: Record<'Core'|'Critic'|'Hidden'|'Instinct', number> = { Core:0, Critic:0, Hidden:0, Instinct:0 };
+
+  for (const f of FUNCS) {
+    const b = blockOf(f);
+    likertBlocks[b] += (likert[f]?.sum ?? 0) / Math.max(1, likert[f]?.count ?? 1);
+    if (fcFunctionScores) fcBlocks[b] += (fcNorm[f] ?? 0);
+    cnt[b] += 1;
+  }
+  for (const k of Object.keys(likertBlocks) as Array<keyof typeof likertBlocks>) {
+    likertBlocks[k] = Number((likertBlocks[k] / Math.max(1, cnt[k])).toFixed(3));
+    if (fcFunctionScores) fcBlocks[k] = Number((fcBlocks[k] / Math.max(1, cnt[k])).toFixed(3));
+  }
+  const blocks_norm = blendBlocks(likertBlocks, fcBlocks, 0.7, fcFunctionScores ? 0.3 : 0);
 
   const result: ProfileResult = {
     type_code: top.code,
     base_func: TYPE_MAP[top.code].base,
     creative_func: TYPE_MAP[top.code].creative,
-    top_types: top3.map(t => ({ code: t.code, share: t.share })),
+    top_types: top3.map(t => ({ code: t.code, fit: Number(t.fit.toFixed(3)), share: t.share })),
     top_3_fits: top3.map(t => ({ code: t.code, fit: t.fit, share: t.share })),
     score_fit_raw: top.fit,
     score_fit_calibrated: top.fit,
@@ -446,13 +457,13 @@ export function scoreAssessment(input: ProfileInput): ProfileResult {
     fit_parts,
     distance_metrics,
     blocks_norm: {
-      Core: blocks_enhanced.blended.Core,
-      Critic: blocks_enhanced.blended.Critic,
-      Hidden: blocks_enhanced.blended.Hidden,
-      Instinct: blocks_enhanced.blended.Instinct,
-      blended: blocks_enhanced.blended,
-      likert: blocks_enhanced.likert,
-      fc: blocks_enhanced.fc
+      Core: blocks_norm.blended.Core,
+      Critic: blocks_norm.blended.Critic,
+      Hidden: blocks_norm.blended.Hidden,
+      Instinct: blocks_norm.blended.Instinct,
+      blended: blocks_norm.blended,
+      likert: blocks_norm.likert,
+      fc: blocks_norm.fc
     },
     neuro_mean:0,
     neuro_z:0,
