@@ -515,8 +515,23 @@ const UserDashboard = () => {
                                   </div>
                                 </div>
                               ) : (
-                                <div className="text-muted-foreground">
-                                  Progress: {session.completed_questions}/{session.total_questions} questions
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground text-sm">
+                                      Progress: {session.completed_questions}/{session.total_questions} questions
+                                    </span>
+                                    <span className="text-muted-foreground text-sm">
+                                      {Math.round((session.completed_questions / Math.max(session.total_questions, 1)) * 100)}%
+                                    </span>
+                                  </div>
+                                  <div className="w-full bg-secondary rounded-full h-2">
+                                    <div 
+                                      className="bg-primary h-2 rounded-full transition-all duration-300" 
+                                      style={{ 
+                                        width: `${Math.min((session.completed_questions / Math.max(session.total_questions, 1)) * 100, 100)}%` 
+                                      }}
+                                    />
+                                  </div>
                                 </div>
                               )}
                             </div>
