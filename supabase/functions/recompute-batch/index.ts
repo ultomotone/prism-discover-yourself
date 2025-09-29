@@ -1,6 +1,7 @@
 // supabase/functions/recompute-batch/index.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { recomputeSession } from "../_shared/recomputeSession.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,6 +14,25 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+    return new Response(
+      JSON.stringify({ error: "Missing SUPABASE_URL or SERVICE_ROLE key" }), 
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // Block browser calls - require service-role authorization
+  const auth = req.headers.get("authorization") ?? "";
+  if (!auth.includes(SERVICE_ROLE_KEY.slice(0, 16))) {
+    return new Response(
+      JSON.stringify({ error: "Admin-only. Call from server with service-role key." }), 
+      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   try {
     const { 
       limit = 500, 
@@ -21,10 +41,7 @@ serve(async (req) => {
       dry_run = false 
     } = await req.json().catch(() => ({}));
     
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
     console.log(JSON.stringify({
       evt: "recompute_batch_start",
@@ -71,49 +88,27 @@ serve(async (req) => {
 
     for (const row of candidates) {
       try {
-        // Call recompute-session for each session
-        const recomputeUrl = req.url.replace("recompute-batch", "recompute-session");
-        const response = await fetch(recomputeUrl, {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": req.headers.get("Authorization") || ""
-          },
-          body: JSON.stringify({ 
-            session_id: row.session_id, 
-            dry_run 
-          })
-        });
+        // Use shared helper instead of HTTP call
+        const result = await recomputeSession(supabase, row.session_id, dry_run);
+        ok++;
         
-        if (response.ok) {
-          ok++;
-          if (ok % 10 === 0) {
-            console.log(JSON.stringify({
-              evt: "recompute_batch_progress",
-              processed: ok + fail,
-              total: candidates.length,
-              ok,
-              fail
-            }));
-          }
-        } else {
-          fail++;
-          failed_sessions.push(row.session_id);
-          console.warn(JSON.stringify({
-            evt: "recompute_session_failed",
-            session_id: row.session_id,
-            status: response.status,
-            error: await response.text().catch(() => "unknown")
+        if (ok % 10 === 0) {
+          console.log(JSON.stringify({
+            evt: "recompute_batch_progress",
+            processed: ok + fail,
+            total: candidates.length,
+            ok,
+            fail
           }));
         }
-        } catch (error) {
-          fail++;
-          failed_sessions.push(row.session_id);
-          console.error(JSON.stringify({
-            evt: "recompute_session_error",
-            session_id: row.session_id,
-            error: error instanceof Error ? error.message : String(error)
-          }));
+      } catch (error) {
+        fail++;
+        failed_sessions.push(row.session_id);
+        console.error(JSON.stringify({
+          evt: "recompute_session_error",
+          session_id: row.session_id,
+          error: error instanceof Error ? error.message : String(error)
+        }));
       }
     }
 

@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const STATIC_ORIGINS = new Set([
   "https://prismpersonality.com",
-  "http://localhost:5173",
+  "http://localhost:5173", 
   "http://localhost:3000",
 ]);
 
@@ -13,7 +13,8 @@ function isAllowedOrigin(origin: string | null) {
     const u = new URL(origin);
     return (
       u.hostname.endsWith(".lovable.app") ||
-      u.hostname.endsWith(".lovableproject.com")
+      u.hostname.endsWith(".lovableproject.com") ||
+      u.hostname.endsWith(".supabase.co") // Allow Supabase functions
     );
   } catch {
     return false;
@@ -178,7 +179,24 @@ Deno.serve(async (request) => {
 
     if (updateError) {
       console.error("Update error:", updateError);
-      return new Response(JSON.stringify({ success: false, error: "link_failed" }), {
+      
+      // Handle specific constraint errors more gracefully
+      if (updateError.code === "23505" && updateError.message?.includes("uq_active_session_per_email")) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "email_already_linked",
+          message: "This email is already linked to another active session"
+        }), {
+          status: 409,
+          headers: { ...headers, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "link_failed",
+        message: updateError.message || "Failed to link session"
+      }), {
         status: 500,
         headers: { ...headers, 'Content-Type': 'application/json' },
       });
@@ -190,6 +208,19 @@ Deno.serve(async (request) => {
     });
   } catch (e) {
     console.error("link_session_to_account error:", e instanceof Error ? e.message : String(e));
+    
+    // Handle specific database errors more gracefully
+    if (e instanceof Error && e.message?.includes("uq_active_session_per_email")) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "email_already_linked",
+        message: "This email is already linked to another active session"
+      }), {
+        status: 409,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
+    }
+    
     return new Response(JSON.stringify({ success: false, error: "link_failed" }), {
       status: 500,
       headers: { ...headers, 'Content-Type': 'application/json' },
