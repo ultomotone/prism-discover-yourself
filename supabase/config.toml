@@ -3,6 +3,12 @@ project_id = "gnkuikentdtnatazeriu"
 [functions.admin-batch-recompute]
 verify_jwt = false
 
+[functions.can_start_new_session]
+verify_jwt = false
+
+[functions.recompute-batch]
+verify_jwt = false
+
 [functions.complete-near-finished-sessions]
 verify_jwt = false
 
