@@ -589,6 +589,34 @@ export default function Results({ components }: ResultsProps = {}) {
             shareToken={shareToken}
             queryClient={queryClient}
           />
+
+          {/* Version Banner */}
+          {data?.results_version && (
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="default" className="bg-blue-600">
+                      {data.results_version}
+                    </Badge>
+                    <div>
+                      <p className="font-medium text-blue-900">
+                        Results Version {data.results_version} • Type: {profile?.type_code}
+                      </p>
+                      <p className="text-sm text-blue-700">
+                        Confidence: {profile?.conf_calibrated?.toFixed(4)} • 
+                        Fit: {profile?.score_fit_calibrated?.toFixed(2)} • 
+                        Last Updated: {new Date().toLocaleTimeString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right text-xs text-blue-600">
+                    {(data as any).source === 'unified_cache' ? '🟢 Fresh Cache' : '🔄 Live Data'}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
           
           <div id="results-content">
             <ResultsView
