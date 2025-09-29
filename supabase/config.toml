@@ -1,54 +1,9 @@
 project_id = "gnkuikentdtnatazeriu"
 
-[functions.db_admin]
-verify_jwt = false
-
-[functions.db_diagnostics]
-verify_jwt = false
-
-[functions.enhanced-score-engine]
-verify_jwt = false
-
-[functions.validate-scoring-fix]
-verify_jwt = false
-
-[functions.recompute-completed-248]
-verify_jwt = false
-
 [functions.finalizeAssessment]
 verify_jwt = false
 
 [functions.score_prism]
-verify_jwt = false
-
-[functions.compare_runs]
-verify_jwt = false
-
-[functions.cleanup_profiles]
-verify_jwt = false
-
-[functions.backfill_profiles]
-verify_jwt = false
-
-[functions.chatgpt-gateway]
-verify_jwt = false
-
-[functions.updateSystemStatus]
-verify_jwt = false
-
-[functions.getConfig]
-verify_jwt = false
-
-[functions.getView]
-verify_jwt = false
-
-[functions.import_questions]
-verify_jwt = false
-
-[functions.save_response]
-verify_jwt = false
-
-[functions.get_progress]
 verify_jwt = false
 
 [functions.score_fc_session]
@@ -57,19 +12,25 @@ verify_jwt = false
 [functions.get-results-by-session]
 verify_jwt = false
 
-[functions.notify_admin]
+[functions.migrate-all-scoring]
 verify_jwt = false
 
-[functions.assessment-api]
-verify_jwt = false
-
-[functions.refresh-dashboard]
-verify_jwt = false
-
-[functions.reddit-capi]
+[functions.cleanup-duplicate-sessions]
 verify_jwt = false
 
 [functions.delete-session]
+verify_jwt = false
+
+[functions.save_response]
+verify_jwt = false
+
+[functions.get_progress]
+verify_jwt = false
+
+[functions.getConfig]
+verify_jwt = false
+
+[functions.getView]
 verify_jwt = false
 
 [auth]

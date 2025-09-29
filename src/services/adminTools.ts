@@ -238,7 +238,7 @@ function ensurePositiveNumber(value: number, label: string): void {
 
 async function callRecompute(sessionId: string): Promise<RecomputeHttpResult> {
   try {
-    const response = await fetch(`${resolveFunctionsBase()}/recompute-scoring`, {
+    const response = await fetch(`${resolveFunctionsBase()}/score_prism`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

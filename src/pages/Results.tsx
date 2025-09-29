@@ -35,7 +35,7 @@ async function triggerScoring(sessionId: string): Promise<void> {
   try {
     console.log(`🚀 Triggering scoring for session: ${sessionId}`);
     
-    const { data, error } = await supabase.functions.invoke('force-score-session', {
+    const { data, error } = await supabase.functions.invoke('score_prism', {
       body: { session_id: sessionId }
     });
 

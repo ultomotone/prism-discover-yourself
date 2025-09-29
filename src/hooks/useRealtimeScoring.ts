@@ -188,7 +188,7 @@ export const useRealtimeScoring = () => {
 
       const payload = sessionId ? { sessionId } : { userId: user.id };
       
-      const { data, error } = await supabase.functions.invoke('recompute-scoring', {
+      const { data, error } = await supabase.functions.invoke('score_prism', {
         body: payload
       });
 
