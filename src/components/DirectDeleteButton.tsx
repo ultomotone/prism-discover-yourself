@@ -19,9 +19,9 @@ export const DirectDeleteButton = () => {
     setIsDeleting(true);
     
     try {
-      // Delete the specific in-progress session
+      // Delete the specific IEI session
       const { data, error } = await supabase.functions.invoke('delete-session', {
-        body: { session_id: 'ddd83163-2a23-4267-8145-7427ee6119de' }
+        body: { session_id: '76d52e00-3d17-424d-86ee-949a8e8ea8a3' }
       });
       
       if (error) {
@@ -30,8 +30,8 @@ export const DirectDeleteButton = () => {
 
       if (data.success) {
         toast({
-          title: "In-progress session deleted!",
-          description: "The session has been removed from your dashboard",
+          title: "IEI session deleted!",
+          description: "The IEI session and results have been removed",
         });
         console.log('🗑️ Session deleted:', data);
         // Refresh the page to update the dashboard
@@ -67,7 +67,7 @@ export const DirectDeleteButton = () => {
       ) : (
         <Trash2 className="h-4 w-4" />
       )}
-      {isDeleting ? 'Deleting...' : 'Delete In-Progress Session'}
+      {isDeleting ? 'Deleting...' : 'Delete IEI Session'}
     </Button>
   );
 };
