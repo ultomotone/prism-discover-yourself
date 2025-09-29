@@ -140,6 +140,13 @@ const Header = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-3">
+            <Button
+              variant="assessment"
+              size="sm"
+              onClick={() => navigate('/assessment')}
+            >
+              Start the Test
+            </Button>
             {!loading && (
               user ? (
                 <DropdownMenu>
@@ -276,6 +283,19 @@ const Header = () => {
                 ))}
               </div>
               
+              
+              <div className="px-3 py-4">
+                <Button
+                  variant="assessment"
+                  className="w-full"
+                  onClick={() => {
+                    navigate('/assessment');
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  Start the Test
+                </Button>
+              </div>
               
               <div className="px-3 py-2 space-y-2">
                 {!loading && (

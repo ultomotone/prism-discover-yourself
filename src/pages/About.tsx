@@ -4,6 +4,11 @@ import { Brain, BarChart3, Zap, Shield, ArrowRight, CheckCircle, HelpCircle, Thu
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTypingLabLikes } from "@/features/typing-lab/hooks/useTypingLabLikes";
+import WhyPrismDynamics from "@/components/home/WhyPrismDynamics";
+import HowItWorksStrip from "@/components/home/HowItWorksStrip";
+import TypingLabTeaser from "@/components/home/TypingLabTeaser";
+import SocialProofStrip from "@/components/home/SocialProofStrip";
+import FoundingMemberCTA from "@/components/home/FoundingMemberCTA";
 const About = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const navigate = useNavigate();
@@ -69,11 +74,11 @@ const About = () => {
       <div className="max-w-6xl mx-auto">
           {/* Hero */}
           <div className="text-center mb-16">
-            <h1 className="prism-heading-lg text-primary mb-6">
-              The PRISM Dynamics™ Model & Methods
+            <h1 className="prism-heading-xl text-primary mb-6">
+              Predict your type on the first pass.
             </h1>
             <p className="prism-body-lg text-muted-foreground max-w-4xl mx-auto mb-8">
-              A modern, evidence-minded framework that maps how you think and decide—plus how your expression shifts under stress and in flow.
+              PRISM Dynamics™ maps how you process information—in flow and under pressure—to predict your best-fit type before any 1:1 typing.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
@@ -82,43 +87,36 @@ const About = () => {
                 size="lg"
                 onClick={() => navigate('/assessment')}
               >
-                Take the Assessment
+                Start the Test
               </Button>
-              <Button variant="outline-primary" size="lg" asChild>
-                <a href="/profiles">View the Profiles</a>
+              <Button variant="outline-primary" size="lg" onClick={() => navigate('/how-it-works')}>
+                How It Works
               </Button>
             </div>
 
-            <div className="text-sm text-muted-foreground">
-              Multi-method measurement • Confidence-based type calls • Trait vs. state separation
-            </div>
-            <div className="mt-4 flex justify-center">
-              <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/20 px-4 py-2 text-sm text-muted-foreground">
-                <ThumbsUp className="h-4 w-4 text-primary" />
-                {totalLikes} Typing Lab likes logged locally
+            {/* Proof chips */}
+            <div className="flex flex-wrap justify-center gap-3 text-sm text-muted-foreground mb-4">
+              <span className="inline-flex items-center px-4 py-2 rounded-full border border-border/60 bg-muted/20">
+                Information Elements
+              </span>
+              <span className="inline-flex items-center px-4 py-2 rounded-full border border-border/60 bg-muted/20">
+                Dimensionality (1D–4D)
+              </span>
+              <span className="inline-flex items-center px-4 py-2 rounded-full border border-border/60 bg-muted/20">
+                Block Dynamics (Flow vs Pressure)
               </span>
             </div>
           </div>
+      </div>
+      
+      {/* Why PRISM Dynamics - 4 differentiator cards */}
+      <WhyPrismDynamics />
+      
+      {/* How It Works Strip - 3 steps */}
+      <HowItWorksStrip />
 
-          {/* What is PRISM? */}
-          <section className="mb-16">
-            <Card className="prism-shadow-card">
-              <CardContent className="p-8">
-                <h2 className="prism-heading-md text-primary mb-6">What is PRISM Dynamics?</h2>
-                <p className="prism-body text-muted-foreground mb-4">
-                  <strong className="text-primary">PRISM Dynamics™ stands for Personality • Regulation • Information System Mapping.</strong>
-                </p>
-                <p className="prism-body text-muted-foreground mb-4">
-                  It's a practical map of your mind's preferred information signals (from Socionics Model A), how capable and flexible those signals are (dimensionality), how they reconfigure in real situations (block dynamics), and how a state overlay (±) can shift your expression on any given day.
-                </p>
-                <p className="prism-body text-primary font-medium">
-                  In plain English: PRISM Dynamics shows what drives your decisions, what changes when you're stressed or in flow, and how to use that knowledge to communicate better, choose wisely, and grow intentionally.
-                </p>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* PRISM Overview - Modern Visual */}
+      <div className="max-w-6xl mx-auto">
+          {/* What PRISM Dynamics Maps */}
           <Card className="mb-16 prism-shadow-card">
             <CardContent className="p-8">
               <h2 className="prism-heading-md text-primary mb-6 text-center">What PRISM Dynamics™ Maps</h2>
@@ -270,213 +268,17 @@ const About = () => {
             </CardContent>
           </Card>
 
-          {/* Deep Dive Navigation */}
-          <Card className="mb-16 prism-shadow-card">
-            <CardContent className="p-8">
-              <h2 className="prism-heading-md text-primary mb-6 text-center">Dive Deeper</h2>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-primary">The Model</h3>
-                  <div className="space-y-2">
-                    <Button variant="ghost" asChild className="w-full justify-start">
-                      <a href="/signals" className="flex items-center justify-between">
-                        <span>Information Elements (8 Signals)</span>
-                        <ArrowRight className="h-4 w-4" />
-                      </a>
-                    </Button>
-                    <Button variant="ghost" asChild className="w-full justify-start">
-                      <a href="/dimensionality" className="flex items-center justify-between">
-                        <span>Dimensionality (1D-4D)</span>
-                        <ArrowRight className="h-4 w-4" />
-                      </a>
-                    </Button>
-                    <Button variant="ghost" asChild className="w-full justify-start">
-                      <a href="/blocks" className="flex items-center justify-between">
-                        <span>Block Dynamics</span>
-                        <ArrowRight className="h-4 w-4" />
-                      </a>
-                    </Button>
-                    <Button variant="ghost" asChild className="w-full justify-start">
-                      <a href="/state-overlay" className="flex items-center justify-between">
-                        <span>State Overlay (±)</span>
-                        <ArrowRight className="h-4 w-4" />
-                      </a>
-                    </Button>
-                    <Button variant="ghost" asChild className="w-full justify-start">
-                      <a href="/relational-fit" className="flex items-center justify-between">
-                        <span>Relationship Fit</span>
-                        <ArrowRight className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-primary">The Methods</h3>
-                  <div className="space-y-2">
-                    <Button variant="ghost" asChild className="w-full justify-start">
-                      <a href="/assessment-methods" className="flex items-center justify-between">
-                        <span>How the Assessment Works</span>
-                        <ArrowRight className="h-4 w-4" />
-                      </a>
-                    </Button>
-                    <Button variant="ghost" asChild className="w-full justify-start">
-                      <a href="/accuracy-privacy" className="flex items-center justify-between">
-                        <span>Accuracy & Privacy</span>
-                        <ArrowRight className="h-4 w-4" />
-                      </a>
-                    </Button>
-                    <Button variant="ghost" asChild className="w-full justify-start">
-                      <a href="/faq" className="flex items-center justify-between">
-                        <span>Frequently Asked Questions</span>
-                        <ArrowRight className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Privacy Note */}
-          <Card className="mb-16 bg-muted/30">
-            <CardContent className="p-6">
-              <h3 className="font-semibold text-primary mb-2 text-center">A Note on Privacy & Data Handling</h3>
-              <p className="text-sm text-muted-foreground text-center">
-                Your assessment responses are used only for generating your profile. We never sell or share your data with third parties. 
-                All data is encrypted and stored securely with industry-standard protections.
-              </p>
-              <div className="text-center mt-4">
-                <Button variant="ghost" size="sm" asChild>
-                  <a href="/accuracy-privacy">Learn more about our privacy practices</a>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* How the Assessment Works */}
-          <section className="mb-16">
-            <h2 className="prism-heading-md text-primary mb-12 text-center">How the Assessment Works</h2>
-            
-            <Card className="mb-8 prism-shadow-card">
-              <CardContent className="p-8">
-                <h3 className="text-xl font-semibold text-primary mb-6">Multi-method items (to cut bias and raise reliability)</h3>
-                <ul className="space-y-3">
-                  {methods.map((method, index) => (
-                    <li key={index} className="flex items-start">
-                      <CheckCircle className="h-5 w-5 text-secondary mt-0.5 mr-3 flex-shrink-0" />
-                      <span className="text-muted-foreground">{method}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-muted-foreground mt-6 text-sm">
-                  This blend reduces acquiescence ("I agree with everything"), faking-good, and "test-taking styles" that can skew single-method questionnaires.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="prism-shadow-card">
-              <CardContent className="p-8">
-                <h3 className="text-xl font-semibold text-primary mb-6">Scoring & Confidence (how we call type)</h3>
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="font-semibold text-primary mb-2">Compute scales</h4>
-                    <ul className="text-sm text-muted-foreground space-y-1 ml-4">
-                      <li>• Strength per element (Ti…Se)</li>
-                      <li>• Dimensionality per element → map to 1D–4D</li>
-                      <li>• Blocks (Core, Critic, Hidden, Instinct)</li>
-                      <li>• Toggles (A/B/C/D → which block activates)</li>
-                      <li>• ± overlay (z-scored when cohort data is available)</li>
-                      <li>• Quality indices (attention, inconsistency, social desirability)</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-primary mb-2">Adjust for state</h4>
-                    <p className="text-sm text-muted-foreground">
-                      We down-weight Likert when stress/time pressure is high and lean more on forced-choice and scenario data. We also apply a small correction for high reactivity (±) so momentary state doesn't over-shape your trait profile.
-                    </p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-primary mb-2">Compare to type prototypes</h4>
-                    <p className="text-sm text-muted-foreground">
-                      We compare your 8-element pattern to prototype patterns (based on Model A expectations and PRISM mechanics). Instead of hard cutoffs, we compute probabilities for all 16 types.
-                    </p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-primary mb-2">Set confidence</h4>
-                    <p className="text-sm text-muted-foreground">
-                      We display your top type with a confidence band. If the top two are close, we say so (no forced certainty). High confidence → firm type; Medium/Low → likely types + guidance and next steps (e.g., micro-retest).
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-6 p-4 bg-accent/10 rounded-lg border border-accent/20">
-                  <p className="text-accent font-medium">
-                    Why this matters: You said accuracy is critical. Confidence-based reporting avoids over-promising and tells you how sure we are.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Quick FAQ */}
-          <section className="mb-16">
-            <h2 className="prism-heading-md text-primary mb-12 text-center">Quick FAQ (About)</h2>
-            <div className="space-y-4">
-              {faqItems.map((item, index) => (
-                <Card key={index} className="prism-shadow-card">
-                  <CardContent className="p-0">
-                    <button
-                      onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                      className="w-full p-6 text-left hover:bg-muted/30 prism-transition flex items-center justify-between"
-                    >
-                      <div className="flex items-center">
-                        <HelpCircle className="h-5 w-5 text-accent mr-3 flex-shrink-0" />
-                        <h3 className="font-semibold text-primary">{item.q}</h3>
-                      </div>
-                      <ArrowRight 
-                        className={`h-5 w-5 text-muted-foreground transition-transform ${
-                          openFaq === index ? 'rotate-90' : ''
-                        }`}
-                      />
-                    </button>
-                    {openFaq === index && (
-                      <div className="px-6 pb-6">
-                        <div className="pl-8 border-l-2 border-accent/20">
-                          <p className="text-muted-foreground">{item.a}</p>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <div className="text-center mt-8">
-              <Button variant="outline-primary" asChild>
-                <a href="/faq">View All FAQs</a>
-              </Button>
-            </div>
-          </section>
-
-          {/* Closing CTA */}
-          <section className="text-center">
-            <Card className="prism-gradient-hero text-white prism-shadow-card">
-              <CardContent className="p-12">
-                <h2 className="text-3xl font-bold mb-4">Ready to see your PRISM?</h2>
-                <p className="text-white/90 mb-8 max-w-2xl mx-auto">
-                  Take the assessment and get a clear, confidence-rated profile you can apply immediately.
-                </p>
-                <Button 
-                  variant="assessment" 
-                  size="lg" 
-                  className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-3"
-                  onClick={() => navigate('/assessment')}
-                >
-                  Take the Assessment
-                </Button>
-              </CardContent>
-            </Card>
-          </section>
-        </div>
       </div>
+
+      {/* Typing Lab Teaser */}
+      <TypingLabTeaser />
+      
+      {/* Social Proof Strip */}
+      <SocialProofStrip />
+      
+      {/* Founding Member CTA */}
+      <FoundingMemberCTA />
+    </div>
   );
 };
 
