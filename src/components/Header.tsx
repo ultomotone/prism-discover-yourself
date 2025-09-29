@@ -17,7 +17,6 @@ const Header = () => {
 
   const navigation = [
     { name: "Typing Lab", href: "/typing-lab" },
-    { name: "About", href: "/about" },
   ];
 
   const solutionsItems = [
