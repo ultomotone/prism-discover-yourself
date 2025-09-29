@@ -12,7 +12,6 @@ import Assessment from "./pages/Assessment";
 import Results from "./pages/Results";
 import History from "./pages/History";
 import UserDashboard from "./pages/UserDashboard";
-import Troubleshoot from "./pages/Troubleshoot";
 import RealTimeType from "./pages/RealTimeType";
 import LiveDashboard from "./pages/LiveDashboard";
 import Live from "./pages/Live";
@@ -84,6 +83,7 @@ import PossibilityConnector from "./pages/types/PossibilityConnector";
 import IntegrityGuide from "./pages/types/IntegrityGuide";
 import Roadmap from "./pages/Roadmap";
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
+const Troubleshoot = lazy(() => import("./pages/Troubleshoot"));
 import YourPersonalityBlueprint from "./pages/YourPersonalityBlueprint";
 import RelationalFitPage from "./pages/prism-relational-fit/page";
 import RelationalFitHome from "./pages/relational-fit/RelationalFitHome";
@@ -225,7 +225,11 @@ const App = () => (
                   />
                   <Route path="/history" element={<History />} />
                   <Route path="/dashboard" element={<UserDashboard />} />
-                  <Route path="/troubleshoot" element={<Troubleshoot />} />
+                  <Route path="/troubleshoot" element={
+                    <Suspense fallback={<div className="p-6">Loading...</div>}>
+                      <Troubleshoot />
+                    </Suspense>
+                  } />
 
                   {/* Live + Real-time routes */}
                   <Route path="/live" element={<Live />} />
