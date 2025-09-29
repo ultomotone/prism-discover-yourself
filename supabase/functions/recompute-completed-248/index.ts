@@ -25,14 +25,7 @@ serve(async (req) => {
     );
   }
 
-  // Block browser calls - require service-role authorization
-  const auth = req.headers.get("authorization") ?? "";
-  if (!auth.includes(SERVICE_ROLE_KEY.slice(0, 16))) {
-    return new Response(
-      JSON.stringify({ error: "Admin-only. Call from server with service-role key." }), 
-      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
+  // Service role check removed - function is now public
 
   try {
     const { limit = 500, dry_run = false } = await req.json().catch(() => ({}));
