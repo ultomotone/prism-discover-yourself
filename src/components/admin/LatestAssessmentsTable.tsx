@@ -22,7 +22,17 @@ export function LatestAssessmentsTable({ data }: { data: LatestAssessments }) {
         {data.map((row) => (
           <TableRow key={row.session_id}>
             <TableCell>
-              {format(new Date(row.completed_at_et), "MM/dd HH:mm")}
+              {(() => {
+                try {
+                  const date = new Date(row.completed_at_et);
+                  if (isNaN(date.getTime())) {
+                    return "–";
+                  }
+                  return format(date, "MM/dd HH:mm");
+                } catch (error) {
+                  return "–";
+                }
+              })()}
             </TableCell>
             <TableCell className="font-mono text-right">
               {row.top1_fit != null ? row.top1_fit.toFixed(1) : "–"}
