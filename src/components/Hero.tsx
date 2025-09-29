@@ -17,8 +17,7 @@ const Hero = () => {
                 Predict your type on the first pass.
               </h1>
               <p className="prism-body-lg text-muted-foreground max-w-2xl">
-                PRISM Dynamics™ maps how you process information — in flow and under pressure — 
-                to predict your best-fit type before any 1:1 typing.
+                PRISM Dynamics™ maps how you process information—in flow and under pressure—to predict your best-fit type before any 1:1 typing.
               </p>
             </div>
 

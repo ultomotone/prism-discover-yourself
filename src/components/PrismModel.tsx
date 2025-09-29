@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Brain, BarChart3, Zap, Shield, ArrowRight } from "lucide-react";
+import { Brain, BarChart3, Zap, Shield, ArrowRight, Users, Heart } from "lucide-react";
 
 const PrismModel = () => {
   const [activeElement, setActiveElement] = useState<string | null>(null);
@@ -86,14 +86,21 @@ const PrismModel = () => {
   const prismFeatures = [
     {
       icon: Brain,
-      title: "8 Information Elements",
+      title: "Information Elements",
       description: "The fundamental signals your mind uses to process reality",
       link: "/signals",
       gradient: "prism-gradient-secondary"
     },
     {
+      icon: Users,
+      title: "Core Alignments",
+      description: "How your cognitive functions naturally combine to form your type",
+      link: "/disambiguation",
+      gradient: "prism-gradient-primary"
+    },
+    {
       icon: BarChart3, 
-      title: "1D-4D Dimensionality",
+      title: "Dimensionality",
       description: "How broad and adaptable each signal is in different contexts",
       link: "/dimensionality",
       gradient: "prism-gradient-accent"
@@ -107,10 +114,17 @@ const PrismModel = () => {
     },
     {
       icon: Shield,
-      title: "State Overlay (±)",
+      title: "State Overlay",
       description: "How emotional reactivity shapes your day-to-day expression",
       link: "/state-overlay", 
       gradient: "prism-gradient-primary"
+    },
+    {
+      icon: Heart,
+      title: "Relationship Fit",
+      description: "Understand compatibility dynamics and relational exchange patterns",
+      link: "/prism-relational-fit",
+      gradient: "prism-gradient-secondary"
     }
   ];
 
@@ -122,8 +136,8 @@ const PrismModel = () => {
             The PRISM Dynamics™ Information System
           </h2>
           <p className="prism-body-lg text-muted-foreground max-w-4xl mx-auto">
-            PRISM Dynamics maps the eight fundamental ways your mind processes information, 
-            how skilled you are with each one, and how they reorganize under different states.
+            PRISM Dynamics™ maps how you process information—through Information Elements, Core Alignments, 
+            Dimensionality, Block Dynamics, State Overlay, and Relationship Fit—to predict your best-fit type.
           </p>
         </div>
 
@@ -193,7 +207,7 @@ const PrismModel = () => {
         </div>
 
         {/* PRISM Framework Features */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {prismFeatures.map((feature, index) => (
             <Card key={index} className="prism-hover-lift border-2 border-primary/10">
               <CardContent className="p-6 text-center">
