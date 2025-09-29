@@ -181,7 +181,8 @@ const Footer = () => {
 
       <div className="text-center text-gray-400 text-xs mt-12 space-y-2">
         <p>Looking for a different PRISM? We're a distinct product. <button onClick={() => navigate('/disambiguation')} className="underline hover:text-white">See Disambiguation</button>.</p>
-        <p>© 2025 PRISM Dynamics™. All rights reserved.</p>
+        <p>© 2025 PRISM Dynamics Company LLC. All rights reserved.</p>
+        <p className="text-gray-500">DBA: PRISM Dynamics™</p>
       </div>
     </footer>
   );
