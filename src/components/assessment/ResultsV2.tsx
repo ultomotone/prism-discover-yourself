@@ -102,7 +102,11 @@ function Top3FitChart({ data, primary, profile }:{
   profile: Profile;
 }) {
   // QA Guards - prevent the exact failure modes we diagnosed
-  const validData = data.filter(d => d.fit != null && d.share != null);
+  const validData = data.filter(d => 
+    d.code && 
+    typeof d.fit === 'number' && !isNaN(d.fit) && 
+    typeof d.share === 'number' && !isNaN(d.share)
+  );
   if (validData.length === 0) {
     return (
       <div className="mt-3 p-3 border rounded-xl bg-gray-50">
