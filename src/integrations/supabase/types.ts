@@ -1170,6 +1170,10 @@ export type Database = {
         Args: { p_user: string; p_window_days: number }
         Returns: number
       }
+      delete_specific_session: {
+        Args: { p_session_id: string }
+        Returns: Json
+      }
       example_rate_limited_function: {
         Args: { client_ip: string }
         Returns: string

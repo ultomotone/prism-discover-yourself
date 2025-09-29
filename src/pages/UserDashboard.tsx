@@ -26,6 +26,8 @@ import {
 } from "@/hooks/useEmailSessionManager";
 import { RetakeLimitNotice } from "@/components/assessment/RetakeLimitNotice";
 import { CleanupSessionsButton } from "@/components/CleanupSessionsButton";
+import { DeleteSessionButton } from "@/components/DeleteSessionButton";
+import { DirectDeleteButton } from "@/components/DirectDeleteButton";
 
 interface UserSession {
   id: string;
@@ -192,6 +194,7 @@ const UserDashboard = () => {
                   </p>
                 </div>
                 <div className="flex gap-2">
+                  <DirectDeleteButton />
                   <CleanupSessionsButton />
                   <Button 
                     onClick={signOut}
