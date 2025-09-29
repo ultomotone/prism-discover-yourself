@@ -5,6 +5,9 @@ import { initializeRouteTracking } from './lib/route-tracking'
 import { initializeRedditSPATracking } from './lib/reddit/spa-tracker'
 import { initAnalytics } from './lib/analytics'
 
+// Trigger recomputation system
+import './utils/triggerNewRecompute'
+
 // Initialize analytics
 initAnalytics()
 
