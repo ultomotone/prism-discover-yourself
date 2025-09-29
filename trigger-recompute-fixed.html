@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trigger Recompute - Fixed</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .status { padding: 20px; margin: 20px 0; border-radius: 8px; }
+        .loading { background: #e3f2fd; color: #1976d2; }
+        .success { background: #e8f5e9; color: #2e7d32; }
+        .error { background: #ffebee; color: #c62828; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin: 5px; }
+        .code { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>Trigger Session Recompute - Fixed Version</h1>
+    <div id="status" class="status loading">Ready to trigger recompute...</div>
+    
+    <button onclick="triggerRecomputeViaSupabase()">Trigger via Supabase Client</button>
+    <button onclick="triggerRecomputeDirectly()">Trigger via Direct Fetch</button>
+    <button onclick="checkSession()">Check Current Session</button>
+    
+    <div class="code" id="debugInfo">Debug info will appear here...</div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const statusDiv = document.getElementById('status');
+        const debugDiv = document.getElementById('debugInfo');
+        const sessionId = '11652dac-e085-4dd6-85f6-b9a660932345';
+        
+        // Initialize Supabase client
+        const { createClient } = supabase;
+        const supabaseClient = createClient(
+            'https://gnkuikentdtnatazeriu.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdua3Vpa2VudGR0bmF0YXplcml1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3MzI2MDQsImV4cCI6MjA2OTMwODYwNH0.wCk8ngoDqGW4bMIAjH5EttXsoBwdk4xnIViJZCezs-U'
+        );
+        
+        function updateStatus(message, className = 'loading') {
+            statusDiv.className = `status ${className}`;
+            statusDiv.innerHTML = message;
+        }
+        
+        function updateDebug(info) {
+            debugDiv.innerHTML = `<pre>${JSON.stringify(info, null, 2)}</pre>`;
+        }
+        
+        async function checkSession() {
+            try {
+                updateStatus('Checking session in database...', 'loading');
+                
+                const { data, error } = await supabaseClient
+                    .from('scoring_results')
+                    .select('*')
+                    .eq('session_id', sessionId)
+                    .single();
+                
+                if (error) {
+                    updateDebug({ error: error.message, details: error });
+                    updateStatus(`Database error: ${error.message}`, 'error');
+                    return;
+                }
+                
+                updateDebug({ session_data: data });
+                updateStatus('Session found in database', 'success');
+                
+            } catch (e) {
+                updateDebug({ exception: e.message, stack: e.stack });
+                updateStatus(`Exception: ${e.message}`, 'error');
+            }
+        }
+        
+        async function triggerRecomputeViaSupabase() {
+            try {
+                updateStatus('Calling force-recompute-session via Supabase client...', 'loading');
+                
+                const { data, error } = await supabaseClient.functions.invoke('force-recompute-session', {
+                    body: { 
+                        session_id: sessionId,
+                        dry_run: false 
+                    }
+                });
+                
+                updateDebug({ 
+                    request: { session_id: sessionId, dry_run: false },
+                    response_data: data, 
+                    response_error: error 
+                });
+                
+                if (error) {
+                    updateStatus(`Supabase client error: ${error.message}`, 'error');
+                    return;
+                }
+                
+                updateStatus(`Success via Supabase client: ${JSON.stringify(data)}`, 'success');
+                
+                // Redirect to results after success
+                setTimeout(() => {
+                    window.location.href = `/#/results/${sessionId}`;
+                }, 2000);
+                
+            } catch (e) {
+                updateDebug({ exception: e.message, stack: e.stack });
+                updateStatus(`Exception: ${e.message}`, 'error');
+            }
+        }
+        
+        async function triggerRecomputeDirectly() {
+            try {
+                updateStatus('Calling function via direct fetch...', 'loading');
+                
+                const url = 'https://gnkuikentdtnatazeriu.functions.supabase.co/force-recompute-session';
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdua3Vpa2VudGR0bmF0YXplcml1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3MzI2MDQsImV4cCI6MjA2OTMwODYwNH0.wCk8ngoDqGW4bMIAjH5EttXsoBwdk4xnIViJZCezs-U'
+                };
+                const body = JSON.stringify({ 
+                    session_id: sessionId,
+                    dry_run: false 
+                });
+                
+                updateDebug({ 
+                    request: { url, headers, body: JSON.parse(body) }
+                });
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers,
+                    body
+                });
+                
+                const responseText = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch {
+                    data = responseText;
+                }
+                
+                updateDebug({
+                    response_status: response.status,
+                    response_headers: Object.fromEntries(response.headers.entries()),
+                    response_data: data,
+                    raw_response: responseText
+                });
+                
+                if (!response.ok) {
+                    updateStatus(`Direct fetch failed: ${response.status} - ${JSON.stringify(data)}`, 'error');
+                    return;
+                }
+                
+                updateStatus(`Success via direct fetch: ${JSON.stringify(data)}`, 'success');
+                
+            } catch (e) {
+                updateDebug({ exception: e.message, stack: e.stack });
+                updateStatus(`Exception: ${e.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
