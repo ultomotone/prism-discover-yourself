@@ -22,23 +22,37 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Security: Only allow service role access
+    // Security: Require authentication (user or service role)
     const authHeader = req.headers.get('authorization');
-    if (!authHeader?.includes('service_role')) {
+    if (!authHeader?.startsWith('Bearer ')) {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized - service role required' }),
+        JSON.stringify({ error: 'Unauthorized - authentication required' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
 
-    if (!supabaseUrl || !serviceRoleKey) {
+    if (!supabaseUrl || !serviceRoleKey || !anonKey) {
       throw new Error('Missing Supabase configuration');
     }
 
+    // Use service role for internal operations but verify user access
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const userSupabase = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // Verify the user is authenticated
+    const { data: { user }, error: authError } = await userSupabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     let requestBody: RecomputeRequest = {};
     if (req.method === 'POST') {
@@ -57,8 +71,23 @@ Deno.serve(async (req) => {
     let sessionsToProcess: string[] = [];
 
     if (session_ids && Array.isArray(session_ids)) {
-      // Process specific sessions
-      sessionsToProcess = session_ids.slice(0, limit);
+      // Process specific sessions - but only if user owns them
+      const { data: userSessions, error: sessionError } = await supabase
+        .from('assessment_sessions')
+        .select('id')
+        .eq('user_id', user.id)
+        .in('id', session_ids);
+      
+      if (sessionError) throw sessionError;
+      
+      sessionsToProcess = userSessions?.map(s => s.id) || [];
+      
+      if (sessionsToProcess.length === 0) {
+        return new Response(
+          JSON.stringify({ error: 'No accessible sessions found' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     } else {
       // Find sessions missing new fields using SQL view
       const { data: missingSessions, error: queryError } = await supabase

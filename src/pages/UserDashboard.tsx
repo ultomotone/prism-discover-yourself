@@ -27,8 +27,6 @@ import {
 } from "@/hooks/useEmailSessionManager";
 import { RetakeLimitNotice } from "@/components/assessment/RetakeLimitNotice";
 import { CleanupSessionsButton } from "@/components/CleanupSessionsButton";
-import { DeleteSessionButton } from "@/components/DeleteSessionButton";
-import { DirectDeleteButton } from "@/components/DirectDeleteButton";
 
 interface UserSession {
   id: string;
@@ -267,7 +265,6 @@ const UserDashboard = () => {
                     )}
                     {isMigrating ? 'Migrating...' : 'Migrate Scoring'}
                   </Button>
-                  <DirectDeleteButton />
                   <CleanupSessionsButton />
                   <Button
                     onClick={signOut}
