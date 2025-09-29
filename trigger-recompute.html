@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trigger Recompute</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .status { padding: 20px; margin: 20px 0; border-radius: 8px; }
+        .loading { background: #e3f2fd; color: #1976d2; }
+        .success { background: #e8f5e9; color: #2e7d32; }
+        .error { background: #ffebee; color: #c62828; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Triggering Session Recompute</h1>
+    <div id="status" class="status loading">Starting...</div>
+    <button onclick="triggerRecompute()">Trigger Recompute</button>
+    
+    <script>
+        async function triggerRecompute() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = 'status loading';
+            
+            try {
+                statusDiv.innerHTML = 'Calling recompute function...';
+                
+                const response = await fetch('https://gnkuikentdtnatazeriu.functions.supabase.co/force-recompute-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdua3Vpa2VudGR0bmF0YXplcml1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3MzI2MDQsImV4cCI6MjA2OTMwODYwNH0.wCk8ngoDqGW4bMIAjH5EttXsoBwdk4xnIViJZCezs-U'
+                    },
+                    body: JSON.stringify({ 
+                        session_id: '11652dac-e085-4dd6-85f6-b9a660932345',
+                        dry_run: false 
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${JSON.stringify(data)}`);
+                }
+                
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = `Success: ${JSON.stringify(data, null, 2)}`;
+                console.log('Recompute success:', data);
+                
+                // Reload the results page after 2 seconds
+                setTimeout(() => {
+                    window.location.href = '/#/results/11652dac-e085-4dd6-85f6-b9a660932345';
+                }, 2000);
+                
+            } catch (e) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `Error: ${e.message}`;
+                console.error('Recompute error:', e);
+            }
+        }
+        
+        // Auto-trigger on load
+        window.onload = () => {
+            console.log('Debug recompute at:', new Date().toISOString());
+            setTimeout(triggerRecompute, 500);
+        };
+    </script>
+</body>
+</html>
