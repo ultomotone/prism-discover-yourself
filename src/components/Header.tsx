@@ -47,7 +47,7 @@ const Header = () => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
       <nav className="prism-container">
-        <div className="flex justify-between items-center h-16 px-4">
+        <div className="flex justify-between items-center h-20 px-6">
           {/* Logo */}
           <Link to="/" className="flex items-center hover:opacity-80 prism-transition">
             <img src={prismLogo} alt="PRISM Dynamics Logo" className="w-9 h-9 mr-3" />
@@ -55,7 +55,7 @@ const Header = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden md:flex items-center space-x-8">
             <Link
               to="/assessment"
               className="text-sm font-medium text-foreground hover:text-primary prism-transition px-3 py-2 rounded-md hover:bg-accent/50"
@@ -89,11 +89,11 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
             
-            {/* PRISM Types Dropdown */}
+            {/* Types Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="text-sm font-medium text-foreground hover:text-primary prism-transition px-3 py-2 h-auto">
-                  PRISM Types
+                  Types
                   <ChevronDown className="ml-1 h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
@@ -111,11 +111,11 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
             
-            {/* PRISM Components Dropdown */}
+            {/* Components Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="text-sm font-medium text-foreground hover:text-primary prism-transition px-3 py-2 h-auto">
-                  PRISM Components
+                  Components
                   <ChevronDown className="ml-1 h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
@@ -244,9 +244,9 @@ const Header = () => {
                 ))}
               </div>
               
-              {/* PRISM Types in Mobile */}  
+              {/* Types in Mobile */}  
               <div className="border-t border-border mt-4 pt-4">
-                <div className="px-3 py-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide">PRISM Types</div>
+                <div className="px-3 py-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Types</div>
                 {prismTypes.map((type) => (
                   <Link
                     key={type.code}
@@ -262,9 +262,9 @@ const Header = () => {
                 ))}
               </div>
               
-              {/* PRISM Components in Mobile */}
+              {/* Components in Mobile */}
               <div className="border-t border-border mt-4 pt-4">
-                <div className="px-3 py-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide">PRISM Components</div>
+                <div className="px-3 py-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Components</div>
                 {prismComponents.map((item) => (
                   <Link
                     key={item.name}
