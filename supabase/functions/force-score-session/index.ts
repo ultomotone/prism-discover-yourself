@@ -68,7 +68,7 @@ serve(async (req) => {
 
     // Force recompute the session
     try {
-      await recomputeSession(supabase, session_id, true);
+      await recomputeSession(supabase, session_id, false);
       
       console.log(`Successfully scored session: ${session_id}`);
       
