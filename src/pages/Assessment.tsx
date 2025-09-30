@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/components/Header';
 import { AssessmentForm, AssessmentResponse } from '@/components/assessment/AssessmentForm';
 import { SavedAssessments } from '@/components/assessment/SavedAssessments';
@@ -14,12 +14,14 @@ const Assessment = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const location = useLocation();
 
-  const resume = searchParams.get('resume');
-  const start = searchParams.get('start');
-  const session = searchParams.get('session');
+  // Try both URL params (for BrowserRouter) and state (for HashRouter)
+  const resume = location.state?.resume || searchParams.get('resume');
+  const start = location.state?.start || searchParams.get('start');
+  const session = location.state?.session || searchParams.get('session');
   
-  // show form whenever ?start is present (any truthy) or ?resume=:id exists
+  // show form whenever start is present (any truthy) or resume exists
   const showForm = Boolean(resume || start !== null);
 
   console.log('🎯 Assessment page render:', { 
@@ -27,7 +29,8 @@ const Assessment = () => {
     start, 
     session,
     showForm,
-    fullURL: window.location.href 
+    fullURL: window.location.href,
+    locationState: location.state
   });
 
   const [finalizing, setFinalizing] = useState(false);
@@ -116,7 +119,7 @@ const Assessment = () => {
   }
 
   return (
-    <AssessmentIntro onStart={() => navigate('/assessment?start=true')} />
+    <AssessmentIntro onStart={() => navigate('/assessment', { state: { start: true } })} />
   );
 };
 

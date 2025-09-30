@@ -108,16 +108,8 @@ export function SavedAssessments({ onStartNew }: SavedAssessmentsProps) {
       return;
     }
 
-    console.log('➡️ Navigating to resume assessment with params');
-    const targetPath = `/assessment?resume=${sessionId}`;
-    console.log('🎯 Target path:', targetPath);
-    console.log('🌐 Current location:', window.location.href);
-    navigate(targetPath);
-    
-    // Log after navigation attempt
-    setTimeout(() => {
-      console.log('🌐 Location after navigate:', window.location.href);
-    }, 100);
+    console.log('➡️ Navigating to resume assessment');
+    navigate('/assessment', { state: { resume: sessionId } });
   };
 
   if (isLoading) {
