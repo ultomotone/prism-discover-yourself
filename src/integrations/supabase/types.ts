@@ -17,6 +17,7 @@ export type Database = {
       assessment_feedback: {
         Row: {
           actionability: boolean | null
+          behavioral_change: boolean | null
           clarity_overall: number | null
           engagement: number | null
           focus_ease: number | null
@@ -32,6 +33,7 @@ export type Database = {
         }
         Insert: {
           actionability?: boolean | null
+          behavioral_change?: boolean | null
           clarity_overall?: number | null
           engagement?: number | null
           focus_ease?: number | null
@@ -47,6 +49,7 @@ export type Database = {
         }
         Update: {
           actionability?: boolean | null
+          behavioral_change?: boolean | null
           clarity_overall?: number | null
           engagement?: number | null
           focus_ease?: number | null
@@ -139,7 +142,21 @@ export type Database = {
             foreignKeyName: "assessment_item_flags_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
+            referencedRelation: "mv_kpi_item_clarity"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "assessment_item_flags_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
             referencedRelation: "mv_kpi_item_flags"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "assessment_item_flags_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "mv_kpi_item_flow"
             referencedColumns: ["question_id"]
           },
           {
@@ -231,6 +248,7 @@ export type Database = {
           reverse_applied: boolean | null
           section_id: string | null
           session_id: string
+          skipped: boolean | null
           updated_at: string | null
           valid_bool: boolean | null
           value_coded: string | null
@@ -254,6 +272,7 @@ export type Database = {
           reverse_applied?: boolean | null
           section_id?: string | null
           session_id: string
+          skipped?: boolean | null
           updated_at?: string | null
           valid_bool?: boolean | null
           value_coded?: string | null
@@ -277,6 +296,7 @@ export type Database = {
           reverse_applied?: boolean | null
           section_id?: string | null
           session_id?: string
+          skipped?: boolean | null
           updated_at?: string | null
           valid_bool?: boolean | null
           value_coded?: string | null
@@ -740,6 +760,70 @@ export type Database = {
         }
         Relationships: []
       }
+      item_catalog: {
+        Row: {
+          created_at: string | null
+          keyed: number | null
+          question_id: number
+          scale_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          keyed?: number | null
+          question_id: number
+          scale_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          keyed?: number | null
+          question_id?: number
+          scale_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_catalog_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_catalog_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: true
+            referencedRelation: "mv_kpi_item_clarity"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "item_catalog_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: true
+            referencedRelation: "mv_kpi_item_flags"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "item_catalog_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: true
+            referencedRelation: "mv_kpi_item_flow"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "item_catalog_scale_id_fkey"
+            columns: ["scale_id"]
+            isOneToOne: false
+            referencedRelation: "mv_kpi_reliability"
+            referencedColumns: ["scale_id"]
+          },
+          {
+            foreignKeyName: "item_catalog_scale_id_fkey"
+            columns: ["scale_id"]
+            isOneToOne: false
+            referencedRelation: "scale_catalog"
+            referencedColumns: ["scale_id"]
+          },
+        ]
+      }
       kb_definitions: {
         Row: {
           content: Json
@@ -881,6 +965,141 @@ export type Database = {
         }
         Relationships: []
       }
+      psychometrics_external: {
+        Row: {
+          cfi: number | null
+          dif_flag: boolean | null
+          factor_loading: number | null
+          omega: number | null
+          question_id: number
+          results_version: string
+          rmsea: number | null
+          scale_id: string
+          srmr: number | null
+          tli: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          cfi?: number | null
+          dif_flag?: boolean | null
+          factor_loading?: number | null
+          omega?: number | null
+          question_id: number
+          results_version?: string
+          rmsea?: number | null
+          scale_id: string
+          srmr?: number | null
+          tli?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          cfi?: number | null
+          dif_flag?: boolean | null
+          factor_loading?: number | null
+          omega?: number | null
+          question_id?: number
+          results_version?: string
+          rmsea?: number | null
+          scale_id?: string
+          srmr?: number | null
+          tli?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "psychometrics_external_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "psychometrics_external_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "mv_kpi_item_clarity"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "psychometrics_external_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "mv_kpi_item_flags"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "psychometrics_external_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "mv_kpi_item_flow"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "psychometrics_external_scale_id_fkey"
+            columns: ["scale_id"]
+            isOneToOne: false
+            referencedRelation: "mv_kpi_reliability"
+            referencedColumns: ["scale_id"]
+          },
+          {
+            foreignKeyName: "psychometrics_external_scale_id_fkey"
+            columns: ["scale_id"]
+            isOneToOne: false
+            referencedRelation: "scale_catalog"
+            referencedColumns: ["scale_id"]
+          },
+        ]
+      }
+      retest_invites: {
+        Row: {
+          completed_at: string | null
+          invited_at: string | null
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          invited_at?: string | null
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          invited_at?: string | null
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retest_invites_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scale_catalog: {
+        Row: {
+          created_at: string | null
+          result_version: string
+          scale_id: string
+          scale_name: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          result_version?: string
+          scale_id: string
+          scale_name?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          result_version?: string
+          scale_id?: string
+          scale_name?: string | null
+        }
+        Relationships: []
+      }
       scoring_config: {
         Row: {
           key: string
@@ -995,6 +1214,116 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_kpi_behavioral_impact: {
+        Row: {
+          behavioral_impact_pct: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_business: {
+        Row: {
+          arpu_completed: number | null
+          free_to_paid_rate: number | null
+          paywall_abandon_rate: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_calibration: {
+        Row: {
+          ece: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_cfa: {
+        Row: {
+          cfi: number | null
+          factor_loading: number | null
+          question_id: number | null
+          rmsea: number | null
+          scale_id: string | null
+          srmr: number | null
+          tli: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "psychometrics_external_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "psychometrics_external_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "mv_kpi_item_clarity"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "psychometrics_external_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "mv_kpi_item_flags"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "psychometrics_external_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "mv_kpi_item_flow"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "psychometrics_external_scale_id_fkey"
+            columns: ["scale_id"]
+            isOneToOne: false
+            referencedRelation: "mv_kpi_reliability"
+            referencedColumns: ["scale_id"]
+          },
+          {
+            foreignKeyName: "psychometrics_external_scale_id_fkey"
+            columns: ["scale_id"]
+            isOneToOne: false
+            referencedRelation: "scale_catalog"
+            referencedColumns: ["scale_id"]
+          },
+        ]
+      }
+      mv_kpi_classification_stability: {
+        Row: {
+          classification_stability: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_confidence_spread: {
+        Row: {
+          confidence_variance: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_construct_coverage: {
+        Row: {
+          construct_coverage_index: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_engagement: {
+        Row: {
+          avg_completion_sec: number | null
+          completion_time_sd_sec: number | null
+          day: string | null
+          drop_off_rate: number | null
+          sessions_completed: number | null
+          sessions_started: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_fairness_dif: {
+        Row: {
+          dif_flag_rate: number | null
+        }
+        Relationships: []
+      }
       mv_kpi_feedback: {
         Row: {
           avg_accuracy: number | null
@@ -1006,6 +1335,21 @@ export type Database = {
           feedback_count: number | null
           pct_actionable: number | null
           pct_reported_unclear: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_followup: {
+        Row: {
+          followup_completion_rate: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_item_clarity: {
+        Row: {
+          answered_ct: number | null
+          clarity_flag_rate_pct: number | null
+          flags_ct: number | null
+          question_id: number | null
         }
         Relationships: []
       }
@@ -1026,11 +1370,83 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_kpi_item_flow: {
+        Row: {
+          answered_ct: number | null
+          avg_time_ms: number | null
+          presented_ct: number | null
+          question_id: number | null
+          skip_rate: number | null
+        }
+        Relationships: []
+      }
       mv_kpi_item_timing: {
         Row: {
           p50_ms: number | null
           p90_ms: number | null
           question_id: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_reliability: {
+        Row: {
+          cronbach_alpha: number | null
+          mcdonald_omega: number | null
+          scale_id: string | null
+          split_half_corr: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_reliability_alpha: {
+        Row: {
+          cronbach_alpha: number | null
+          k: number | null
+          scale_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_catalog_scale_id_fkey"
+            columns: ["scale_id"]
+            isOneToOne: false
+            referencedRelation: "mv_kpi_reliability"
+            referencedColumns: ["scale_id"]
+          },
+          {
+            foreignKeyName: "item_catalog_scale_id_fkey"
+            columns: ["scale_id"]
+            isOneToOne: false
+            referencedRelation: "scale_catalog"
+            referencedColumns: ["scale_id"]
+          },
+        ]
+      }
+      mv_kpi_reliability_split_half: {
+        Row: {
+          scale_id: string | null
+          split_half_corr: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_catalog_scale_id_fkey"
+            columns: ["scale_id"]
+            isOneToOne: false
+            referencedRelation: "mv_kpi_reliability"
+            referencedColumns: ["scale_id"]
+          },
+          {
+            foreignKeyName: "item_catalog_scale_id_fkey"
+            columns: ["scale_id"]
+            isOneToOne: false
+            referencedRelation: "scale_catalog"
+            referencedColumns: ["scale_id"]
+          },
+        ]
+      }
+      mv_kpi_response_process: {
+        Row: {
+          day: string | null
+          not_sure_usage_rate: number | null
+          post_clarity_mean: number | null
         }
         Relationships: []
       }
@@ -1050,6 +1466,21 @@ export type Database = {
           day: string | null
           sessions_completed: number | null
           sessions_started: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_trajectory_alignment: {
+        Row: {
+          trajectory_alignment_r: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_user_experience: {
+        Row: {
+          accuracy_perception: number | null
+          actionable_insights_pct: number | null
+          day: string | null
+          engagement_rating: number | null
         }
         Relationships: []
       }
