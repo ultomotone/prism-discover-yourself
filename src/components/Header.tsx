@@ -171,22 +171,23 @@ const Header = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <div className="flex items-center space-x-3">
-                  <Button
-                    variant="ghost"
-                    className="text-sm font-medium px-4 py-2 h-auto"
-                    onClick={() => navigate('/login')}
-                  >
-                    Sign In
-                  </Button>
-                  <Button
-                    variant="hero" 
-                    className="text-sm font-medium px-4 py-2 h-auto"
-                    onClick={() => navigate('/signup')}
-                  >
-                    Get Started
-                  </Button>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center gap-2 text-sm font-medium px-3 py-2 h-auto">
+                      <User className="h-4 w-4" />
+                      Sign In
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 bg-background border border-border shadow-lg z-50">
+                    <DropdownMenuItem onClick={() => navigate('/login')}>
+                      Sign In
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/signup')}>
+                      Get Started
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )
             )}
           </div>
