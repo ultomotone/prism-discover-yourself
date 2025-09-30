@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Menu, X, ChevronDown, User, LogOut, Bug } from "lucide-react";
+import { Menu, X, ChevronDown, User, LogOut, Bug, BarChart3 } from "lucide-react";
 import { prismTypes } from "@/data/prismTypes";
 import { useAuth } from "@/contexts/AuthContext";
 import prismLogo from "@/assets/prism-logo.png";
@@ -156,12 +156,20 @@ const Header = () => {
                       <Link to="/dashboard" className="w-full">Dashboard</Link>
                     </DropdownMenuItem>
                     {ADMIN_EMAILS.includes(user.email || '') && (
-                      <DropdownMenuItem asChild>
-                        <Link to="/troubleshoot" className="w-full">
-                          <Bug className="h-4 w-4 mr-2" />
-                          Troubleshoot
-                        </Link>
-                      </DropdownMenuItem>
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link to="/analytics" className="w-full">
+                            <BarChart3 className="h-4 w-4 mr-2" />
+                            Analytics
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to="/troubleshoot" className="w-full">
+                            <Bug className="h-4 w-4 mr-2" />
+                            Troubleshoot
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
                     )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={signOut} className="text-destructive">
@@ -296,6 +304,16 @@ const Header = () => {
                       >
                         Dashboard
                       </Link>
+                      {ADMIN_EMAILS.includes(user.email || '') && (
+                        <Link
+                          to="/analytics"
+                          className="block px-3 py-2 text-foreground hover:text-primary prism-transition font-medium"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          <BarChart3 className="h-4 w-4 inline mr-2" />
+                          Analytics
+                        </Link>
+                      )}
                       <Button
                         variant="ghost"
                         className="w-full justify-start text-destructive hover:text-destructive"
