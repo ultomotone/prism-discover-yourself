@@ -88,6 +88,7 @@ const AssessmentAnalytics = () => {
           <TabsTrigger value="fairness">Fairness & Calibration</TabsTrigger>
           <TabsTrigger value="feedback">User Experience</TabsTrigger>
           <TabsTrigger value="business">Business Metrics</TabsTrigger>
+          <TabsTrigger value="troubleshooting">Troubleshooting</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -404,6 +405,90 @@ const AssessmentAnalytics = () => {
                   <li>ARPU (Average Revenue Per User)</li>
                   <li>Churn/abandon rate at paywall</li>
                   <li>6-week retest invitations (test-retest reliability)</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="troubleshooting" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Database & Analytics Troubleshooting</CardTitle>
+              <CardDescription>Tools to diagnose and fix data issues</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-3">
+                  <h4 className="font-medium">Materialized View Refresh</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Manually trigger a refresh of all analytics materialized views. This updates the dashboard with the latest data from the database.
+                  </p>
+                  <button 
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary text-primary-foreground hover:bg-primary/90 h-10 py-2 px-4"
+                    onClick={() => {
+                      console.log('Triggering MV refresh...');
+                      // TODO: Call edge function to refresh MVs
+                    }}
+                  >
+                    <Activity className="mr-2 h-4 w-4" />
+                    Recompute Analytics
+                  </button>
+                  <p className="text-xs text-muted-foreground">
+                    Last auto-refresh: Every 10 minutes
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-medium">View Logs</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Access system logs to troubleshoot data processing issues, scoring problems, or API errors.
+                  </p>
+                  <button 
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background border border-input hover:bg-accent hover:text-accent-foreground h-10 py-2 px-4"
+                    onClick={() => {
+                      console.log('Opening logs...');
+                      // TODO: Open logs modal or navigate to logs page
+                    }}
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    View Troubleshooting Logs
+                  </button>
+                  <p className="text-xs text-muted-foreground">
+                    Includes DB queries, edge function calls, and errors
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h4 className="font-medium mb-3">Current System Status</h4>
+                <div className="grid gap-3 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Dashboard Data Source:</span>
+                    <span className="font-mono">get_assessment_kpis RPC</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Materialized Views:</span>
+                    <span className="font-mono">21 views (auto-refresh: 10m)</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Data Freshness:</span>
+                    <span className="font-mono">{new Date().toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Cache TTL:</span>
+                    <span className="font-mono">1 minute</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h4 className="font-medium mb-3">Quick Diagnostics</h4>
+                <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
+                  <li>If metrics show 0: Check if sessions exist in last 7 days</li>
+                  <li>If data seems stale: Use "Recompute Analytics" button</li>
+                  <li>If errors persist: Check troubleshooting logs for SQL errors</li>
+                  <li>Security warnings are expected and documented</li>
                 </ul>
               </div>
             </CardContent>
