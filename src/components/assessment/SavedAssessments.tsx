@@ -109,7 +109,8 @@ export function SavedAssessments({ onStartNew }: SavedAssessmentsProps) {
     }
 
     console.log('➡️ Navigating to resume assessment');
-    navigate('/assessment', { state: { resume: sessionId } });
+    localStorage.setItem('prism_nav_data', JSON.stringify({ resume: sessionId }));
+    navigate('/assessment');
   };
 
   if (isLoading) {

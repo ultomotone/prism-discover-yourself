@@ -16,10 +16,24 @@ const Assessment = () => {
   const queryClient = useQueryClient();
   const location = useLocation();
 
-  // Try both URL params (for BrowserRouter) and state (for HashRouter)
-  const resume = location.state?.resume || searchParams.get('resume');
-  const start = location.state?.start || searchParams.get('start');
-  const session = location.state?.session || searchParams.get('session');
+  // Read from localStorage first, then fall back to URL params and state
+  const getNavData = () => {
+    try {
+      const stored = localStorage.getItem('prism_nav_data');
+      if (stored) {
+        localStorage.removeItem('prism_nav_data'); // Clear after reading
+        return JSON.parse(stored);
+      }
+    } catch (e) {
+      console.warn('Failed to read nav data from localStorage:', e);
+    }
+    return null;
+  };
+
+  const navData = getNavData();
+  const resume = navData?.resume || location.state?.resume || searchParams.get('resume');
+  const start = navData?.start || location.state?.start || searchParams.get('start');
+  const session = navData?.session || location.state?.session || searchParams.get('session');
   
   // show form whenever start is present (any truthy) or resume exists
   const showForm = Boolean(resume || start !== null);
@@ -30,7 +44,8 @@ const Assessment = () => {
     session,
     showForm,
     fullURL: window.location.href,
-    locationState: location.state
+    locationState: location.state,
+    navData
   });
 
   const [finalizing, setFinalizing] = useState(false);
@@ -119,7 +134,10 @@ const Assessment = () => {
   }
 
   return (
-    <AssessmentIntro onStart={() => navigate('/assessment', { state: { start: true } })} />
+    <AssessmentIntro onStart={() => {
+      localStorage.setItem('prism_nav_data', JSON.stringify({ start: true }));
+      navigate('/assessment');
+    }} />
   );
 };
 

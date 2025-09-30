@@ -74,16 +74,12 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
 
     if (sessionData.existing_session) {
       console.log('➡️ Navigating to RESUME existing session:', sessionData.session_id);
-      navigate('/assessment', { 
-        replace: true,
-        state: { resume: sessionData.session_id }
-      });
+      localStorage.setItem('prism_nav_data', JSON.stringify({ resume: sessionData.session_id }));
+      navigate('/assessment', { replace: true });
     } else {
       console.log('➡️ Navigating to START new session:', sessionData.session_id);
-      navigate('/assessment', { 
-        replace: true,
-        state: { start: true, session: sessionData.session_id }
-      });
+      localStorage.setItem('prism_nav_data', JSON.stringify({ start: true, session: sessionData.session_id }));
+      navigate('/assessment', { replace: true });
     }
   };
 
@@ -114,23 +110,22 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
 
         if (!confirmNew) {
           // User chose to continue existing
-          navigate('/assessment', { state: { resume: sessionData.session_id } });
+          localStorage.setItem('prism_nav_data', JSON.stringify({ resume: sessionData.session_id }));
+          navigate('/assessment');
           return;
         }
 
         // User confirmed they want to start new - force new session
         const forceNewResult = await startAssessmentSession(cachedEmail, undefined, true);
         if (!forceNewResult || forceNewResult.status === 'blocked') return;
-        navigate('/assessment', { 
-          state: { start: true, session: forceNewResult.session.session_id }
-        });
+        localStorage.setItem('prism_nav_data', JSON.stringify({ start: true, session: forceNewResult.session.session_id }));
+        navigate('/assessment');
         return;
       }
 
       // No existing session, proceed normally
-      navigate('/assessment', { 
-        state: { start: true, session: sessionData.session_id }
-      });
+      localStorage.setItem('prism_nav_data', JSON.stringify({ start: true, session: sessionData.session_id }));
+      navigate('/assessment');
     } else {
       // No cached email, just start
       onStart();
