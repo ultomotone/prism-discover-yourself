@@ -55,12 +55,6 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link
-              to="/assessment"
-              className="text-sm font-medium text-foreground hover:text-primary prism-transition px-3 py-2 rounded-md hover:bg-accent/50"
-            >
-              Assessment
-            </Link>
             {navigation.map((item) => (
               <Link
                 key={item.name}
@@ -217,13 +211,6 @@ const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-4 pt-4 pb-6 space-y-2 bg-background border-t border-border max-h-[calc(100vh-4rem)] overflow-y-auto">
-              <Link
-                to="/assessment"
-                className="block px-3 py-3 text-sm font-medium text-foreground hover:text-primary prism-transition rounded-md hover:bg-accent/50"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Assessment
-              </Link>
               {navigation.map((item) => (
                 <Link
                   key={item.name}
