@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Helmet } from "react-helmet";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 
 const Membership = () => {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
@@ -20,7 +18,7 @@ const Membership = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <Helmet
         title="Membership | PRISM Dynamics™"
         meta={[
@@ -30,9 +28,6 @@ const Membership = () => {
           }
         ]}
       />
-      
-      <Header />
-      
       <main className="pt-24 pb-16">
         <div className="prism-container max-w-7xl">
           {/* Hero Section */}
@@ -244,9 +239,7 @@ const Membership = () => {
           </Card>
         </div>
       </main>
-      
-      <Footer />
-    </div>
+    </>
   );
 };
 
