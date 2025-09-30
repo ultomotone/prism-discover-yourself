@@ -1262,10 +1262,11 @@ export type Database = {
       }
       mv_kpi_item_flags: {
         Row: {
-          flag_count: number | null
+          answered: number | null
           flag_rate: number | null
+          flags: number | null
           question_id: number | null
-          session_count: number | null
+          section: string | null
         }
         Relationships: [
           {
