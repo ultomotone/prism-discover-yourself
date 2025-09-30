@@ -1,5 +1,8 @@
 project_id = "gnkuikentdtnatazeriu"
 
+[functions.load-session-responses]
+verify_jwt = false
+
 [functions.start_assessment]
 verify_jwt = false
 

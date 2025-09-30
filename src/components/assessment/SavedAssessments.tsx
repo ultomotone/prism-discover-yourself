@@ -90,6 +90,7 @@ export function SavedAssessments({ onStartNew }: SavedAssessmentsProps) {
   };
 
   const handleContinue = async (sessionId: string) => {
+    console.log('📍 SavedAssessments handleContinue called with sessionId:', sessionId);
     const total = TOTAL_PRISM_QUESTIONS;
     const { count, error: countErr } = await supabase
       .from('assessment_responses')
@@ -102,11 +103,21 @@ export function SavedAssessments({ onStartNew }: SavedAssessmentsProps) {
 
     const answered = count ?? 0;
     if (answered >= total) {
+      console.log('✅ Session complete, navigating to results');
       navigate(`/results/${sessionId}`, { replace: true });
       return;
     }
 
-    navigate(`/assessment?resume=${sessionId}`);
+    console.log('➡️ Navigating to resume assessment with params');
+    const targetPath = `/assessment?resume=${sessionId}`;
+    console.log('🎯 Target path:', targetPath);
+    console.log('🌐 Current location:', window.location.href);
+    navigate(targetPath);
+    
+    // Log after navigation attempt
+    setTimeout(() => {
+      console.log('🌐 Location after navigate:', window.location.href);
+    }, 100);
   };
 
   if (isLoading) {
