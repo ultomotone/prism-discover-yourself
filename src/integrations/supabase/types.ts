@@ -154,6 +154,7 @@ export type Database = {
       assessment_questions: {
         Row: {
           clarity_status: string | null
+          construct_tag: string | null
           created_at: string
           fc_map: Json | null
           id: number
@@ -168,9 +169,11 @@ export type Database = {
           tag: string | null
           type: string
           updated_at: string
+          variant_label: string | null
         }
         Insert: {
           clarity_status?: string | null
+          construct_tag?: string | null
           created_at?: string
           fc_map?: Json | null
           id: number
@@ -185,9 +188,11 @@ export type Database = {
           tag?: string | null
           type: string
           updated_at?: string
+          variant_label?: string | null
         }
         Update: {
           clarity_status?: string | null
+          construct_tag?: string | null
           created_at?: string
           fc_map?: Json | null
           id?: number
@@ -202,6 +207,7 @@ export type Database = {
           tag?: string | null
           type?: string
           updated_at?: string
+          variant_label?: string | null
         }
         Relationships: []
       }
@@ -1178,6 +1184,10 @@ export type Database = {
         Args: { session_id: string }
         Returns: string
       }
+      get_assessment_kpis: {
+        Args: { end_date?: string; start_date?: string }
+        Returns: Json
+      }
       get_config_number: {
         Args: { p_default: number; p_key: string }
         Returns: number
@@ -1343,6 +1353,12 @@ export type Database = {
           rls_enabled: boolean
         }[]
       }
+      kpi_alerts: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          msg: string
+        }[]
+      }
       kpi_country_activity_v11: {
         Args: { end_ts?: string; start_ts?: string }
         Returns: {
@@ -1410,6 +1426,10 @@ export type Database = {
       start_assessment_with_cleanup: {
         Args: { p_email: string; p_user_id?: string }
         Returns: Json
+      }
+      triage_confusing_items: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       trigger_session_cleanup: {
         Args: Record<PropertyKey, never>

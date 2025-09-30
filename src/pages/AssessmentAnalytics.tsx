@@ -17,18 +17,22 @@ const AssessmentAnalytics = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold mb-6">Assessment Analytics Dashboard</h1>
-        <div className="text-muted-foreground">Loading analytics...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading analytics...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="container mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold mb-6">Assessment Analytics Dashboard</h1>
-        <div className="text-destructive">Error loading analytics: {error.message}</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive mb-2">Error loading analytics</p>
+          <p className="text-sm text-muted-foreground">{(error as Error).message}</p>
+        </div>
       </div>
     );
   }
@@ -43,6 +47,8 @@ const AssessmentAnalytics = () => {
     avgClarity: 0,
   };
 
+  const alerts = data?.alerts || [];
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-8">
@@ -50,6 +56,15 @@ const AssessmentAnalytics = () => {
         <p className="text-muted-foreground">
           Standards-aligned metrics (APA/AERA/NCME) - Last 7 days
         </p>
+        {alerts.length > 0 && (
+          <div className="mt-4 space-y-2">
+            {alerts.map((alert, i) => (
+              <div key={i} className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">
+                {alert}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">

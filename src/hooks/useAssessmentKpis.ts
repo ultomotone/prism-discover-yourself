@@ -7,6 +7,14 @@ export interface KpiFilters {
   endDate?: Date;
 }
 
+interface KpiRpcResponse {
+  sessions: unknown[];
+  itemFlags: unknown[];
+  feedback: unknown[];
+  scoring: unknown[];
+  alerts: string[];
+}
+
 export interface SessionMetricsKpi {
   day: string;
   sessions_started: number;
@@ -48,51 +56,23 @@ export const useAssessmentKpis = (filters: KpiFilters = {}) => {
   return useQuery({
     queryKey: ["assessment-kpis", format(startDate, "yyyy-MM-dd"), format(endDate, "yyyy-MM-dd")],
     queryFn: async () => {
-      // Fetch session metrics
-      const { data: sessionData, error: sessionError } = await supabase
-        .from("mv_kpi_sessions")
-        .select("*")
-        .gte("day", format(startDate, "yyyy-MM-dd"))
-        .lte("day", format(endDate, "yyyy-MM-dd"))
-        .order("day", { ascending: true });
+      // Call consolidated RPC for all KPIs
+      const { data, error } = await supabase.rpc("get_assessment_kpis", {
+        start_date: format(startDate, "yyyy-MM-dd"),
+        end_date: format(endDate, "yyyy-MM-dd"),
+      });
 
-      if (sessionError) throw sessionError;
+      if (error) throw error;
+      if (!data) throw new Error("No data returned from KPI function");
 
-      // Fetch feedback metrics
-      const { data: feedbackData, error: feedbackError } = await supabase
-        .from("mv_kpi_feedback")
-        .select("*")
-        .gte("day", format(startDate, "yyyy-MM-dd"))
-        .lte("day", format(endDate, "yyyy-MM-dd"))
-        .order("day", { ascending: true });
-
-      if (feedbackError) throw feedbackError;
-
-      // Fetch scoring metrics
-      const { data: scoringData, error: scoringError } = await supabase
-        .from("mv_kpi_scoring")
-        .select("*")
-        .gte("day", format(startDate, "yyyy-MM-dd"))
-        .lte("day", format(endDate, "yyyy-MM-dd"))
-        .order("day", { ascending: true });
-
-      if (scoringError) throw scoringError;
-
-      // Fetch item flag metrics (top 20 flagged items)
-      const { data: itemData, error: itemError } = await supabase
-        .from("mv_kpi_item_flags")
-        .select("*")
-        .order("flag_rate", { ascending: false, nullsFirst: false })
-        .limit(20);
-
-      if (itemError) throw itemError;
+      const response = data as KpiRpcResponse;
+      const sessions = (response.sessions || []) as unknown as SessionMetricsKpi[];
+      const feedback = (response.feedback || []) as unknown as FeedbackMetricsKpi[];
+      const scoring = (response.scoring || []) as unknown as ScoringMetricsKpi[];
+      const itemFlags = (response.itemFlags || []) as unknown as ItemFlagMetricsKpi[];
+      const alerts = (response.alerts || []) as string[];
 
       // Calculate aggregate metrics for header
-      const sessions = (sessionData || []) as unknown as SessionMetricsKpi[];
-      const feedback = (feedbackData || []) as unknown as FeedbackMetricsKpi[];
-      const scoring = (scoringData || []) as unknown as ScoringMetricsKpi[];
-      const itemFlags = (itemData || []) as unknown as ItemFlagMetricsKpi[];
-
       const totalStarted = sessions.reduce((sum, d) => sum + (d.sessions_started || 0), 0);
       const totalCompleted = sessions.reduce((sum, d) => sum + (d.sessions_completed || 0), 0);
       const completionRate = totalStarted > 0 ? (totalCompleted / totalStarted) * 100 : 0;
@@ -118,6 +98,7 @@ export const useAssessmentKpis = (filters: KpiFilters = {}) => {
         feedback,
         scoring,
         itemFlags,
+        alerts,
         summary: {
           totalStarted,
           totalCompleted,
@@ -129,6 +110,6 @@ export const useAssessmentKpis = (filters: KpiFilters = {}) => {
         },
       };
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60, // 1 minute (MVs refresh every 10 min)
   });
 };
