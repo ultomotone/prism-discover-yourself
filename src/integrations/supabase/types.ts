@@ -1621,6 +1621,15 @@ export type Database = {
           type_prefix: string
         }[]
       }
+      get_recent_database_logs: {
+        Args: { limit_count?: number; log_level?: string }
+        Returns: {
+          context: Json
+          level: string
+          log_timestamp: string
+          message: string
+        }[]
+      }
       get_results_by_session: {
         Args: { session_id: string; t?: string }
         Returns: Json
@@ -1719,6 +1728,10 @@ export type Database = {
       rate_limit: {
         Args: { p_key: string; p_max: number; p_window: unknown }
         Returns: boolean
+      }
+      refresh_all_materialized_views: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       refresh_evidence_kpis: {
         Args: Record<PropertyKey, never>
