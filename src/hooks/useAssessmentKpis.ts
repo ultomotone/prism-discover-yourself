@@ -94,7 +94,7 @@ export interface UserExperienceMetrics {
 export const useAssessmentKpis = (filters: KpiFilters = {}) => {
   const { startDate = subDays(new Date(), 7), endDate = new Date() } = filters;
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ["assessment-kpis", format(startDate, "yyyy-MM-dd"), format(endDate, "yyyy-MM-dd")],
     queryFn: async () => {
       // Call consolidated RPC for all KPIs
@@ -187,4 +187,9 @@ export const useAssessmentKpis = (filters: KpiFilters = {}) => {
     },
     staleTime: 1000 * 60, // 1 minute (MVs refresh every 10 min)
   });
+
+  return {
+    ...query,
+    refetch: query.refetch,
+  };
 };

@@ -2,18 +2,29 @@ import { useState } from "react";
 import { useAssessmentKpis } from "@/hooks/useAssessmentKpis";
 import { MetricCard } from "@/components/analytics/MetricCard";
 import { ItemFlagsTable } from "@/components/analytics/ItemFlagsTable";
-import { Activity, CheckCircle, TrendingUp, Users, Brain, Target } from "lucide-react";
+import { Activity, CheckCircle, TrendingUp, Users, Brain, Target, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { subDays } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query";
 
 const AssessmentAnalytics = () => {
   const [dateRange] = useState({
     startDate: subDays(new Date(), 7),
     endDate: new Date(),
   });
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [logsOpen, setLogsOpen] = useState(false);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
 
-  const { data, isLoading, error } = useAssessmentKpis(dateRange);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { data, isLoading, error, refetch } = useAssessmentKpis(dateRange);
   
   const engagementData = data?.engagement || [];
   const reliabilityData = data?.reliability || [];
@@ -60,13 +71,86 @@ const AssessmentAnalytics = () => {
 
   const alerts = data?.alerts || [];
 
+  const handleRecomputeAnalytics = async () => {
+    setIsRefreshing(true);
+    try {
+      toast({
+        title: "Refreshing Analytics",
+        description: "Recomputing all materialized views...",
+      });
+
+      const { data: result, error } = await supabase.rpc("refresh_all_materialized_views");
+
+      if (error) throw error;
+
+      // Invalidate React Query cache and force refetch
+      await queryClient.invalidateQueries({ queryKey: ["assessment-kpis"] });
+      await refetch();
+
+      setLastRefresh(new Date());
+
+      const refreshResult = result as any;
+      toast({
+        title: "Analytics Refreshed",
+        description: `Successfully refreshed ${refreshResult?.refreshed_count || 0} views in ${refreshResult?.duration_ms?.toFixed(0) || 0}ms`,
+      });
+    } catch (error: any) {
+      console.error("Refresh error:", error);
+      toast({
+        title: "Refresh Failed",
+        description: error.message || "Failed to refresh analytics",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleViewLogs = async () => {
+    setLoadingLogs(true);
+    setLogsOpen(true);
+    try {
+      const { data: logData, error } = await supabase.rpc("get_recent_database_logs", {
+        log_level: "error",
+        limit_count: 50,
+      });
+
+      if (error) throw error;
+
+      setLogs((logData as any[]) || []);
+    } catch (error: any) {
+      console.error("Logs error:", error);
+      toast({
+        title: "Failed to Load Logs",
+        description: error.message,
+        variant: "destructive",
+      });
+      setLogs([]);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
+      {isRefreshing && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-lg font-medium">Refreshing Analytics...</p>
+            <p className="text-sm text-muted-foreground">This may take a few seconds</p>
+          </div>
+        </div>
+      )}
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Assessment Analytics Dashboard</h1>
         <div className="flex items-center gap-2 text-muted-foreground">
           <p>Standards-aligned metrics (APA/AERA/NCME) - Last 7 days</p>
           <span className="text-xs">• Updated: {new Date().toLocaleTimeString()}</span>
+          {lastRefresh && (
+            <span className="text-xs">• Last refresh: {lastRefresh.toLocaleTimeString()}</span>
+          )}
         </div>
         {alerts.length > 0 && (
           <div className="mt-4 space-y-2">
@@ -426,13 +510,15 @@ const AssessmentAnalytics = () => {
                   </p>
                   <button 
                     className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary text-primary-foreground hover:bg-primary/90 h-10 py-2 px-4"
-                    onClick={() => {
-                      console.log('Triggering MV refresh...');
-                      // TODO: Call edge function to refresh MVs
-                    }}
+                    onClick={handleRecomputeAnalytics}
+                    disabled={isRefreshing}
                   >
-                    <Activity className="mr-2 h-4 w-4" />
-                    Recompute Analytics
+                    {isRefreshing ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Activity className="mr-2 h-4 w-4" />
+                    )}
+                    {isRefreshing ? "Refreshing..." : "Recompute Analytics"}
                   </button>
                   <p className="text-xs text-muted-foreground">
                     Last auto-refresh: Every 10 minutes
@@ -446,12 +532,14 @@ const AssessmentAnalytics = () => {
                   </p>
                   <button 
                     className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background border border-input hover:bg-accent hover:text-accent-foreground h-10 py-2 px-4"
-                    onClick={() => {
-                      console.log('Opening logs...');
-                      // TODO: Open logs modal or navigate to logs page
-                    }}
+                    onClick={handleViewLogs}
+                    disabled={loadingLogs}
                   >
-                    <CheckCircle className="mr-2 h-4 w-4" />
+                    {loadingLogs ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                    )}
                     View Troubleshooting Logs
                   </button>
                   <p className="text-xs text-muted-foreground">
@@ -495,6 +583,57 @@ const AssessmentAnalytics = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={logsOpen} onOpenChange={setLogsOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Database Troubleshooting Logs</DialogTitle>
+            <DialogDescription>
+              Recent database errors and session issues from the last 7 days
+            </DialogDescription>
+          </DialogHeader>
+          
+          {loadingLogs ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No recent errors or issues found
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {logs.map((log: any, idx: number) => (
+                <div
+                  key={idx}
+                  className={`rounded-lg border p-4 ${
+                    log.level === "error"
+                      ? "border-destructive/50 bg-destructive/10"
+                      : "border-yellow-500/50 bg-yellow-500/10"
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {new Date(log.log_timestamp).toLocaleString()}
+                    </span>
+                    <span className={`text-xs font-medium px-2 py-1 rounded ${
+                      log.level === "error" ? "bg-destructive text-destructive-foreground" : "bg-yellow-500 text-yellow-950"
+                    }`}>
+                      {log.level.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium mb-2">{log.message}</p>
+                  {log.context && (
+                    <pre className="text-xs bg-muted p-2 rounded mt-2 overflow-x-auto">
+                      {JSON.stringify(log.context, null, 2)}
+                    </pre>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
