@@ -139,6 +139,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "assessment_item_flags_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "mv_kpi_item_flow"
+            referencedColumns: ["question_id"]
+          },
+          {
             foreignKeyName: "assessment_item_flags_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
@@ -767,6 +774,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "item_catalog_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: true
+            referencedRelation: "mv_kpi_item_flow"
+            referencedColumns: ["question_id"]
+          },
+          {
             foreignKeyName: "item_catalog_scale_id_fkey"
             columns: ["scale_id"]
             isOneToOne: false
@@ -965,6 +979,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "psychometrics_external_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "mv_kpi_item_flow"
+            referencedColumns: ["question_id"]
+          },
+          {
             foreignKeyName: "psychometrics_external_scale_id_fkey"
             columns: ["scale_id"]
             isOneToOne: false
@@ -1137,11 +1158,98 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_kpi_behavioral_impact: {
+        Row: {
+          impact_rate: number | null
+          responses: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_business: {
+        Row: {
+          total_completions: number | null
+          unique_users: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_calibration: {
+        Row: {
+          avg_confidence: number | null
+          n_profiles: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_cfa: {
+        Row: {
+          cfi: number | null
+          metric_type: string | null
+          rmsea: number | null
+          tli: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_classification_stability: {
+        Row: {
+          n_pairs: number | null
+          stability_rate: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_confidence_spread: {
+        Row: {
+          max_confidence: number | null
+          mean_confidence: number | null
+          min_confidence: number | null
+          stddev_confidence: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_construct_coverage: {
+        Row: {
+          constructs_covered: number | null
+          total_items: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_engagement: {
+        Row: {
+          completion_rate_pct: number | null
+          day: string | null
+          drop_off_rate: number | null
+          sessions_abandoned: number | null
+          sessions_completed: number | null
+          sessions_started: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_fairness_dif: {
+        Row: {
+          flagged_items: number | null
+          total_items: number | null
+        }
+        Relationships: []
+      }
       mv_kpi_feedback: {
         Row: {
           avg_nps: number | null
           day: string | null
           feedback_count: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_followup: {
+        Row: {
+          followup_count: number | null
+          total_completions: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_item_clarity: {
+        Row: {
+          clarity_flag_count: number | null
+          clarity_flag_rate_pct: number | null
+          question_id: number | null
+          response_count: number | null
         }
         Relationships: []
       }
@@ -1167,13 +1275,37 @@ export type Database = {
             referencedRelation: "assessment_questions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "assessment_item_flags_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "mv_kpi_item_flow"
+            referencedColumns: ["question_id"]
+          },
         ]
+      }
+      mv_kpi_item_flow: {
+        Row: {
+          question_id: number | null
+          skip_count: number | null
+          skip_rate: number | null
+          total_responses: number | null
+        }
+        Relationships: []
       }
       mv_kpi_item_timing: {
         Row: {
           p50_ms: number | null
           p90_ms: number | null
           question_id: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_reliability: {
+        Row: {
+          correlation: number | null
+          metric_type: string | null
+          n_pairs: number | null
         }
         Relationships: []
       }
@@ -1208,6 +1340,14 @@ export type Database = {
           },
         ]
       }
+      mv_kpi_response_process: {
+        Row: {
+          avg_response_time_ms: number | null
+          day: string | null
+          median_response_time_ms: number | null
+        }
+        Relationships: []
+      }
       mv_kpi_scoring: {
         Row: {
           avg_conf_calibrated: number | null
@@ -1223,6 +1363,22 @@ export type Database = {
           day: string | null
           sessions_completed: number | null
           sessions_started: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_trajectory_alignment: {
+        Row: {
+          alignment_score: number | null
+          n_users: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_user_experience: {
+        Row: {
+          avg_engagement: number | null
+          avg_nps: number | null
+          day: string | null
+          feedback_count: number | null
         }
         Relationships: []
       }
