@@ -72,6 +72,52 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
     }
   };
 
+  const handleStartNewAssessment = async () => {
+    setRetakeBlock(null);
+
+    // Check for existing in-progress sessions
+    const cachedEmail = email || localStorage.getItem('prism_last_email');
+    
+    if (cachedEmail) {
+      const result = await startAssessmentSession(cachedEmail);
+      if (!result) return;
+
+      if (result.status === 'blocked') {
+        setRetakeBlock(result.block);
+        return;
+      }
+
+      const sessionData = result.session;
+
+      // If there's an existing session, warn the user
+      if (sessionData.existing_session) {
+        const confirmNew = window.confirm(
+          `You have an in-progress assessment (${sessionData.progress?.completed || 0}/${sessionData.progress?.total || 0} questions completed).\n\n` +
+          'Starting a new one will abandon your current progress.\n\n' +
+          'Click OK to start fresh, or Cancel to continue your existing assessment.'
+        );
+
+        if (!confirmNew) {
+          // User chose to continue existing
+          navigate(`/assessment?resume=${sessionData.session_id}`);
+          return;
+        }
+
+        // User confirmed they want to start new - force new session
+        const forceNewResult = await startAssessmentSession(cachedEmail, undefined, true);
+        if (!forceNewResult || forceNewResult.status === 'blocked') return;
+        navigate(`/assessment?start=true&session=${forceNewResult.session.session_id}`);
+        return;
+      }
+
+      // No existing session, proceed normally
+      navigate(`/assessment?start=true&session=${sessionData.session_id}`);
+    } else {
+      // No cached email, just start
+      onStart();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="prism-container pt-24 pb-16">
@@ -309,12 +355,20 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
                         console.log('Start Assessment button clicked', e);
                         e.preventDefault();
                         e.stopPropagation();
-                        onStart();
+                        handleStartNewAssessment();
                       }}
                       onTouchStart={() => console.log('Touch start on button')}
                       type="button"
+                      disabled={isLoading}
                     >
-                      Start New Assessment
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Checking...
+                        </>
+                      ) : (
+                        "Start New Assessment"
+                      )}
                     </Button>
                   </div>
                   

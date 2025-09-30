@@ -134,6 +134,10 @@ export function useEmailSessionManager() {
         share_token?: string;
         existing_session?: boolean;
         recent_completion?: any;
+        progress?: {
+          completed: number;
+          total: number;
+        };
       } | null;
 
       if (!payload || !payload.success) {
@@ -152,22 +156,30 @@ export function useEmailSessionManager() {
         existing_session: payload.existing_session || false,
         attempt_no: allowance.attemptNo,
         recent_completion: payload.recent_completion,
+        progress: payload.progress,
       };
 
       console.log('Assessment session started successfully:', session);
 
-      // Show appropriate message based on session type 
+      // Show appropriate message based on session type
+      if (payload.existing_session) {
+        toast({
+          title: "Resuming Assessment",
+          description: `Continuing from question ${session.progress?.completed || 0}/${session.progress?.total || 0}`,
+        });
+      } else {
         toast({
           title: "Assessment Started",
           description: "You can take one assessment every 30 days. Your progress will be saved.",
         });
+      }
       
       if (email) {
         trackLead(email);
       }
 
       return {
-        status: 'new',
+        status: payload.existing_session ? 'existing' : 'new',
         session,
       } satisfies StartAssessmentSessionResult;
     } catch (error) {
