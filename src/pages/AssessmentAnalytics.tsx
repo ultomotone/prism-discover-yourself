@@ -64,13 +64,14 @@ const AssessmentAnalytics = () => {
     <div className="container mx-auto py-8 px-4">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Assessment Analytics Dashboard</h1>
-        <p className="text-muted-foreground">
-          Standards-aligned metrics (APA/AERA/NCME) - Last 7 days
-        </p>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <p>Standards-aligned metrics (APA/AERA/NCME) - Last 7 days</p>
+          <span className="text-xs">• Updated: {new Date().toLocaleTimeString()}</span>
+        </div>
         {alerts.length > 0 && (
           <div className="mt-4 space-y-2">
-            {alerts.map((alert, i) => (
-              <div key={i} className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">
+            {alerts.map((alert) => (
+              <div key={alert} className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">
                 {alert}
               </div>
             ))}
