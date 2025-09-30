@@ -13,6 +13,24 @@ interface KpiRpcResponse {
   feedback: unknown[];
   scoring: unknown[];
   alerts: string[];
+  
+  // New comprehensive KPIs
+  engagement: unknown[];
+  itemFlow: unknown[];
+  itemClarity: unknown[];
+  responseProcess: unknown[];
+  reliability: unknown[];
+  cfa: unknown[];
+  constructCoverage: unknown;
+  fairness: unknown;
+  calibration: unknown;
+  classificationStability: unknown;
+  confidenceSpread: unknown;
+  userExperience: unknown[];
+  business: unknown;
+  followup: unknown;
+  behavioralImpact: unknown;
+  trajectoryAlignment: unknown;
 }
 
 export interface SessionMetricsKpi {
@@ -50,6 +68,29 @@ export interface ScoringMetricsKpi {
   total_profiles: number;
 }
 
+export interface EngagementMetrics {
+  day: string;
+  sessions_started: number;
+  sessions_completed: number;
+  drop_off_rate: number | null;
+  avg_completion_sec: number | null;
+  completion_time_sd_sec: number | null;
+}
+
+export interface ReliabilityMetrics {
+  scale_id: string;
+  cronbach_alpha: number | null;
+  split_half_corr: number | null;
+  mcdonald_omega: number | null;
+}
+
+export interface UserExperienceMetrics {
+  day: string;
+  engagement_rating: number | null;
+  actionable_insights_pct: number | null;
+  accuracy_perception: number | null;
+}
+
 export const useAssessmentKpis = (filters: KpiFilters = {}) => {
   const { startDate = subDays(new Date(), 7), endDate = new Date() } = filters;
 
@@ -71,6 +112,16 @@ export const useAssessmentKpis = (filters: KpiFilters = {}) => {
       const scoring = (response.scoring || []) as unknown as ScoringMetricsKpi[];
       const itemFlags = (response.itemFlags || []) as unknown as ItemFlagMetricsKpi[];
       const alerts = (response.alerts || []) as string[];
+      
+      // New comprehensive metrics
+      const engagement = (response.engagement || []) as unknown as EngagementMetrics[];
+      const reliability = (response.reliability || []) as unknown as ReliabilityMetrics[];
+      const userExperience = (response.userExperience || []) as unknown as UserExperienceMetrics[];
+      const constructCoverage = response.constructCoverage as any;
+      const fairness = response.fairness as any;
+      const calibration = response.calibration as any;
+      const classificationStability = response.classificationStability as any;
+      const business = response.business as any;
 
       // Calculate aggregate metrics for header
       const totalStarted = sessions.reduce((sum, d) => sum + (d.sessions_started || 0), 0);
@@ -92,6 +143,15 @@ export const useAssessmentKpis = (filters: KpiFilters = {}) => {
       const avgClarity = feedback.length > 0
         ? feedback.reduce((sum, d) => sum + (d.avg_clarity || 0), 0) / feedback.length
         : 0;
+        
+      // New metric aggregations
+      const avgDropOffRate = engagement.length > 0
+        ? (engagement.reduce((sum, d) => sum + (d.drop_off_rate || 0), 0) / engagement.length) * 100
+        : 0;
+        
+      const avgEngagementRating = userExperience.length > 0
+        ? userExperience.reduce((sum, d) => sum + (d.engagement_rating || 0), 0) / userExperience.length
+        : 0;
 
       return {
         sessions,
@@ -99,6 +159,14 @@ export const useAssessmentKpis = (filters: KpiFilters = {}) => {
         scoring,
         itemFlags,
         alerts,
+        engagement,
+        reliability,
+        userExperience,
+        constructCoverage,
+        fairness,
+        calibration,
+        classificationStability,
+        business,
         summary: {
           totalStarted,
           totalCompleted,
@@ -107,6 +175,13 @@ export const useAssessmentKpis = (filters: KpiFilters = {}) => {
           avgConfidence,
           avgNPS,
           avgClarity,
+          avgDropOffRate,
+          avgEngagementRating,
+          constructCoverageIndex: constructCoverage?.construct_coverage_index || 0,
+          difFlagRate: (fairness?.dif_flag_rate || 0) * 100,
+          calibrationError: calibration?.ece || 0,
+          classificationStabilityRate: (classificationStability?.classification_stability || 0) * 100,
+          freeToPaidRate: (business?.free_to_paid_rate || 0) * 100,
         },
       };
     },
