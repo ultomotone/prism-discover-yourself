@@ -121,7 +121,7 @@ const PrismModel = () => {
     },
     {
       icon: Heart,
-      title: "Relationship Fit",
+      title: "Relational Fit",
       description: "Understand compatibility dynamics and relational exchange patterns",
       link: "/prism-relational-fit",
       gradient: "prism-gradient-secondary"
@@ -137,7 +137,7 @@ const PrismModel = () => {
           </h2>
           <p className="prism-body-lg text-muted-foreground max-w-4xl mx-auto">
             PRISM Dynamics™ maps how you process information—through Information Elements, Core Alignments, 
-            Dimensionality, Block Dynamics, State Overlay, and Relationship Fit—to predict your best-fit type.
+            Dimensionality, Block Dynamics, State Overlay, and Relational Fit—to predict your best-fit type.
           </p>
         </div>
 

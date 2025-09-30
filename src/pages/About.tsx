@@ -122,7 +122,7 @@ const About = () => {
               <h2 className="prism-heading-md text-primary mb-6 text-center">What PRISM Dynamics™ Maps</h2>
               <p className="prism-body text-muted-foreground text-center max-w-3xl mx-auto mb-8">
                 PRISM Dynamics™ maps how you process information—through Information Elements, Core Alignments, 
-                Dimensionality, Block Dynamics, State Overlay, and Relationship Fit—to predict your best-fit type.
+                Dimensionality, Block Dynamics, State Overlay, and Relational Fit—to predict your best-fit type.
               </p>
               
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -206,7 +206,7 @@ const About = () => {
                     <div className="w-12 h-12 prism-gradient-secondary rounded-full flex items-center justify-center mx-auto mb-4">
                       <Heart className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="font-semibold text-primary mb-2">Relationship Fit</h3>
+                    <h3 className="font-semibold text-primary mb-2">Relational Fit</h3>
                     <p className="text-sm text-muted-foreground">Understand compatibility dynamics and relational exchange patterns</p>
                     <Button variant="ghost" size="sm" asChild className="mt-2">
                       <a href="/prism-relational-fit" className="flex items-center gap-1">

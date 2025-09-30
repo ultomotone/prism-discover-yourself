@@ -23,7 +23,7 @@ const Footer = () => {
       { name: "Dimensionality", href: "/dimensionality" },
       { name: "Block Dynamics", href: "/blocks" },
       { name: "State Overlay", href: "/state-overlay" },
-      { name: "Relationship Fit", href: "/relational-fit" },
+      { name: "Relational Fit", href: "/relational-fit" },
     ],
     support: [
       { name: "FAQ", href: "/faq" },
