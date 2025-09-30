@@ -43,6 +43,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Save } from 'lucide-react';
 import { trackAssessmentStart, trackAssessmentProgress } from '@/lib/analytics';
 import { RetakeLimitNotice } from './RetakeLimitNotice';
+import { QuestionFlagButton } from './QuestionFlagButton';
 
 export interface AssessmentResponse {
   questionId: number | string;
@@ -1428,6 +1429,16 @@ export function AssessmentForm({
                   value={currentAnswer}
                   onChange={handleAnswerChange}
                 />
+                
+                {/* Flag Button */}
+                {sessionId && (
+                  <div className="mt-4 pt-4 border-t border-border flex justify-start">
+                    <QuestionFlagButton 
+                      sessionId={sessionId} 
+                      questionId={currentQuestion.id} 
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
