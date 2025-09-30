@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Bug, Wrench, Database, RotateCcw, ExternalLink, Users } from 'lucide-react';
+import { Search, Bug, Wrench, Database, RotateCcw, ExternalLink, Users, RefreshCw, FileText, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -39,6 +39,9 @@ const Troubleshoot: React.FC = () => {
   const [recomputeLoading, setRecomputeLoading] = useState(false);
   const [cleanupLoading, setCleanupLoading] = useState(false);
   const [duplicateResults, setDuplicateResults] = useState<any>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsStatus, setAnalyticsStatus] = useState<any>(null);
+  const [dbLogs, setDbLogs] = useState<any[]>([]);
 
   // Check admin access
   if (!user || !ADMIN_EMAILS.includes(user.email || '')) {
@@ -304,6 +307,129 @@ const Troubleshoot: React.FC = () => {
     }
   };
 
+  const recomputeAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: "Authentication required", variant: "destructive" });
+        return;
+      }
+
+      // Refresh all materialized views
+      const { error } = await supabase.rpc('refresh_all_materialized_views');
+      
+      if (error) {
+        toast({ 
+          title: "Error refreshing analytics", 
+          description: error.message, 
+          variant: "destructive" 
+        });
+      } else {
+        setAnalyticsStatus({ 
+          refreshed: true, 
+          timestamp: new Date().toISOString() 
+        });
+        toast({ 
+          title: "Analytics recomputed successfully!", 
+          description: "All materialized views have been refreshed" 
+        });
+      }
+    } catch (error) {
+      toast({ title: "Network error", variant: "destructive" });
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  const viewDatabaseLogs = async () => {
+    setAnalyticsLoading(true);
+    try {
+      // Query postgres logs for recent errors
+      const { data, error } = await supabase
+        .rpc('get_recent_database_logs', { 
+          log_level: 'error',
+          limit_count: 50 
+        });
+      
+      if (error) {
+        // Fallback: query directly from assessment_sessions for status
+        const { data: sessionStats } = await supabase
+          .from('assessment_sessions')
+          .select('status, created_at')
+          .order('created_at', { ascending: false })
+          .limit(100);
+        
+        setDbLogs([{
+          type: 'session_stats',
+          message: 'Database logs not available, showing session statistics',
+          data: sessionStats
+        }]);
+        
+        toast({ 
+          title: "Direct log access unavailable", 
+          description: "Showing session statistics instead" 
+        });
+      } else {
+        setDbLogs((data as any[]) || []);
+        toast({ title: "Database logs loaded" });
+      }
+    } catch (error) {
+      toast({ title: "Error loading logs", variant: "destructive" });
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  const checkSystemHealth = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const checks = {
+        sessions: { status: 'checking', count: 0 },
+        profiles: { status: 'checking', count: 0 },
+        responses: { status: 'checking', count: 0 },
+        mvViews: { status: 'checking', count: 0 }
+      };
+
+      // Check sessions
+      const { count: sessionCount, error: sessionError } = await supabase
+        .from('assessment_sessions')
+        .select('*', { count: 'exact', head: true });
+      
+      checks.sessions = {
+        status: sessionError ? 'error' : 'ok',
+        count: sessionCount || 0
+      };
+
+      // Check profiles  
+      const { count: profileCount, error: profileError } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+      
+      checks.profiles = {
+        status: profileError ? 'error' : 'ok',
+        count: profileCount || 0
+      };
+
+      // Check responses
+      const { count: responseCount, error: responseError } = await supabase
+        .from('assessment_responses')
+        .select('*', { count: 'exact', head: true });
+      
+      checks.responses = {
+        status: responseError ? 'error' : 'ok',
+        count: responseCount || 0
+      };
+
+      setAnalyticsStatus(checks);
+      toast({ title: "System health check complete" });
+    } catch (error) {
+      toast({ title: "Error checking system health", variant: "destructive" });
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadRecentSessions();
   }, []);
@@ -380,22 +506,26 @@ const Troubleshoot: React.FC = () => {
       </div>
 
       <Tabs defaultValue="search" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="search">
             <Search className="h-4 w-4 mr-2" />
-            Session Search
+            Search
           </TabsTrigger>
           <TabsTrigger value="sessions">
             <Database className="h-4 w-4 mr-2" />
-            Recent Sessions
+            Sessions
+          </TabsTrigger>
+          <TabsTrigger value="analytics">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Analytics
           </TabsTrigger>
           <TabsTrigger value="duplicates">
             <Users className="h-4 w-4 mr-2" />
-            Duplicate Cleanup
+            Duplicates
           </TabsTrigger>
           <TabsTrigger value="recompute">
             <RotateCcw className="h-4 w-4 mr-2" />
-            Batch Operations
+            Batch Ops
           </TabsTrigger>
           <TabsTrigger value="tools">
             <Wrench className="h-4 w-4 mr-2" />
@@ -445,6 +575,143 @@ const Troubleshoot: React.FC = () => {
                   <SessionCard key={session.id} session={session} />
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <RefreshCw className="h-5 w-5" />
+                  Recompute Analytics
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Refresh all materialized views that power the analytics dashboard. Use this when data appears stale or metrics don't match expectations.
+                </p>
+                <Button
+                  onClick={recomputeAnalytics}
+                  disabled={analyticsLoading}
+                  className="w-full"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${analyticsLoading ? 'animate-spin' : ''}`} />
+                  {analyticsLoading ? "Recomputing..." : "Recompute Analytics"}
+                </Button>
+                {analyticsStatus?.refreshed && (
+                  <div className="text-xs text-green-600 bg-green-50 p-2 rounded">
+                    ✓ Last refreshed: {new Date(analyticsStatus.timestamp).toLocaleString()}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Database Logs
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  View recent database logs to diagnose scoring problems, data inconsistencies, or API errors.
+                </p>
+                <Button
+                  onClick={viewDatabaseLogs}
+                  disabled={analyticsLoading}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  {analyticsLoading ? "Loading..." : "View Database Logs"}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                System Health Check
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Check table counts and connectivity to identify data pipeline issues.
+              </p>
+              <Button
+                onClick={checkSystemHealth}
+                disabled={analyticsLoading}
+                variant="secondary"
+                className="w-full"
+              >
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                {analyticsLoading ? "Checking..." : "Run Health Check"}
+              </Button>
+
+              {analyticsStatus && analyticsStatus.sessions && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                  <div className="bg-muted p-3 rounded">
+                    <div className="text-xs text-muted-foreground mb-1">Sessions</div>
+                    <div className="text-xl font-bold">{analyticsStatus.sessions.count.toLocaleString()}</div>
+                    <Badge variant={analyticsStatus.sessions.status === 'ok' ? 'default' : 'destructive'} className="mt-1">
+                      {analyticsStatus.sessions.status}
+                    </Badge>
+                  </div>
+                  <div className="bg-muted p-3 rounded">
+                    <div className="text-xs text-muted-foreground mb-1">Profiles</div>
+                    <div className="text-xl font-bold">{analyticsStatus.profiles.count.toLocaleString()}</div>
+                    <Badge variant={analyticsStatus.profiles.status === 'ok' ? 'default' : 'destructive'} className="mt-1">
+                      {analyticsStatus.profiles.status}
+                    </Badge>
+                  </div>
+                  <div className="bg-muted p-3 rounded">
+                    <div className="text-xs text-muted-foreground mb-1">Responses</div>
+                    <div className="text-xl font-bold">{analyticsStatus.responses.count.toLocaleString()}</div>
+                    <Badge variant={analyticsStatus.responses.status === 'ok' ? 'default' : 'destructive'} className="mt-1">
+                      {analyticsStatus.responses.status}
+                    </Badge>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {dbLogs.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Database Logs</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {dbLogs.map((log, idx) => (
+                    <div key={idx} className="bg-muted p-3 rounded text-xs font-mono">
+                      <div className="text-muted-foreground mb-1">
+                        {log.timestamp || 'N/A'}
+                      </div>
+                      <div>{log.message || JSON.stringify(log)}</div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card className="bg-blue-50 dark:bg-blue-950">
+            <CardHeader>
+              <CardTitle className="text-sm">📝 Troubleshooting Tips</CardTitle>
+            </CardHeader>
+            <CardContent className="text-xs space-y-2">
+              <ul className="list-disc list-inside space-y-1">
+                <li><strong>Stale analytics:</strong> Click "Recompute Analytics" to refresh all dashboard metrics</li>
+                <li><strong>Missing sessions:</strong> Check "System Health" to see if data exists in tables</li>
+                <li><strong>Scoring issues:</strong> View logs for SQL errors or edge function failures</li>
+                <li><strong>Data mismatch:</strong> Compare profile count vs session count for consistency</li>
+              </ul>
             </CardContent>
           </Card>
         </TabsContent>
