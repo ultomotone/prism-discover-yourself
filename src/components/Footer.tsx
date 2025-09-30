@@ -121,7 +121,7 @@ const Footer = () => {
               </button>
             </li>
             <li>
-              <button onClick={() => navigate('/orgs')} className="hover:text-white transition-colors text-left">
+              <button onClick={() => navigate('/organizations')} className="hover:text-white transition-colors text-left">
                 Organizations
               </button>
             </li>
