@@ -139,27 +139,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "assessment_item_flags_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "mv_kpi_item_clarity"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "assessment_item_flags_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "mv_kpi_item_flags"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "assessment_item_flags_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "mv_kpi_item_flow"
-            referencedColumns: ["question_id"]
-          },
-          {
             foreignKeyName: "assessment_item_flags_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
@@ -788,34 +767,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "item_catalog_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: true
-            referencedRelation: "mv_kpi_item_clarity"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "item_catalog_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: true
-            referencedRelation: "mv_kpi_item_flags"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "item_catalog_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: true
-            referencedRelation: "mv_kpi_item_flow"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "item_catalog_scale_id_fkey"
-            columns: ["scale_id"]
-            isOneToOne: false
-            referencedRelation: "mv_kpi_reliability"
-            referencedColumns: ["scale_id"]
-          },
-          {
             foreignKeyName: "item_catalog_scale_id_fkey"
             columns: ["scale_id"]
             isOneToOne: false
@@ -1014,34 +965,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "psychometrics_external_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "mv_kpi_item_clarity"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "psychometrics_external_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "mv_kpi_item_flags"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "psychometrics_external_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "mv_kpi_item_flow"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "psychometrics_external_scale_id_fkey"
-            columns: ["scale_id"]
-            isOneToOne: false
-            referencedRelation: "mv_kpi_reliability"
-            referencedColumns: ["scale_id"]
-          },
-          {
             foreignKeyName: "psychometrics_external_scale_id_fkey"
             columns: ["scale_id"]
             isOneToOne: false
@@ -1216,142 +1139,118 @@ export type Database = {
       }
       mv_kpi_behavioral_impact: {
         Row: {
-          behavioral_impact_pct: number | null
+          change_report_rate: number | null
+          reported_changes: number | null
+          total_followups: number | null
         }
         Relationships: []
       }
       mv_kpi_business: {
         Row: {
-          arpu_completed: number | null
-          free_to_paid_rate: number | null
-          paywall_abandon_rate: number | null
+          free_to_paid_rate_pct: number | null
+          paid_users: number | null
+          registered_users: number | null
+          total_completed_sessions: number | null
         }
         Relationships: []
       }
       mv_kpi_calibration: {
         Row: {
-          ece: number | null
+          expected_calibration_error: number | null
+          total_profiles: number | null
         }
         Relationships: []
       }
       mv_kpi_cfa: {
         Row: {
           cfi: number | null
-          factor_loading: number | null
-          question_id: number | null
+          model_name: string | null
           rmsea: number | null
-          scale_id: string | null
           srmr: number | null
           tli: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "psychometrics_external_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "assessment_questions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "psychometrics_external_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "mv_kpi_item_clarity"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "psychometrics_external_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "mv_kpi_item_flags"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "psychometrics_external_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "mv_kpi_item_flow"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "psychometrics_external_scale_id_fkey"
-            columns: ["scale_id"]
-            isOneToOne: false
-            referencedRelation: "mv_kpi_reliability"
-            referencedColumns: ["scale_id"]
-          },
-          {
-            foreignKeyName: "psychometrics_external_scale_id_fkey"
-            columns: ["scale_id"]
-            isOneToOne: false
-            referencedRelation: "scale_catalog"
-            referencedColumns: ["scale_id"]
-          },
-        ]
+        Relationships: []
       }
       mv_kpi_classification_stability: {
         Row: {
-          classification_stability: number | null
+          stability_rate_pct: number | null
+          stable_retests: number | null
+          total_retests: number | null
         }
         Relationships: []
       }
       mv_kpi_confidence_spread: {
         Row: {
-          confidence_variance: number | null
+          avg_confidence: number | null
+          high_conf_count: number | null
+          low_conf_count: number | null
+          moderate_conf_count: number | null
+          stddev_confidence: number | null
         }
         Relationships: []
       }
       mv_kpi_construct_coverage: {
         Row: {
-          construct_coverage_index: number | null
+          coverage_index: number | null
+          total_types: number | null
+          types_covered: number | null
         }
         Relationships: []
       }
       mv_kpi_engagement: {
         Row: {
           avg_completion_sec: number | null
-          completion_time_sd_sec: number | null
+          completed_sessions: number | null
+          completion_rate_pct: number | null
           day: string | null
-          drop_off_rate: number | null
-          sessions_completed: number | null
-          sessions_started: number | null
+          drop_off_rate_pct: number | null
+          total_sessions: number | null
         }
         Relationships: []
       }
       mv_kpi_fairness_dif: {
         Row: {
-          dif_flag_rate: number | null
+          dif_flag_rate_pct: number | null
+          items_flagged_dif: number | null
+          total_items: number | null
         }
         Relationships: []
       }
       mv_kpi_feedback: {
         Row: {
-          avg_accuracy: number | null
           avg_clarity: number | null
           avg_engagement: number | null
-          avg_focus: number | null
           avg_nps: number | null
           day: string | null
           feedback_count: number | null
-          pct_actionable: number | null
-          pct_reported_unclear: number | null
         }
         Relationships: []
       }
       mv_kpi_followup: {
         Row: {
+          followup_completed: number | null
           followup_completion_rate: number | null
+          followup_sent: number | null
         }
         Relationships: []
       }
       mv_kpi_item_clarity: {
         Row: {
-          answered_ct: number | null
+          clarity_flag_count: number | null
           clarity_flag_rate_pct: number | null
-          flags_ct: number | null
-          question_id: number | null
+          item_id: string | null
+          item_index: number | null
+          total_responses: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "assessment_item_flags_question_id_fkey"
+            columns: ["item_index"]
+            isOneToOne: false
+            referencedRelation: "assessment_questions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mv_kpi_item_discrimination: {
         Row: {
@@ -1362,21 +1261,30 @@ export type Database = {
       }
       mv_kpi_item_flags: {
         Row: {
-          answered: number | null
           flag_rate: number | null
-          flags: number | null
-          question_id: number | null
-          section: string | null
+          flagged_count: number | null
+          item_id: string | null
+          item_index: number | null
+          total_responses: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "assessment_item_flags_question_id_fkey"
+            columns: ["item_index"]
+            isOneToOne: false
+            referencedRelation: "assessment_questions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mv_kpi_item_flow: {
         Row: {
-          answered_ct: number | null
-          avg_time_ms: number | null
-          presented_ct: number | null
-          question_id: number | null
+          avg_response_time_ms: number | null
+          item_id: string | null
+          item_index: number | null
+          skip_count: number | null
           skip_rate: number | null
+          total_responses: number | null
         }
         Relationships: []
       }
@@ -1391,6 +1299,7 @@ export type Database = {
       mv_kpi_reliability: {
         Row: {
           cronbach_alpha: number | null
+          item_count: number | null
           mcdonald_omega: number | null
           scale_id: string | null
           split_half_corr: number | null
@@ -1404,13 +1313,6 @@ export type Database = {
           scale_id: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "item_catalog_scale_id_fkey"
-            columns: ["scale_id"]
-            isOneToOne: false
-            referencedRelation: "mv_kpi_reliability"
-            referencedColumns: ["scale_id"]
-          },
           {
             foreignKeyName: "item_catalog_scale_id_fkey"
             columns: ["scale_id"]
@@ -1430,13 +1332,6 @@ export type Database = {
             foreignKeyName: "item_catalog_scale_id_fkey"
             columns: ["scale_id"]
             isOneToOne: false
-            referencedRelation: "mv_kpi_reliability"
-            referencedColumns: ["scale_id"]
-          },
-          {
-            foreignKeyName: "item_catalog_scale_id_fkey"
-            columns: ["scale_id"]
-            isOneToOne: false
             referencedRelation: "scale_catalog"
             referencedColumns: ["scale_id"]
           },
@@ -1444,25 +1339,33 @@ export type Database = {
       }
       mv_kpi_response_process: {
         Row: {
+          avg_item_response_ms: number | null
           day: string | null
-          not_sure_usage_rate: number | null
-          post_clarity_mean: number | null
+          session_id: string | null
+          stddev_response_ms: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mv_kpi_scoring: {
         Row: {
-          avg_conf_cal: number | null
+          avg_confidence: number | null
           avg_top_gap: number | null
           day: string | null
-          invalid_ct: number | null
-          total_profiles: number | null
+          profiles_generated: number | null
         }
         Relationships: []
       }
       mv_kpi_sessions: {
         Row: {
-          avg_completion_minutes: number | null
+          completion_rate_pct: number | null
           day: string | null
           sessions_completed: number | null
           sessions_started: number | null
@@ -1471,16 +1374,18 @@ export type Database = {
       }
       mv_kpi_trajectory_alignment: {
         Row: {
-          trajectory_alignment_r: number | null
+          trajectory_correlation: number | null
+          trajectory_samples: number | null
         }
         Relationships: []
       }
       mv_kpi_user_experience: {
         Row: {
-          accuracy_perception: number | null
-          actionable_insights_pct: number | null
+          avg_clarity: number | null
+          avg_engagement: number | null
+          avg_nps: number | null
           day: string | null
-          engagement_rating: number | null
+          response_count: number | null
         }
         Relationships: []
       }
