@@ -1,21 +1,6 @@
 project_id = "gnkuikentdtnatazeriu"
 
-[functions.admin-batch-recompute]
-verify_jwt = false
-
-[functions.can_start_new_session]
-verify_jwt = false
-
-[functions.recompute-batch]
-verify_jwt = false
-
 [functions.start_assessment]
-verify_jwt = false
-
-[functions.send-assessment-reminders]
-verify_jwt = false
-
-[functions.complete-near-finished-sessions]
 verify_jwt = false
 
 [functions.finalizeAssessment]
@@ -30,19 +15,7 @@ verify_jwt = false
 [functions.get-results-by-session]
 verify_jwt = false
 
-[functions.migrate-all-scoring]
-verify_jwt = false
-
-[functions.recompute-new-metrics]
-verify_jwt = false
-
-[functions.cleanup-duplicate-sessions]
-verify_jwt = false
-
 [functions.delete-session]
-verify_jwt = false
-
-[functions.save_response]
 verify_jwt = false
 
 [functions.get_progress]
