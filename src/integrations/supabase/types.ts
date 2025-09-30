@@ -14,14 +14,153 @@ export type Database = {
   }
   public: {
     Tables: {
+      assessment_feedback: {
+        Row: {
+          actionability: boolean | null
+          clarity_overall: number | null
+          engagement: number | null
+          focus_ease: number | null
+          id: string
+          meta: Json | null
+          nps: number | null
+          perceived_accuracy: number | null
+          results_resonated: string | null
+          session_id: string
+          submitted_at: string | null
+          unclear_any: boolean | null
+          unclear_notes: string | null
+        }
+        Insert: {
+          actionability?: boolean | null
+          clarity_overall?: number | null
+          engagement?: number | null
+          focus_ease?: number | null
+          id?: string
+          meta?: Json | null
+          nps?: number | null
+          perceived_accuracy?: number | null
+          results_resonated?: string | null
+          session_id: string
+          submitted_at?: string | null
+          unclear_any?: boolean | null
+          unclear_notes?: string | null
+        }
+        Update: {
+          actionability?: boolean | null
+          clarity_overall?: number | null
+          engagement?: number | null
+          focus_ease?: number | null
+          id?: string
+          meta?: Json | null
+          nps?: number | null
+          perceived_accuracy?: number | null
+          results_resonated?: string | null
+          session_id?: string
+          submitted_at?: string | null
+          unclear_any?: boolean | null
+          unclear_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_feedback_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_feedback_context: {
+        Row: {
+          age_bucket: string | null
+          feedback_id: string
+          id: string
+          industry_bucket: string | null
+          prior_exposure: boolean | null
+        }
+        Insert: {
+          age_bucket?: string | null
+          feedback_id: string
+          id?: string
+          industry_bucket?: string | null
+          prior_exposure?: boolean | null
+        }
+        Update: {
+          age_bucket?: string | null
+          feedback_id?: string
+          id?: string
+          industry_bucket?: string | null
+          prior_exposure?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_feedback_context_feedback_id_fkey"
+            columns: ["feedback_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_feedback"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_item_flags: {
+        Row: {
+          created_at: string | null
+          flag_type: string | null
+          id: string
+          note: string | null
+          question_id: number | null
+          session_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          flag_type?: string | null
+          id?: string
+          note?: string | null
+          question_id?: number | null
+          session_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          flag_type?: string | null
+          id?: string
+          note?: string | null
+          question_id?: number | null
+          session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_item_flags_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_item_flags_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "mv_kpi_item_flags"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "assessment_item_flags_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_questions: {
         Row: {
+          clarity_status: string | null
           created_at: string
           fc_map: Json | null
           id: number
           meta: Json | null
           order_index: number | null
           pair_group: string | null
+          question_version: number | null
           required: boolean | null
           reverse_scored: boolean | null
           scale_type: string | null
@@ -31,12 +170,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          clarity_status?: string | null
           created_at?: string
           fc_map?: Json | null
           id: number
           meta?: Json | null
           order_index?: number | null
           pair_group?: string | null
+          question_version?: number | null
           required?: boolean | null
           reverse_scored?: boolean | null
           scale_type?: string | null
@@ -46,12 +187,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          clarity_status?: string | null
           created_at?: string
           fc_map?: Json | null
           id?: number
           meta?: Json | null
           order_index?: number | null
           pair_group?: string | null
+          question_version?: number | null
           required?: boolean | null
           reverse_scored?: boolean | null
           scale_type?: string | null
@@ -271,6 +414,41 @@ export type Database = {
         }
         Relationships: []
       }
+      assessment_ui_events: {
+        Row: {
+          created_at: string | null
+          event_type: string | null
+          id: string
+          meta: Json | null
+          question_id: number | null
+          session_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type?: string | null
+          id?: string
+          meta?: Json | null
+          question_id?: number | null
+          session_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string | null
+          id?: string
+          meta?: Json | null
+          question_id?: number | null
+          session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_ui_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calibration_model: {
         Row: {
           brier_score: number | null
@@ -361,6 +539,27 @@ export type Database = {
         Update: {
           country_name?: string
           iso2_code?: string
+        }
+        Relationships: []
+      }
+      entitlements: {
+        Row: {
+          active: boolean | null
+          granted_at: string | null
+          product_code: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          granted_at?: string | null
+          product_code: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          granted_at?: string | null
+          product_code?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -787,6 +986,64 @@ export type Database = {
         Row: {
           n: number | null
           primary_type: string | null
+        }
+        Relationships: []
+      }
+      mv_kpi_feedback: {
+        Row: {
+          avg_accuracy: number | null
+          avg_clarity: number | null
+          avg_engagement: number | null
+          avg_focus: number | null
+          avg_nps: number | null
+          day: string | null
+          feedback_count: number | null
+          pct_actionable: number | null
+          pct_reported_unclear: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_item_discrimination: {
+        Row: {
+          item_total_corr: number | null
+          question_id: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_item_flags: {
+        Row: {
+          answered: number | null
+          flag_rate: number | null
+          flags: number | null
+          question_id: number | null
+          section: string | null
+        }
+        Relationships: []
+      }
+      mv_kpi_item_timing: {
+        Row: {
+          p50_ms: number | null
+          p90_ms: number | null
+          question_id: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_scoring: {
+        Row: {
+          avg_conf_cal: number | null
+          avg_top_gap: number | null
+          day: string | null
+          invalid_ct: number | null
+          total_profiles: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_sessions: {
+        Row: {
+          avg_completion_minutes: number | null
+          day: string | null
+          sessions_completed: number | null
+          sessions_started: number | null
         }
         Relationships: []
       }
