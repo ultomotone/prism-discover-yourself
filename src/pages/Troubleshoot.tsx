@@ -310,33 +310,37 @@ const Troubleshoot: React.FC = () => {
   const recomputeAnalytics = async () => {
     setAnalyticsLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({ title: "Authentication required", variant: "destructive" });
-        return;
-      }
-
       // Refresh all materialized views
-      const { error } = await supabase.rpc('refresh_all_materialized_views');
+      const { data, error } = await supabase.rpc('refresh_all_materialized_views');
       
       if (error) {
+        console.error('Refresh error:', error);
         toast({ 
           title: "Error refreshing analytics", 
           description: error.message, 
           variant: "destructive" 
         });
       } else {
+        console.log('Refresh result:', data);
+        const result = data as any;
         setAnalyticsStatus({ 
           refreshed: true, 
-          timestamp: new Date().toISOString() 
+          timestamp: new Date().toISOString(),
+          refreshed_count: result?.refreshed_count || 0,
+          duration_ms: result?.duration_ms || 0
         });
         toast({ 
           title: "Analytics recomputed successfully!", 
-          description: "All materialized views have been refreshed" 
+          description: `Refreshed ${result?.refreshed_count || 0} views in ${Math.round(result?.duration_ms || 0)}ms` 
         });
       }
-    } catch (error) {
-      toast({ title: "Network error", variant: "destructive" });
+    } catch (error: any) {
+      console.error('Network error:', error);
+      toast({ 
+        title: "Network error", 
+        description: error.message,
+        variant: "destructive" 
+      });
     } finally {
       setAnalyticsLoading(false);
     }
@@ -353,6 +357,7 @@ const Troubleshoot: React.FC = () => {
         });
       
       if (error) {
+        console.error('Logs error:', error);
         // Fallback: query directly from assessment_sessions for status
         const { data: sessionStats } = await supabase
           .from('assessment_sessions')
@@ -361,9 +366,10 @@ const Troubleshoot: React.FC = () => {
           .limit(100);
         
         setDbLogs([{
-          type: 'session_stats',
+          log_timestamp: new Date().toISOString(),
+          level: 'info',
           message: 'Database logs not available, showing session statistics',
-          data: sessionStats
+          context: { data: sessionStats }
         }]);
         
         toast({ 
@@ -371,11 +377,21 @@ const Troubleshoot: React.FC = () => {
           description: "Showing session statistics instead" 
         });
       } else {
-        setDbLogs((data as any[]) || []);
-        toast({ title: "Database logs loaded" });
+        console.log('Logs loaded:', data);
+        const logs = (data as any[]) || [];
+        setDbLogs(logs);
+        toast({ 
+          title: "Database logs loaded", 
+          description: `Found ${logs.length} log entries` 
+        });
       }
-    } catch (error) {
-      toast({ title: "Error loading logs", variant: "destructive" });
+    } catch (error: any) {
+      console.error('Error loading logs:', error);
+      toast({ 
+        title: "Error loading logs", 
+        description: error.message,
+        variant: "destructive" 
+      });
     } finally {
       setAnalyticsLoading(false);
     }
@@ -684,16 +700,26 @@ const Troubleshoot: React.FC = () => {
           {dbLogs.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Recent Database Logs</CardTitle>
+                <CardTitle>Recent Database Logs ({dbLogs.length} entries)</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {dbLogs.map((log, idx) => (
-                    <div key={idx} className="bg-muted p-3 rounded text-xs font-mono">
-                      <div className="text-muted-foreground mb-1">
-                        {log.timestamp || 'N/A'}
+                    <div key={idx} className="border-l-4 border-yellow-500 bg-muted p-3 rounded text-xs">
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge variant={log.level === 'error' ? 'destructive' : log.level === 'warning' ? 'default' : 'secondary'}>
+                          {log.level}
+                        </Badge>
+                        <span className="text-muted-foreground">
+                          {log.log_timestamp ? new Date(log.log_timestamp).toLocaleString() : 'N/A'}
+                        </span>
                       </div>
-                      <div>{log.message || JSON.stringify(log)}</div>
+                      <div className="font-semibold mb-1">{log.message}</div>
+                      {log.context && (
+                        <div className="mt-2 p-2 bg-background rounded font-mono text-xs overflow-x-auto">
+                          {JSON.stringify(log.context, null, 2)}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
