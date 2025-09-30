@@ -17,8 +17,18 @@ const Assessment = () => {
 
   const resume = searchParams.get('resume');
   const start = searchParams.get('start');
+  const session = searchParams.get('session');
+  
   // show form whenever ?start is present (any truthy) or ?resume=:id exists
   const showForm = Boolean(resume || start !== null);
+
+  console.log('🎯 Assessment page render:', { 
+    resume, 
+    start, 
+    session,
+    showForm,
+    fullURL: window.location.href 
+  });
 
   const [finalizing, setFinalizing] = useState(false);
 

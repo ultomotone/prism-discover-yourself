@@ -53,22 +53,31 @@ export function AssessmentIntro({ onStart }: AssessmentIntroProps) {
 
     setRetakeBlock(null);
 
+    console.log('🔍 Checking for existing sessions with email:', email);
     const result = await startAssessmentSession(email);
+    
+    console.log('📧 Email continue result:', result);
+    
     if (!result) {
+      console.error('❌ No result from startAssessmentSession');
       return;
     }
 
     if (result.status === 'blocked') {
+      console.warn('🚫 Session blocked:', result.block);
       setRetakeBlock(result.block);
       return;
     }
 
     const sessionData = result.session;
+    console.log('✅ Session data:', sessionData);
 
     if (sessionData.existing_session) {
-      navigate(`/assessment?resume=${sessionData.session_id}`);
+      console.log('➡️ Navigating to RESUME existing session:', sessionData.session_id);
+      navigate(`/assessment?resume=${sessionData.session_id}`, { replace: true });
     } else {
-      navigate(`/assessment?start=true&session=${sessionData.session_id}`);
+      console.log('➡️ Navigating to START new session:', sessionData.session_id);
+      navigate(`/assessment?start=true&session=${sessionData.session_id}`, { replace: true });
     }
   };
 
