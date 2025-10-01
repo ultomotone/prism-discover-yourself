@@ -47,6 +47,59 @@ serve(async (req) => {
       );
     }
 
+    // Input validation to prevent injection attacks and data corruption
+    if (typeof session_id !== 'string' || session_id.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Invalid session_id format" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (typeof question_id !== 'number' || question_id < 0 || question_id > 10000) {
+      return new Response(
+        JSON.stringify({ error: "Invalid question_id" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate string lengths
+    if (answer_value !== undefined && typeof answer_value === 'string' && answer_value.length > 5000) {
+      return new Response(
+        JSON.stringify({ error: "answer_value too long (max 5000 characters)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (question_text && typeof question_text === 'string' && question_text.length > 1000) {
+      return new Response(
+        JSON.stringify({ error: "question_text too long" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate array length
+    if (answer_array !== undefined && (!Array.isArray(answer_array) || answer_array.length > 100)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid answer_array format or size" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate numeric values
+    if (answer_numeric !== undefined && (typeof answer_numeric !== 'number' || !isFinite(answer_numeric))) {
+      return new Response(
+        JSON.stringify({ error: "Invalid answer_numeric" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (response_time_ms !== undefined && (typeof response_time_ms !== 'number' || response_time_ms < 0 || response_time_ms > 3600000)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid response_time_ms (must be between 0 and 3600000)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Basic session sanity check
     const { data: session, error: sErr } = await supabase
       .from("assessment_sessions")

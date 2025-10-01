@@ -287,8 +287,9 @@ export async function loadSessionResponses(sessionId: string): Promise<Array<{
     console.log('📊 Loaded responses via edge function:', responses.length);
     return responses;
   } catch (error) {
-    console.error('💥 Edge function call failed, falling back to direct query');
-    // Fallback to direct query in case of edge function issues
+    console.error('💥 Edge function call failed, attempting direct query (may fail due to RLS)');
+    // Fallback to direct query - only works for authenticated users viewing their own sessions
+    // Anonymous users are protected by RLS policies and must use the edge function
     const { data: responses, error: directError } = await supabase
       .from('assessment_responses')
       .select('question_id, answer_value, answer_numeric, answer_array')
@@ -296,7 +297,7 @@ export async function loadSessionResponses(sessionId: string): Promise<Array<{
       .order('question_id');
 
     if (directError) {
-      console.error('💥 Direct query also failed:', directError);
+      console.error('💥 Direct query failed (expected for anonymous users):', directError);
       throw directError;
     }
 

@@ -58,9 +58,11 @@ async function loadResponsesForSession(sessionId: string) {
     );
     if (!fnErr && Array.isArray(fnData) && fnData.length > 0) return fnData;
   } catch (e) {
-    console.warn('Edge function failed; falling back to direct query.', e);
+    console.warn('Edge function failed; attempting direct query (may fail for anonymous users due to RLS)', e);
   }
 
+  // Fallback to direct query - will only work for authenticated users viewing their own sessions
+  // Anonymous users are protected by RLS and must use the edge function
   const { data, error } = await supabase
     .from('assessment_responses')
     .select('*')
@@ -68,7 +70,7 @@ async function loadResponsesForSession(sessionId: string) {
     .order('question_order', { ascending: true });
 
   if (error) {
-    console.error('Direct responses query failed:', error);
+    console.warn('Direct responses query failed (expected for anonymous users):', error);
     return [];
   }
   return data ?? [];

@@ -42,11 +42,28 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Basic email validation
+    // Validate email length to prevent abuse
+    if (email.length > 255) {
+      return new Response(
+        JSON.stringify({ error: 'Email too long (max 255 characters)' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Trim and validate email format
+    const trimmedEmail = email.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(trimmedEmail)) {
       return new Response(
         JSON.stringify({ error: 'Invalid email format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Additional validation: prevent injection attempts
+    if (trimmedEmail.includes('<') || trimmedEmail.includes('>') || trimmedEmail.includes('"') || trimmedEmail.includes("'")) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid characters in email' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -72,7 +89,7 @@ Deno.serve(async (req) => {
     const { data: sessions, error } = await supabaseAdmin
       .from('assessment_sessions')
       .select('id, completed_questions, total_questions, created_at')
-      .eq('email', email.toLowerCase().trim())
+      .eq('email', trimmedEmail.toLowerCase())
       .is('completed_at', null)
       .gt('completed_questions', 0)
       .order('created_at', { ascending: false })
@@ -89,7 +106,7 @@ Deno.serve(async (req) => {
     // Return session data WITHOUT exposing email or other PII
     if (sessions && sessions.length > 0) {
       const session = sessions[0];
-      console.log(`Found session for email (hashed): ${email.substring(0, 3)}***`);
+      console.log(`Found session for email (hashed): ${trimmedEmail.substring(0, 3)}***`);
       return new Response(
         JSON.stringify({
           found: true,
@@ -104,7 +121,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`No sessions found for email (hashed): ${email.substring(0, 3)}***`);
+    console.log(`No sessions found for email (hashed): ${trimmedEmail.substring(0, 3)}***`);
     return new Response(
       JSON.stringify({ found: false }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
