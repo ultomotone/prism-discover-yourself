@@ -1162,11 +1162,13 @@ export type Database = {
         Row: {
           impact_rate: number | null
           responses: number | null
+          row_id: number | null
         }
         Relationships: []
       }
       mv_kpi_business: {
         Row: {
+          row_id: number | null
           total_completions: number | null
           unique_users: number | null
         }
@@ -1176,6 +1178,7 @@ export type Database = {
         Row: {
           avg_confidence: number | null
           n_profiles: number | null
+          row_id: number | null
         }
         Relationships: []
       }
@@ -1184,6 +1187,7 @@ export type Database = {
           cfi: number | null
           metric_type: string | null
           rmsea: number | null
+          row_id: number | null
           tli: number | null
         }
         Relationships: []
@@ -1191,6 +1195,7 @@ export type Database = {
       mv_kpi_classification_stability: {
         Row: {
           n_pairs: number | null
+          row_id: number | null
           stability_rate: number | null
         }
         Relationships: []
@@ -1200,6 +1205,7 @@ export type Database = {
           max_confidence: number | null
           mean_confidence: number | null
           min_confidence: number | null
+          row_id: number | null
           stddev_confidence: number | null
         }
         Relationships: []
@@ -1207,6 +1213,7 @@ export type Database = {
       mv_kpi_construct_coverage: {
         Row: {
           constructs_covered: number | null
+          row_id: number | null
           total_items: number | null
         }
         Relationships: []
@@ -1225,6 +1232,7 @@ export type Database = {
       mv_kpi_fairness_dif: {
         Row: {
           flagged_items: number | null
+          row_id: number | null
           total_items: number | null
         }
         Relationships: []
@@ -1240,6 +1248,7 @@ export type Database = {
       mv_kpi_followup: {
         Row: {
           followup_count: number | null
+          row_id: number | null
           total_completions: number | null
         }
         Relationships: []
@@ -1307,6 +1316,7 @@ export type Database = {
           correlation: number | null
           metric_type: string | null
           n_pairs: number | null
+          row_id: number | null
         }
         Relationships: []
       }
@@ -1371,6 +1381,7 @@ export type Database = {
         Row: {
           alignment_score: number | null
           n_users: number | null
+          row_id: number | null
         }
         Relationships: []
       }

@@ -44,21 +44,27 @@ export function EmailSaveRetrieve({ onResumeFound, onStartNew }: EmailSaveRetrie
     setIsLoading(true);
 
     try {
-      console.log('Searching for saved assessments with email:', email);
+      console.log('Searching for saved assessments via secure endpoint');
       
-      const { data: sessions, error } = await supabase
-        .from('assessment_sessions')
-        .select('id, completed_questions, total_questions, created_at, email')
-        .eq('email', email.toLowerCase().trim())
-        .is('completed_at', null)
-        .gt('completed_questions', 0)
-        .order('created_at', { ascending: false })
-        .limit(1);
+      const { data, error } = await supabase.functions.invoke('find-session-by-email', {
+        body: { email: email.toLowerCase().trim() }
+      });
 
-      console.log('Email search result:', { sessions, error });
+      console.log('Email search result:', { data, error });
 
       if (error) {
         console.error('Error searching for sessions:', error);
+        
+        // Handle rate limiting
+        if (error.message?.includes('Too many requests')) {
+          toast({
+            title: "Too many attempts",
+            description: "Please wait a few minutes before trying again.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
         toast({
           title: "Search failed", 
           description: "Unable to search for saved assessments. Please try again.",
@@ -67,8 +73,8 @@ export function EmailSaveRetrieve({ onResumeFound, onStartNew }: EmailSaveRetrie
         return;
       }
 
-      if (sessions && sessions.length > 0) {
-        const session = sessions[0];
+      if (data?.found && data?.session) {
+        const session = data.session;
         console.log('Found saved session:', session);
         toast({
           title: "Assessment found!",
@@ -76,7 +82,7 @@ export function EmailSaveRetrieve({ onResumeFound, onStartNew }: EmailSaveRetrie
         });
         onResumeFound(safeString(session.id), email);
       } else {
-        console.log('No saved sessions found for email:', email);
+        console.log('No saved sessions found');
         toast({
           title: "No saved assessment found",
           description: "No incomplete assessment found for this email address. Starting a new assessment.",
