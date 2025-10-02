@@ -59,6 +59,7 @@ const AssessmentAnalytics = () => {
   
   const engagementData = data?.engagement || [];
   const reliabilityData = data?.reliability || [];
+  const retestData = data?.retest || [];
   const userExperienceData = data?.userExperience || [];
 
   if (isLoading) {
@@ -470,43 +471,93 @@ const AssessmentAnalytics = () => {
         </TabsContent>
 
         <TabsContent value="psychometrics" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Reliability Metrics</CardTitle>
-              <CardDescription>
-                Internal consistency across scales (Target: α ≥ .70, ω ≥ .70)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {reliabilityData.length === 0 || !reliabilityData[0]?.scale_id ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground mb-2">No reliability data available yet</p>
-                  <p className="text-sm text-muted-foreground">
-                    Test-retest data requires users to complete the assessment multiple times
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {reliabilityData.map((rel: any, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-2 border rounded">
-                      <span className="font-medium">{rel.scale_id || 'Test-Retest'}</span>
-                      <div className="flex gap-4 text-sm">
-                        {rel.cronbach_alpha && (
-                          <span>α: {rel.cronbach_alpha.toFixed(3)}</span>
-                        )}
-                        {rel.mcdonald_omega && (
-                          <span>ω: {rel.mcdonald_omega.toFixed(3)}</span>
-                        )}
-                        {rel.split_half_corr && (
-                          <span>r: {rel.split_half_corr.toFixed(3)}</span>
-                        )}
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Reliability Metrics (Internal Consistency)</CardTitle>
+                <CardDescription>
+                  Cronbach's α and McDonald's ω (Target: ≥ .70)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {reliabilityData.length === 0 || !reliabilityData[0]?.scale_id ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-2">No reliability data available yet</p>
+                    <p className="text-sm text-muted-foreground">
+                      Load data using the batch computation script to populate α and ω values
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                    {reliabilityData.map((rel: any, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-2 border rounded hover:bg-muted/50 transition-colors">
+                        <span className="font-medium">{rel.scale_id}</span>
+                        <div className="flex gap-4 text-sm">
+                          {rel.cronbach_alpha && (
+                            <span className={rel.cronbach_alpha >= 0.70 ? 'text-green-600' : 'text-orange-600'}>
+                              α: {rel.cronbach_alpha.toFixed(3)}
+                            </span>
+                          )}
+                          {rel.mcdonald_omega && (
+                            <span className={rel.mcdonald_omega >= 0.70 ? 'text-green-600' : 'text-orange-600'}>
+                              ω: {rel.mcdonald_omega.toFixed(3)}
+                            </span>
+                          )}
+                          {rel.n_total && (
+                            <span className="text-muted-foreground">
+                              n={rel.n_total}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Test-Retest Reliability</CardTitle>
+                <CardDescription>
+                  Temporal stability over 2-6 week window (Target: r ≥ .70)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!retestData || retestData.length === 0 || retestData[0]?.n_pairs === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-2">No retest data available yet</p>
+                    <p className="text-sm text-muted-foreground">
+                      Requires users to complete the assessment multiple times within 2-6 weeks
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                    {retestData.map((rt: any, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-2 border rounded hover:bg-muted/50 transition-colors">
+                        <span className="font-medium">{rt.scale_code}</span>
+                        <div className="flex gap-4 text-sm">
+                          {rt.r_mean !== null && (
+                            <span className={rt.r_mean >= 0.70 ? 'text-green-600' : 'text-orange-600'}>
+                              r: {rt.r_mean.toFixed(3)}
+                            </span>
+                          )}
+                          <span className="text-muted-foreground">
+                            pairs: {rt.n_pairs}
+                          </span>
+                          {rt.median_days_between && (
+                            <span className="text-muted-foreground text-xs">
+                              ~{Math.round(rt.median_days_between)}d
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
           
           <Card>
             <CardHeader>

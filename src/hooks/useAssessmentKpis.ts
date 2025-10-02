@@ -20,6 +20,7 @@ interface KpiRpcResponse {
   itemClarity: unknown[];
   responseProcess: unknown[];
   reliability: unknown[];
+  retest: unknown[];
   cfa: unknown[];
   constructCoverage: unknown;
   fairness: unknown;
@@ -91,6 +92,14 @@ export interface UserExperienceMetrics {
   accuracy_perception: number | null;
 }
 
+export interface RetestMetrics {
+  scale_code: string;
+  results_version: string;
+  n_pairs: number;
+  r_mean: number | null;
+  median_days_between: number | null;
+}
+
 export const useAssessmentKpis = (filters: KpiFilters = {}) => {
   const { startDate = subDays(new Date(), 7), endDate = new Date() } = filters;
 
@@ -116,6 +125,7 @@ export const useAssessmentKpis = (filters: KpiFilters = {}) => {
       // New comprehensive metrics
       const engagement = (response.engagement || []) as unknown as EngagementMetrics[];
       const reliability = (response.reliability || []) as unknown as ReliabilityMetrics[];
+      const retest = (response.retest || []) as unknown as RetestMetrics[];
       const userExperience = (response.userExperience || []) as unknown as UserExperienceMetrics[];
       const constructCoverage = response.constructCoverage as any;
       const fairness = response.fairness as any;
@@ -161,6 +171,7 @@ export const useAssessmentKpis = (filters: KpiFilters = {}) => {
         alerts,
         engagement,
         reliability,
+        retest,
         userExperience,
         constructCoverage,
         fairness,
