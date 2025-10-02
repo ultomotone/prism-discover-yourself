@@ -33,5 +33,11 @@ verify_jwt = false
 [functions.find-session-by-email]
 verify_jwt = false
 
+[functions.analytics-get]
+verify_jwt = false
+
+[functions.compute-psychometrics]
+verify_jwt = false
+
 [auth]
 # (manage OTP expiry & password policies in the Supabase Dashboard)

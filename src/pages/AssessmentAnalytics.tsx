@@ -357,14 +357,14 @@ const AssessmentAnalytics = () => {
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Median Completion Time</p>
                   <p className="text-2xl font-bold">
-                    {engagementData.length > 0 && engagementData[0]?.avg_completion_sec 
+                    {engagementData.length > 0 && engagementData[0]?.avg_completion_sec != null
                       ? `${(engagementData[0].avg_completion_sec / 60).toFixed(0)} min` 
-                      : 'N/A'}
+                      : '—'}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {engagementData.length > 0 && engagementData[0]?.avg_completion_sec 
+                    {engagementData.length > 0 && engagementData[0]?.avg_completion_sec != null
                       ? `Real-time estimate (excludes outliers)`
-                      : 'Expected: 15-25 min'}
+                      : 'Waiting for completed sessions'}
                   </p>
                 </div>
                 <div>
@@ -549,12 +549,16 @@ const AssessmentAnalytics = () => {
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">DIF Flag Rate</p>
-                  <p className="text-2xl font-bold">{summary.difFlagRate.toFixed(1)}%</p>
+                  <p className="text-2xl font-bold">
+                    {summary.difFlagRate != null ? `${summary.difFlagRate.toFixed(1)}%` : "—"}
+                  </p>
                   <p className="text-xs text-muted-foreground">Target: ≤10% items flagged</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Calibration Error (ECE)</p>
-                  <p className="text-2xl font-bold">{summary.calibrationError.toFixed(3)}</p>
+                  <p className="text-2xl font-bold">
+                    {summary.calibrationError != null ? summary.calibrationError.toFixed(3) : "—"}
+                  </p>
                   <p className="text-xs text-muted-foreground">Target: &lt;0.05</p>
                 </div>
               </div>
