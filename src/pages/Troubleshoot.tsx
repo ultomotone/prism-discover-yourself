@@ -306,7 +306,7 @@ const Troubleshoot: React.FC = () => {
     setAnalyticsLoading(true);
     try {
       // Refresh all materialized views
-      const { data, error } = await supabase.rpc('refresh_all_materialized_views');
+      const { data, error } = await supabase.functions.invoke('refresh-analytics');
       
       if (error) {
         console.error('Refresh error:', error);

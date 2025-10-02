@@ -115,7 +115,7 @@ const AssessmentAnalytics = () => {
         description: "Refreshing all analytics views...",
       });
       
-      const { data: result, error } = await supabase.rpc('refresh_all_materialized_views');
+      const { data: result, error } = await supabase.functions.invoke('refresh-analytics');
       
       if (error) throw error;
 
