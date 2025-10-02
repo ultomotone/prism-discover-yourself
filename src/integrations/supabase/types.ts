@@ -1292,8 +1292,8 @@ export type Database = {
       mv_kpi_calibration: {
         Row: {
           avg_confidence: number | null
-          n_profiles: number | null
-          row_id: number | null
+          avg_top_gap: number | null
+          ece: number | null
         }
         Relationships: []
       }
@@ -1310,7 +1310,6 @@ export type Database = {
       mv_kpi_classification_stability: {
         Row: {
           n_pairs: number | null
-          row_id: number | null
           stability_rate: number | null
         }
         Relationships: []
@@ -1330,16 +1329,26 @@ export type Database = {
           coverage_pct: number | null
           keyed_items: number | null
           scale_code: string | null
+          scale_id: string | null
+          scale_name: string | null
           total_items: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "item_catalog_scale_id_fkey"
+            columns: ["scale_id"]
+            isOneToOne: false
+            referencedRelation: "scale_catalog"
+            referencedColumns: ["scale_id"]
+          },
+        ]
       }
       mv_kpi_engagement: {
         Row: {
-          avg_completion_sec: number | null
-          completion_time_sd_sec: number | null
+          completion_rate_pct: number | null
           day: string | null
-          drop_off_rate: number | null
+          drop_off_rate_pct: number | null
+          median_completion_sec: number | null
           sessions_completed: number | null
           sessions_started: number | null
         }
@@ -1429,10 +1438,13 @@ export type Database = {
       }
       mv_kpi_reliability: {
         Row: {
-          cronbach_alpha: number | null
-          mcdonald_omega: number | null
-          scale_id: string | null
-          split_half_corr: number | null
+          alpha_mean: number | null
+          last_updated: string | null
+          n_total: number | null
+          omega_mean: number | null
+          results_version: string | null
+          scale_code: string | null
+          sem_mean: number | null
         }
         Relationships: []
       }
@@ -1477,7 +1489,6 @@ export type Database = {
       }
       mv_kpi_retest: {
         Row: {
-          median_days_between: number | null
           n_pairs: number | null
           r_mean: number | null
           results_version: string | null

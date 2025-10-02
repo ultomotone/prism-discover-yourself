@@ -43,7 +43,8 @@ Deno.serve(async (req) => {
     const { data: reliability, error: e2 } = await sb.rpc("exec_sql", {
       q: `
         SELECT * FROM mv_kpi_reliability
-        ORDER BY scale_id
+        WHERE results_version = '${ver}'
+        ORDER BY scale_code
       `
     } as any);
     if (e2) {
@@ -66,21 +67,15 @@ Deno.serve(async (req) => {
 
     // Construct coverage
     const { data: coverage, error: e4 } = await sb.rpc("exec_sql", {
-      q: `SELECT * FROM mv_kpi_construct_coverage ORDER BY scale_code`
+      q: `SELECT scale_id, scale_code, scale_name, keyed_items, total_items, coverage_pct FROM mv_kpi_construct_coverage ORDER BY scale_id`
     } as any);
     if (e4) {
       console.error("[analytics-get] Coverage error:", e4);
       throw e4;
     }
 
-    // Fairness metrics
-    const { data: fairness, error: e5 } = await sb.rpc("exec_sql", {
-      q: `SELECT * FROM mv_kpi_fairness_dif LIMIT 1`
-    } as any);
-    if (e5) {
-      console.error("[analytics-get] Fairness error:", e5);
-      throw e5;
-    }
+    // Fairness metrics (placeholder until DIF implemented)
+    const fairness = [{ flagged_items: 0, total_items: 0 }];
 
     // Calibration metrics
     const { data: calibration, error: e6 } = await sb.rpc("exec_sql", {
@@ -101,13 +96,12 @@ Deno.serve(async (req) => {
     }
 
     // Business metrics
-    const { data: business, error: e8 } = await sb.rpc("exec_sql", {
-      q: `SELECT * FROM mv_kpi_business LIMIT 1`
-    } as any);
-    if (e8) {
-      console.error("[analytics-get] Business error:", e8);
-      throw e8;
-    }
+    const { data: business, error: e8 } = await sb.from('profiles')
+      .select('session_id', { count: 'exact', head: true });
+    const businessMetrics = [{
+      total_completions: business?.count ?? 0,
+      unique_users: 0 // placeholder until user tracking implemented
+    }];
 
     console.log(`[analytics-get] Success: engagement=${engagement?.length ?? 0} rows, reliability=${reliability?.length ?? 0} scales`);
 
@@ -117,10 +111,10 @@ Deno.serve(async (req) => {
         reliability: reliability ?? [], 
         retest: retest ?? [], 
         coverage: coverage ?? [],
-        fairness: fairness?.[0] ?? {},
-        calibration: calibration?.[0] ?? {},
-        classificationStability: classificationStability?.[0] ?? {},
-        business: business?.[0] ?? {}
+        fairness: fairness?.[0] ?? { flagged_items: 0, total_items: 0 },
+        calibration: calibration?.[0] ?? { avg_confidence: null, avg_top_gap: null, ece: null },
+        classificationStability: classificationStability?.[0] ?? { n_pairs: 0, stability_rate: null },
+        business: businessMetrics?.[0] ?? { total_completions: 0, unique_users: 0 }
       }), 
       {
         headers: { ...corsHeaders, "content-type": "application/json" },
