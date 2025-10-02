@@ -200,30 +200,15 @@ const AssessmentAnalytics = () => {
             </div>
           </div>
           
-          <div className="flex gap-2">
-            <Button
-              onClick={handleRecomputeAnalytics}
-              variant="default"
-              disabled={isRefreshing || isLoading}
-              className="gap-2"
-            >
-              {isRefreshing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Activity className="h-4 w-4" />
-              )}
-              {isRefreshing ? "Refreshing..." : "Recompute Analytics"}
-            </Button>
-            <Button
-              onClick={handleDownloadCSV}
-              variant="outline"
-              disabled={isLoading || !data}
-              className="gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Download CSV
-            </Button>
-          </div>
+          <Button
+            onClick={handleDownloadCSV}
+            variant="outline"
+            disabled={isLoading || !data}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Download CSV
+          </Button>
         </div>
         
         {/* Time Period Filter */}
@@ -698,20 +683,26 @@ const AssessmentAnalytics = () => {
                   <p className="text-sm text-muted-foreground">
                     Manually trigger a refresh of all analytics materialized views. This updates the dashboard with the latest data from the database.
                   </p>
-                  <button 
-                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary text-primary-foreground hover:bg-primary/90 h-10 py-2 px-4"
+                  <Button
                     onClick={handleRecomputeAnalytics}
+                    variant="default"
                     disabled={isRefreshing}
+                    className="gap-2"
                   >
                     {isRefreshing ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Activity className="mr-2 h-4 w-4" />
+                      <Activity className="h-4 w-4" />
                     )}
                     {isRefreshing ? "Refreshing..." : "Recompute Analytics"}
-                  </button>
+                  </Button>
+                  {lastRefresh && (
+                    <p className="text-xs text-muted-foreground">
+                      Last manual refresh: {lastRefresh.toLocaleTimeString()}
+                    </p>
+                  )}
                   <p className="text-xs text-muted-foreground">
-                    Last auto-refresh: Every 10 minutes
+                    Materialized views auto-refresh every 10 minutes
                   </p>
                 </div>
 
@@ -720,18 +711,19 @@ const AssessmentAnalytics = () => {
                   <p className="text-sm text-muted-foreground">
                     Access system logs to troubleshoot data processing issues, scoring problems, or API errors.
                   </p>
-                  <button 
-                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background border border-input hover:bg-accent hover:text-accent-foreground h-10 py-2 px-4"
+                  <Button
                     onClick={handleViewLogs}
+                    variant="outline"
                     disabled={loadingLogs}
+                    className="gap-2"
                   >
                     {loadingLogs ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <CheckCircle className="mr-2 h-4 w-4" />
+                      <CheckCircle className="h-4 w-4" />
                     )}
                     View Troubleshooting Logs
-                  </button>
+                  </Button>
                   <p className="text-xs text-muted-foreground">
                     Includes DB queries, edge function calls, and errors
                   </p>
