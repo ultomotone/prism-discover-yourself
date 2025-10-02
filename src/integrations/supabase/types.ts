@@ -517,6 +517,36 @@ export type Database = {
           },
         ]
       }
+      calibration_bins: {
+        Row: {
+          bin_index: number
+          computed_at: string | null
+          id: string
+          n: number
+          p_obs: number
+          p_pred: number
+          results_version: string
+        }
+        Insert: {
+          bin_index: number
+          computed_at?: string | null
+          id?: string
+          n: number
+          p_obs: number
+          p_pred: number
+          results_version: string
+        }
+        Update: {
+          bin_index?: number
+          computed_at?: string | null
+          id?: string
+          n?: number
+          p_obs?: number
+          p_pred?: number
+          results_version?: string
+        }
+        Relationships: []
+      }
       calibration_model: {
         Row: {
           brier_score: number | null
@@ -556,6 +586,63 @@ export type Database = {
           training_size?: number | null
           validation_size?: number | null
           version?: string
+        }
+        Relationships: []
+      }
+      calibration_summary: {
+        Row: {
+          brier: number | null
+          computed_at: string | null
+          ece: number | null
+          results_version: string
+        }
+        Insert: {
+          brier?: number | null
+          computed_at?: string | null
+          ece?: number | null
+          results_version: string
+        }
+        Update: {
+          brier?: number | null
+          computed_at?: string | null
+          ece?: number | null
+          results_version?: string
+        }
+        Relationships: []
+      }
+      cfa_fit: {
+        Row: {
+          cfi: number | null
+          created_at: string | null
+          id: string
+          model_name: string
+          n: number | null
+          results_version: string
+          rmsea: number | null
+          srmr: number | null
+          tli: number | null
+        }
+        Insert: {
+          cfi?: number | null
+          created_at?: string | null
+          id?: string
+          model_name: string
+          n?: number | null
+          results_version: string
+          rmsea?: number | null
+          srmr?: number | null
+          tli?: number | null
+        }
+        Update: {
+          cfi?: number | null
+          created_at?: string | null
+          id?: string
+          model_name?: string
+          n?: number | null
+          results_version?: string
+          rmsea?: number | null
+          srmr?: number | null
+          tli?: number | null
         }
         Relationships: []
       }
@@ -607,6 +694,45 @@ export type Database = {
         Update: {
           country_name?: string
           iso2_code?: string
+        }
+        Relationships: []
+      }
+      dif_results: {
+        Row: {
+          created_at: string | null
+          effect_size: number | null
+          flag: boolean
+          focal_group: string
+          id: string
+          method: string
+          p_value: number | null
+          question_id: number
+          reference_group: string
+          scale_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          effect_size?: number | null
+          flag: boolean
+          focal_group: string
+          id?: string
+          method: string
+          p_value?: number | null
+          question_id: number
+          reference_group: string
+          scale_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          effect_size?: number | null
+          flag?: boolean
+          focal_group?: string
+          id?: string
+          method?: string
+          p_value?: number | null
+          question_id?: number
+          reference_group?: string
+          scale_id?: string | null
         }
         Relationships: []
       }
@@ -858,6 +984,36 @@ export type Database = {
             referencedColumns: ["scale_id"]
           },
         ]
+      }
+      item_discrimination: {
+        Row: {
+          created_at: string | null
+          id: string
+          n: number | null
+          question_id: number
+          r_it: number | null
+          results_version: string | null
+          scale_code: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          n?: number | null
+          question_id: number
+          r_it?: number | null
+          results_version?: string | null
+          scale_code?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          n?: number | null
+          question_id?: number
+          r_it?: number | null
+          results_version?: string | null
+          scale_code?: string | null
+        }
+        Relationships: []
       }
       kb_definitions: {
         Row: {
@@ -1233,6 +1389,39 @@ export type Database = {
           },
         ]
       }
+      split_half_results: {
+        Row: {
+          cohort_end: string
+          cohort_start: string
+          created_at: string | null
+          id: string
+          lambda2: number | null
+          n_respondents: number | null
+          results_version: string
+          scale_code: string
+        }
+        Insert: {
+          cohort_end: string
+          cohort_start: string
+          created_at?: string | null
+          id?: string
+          lambda2?: number | null
+          n_respondents?: number | null
+          results_version: string
+          scale_code: string
+        }
+        Update: {
+          cohort_end?: string
+          cohort_start?: string
+          created_at?: string | null
+          id?: string
+          lambda2?: number | null
+          n_respondents?: number | null
+          results_version?: string
+          scale_code?: string
+        }
+        Relationships: []
+      }
       type_prototypes: {
         Row: {
           block: string
@@ -1293,16 +1482,21 @@ export type Database = {
         Row: {
           avg_confidence: number | null
           avg_top_gap: number | null
+          bins: Json | null
+          brier: number | null
           ece: number | null
+          results_version: string | null
         }
         Relationships: []
       }
       mv_kpi_cfa: {
         Row: {
           cfi: number | null
-          metric_type: string | null
+          model_name: string | null
+          n: number | null
+          results_version: string | null
           rmsea: number | null
-          row_id: number | null
+          srmr: number | null
           tli: number | null
         }
         Relationships: []
@@ -1356,8 +1550,8 @@ export type Database = {
       }
       mv_kpi_fairness_dif: {
         Row: {
+          dif_flag_rate_pct: number | null
           flagged_items: number | null
-          row_id: number | null
           total_items: number | null
         }
         Relationships: []
@@ -1436,6 +1630,14 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_kpi_items_discrimination: {
+        Row: {
+          low_disc_items: number | null
+          scale_code: string | null
+          total_items: number | null
+        }
+        Relationships: []
+      }
       mv_kpi_reliability: {
         Row: {
           alpha_mean: number | null
@@ -1511,6 +1713,15 @@ export type Database = {
           day: string | null
           sessions_completed: number | null
           sessions_started: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_split_half: {
+        Row: {
+          lambda2_mean: number | null
+          n_total: number | null
+          results_version: string | null
+          scale_code: string | null
         }
         Relationships: []
       }
