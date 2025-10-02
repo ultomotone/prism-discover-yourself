@@ -91,6 +91,7 @@ import RelationalFitHeatmap from "./pages/relational-fit/RelationalFitHeatmap";
 import RelationalFitTypes from "./pages/relational-fit/RelationalFitTypes";
 import RelationalFitPair from "./pages/relational-fit/RelationalFitPair";
 import AssessmentAnalytics from "./pages/AssessmentAnalytics";
+import ContentStudio from "./pages/ContentStudio";
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -227,6 +228,7 @@ const App = () => (
                   <Route path="/history" element={<History />} />
                   <Route path="/dashboard" element={<UserDashboard />} />
                   <Route path="/analytics" element={<AssessmentAnalytics />} />
+                  <Route path="/content-studio" element={<ContentStudio />} />
                   <Route path="/troubleshoot" element={
                     <Suspense fallback={<div className="p-6">Loading...</div>}>
                       <Troubleshoot />
