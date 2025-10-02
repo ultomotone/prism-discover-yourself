@@ -36,7 +36,10 @@ verify_jwt = false
 [functions.analytics-get]
 verify_jwt = false
 
-[functions.compute-psychometrics]
+[functions.compute-reliability]
+verify_jwt = false
+
+[functions.compute-retest]
 verify_jwt = false
 
 [auth]

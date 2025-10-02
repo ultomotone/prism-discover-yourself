@@ -79,32 +79,60 @@ const AssessmentAnalytics = () => {
 
   const handleRecomputeAnalytics = async () => {
     setIsRefreshing(true);
+    setLastRefresh(new Date());
     try {
+      // Step 1: Compute reliability metrics
       toast({
-        title: "Refreshing Analytics",
-        description: "Recomputing all materialized views...",
+        title: "Computing Metrics",
+        description: "Computing reliability metrics...",
       });
+      
+      const { data: reliabilityResult, error: relError } = await supabase.functions.invoke('compute-reliability');
+      
+      if (relError) {
+        console.error('Reliability computation error:', relError);
+      } else {
+        console.log('Reliability result:', reliabilityResult);
+      }
 
-      const { data: result, error } = await supabase.rpc("refresh_all_materialized_views");
+      // Step 2: Compute retest correlations
+      toast({
+        title: "Computing Metrics",
+        description: "Computing retest correlations...",
+      });
+      
+      const { data: retestResult, error: retestError } = await supabase.functions.invoke('compute-retest');
+      
+      if (retestError) {
+        console.error('Retest computation error:', retestError);
+      } else {
+        console.log('Retest result:', retestResult);
+      }
 
+      // Step 3: Refresh materialized views
+      toast({
+        title: "Refreshing Views",
+        description: "Refreshing all analytics views...",
+      });
+      
+      const { data: result, error } = await supabase.rpc('refresh_all_materialized_views');
+      
       if (error) throw error;
 
       // Invalidate React Query cache and force refetch
       await queryClient.invalidateQueries({ queryKey: ["assessment-kpis"] });
       await refetch();
 
-      setLastRefresh(new Date());
-
       const refreshResult = result as any;
       toast({
-        title: "Analytics Refreshed",
-        description: `Successfully refreshed ${refreshResult?.refreshed_count || 0} views in ${refreshResult?.duration_ms?.toFixed(0) || 0}ms`,
+        title: "Analytics Updated",
+        description: `Computed reliability (${reliabilityResult?.scales_processed || 0} scales), retest (${retestResult?.pairs_processed || 0} pairs). Refreshed ${refreshResult?.refreshed_count || 0} views.`,
       });
     } catch (error: any) {
       console.error("Refresh error:", error);
       toast({
-        title: "Refresh Failed",
-        description: error.message || "Failed to refresh analytics",
+        title: "Computation Failed",
+        description: error.message || "Failed to compute analytics",
         variant: "destructive",
       });
     } finally {
