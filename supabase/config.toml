@@ -39,10 +39,46 @@ verify_jwt = false
 [functions.analytics-get]
 verify_jwt = false
 
+[functions.analytics-export]
+verify_jwt = false
+
 [functions.compute-reliability]
 verify_jwt = false
 
 [functions.compute-retest]
+verify_jwt = false
+
+[functions.link_session_to_account]
+verify_jwt = false
+
+[functions.get-or-create-share-token]
+verify_jwt = false
+
+[functions.admin-run-reliability]
+verify_jwt = false
+
+[functions.admin-run-retest]
+verify_jwt = false
+
+[functions.admin-run-calibration]
+verify_jwt = false
+
+[functions.admin-get-metrics]
+verify_jwt = false
+
+[functions.admin-backfill-profiles]
+verify_jwt = false
+
+[functions.admin-backfill-scoring_results]
+verify_jwt = false
+
+[functions.cleanup-sessions]
+verify_jwt = false
+
+[functions.cron-force-finalize-248]
+verify_jwt = false
+
+[functions.health-check-scoring]
 verify_jwt = false
 
 [auth]
