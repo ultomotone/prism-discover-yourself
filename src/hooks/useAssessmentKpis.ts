@@ -75,8 +75,23 @@ export interface CFAFitMetrics {
   n: number;
 }
 
+export interface LiveToday {
+  sessions_started: number;
+  sessions_completed: number;
+  completion_rate_pct: number;
+  drop_off_rate_pct: number;
+  median_completion_sec: number | null;
+}
+
+export interface MVAge {
+  view_name: string;
+  refreshed_at: string;
+}
+
 interface KpiRpcResponse {
   engagement?: EngagementMetrics[];
+  live?: LiveToday;
+  mv_ages?: MVAge[];
   coverage?: CoverageMetrics[];
   reliability?: ReliabilityMetrics[];
   retest?: RetestMetrics[];
@@ -124,9 +139,19 @@ export const useAssessmentKpis = (filters: KpiFilters = {}) => {
 
       const result: KpiRpcResponse = await response.json();
       
+      // Calculate live status based on MV age
+      const now = new Date();
+      const engagementAge = result.mv_ages?.find(m => m.view_name === 'mv_kpi_engagement');
+      const engagementStale = engagementAge 
+        ? (now.getTime() - new Date(engagementAge.refreshed_at).getTime()) / 1000 > 90
+        : true;
+      
       // Map response to structured data
       const mappedData = {
         engagement: result.engagement || [],
+        live: result.live || { sessions_started: 0, sessions_completed: 0, completion_rate_pct: 0, drop_off_rate_pct: 0, median_completion_sec: null },
+        mv_ages: result.mv_ages || [],
+        isLive: !engagementStale,
         coverage: result.coverage || [],
         reliability: result.reliability || [],
         retest: result.retest || [],

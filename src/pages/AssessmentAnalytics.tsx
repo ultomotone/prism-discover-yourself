@@ -22,6 +22,15 @@ import {
 
 type TimePeriod = 'all' | '7' | '30' | '60' | '90' | '365';
 
+const LiveBadge = ({ isLive }: { isLive: boolean }) => (
+  <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
+    isLive ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+  }`}>
+    <span className={`h-2 w-2 rounded-full ${isLive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+    {isLive ? 'Live (≤60s)' : 'Stale'}
+  </div>
+);
+
 const AssessmentAnalytics = () => {
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -310,55 +319,68 @@ const AssessmentAnalytics = () => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {/* Header KPIs */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <MetricCard
-              title="Sessions Started"
-              value={summary.totalSessionsStarted}
-              icon={Users}
-              description="Assessment sessions initiated"
-            />
-            <MetricCard
-              title="Sessions Completed"
-              value={summary.totalSessionsCompleted}
-              icon={CheckCircle}
-              description="Successfully finished assessments"
-            />
-            <MetricCard
-              title="Completion Rate"
-              value={`${summary.periodCompletionRate.toFixed(1)}%`}
-              icon={TrendingUp}
-              description="Percentage of started sessions completed"
-            />
-            <MetricCard
-              title="Median Time"
-              value={summary.medianCompletionTime !== null ? `${summary.medianCompletionTime.toFixed(0)} min` : '—'}
-              icon={Target}
-              description="Median completion time"
-            />
-          </div>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Overview</CardTitle>
+                  <CardDescription>Key performance indicators across all assessment areas</CardDescription>
+                </div>
+                <LiveBadge isLive={data?.isLive ?? false} />
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Header KPIs */}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <MetricCard
+                  title="Sessions Started"
+                  value={summary.totalSessionsStarted}
+                  icon={Users}
+                  description="Assessment sessions initiated"
+                />
+                <MetricCard
+                  title="Sessions Completed"
+                  value={summary.totalSessionsCompleted}
+                  icon={CheckCircle}
+                  description="Successfully finished assessments"
+                />
+                <MetricCard
+                  title="Completion Rate"
+                  value={`${summary.periodCompletionRate.toFixed(1)}%`}
+                  icon={TrendingUp}
+                  description="Percentage of started sessions completed"
+                />
+                <MetricCard
+                  title="Median Time"
+                  value={summary.medianCompletionTime !== null ? `${summary.medianCompletionTime.toFixed(0)} min` : '—'}
+                  icon={Target}
+                  description="Median completion time"
+                />
+              </div>
 
-          {/* Scoring Health */}
-          <div className="grid gap-4 md:grid-cols-4">
-            <MetricCard
-              title="Drop-off Rate"
-              value={`${summary.periodDropOffRate.toFixed(1)}%`}
-              icon={Activity}
-              description="% who started but didn't complete"
-            />
-            <MetricCard
-              title="Construct Coverage"
-              value={`${summary.constructCoverageAvg.toFixed(0)}%`}
-              icon={Target}
-              description="Average coverage across scales"
-            />
-            <MetricCard
-              title="Classification Stability"
-              value={classificationStability.n_pairs > 0 ? `${summary.classificationStabilityRate.toFixed(0)}%` : '0% / N/A'}
-              icon={CheckCircle}
-              description={classificationStability.n_pairs > 0 ? "Retest type consistency" : "No retest data yet"}
-            />
-          </div>
+              {/* Scoring Health */}
+              <div className="grid gap-4 md:grid-cols-4 mt-4">
+                <MetricCard
+                  title="Drop-off Rate"
+                  value={`${summary.periodDropOffRate.toFixed(1)}%`}
+                  icon={Activity}
+                  description="% who started but didn't complete"
+                />
+                <MetricCard
+                  title="Construct Coverage"
+                  value={`${summary.constructCoverageAvg.toFixed(0)}%`}
+                  icon={Target}
+                  description="Average coverage across scales"
+                />
+                <MetricCard
+                  title="Classification Stability"
+                  value={classificationStability.n_pairs > 0 ? `${summary.classificationStabilityRate.toFixed(0)}%` : '0% / N/A'}
+                  icon={CheckCircle}
+                  description={classificationStability.n_pairs > 0 ? "Retest type consistency" : "No retest data yet"}
+                />
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="engagement" className="space-y-6">

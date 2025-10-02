@@ -122,12 +122,28 @@ Deno.serve(async (req) => {
       console.error("[analytics-get] CFA fit error:", e11);
     }
 
+    // Live today metrics (always fresh, <1s query)
+    const { data: liveToday, error: e12 } = await sb.rpc("exec_sql", {
+      q: `SELECT * FROM v_kpi_live_today`
+    } as any);
+    if (e12) {
+      console.error("[analytics-get] Live today error:", e12);
+    }
+
+    // MV refresh ages (for live badge)
+    const { data: mvAges, error: e13 } = await sb.rpc("exec_sql", {
+      q: `SELECT view_name, refreshed_at FROM mv_refresh_log ORDER BY view_name`
+    } as any);
+    if (e13) {
+      console.error("[analytics-get] MV ages error:", e13);
+    }
+
     // Business metrics  
-    const { count, error: e12 } = await sb.from('profiles')
+    const { count, error: e14 } = await sb.from('profiles')
       .select('session_id', { count: 'exact' });
     
-    if (e12) {
-      console.error("[analytics-get] Business metrics error:", e12);
+    if (e14) {
+      console.error("[analytics-get] Business metrics error:", e14);
     }
     
     const businessMetrics = [{
@@ -135,11 +151,13 @@ Deno.serve(async (req) => {
       unique_users: 0 // placeholder until user tracking implemented
     }];
 
-    console.log(`[analytics-get] Success: engagement=${engagement?.length ?? 0} rows, reliability=${reliability?.length ?? 0} scales`);
+    console.log(`[analytics-get] Success: engagement=${engagement?.length ?? 0} rows, reliability=${reliability?.length ?? 0} scales, live=${liveToday?.[0] ? 'yes' : 'no'}`);
 
     return new Response(
       JSON.stringify({ 
         engagement: engagement ?? [], 
+        live: liveToday?.[0] ?? { sessions_started: 0, sessions_completed: 0, completion_rate_pct: 0, drop_off_rate_pct: 0, median_completion_sec: null },
+        mv_ages: mvAges ?? [],
         reliability: reliability ?? [], 
         retest: retest ?? [], 
         coverage: coverage ?? [],

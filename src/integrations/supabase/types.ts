@@ -1061,6 +1061,21 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_refresh_log: {
+        Row: {
+          refreshed_at: string
+          view_name: string
+        }
+        Insert: {
+          refreshed_at?: string
+          view_name: string
+        }
+        Update: {
+          refreshed_at?: string
+          view_name?: string
+        }
+        Relationships: []
+      }
       newsletter_signups: {
         Row: {
           confirmation_token: string | null
@@ -1776,6 +1791,16 @@ export type Database = {
         }
         Relationships: []
       }
+      v_kpi_live_today: {
+        Row: {
+          completion_rate_pct: number | null
+          drop_off_rate_pct: number | null
+          median_completion_sec: number | null
+          sessions_completed: number | null
+          sessions_started: number | null
+        }
+        Relationships: []
+      }
       v_retest_pairs: {
         Row: {
           days_between: number | null
@@ -1788,6 +1813,10 @@ export type Database = {
       }
     }
     Functions: {
+      _bump_mv_heartbeat: {
+        Args: { p_view: string }
+        Returns: undefined
+      }
       admin_get_confidence_dist_last_30d: {
         Args: Record<PropertyKey, never>
         Returns: {
