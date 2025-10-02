@@ -417,13 +417,17 @@ const AssessmentAnalytics = () => {
                   <p className="text-xs text-muted-foreground">Target: ≤25%</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Avg Completion Time</p>
+                  <p className="text-sm text-muted-foreground mb-1">Median Completion Time</p>
                   <p className="text-2xl font-bold">
-                    {engagementData[0]?.avg_completion_sec 
-                      ? `${(engagementData[0].avg_completion_sec / 60).toFixed(0)}m` 
+                    {engagementData.length > 0 && engagementData[0]?.avg_completion_sec 
+                      ? `${(engagementData[0].avg_completion_sec / 60).toFixed(0)} min` 
                       : 'N/A'}
                   </p>
-                  <p className="text-xs text-muted-foreground">Expected: 15-25 min</p>
+                  <p className="text-xs text-muted-foreground">
+                    {engagementData.length > 0 && engagementData[0]?.avg_completion_sec 
+                      ? `Real-time estimate (excludes outliers)`
+                      : 'Expected: 15-25 min'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Engagement Rating</p>
@@ -474,34 +478,32 @@ const AssessmentAnalytics = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {reliabilityData.length > 0 ? (
-                <div className="space-y-3">
-                  {reliabilityData.slice(0, 10).map((rel: any) => (
-                    <div key={rel.scale_id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <span className="font-medium">{rel.scale_id}</span>
+              {reliabilityData.length === 0 || !reliabilityData[0]?.scale_id ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-2">No reliability data available yet</p>
+                  <p className="text-sm text-muted-foreground">
+                    Test-retest data requires users to complete the assessment multiple times
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {reliabilityData.map((rel: any, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 border rounded">
+                      <span className="font-medium">{rel.scale_id || 'Test-Retest'}</span>
                       <div className="flex gap-4 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">α: </span>
-                          <span className={rel.cronbach_alpha >= 0.7 ? "text-green-600" : "text-yellow-600"}>
-                            {rel.cronbach_alpha?.toFixed(3) || 'N/A'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">ω: </span>
-                          <span className={rel.mcdonald_omega >= 0.7 ? "text-green-600" : "text-yellow-600"}>
-                            {rel.mcdonald_omega?.toFixed(3) || 'N/A'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">r: </span>
-                          <span>{rel.split_half_corr?.toFixed(3) || 'N/A'}</span>
-                        </div>
+                        {rel.cronbach_alpha && (
+                          <span>α: {rel.cronbach_alpha.toFixed(3)}</span>
+                        )}
+                        {rel.mcdonald_omega && (
+                          <span>ω: {rel.mcdonald_omega.toFixed(3)}</span>
+                        )}
+                        {rel.split_half_corr && (
+                          <span>r: {rel.split_half_corr.toFixed(3)}</span>
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No reliability data available yet. Scale data needed.</p>
               )}
             </CardContent>
           </Card>

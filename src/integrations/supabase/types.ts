@@ -1220,7 +1220,9 @@ export type Database = {
       }
       mv_kpi_engagement: {
         Row: {
+          avg_completion_sec: number | null
           completion_rate_pct: number | null
+          completion_time_sd_sec: number | null
           day: string | null
           drop_off_rate: number | null
           sessions_abandoned: number | null
