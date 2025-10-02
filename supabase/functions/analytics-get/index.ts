@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
 
     // Calibration metrics
     const { data: calibration, error: e7 } = await sb.rpc("exec_sql", {
-      q: `SELECT * FROM mv_kpi_calibration WHERE results_version='${ver}' LIMIT 1`
+      q: `SELECT results_version, ece, brier, bins FROM mv_kpi_calibration WHERE results_version='${ver}' LIMIT 1`
     } as any);
     if (e7) {
       console.error("[analytics-get] Calibration error:", e7);
@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
 
     // Split-Half Reliability (λ₂)
     const { data: splitHalf, error: e9 } = await sb.rpc("exec_sql", {
-      q: `SELECT * FROM mv_kpi_split_half WHERE results_version='${ver}' ORDER BY scale_code`
+      q: `SELECT scale_code, lambda2, n_respondents FROM split_half_results WHERE results_version='${ver}' ORDER BY scale_code`
     } as any);
     if (e9) {
       console.error("[analytics-get] Split-half error:", e9);
@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
 
     // Item Discrimination
     const { data: itemDiscrimination, error: e10 } = await sb.rpc("exec_sql", {
-      q: `SELECT * FROM mv_kpi_items_discrimination ORDER BY scale_code`
+      q: `SELECT scale_code, question_id, r_it, n FROM item_discrimination WHERE results_version='${ver}' ORDER BY scale_code`
     } as any);
     if (e10) {
       console.error("[analytics-get] Item discrimination error:", e10);
@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
 
     // CFA Fit Indices
     const { data: cfaFit, error: e11 } = await sb.rpc("exec_sql", {
-      q: `SELECT * FROM mv_kpi_cfa WHERE results_version='${ver}' ORDER BY model_name`
+      q: `SELECT model_name, cfi, tli, rmsea, srmr, n FROM cfa_fit WHERE results_version='${ver}' ORDER BY model_name`
     } as any);
     if (e11) {
       console.error("[analytics-get] CFA fit error:", e11);
@@ -144,7 +144,7 @@ Deno.serve(async (req) => {
         retest: retest ?? [], 
         coverage: coverage ?? [],
         fairness: fairness?.[0] ?? { flagged_items: 0, total_items: 0, dif_flag_rate_pct: null },
-        calibration: calibration?.[0] ?? { avg_confidence: null, avg_top_gap: null, ece: null, brier: null, bins: null },
+        calibration: calibration?.[0] ?? { results_version: ver, ece: null, brier: null, bins: null },
         classificationStability: classificationStability?.[0] ?? { n_pairs: 0, stability_rate: null },
         splitHalf: splitHalf ?? [],
         itemDiscrimination: itemDiscrimination ?? [],

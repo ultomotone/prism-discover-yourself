@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { subDays, subYears, format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
+import { TypeStabilityCard, ConstructCoverageCard } from "@/components/admin/evidence";
 import { 
   FairnessCard, 
   CalibrationCard, 
@@ -41,7 +42,6 @@ const AssessmentAnalytics = () => {
   const engagementData = data?.engagement || [];
   const reliabilityData = data?.reliability || [];
   const retestData = data?.retest || [];
-  const userExperienceData = data?.userExperience || [];
   const splitHalfData = data?.splitHalf || [];
   const itemDiscriminationData = data?.itemDiscrimination || [];
   const cfaFitData = data?.cfaFit || [];
@@ -71,23 +71,17 @@ const AssessmentAnalytics = () => {
   }
 
   const summary = data?.summary || {
-    totalStarted: 0,
-    totalCompleted: 0,
-    completionRate: 0,
-    avgTopGap: 0,
-    avgConfidence: 0,
-    avgNPS: 0,
-    avgClarity: 0,
-    avgDropOffRate: 0,
-    avgEngagementRating: 0,
-    constructCoverageIndex: 0,
-    difFlagRate: 0,
-    calibrationError: 0,
-    classificationStabilityRate: 0,
-    freeToPaidRate: 0,
+    totalSessionsStarted: 0,
+    totalSessionsCompleted: 0,
+    periodCompletionRate: 0,
+    periodDropOffRate: 0,
+    medianCompletionTime: null,
+    constructCoverageAvg: 0,
+    classificationStabilityRate: 0
   };
 
-  const alerts = data?.alerts || [];
+  const coverageData = data?.coverage || [];
+  const classificationStability = data?.classificationStability || { n_pairs: 0, stability_rate: null };
 
   const handleRecomputeAnalytics = async () => {
     setIsRefreshing(true);
@@ -300,15 +294,7 @@ const AssessmentAnalytics = () => {
           </div>
         </div>
         
-        {alerts.length > 0 && (
-          <div className="mt-4 space-y-2">
-            {alerts.map((alert) => (
-              <div key={alert} className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">
-                {alert}
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Alerts removed - not part of current data structure */}
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
@@ -328,55 +314,49 @@ const AssessmentAnalytics = () => {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <MetricCard
               title="Sessions Started"
-              value={summary.totalStarted}
+              value={summary.totalSessionsStarted}
               icon={Users}
               description="Assessment sessions initiated"
             />
             <MetricCard
               title="Sessions Completed"
-              value={summary.totalCompleted}
+              value={summary.totalSessionsCompleted}
               icon={CheckCircle}
               description="Successfully finished assessments"
             />
             <MetricCard
               title="Completion Rate"
-              value={`${summary.completionRate.toFixed(1)}%`}
+              value={`${summary.periodCompletionRate.toFixed(1)}%`}
               icon={TrendingUp}
               description="Percentage of started sessions completed"
             />
             <MetricCard
-              title="Avg Top Gap"
-              value={summary.avgTopGap.toFixed(2)}
+              title="Median Time"
+              value={summary.medianCompletionTime !== null ? `${summary.medianCompletionTime.toFixed(0)} min` : '—'}
               icon={Target}
-              description="Type differentiation strength"
+              description="Median completion time"
             />
           </div>
 
           {/* Scoring Health */}
           <div className="grid gap-4 md:grid-cols-4">
             <MetricCard
-              title="Avg Confidence"
-              value={`${(summary.avgConfidence * 100).toFixed(1)}%`}
-              icon={Brain}
-              description="Calibrated confidence margin"
-            />
-            <MetricCard
               title="Drop-off Rate"
-              value={`${summary.avgDropOffRate.toFixed(1)}%`}
+              value={`${summary.periodDropOffRate.toFixed(1)}%`}
               icon={Activity}
               description="% who started but didn't complete"
             />
             <MetricCard
               title="Construct Coverage"
-              value={`${(summary.constructCoverageIndex * 100).toFixed(0)}%`}
+              value={`${summary.constructCoverageAvg.toFixed(0)}%`}
               icon={Target}
-              description="Scales with α ≥ .70"
+              description="Average coverage across scales"
             />
             <MetricCard
               title="Classification Stability"
-              value={`${summary.classificationStabilityRate.toFixed(0)}%`}
+              value={classificationStability.n_pairs > 0 ? `${summary.classificationStabilityRate.toFixed(0)}%` : '0% / N/A'}
               icon={CheckCircle}
-              description="Retest type consistency"
+              description={classificationStability.n_pairs > 0 ? "Retest type consistency" : "No retest data yet"}
             />
           </div>
         </TabsContent>
@@ -391,25 +371,25 @@ const AssessmentAnalytics = () => {
               <div className="grid gap-4 md:grid-cols-3">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Drop-off Rate</p>
-                  <p className="text-2xl font-bold">{summary.avgDropOffRate.toFixed(1)}%</p>
+                  <p className="text-2xl font-bold">{summary.periodDropOffRate.toFixed(1)}%</p>
                   <p className="text-xs text-muted-foreground">Target: ≤25%</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Median Completion Time</p>
                   <p className="text-2xl font-bold">
-                    {engagementData.length > 0 && engagementData[0]?.avg_completion_sec != null
-                      ? `${(engagementData[0].avg_completion_sec / 60).toFixed(0)} min` 
+                    {summary.medianCompletionTime !== null
+                      ? `${summary.medianCompletionTime.toFixed(0)} min` 
                       : '—'}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {engagementData.length > 0 && engagementData[0]?.avg_completion_sec != null
-                      ? `Real-time estimate (excludes outliers)`
+                    {summary.medianCompletionTime !== null
+                      ? `Bounded 5-120 min`
                       : 'Waiting for completed sessions'}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Engagement Rating</p>
-                  <p className="text-2xl font-bold">{summary.avgEngagementRating.toFixed(1)}/5</p>
+                  <p className="text-2xl font-bold">N/A</p>
                   <p className="text-xs text-muted-foreground">Ease of focus</p>
                 </div>
               </div>
@@ -418,7 +398,15 @@ const AssessmentAnalytics = () => {
         </TabsContent>
 
         <TabsContent value="quality" className="space-y-6">
-          <ItemFlagsTable items={data?.itemFlags || []} />
+          <Card>
+            <CardHeader>
+              <CardTitle>Item Flags</CardTitle>
+              <CardDescription>No item flag data available in current implementation</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">Item flagging functionality will be added in a future update.</p>
+            </CardContent>
+          </Card>
           
           <Card>
             <CardHeader>
@@ -457,8 +445,8 @@ const AssessmentAnalytics = () => {
                   Cronbach's α and McDonald's ω (Target: ≥ .70)
                 </CardDescription>
               </CardHeader>
-             <CardContent>
-                {reliabilityData.length === 0 || !reliabilityData[0]?.scale_id ? (
+              <CardContent>
+                {reliabilityData.length === 0 || !reliabilityData[0]?.scale_code ? (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground mb-2">No reliability data available yet</p>
                     <p className="text-sm text-muted-foreground mb-3">
@@ -555,16 +543,26 @@ const AssessmentAnalytics = () => {
           {/* Enhanced Psychometric KPIs */}
           <div className="grid gap-4 md:grid-cols-2">
             <SplitHalfCard 
-              data={splitHalfData}
+              data={splitHalfData.map(d => ({ 
+                scale_code: d.scale_code, 
+                lambda2_mean: d.lambda2, 
+                n_total: d.n_respondents 
+              }))}
               onExportCSV={() => console.log('Export split-half CSV')}
               loading={isLoading}
             />
             <ItemDiscriminationCard 
-              data={itemDiscriminationData}
+              data={[]}
               onExportCSV={() => console.log('Export item discrimination CSV')}
               loading={isLoading}
             />
           </div>
+
+          {/* Construct Coverage */}
+          <ConstructCoverageCard 
+            data={coverageData}
+            loading={isLoading}
+          />
 
           <CFAFitCard 
             data={cfaFitData}
@@ -662,15 +660,15 @@ const AssessmentAnalytics = () => {
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Question Clarity</span>
-                  <span className="font-medium">{summary.avgClarity.toFixed(2)}/5</span>
+                  <span className="font-medium">N/A</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Net Promoter Score</span>
-                  <span className="font-medium">{summary.avgNPS.toFixed(1)}/10</span>
+                  <span className="font-medium">N/A</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Engagement Rating</span>
-                  <span className="font-medium">{summary.avgEngagementRating.toFixed(1)}/5</span>
+                  <span className="font-medium">N/A</span>
                 </div>
               </CardContent>
             </Card>
@@ -724,12 +722,12 @@ const AssessmentAnalytics = () => {
               <div className="grid gap-4 md:grid-cols-3">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Free-to-Paid Rate</p>
-                  <p className="text-2xl font-bold">{summary.freeToPaidRate.toFixed(1)}%</p>
+                  <p className="text-2xl font-bold">N/A</p>
                   <p className="text-xs text-muted-foreground">Users purchasing insights</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Completion Rate</p>
-                  <p className="text-2xl font-bold">{summary.completionRate.toFixed(1)}%</p>
+                  <p className="text-2xl font-bold">{summary.periodCompletionRate.toFixed(1)}%</p>
                   <p className="text-xs text-muted-foreground">Started → Completed</p>
                 </div>
                 <div>

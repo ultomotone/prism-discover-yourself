@@ -980,6 +980,13 @@ export type Database = {
             foreignKeyName: "item_catalog_scale_id_fkey"
             columns: ["scale_id"]
             isOneToOne: false
+            referencedRelation: "mv_kpi_construct_coverage"
+            referencedColumns: ["scale_code"]
+          },
+          {
+            foreignKeyName: "item_catalog_scale_id_fkey"
+            columns: ["scale_id"]
+            isOneToOne: false
             referencedRelation: "scale_catalog"
             referencedColumns: ["scale_id"]
           },
@@ -1532,6 +1539,13 @@ export type Database = {
             foreignKeyName: "item_catalog_scale_id_fkey"
             columns: ["scale_id"]
             isOneToOne: false
+            referencedRelation: "mv_kpi_construct_coverage"
+            referencedColumns: ["scale_code"]
+          },
+          {
+            foreignKeyName: "item_catalog_scale_id_fkey"
+            columns: ["scale_id"]
+            isOneToOne: false
             referencedRelation: "scale_catalog"
             referencedColumns: ["scale_id"]
           },
@@ -1545,6 +1559,12 @@ export type Database = {
           median_completion_sec: number | null
           sessions_completed: number | null
           sessions_started: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_fairness_air: {
+        Row: {
+          adverse_impact_ratio: number | null
         }
         Relationships: []
       }
@@ -1661,6 +1681,13 @@ export type Database = {
             foreignKeyName: "item_catalog_scale_id_fkey"
             columns: ["scale_id"]
             isOneToOne: false
+            referencedRelation: "mv_kpi_construct_coverage"
+            referencedColumns: ["scale_code"]
+          },
+          {
+            foreignKeyName: "item_catalog_scale_id_fkey"
+            columns: ["scale_id"]
+            isOneToOne: false
             referencedRelation: "scale_catalog"
             referencedColumns: ["scale_id"]
           },
@@ -1672,6 +1699,13 @@ export type Database = {
           split_half_corr: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "item_catalog_scale_id_fkey"
+            columns: ["scale_id"]
+            isOneToOne: false
+            referencedRelation: "mv_kpi_construct_coverage"
+            referencedColumns: ["scale_code"]
+          },
           {
             foreignKeyName: "item_catalog_scale_id_fkey"
             columns: ["scale_id"]

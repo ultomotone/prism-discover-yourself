@@ -8,3 +8,4 @@ export { CalibrationCard } from './CalibrationCard';
 export { SplitHalfCard } from './SplitHalfCard';
 export { ItemDiscriminationCard } from './ItemDiscriminationCard';
 export { CFAFitCard } from './CFAFitCard';
+export { ConstructCoverageCard } from './ConstructCoverageCard';
