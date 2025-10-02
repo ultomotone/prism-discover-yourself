@@ -71,6 +71,20 @@ export type Database = {
             referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "assessment_feedback_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["first_session_id"]
+          },
+          {
+            foreignKeyName: "assessment_feedback_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["second_session_id"]
+          },
         ]
       }
       assessment_feedback_context: {
@@ -151,6 +165,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_item_flags_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["first_session_id"]
+          },
+          {
+            foreignKeyName: "assessment_item_flags_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["second_session_id"]
           },
         ]
       }
@@ -294,6 +322,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["first_session_id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["second_session_id"]
           },
         ]
       }
@@ -458,6 +500,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_ui_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["first_session_id"]
+          },
+          {
+            foreignKeyName: "assessment_ui_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["second_session_id"]
           },
         ]
       }
@@ -686,6 +742,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fc_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["first_session_id"]
+          },
+          {
+            foreignKeyName: "fc_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["second_session_id"]
           },
         ]
       }
@@ -932,67 +1002,84 @@ export type Database = {
       }
       psychometrics_external: {
         Row: {
-          cfi: number | null
-          dif_flag: boolean | null
-          factor_loading: number | null
-          omega: number | null
-          question_id: number
+          cohort_end: string
+          cohort_start: string
+          created_at: string | null
+          cronbach_alpha: number | null
+          id: string
+          mcdonald_omega: number | null
+          n_respondents: number
+          notes: string | null
           results_version: string
-          rmsea: number | null
-          scale_id: string
-          srmr: number | null
-          tli: number | null
-          updated_at: string | null
+          scale_code: string
+          sem: number | null
         }
         Insert: {
-          cfi?: number | null
-          dif_flag?: boolean | null
-          factor_loading?: number | null
-          omega?: number | null
-          question_id: number
-          results_version?: string
-          rmsea?: number | null
-          scale_id: string
-          srmr?: number | null
-          tli?: number | null
-          updated_at?: string | null
+          cohort_end: string
+          cohort_start: string
+          created_at?: string | null
+          cronbach_alpha?: number | null
+          id?: string
+          mcdonald_omega?: number | null
+          n_respondents: number
+          notes?: string | null
+          results_version: string
+          scale_code: string
+          sem?: number | null
         }
         Update: {
-          cfi?: number | null
-          dif_flag?: boolean | null
-          factor_loading?: number | null
-          omega?: number | null
-          question_id?: number
+          cohort_end?: string
+          cohort_start?: string
+          created_at?: string | null
+          cronbach_alpha?: number | null
+          id?: string
+          mcdonald_omega?: number | null
+          n_respondents?: number
+          notes?: string | null
           results_version?: string
-          rmsea?: number | null
-          scale_id?: string
-          srmr?: number | null
-          tli?: number | null
-          updated_at?: string | null
+          scale_code?: string
+          sem?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "psychometrics_external_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "assessment_questions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "psychometrics_external_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "mv_kpi_item_flow"
-            referencedColumns: ["question_id"]
-          },
-          {
-            foreignKeyName: "psychometrics_external_scale_id_fkey"
-            columns: ["scale_id"]
-            isOneToOne: false
-            referencedRelation: "scale_catalog"
-            referencedColumns: ["scale_id"]
-          },
-        ]
+        Relationships: []
+      }
+      psychometrics_retest_pairs: {
+        Row: {
+          created_at: string | null
+          days_between: number
+          first_session_id: string
+          id: string
+          n_items: number | null
+          r_pearson: number | null
+          results_version: string
+          scale_code: string
+          second_session_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          days_between: number
+          first_session_id: string
+          id?: string
+          n_items?: number | null
+          r_pearson?: number | null
+          results_version: string
+          scale_code: string
+          second_session_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          days_between?: number
+          first_session_id?: string
+          id?: string
+          n_items?: number | null
+          r_pearson?: number | null
+          results_version?: string
+          scale_code?: string
+          second_session_id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       retest_invites: {
         Row: {
@@ -1020,6 +1107,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retest_invites_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["first_session_id"]
+          },
+          {
+            foreignKeyName: "retest_invites_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["second_session_id"]
           },
         ]
       }
@@ -1115,6 +1216,20 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "assessment_sessions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scoring_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["first_session_id"]
+          },
+          {
+            foreignKeyName: "scoring_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["second_session_id"]
           },
         ]
       }
@@ -1315,10 +1430,14 @@ export type Database = {
       }
       mv_kpi_reliability: {
         Row: {
-          correlation: number | null
-          metric_type: string | null
-          n_pairs: number | null
-          row_id: number | null
+          cronbach_alpha: number | null
+          last_updated: string | null
+          mcdonald_omega: number | null
+          n_total: number | null
+          results_version: string | null
+          scale_id: string | null
+          sem_mean: number | null
+          split_half_corr: number | null
         }
         Relationships: []
       }
@@ -1361,6 +1480,16 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_kpi_retest: {
+        Row: {
+          median_days_between: number | null
+          n_pairs: number | null
+          r_mean: number | null
+          results_version: string | null
+          scale_code: string | null
+        }
+        Relationships: []
+      }
       mv_kpi_scoring: {
         Row: {
           avg_conf_calibrated: number | null
@@ -1393,6 +1522,16 @@ export type Database = {
           avg_nps: number | null
           day: string | null
           feedback_count: number | null
+        }
+        Relationships: []
+      }
+      v_retest_pairs: {
+        Row: {
+          days_between: number | null
+          first_session_id: string | null
+          results_version: string | null
+          second_session_id: string | null
+          user_id: string | null
         }
         Relationships: []
       }
