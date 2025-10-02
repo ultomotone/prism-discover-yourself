@@ -72,6 +72,42 @@ Deno.serve(async (req) => {
       throw e4;
     }
 
+    // Fairness metrics
+    const { data: fairness, error: e5 } = await sb.rpc("exec_sql", {
+      q: `SELECT * FROM mv_kpi_fairness_dif LIMIT 1`
+    } as any);
+    if (e5) {
+      console.error("[analytics-get] Fairness error:", e5);
+      throw e5;
+    }
+
+    // Calibration metrics
+    const { data: calibration, error: e6 } = await sb.rpc("exec_sql", {
+      q: `SELECT * FROM mv_kpi_calibration LIMIT 1`
+    } as any);
+    if (e6) {
+      console.error("[analytics-get] Calibration error:", e6);
+      throw e6;
+    }
+
+    // Classification stability
+    const { data: classificationStability, error: e7 } = await sb.rpc("exec_sql", {
+      q: `SELECT * FROM mv_kpi_classification_stability LIMIT 1`
+    } as any);
+    if (e7) {
+      console.error("[analytics-get] Classification stability error:", e7);
+      throw e7;
+    }
+
+    // Business metrics
+    const { data: business, error: e8 } = await sb.rpc("exec_sql", {
+      q: `SELECT * FROM mv_kpi_business LIMIT 1`
+    } as any);
+    if (e8) {
+      console.error("[analytics-get] Business error:", e8);
+      throw e8;
+    }
+
     console.log(`[analytics-get] Success: engagement=${engagement?.length ?? 0} rows, reliability=${reliability?.length ?? 0} scales`);
 
     return new Response(
@@ -79,7 +115,11 @@ Deno.serve(async (req) => {
         engagement: engagement ?? [], 
         reliability: reliability ?? [], 
         retest: retest ?? [], 
-        coverage: coverage ?? [] 
+        coverage: coverage ?? [],
+        fairness: fairness?.[0] ?? {},
+        calibration: calibration?.[0] ?? {},
+        classificationStability: classificationStability?.[0] ?? {},
+        business: business?.[0] ?? {}
       }), 
       {
         headers: { ...corsHeaders, "content-type": "application/json" },
