@@ -11,6 +11,13 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { subDays, subYears, format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
+import { 
+  FairnessCard, 
+  CalibrationCard, 
+  SplitHalfCard, 
+  ItemDiscriminationCard, 
+  CFAFitCard 
+} from "@/components/admin/evidence";
 
 type TimePeriod = 'all' | '7' | '30' | '60' | '90' | '365';
 
@@ -35,6 +42,11 @@ const AssessmentAnalytics = () => {
   const reliabilityData = data?.reliability || [];
   const retestData = data?.retest || [];
   const userExperienceData = data?.userExperience || [];
+  const splitHalfData = data?.splitHalf || [];
+  const itemDiscriminationData = data?.itemDiscrimination || [];
+  const cfaFitData = data?.cfaFit || [];
+  const fairnessData = data?.fairness || null;
+  const calibrationData = data?.calibration || null;
 
   if (isLoading) {
     return (
@@ -436,6 +448,7 @@ const AssessmentAnalytics = () => {
         </TabsContent>
 
         <TabsContent value="psychometrics" className="space-y-6">
+          {/* Internal Consistency Reliability */}
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
@@ -444,7 +457,7 @@ const AssessmentAnalytics = () => {
                   Cronbach's α and McDonald's ω (Target: ≥ .70)
                 </CardDescription>
               </CardHeader>
-               <CardContent>
+             <CardContent>
                 {reliabilityData.length === 0 || !reliabilityData[0]?.scale_id ? (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground mb-2">No reliability data available yet</p>
@@ -538,6 +551,26 @@ const AssessmentAnalytics = () => {
               </CardContent>
             </Card>
           </div>
+
+          {/* Enhanced Psychometric KPIs */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <SplitHalfCard 
+              data={splitHalfData}
+              onExportCSV={() => console.log('Export split-half CSV')}
+              loading={isLoading}
+            />
+            <ItemDiscriminationCard 
+              data={itemDiscriminationData}
+              onExportCSV={() => console.log('Export item discrimination CSV')}
+              loading={isLoading}
+            />
+          </div>
+
+          <CFAFitCard 
+            data={cfaFitData}
+            onExportCSV={() => console.log('Export CFA CSV')}
+            loading={isLoading}
+          />
           
           <Card>
             <CardHeader>
@@ -568,36 +601,52 @@ const AssessmentAnalytics = () => {
         </TabsContent>
 
         <TabsContent value="fairness" className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            <FairnessCard 
+              data={fairnessData}
+              onExportCSV={() => console.log('Export fairness CSV')}
+              loading={isLoading}
+            />
+            <CalibrationCard 
+              data={calibrationData}
+              onExportCSV={() => console.log('Export calibration CSV')}
+              loading={isLoading}
+            />
+          </div>
+
           <Card>
             <CardHeader>
-              <CardTitle>Fairness & Calibration</CardTitle>
-              <CardDescription>Bias detection and prediction calibration metrics</CardDescription>
+              <CardTitle>Fairness & Calibration Standards</CardTitle>
+              <CardDescription>APA/AERA/NCME alignment for bias detection and prediction accuracy</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">DIF Flag Rate</p>
-                  <p className="text-2xl font-bold">
-                    {summary.difFlagRate != null ? `${summary.difFlagRate.toFixed(1)}%` : "—"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Target: ≤10% items flagged</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Calibration Error (ECE)</p>
-                  <p className="text-2xl font-bold">
-                    {summary.calibrationError != null ? summary.calibrationError.toFixed(3) : "—"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Target: &lt;0.05</p>
-                </div>
-              </div>
-              <div className="pt-4">
+              <div>
                 <h4 className="font-medium mb-2">Fairness Standards</h4>
                 <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                  <li>DIF detection: Mantel-Haenszel χ² or IRT-based</li>
-                  <li>Adverse impact: 80% rule (selection rate ratios)</li>
-                  <li>Calibration: Expected Calibration Error (ECE) &lt; .05</li>
-                  <li>Confidence intervals: Well-calibrated across groups</li>
+                  <li>DIF detection: Mantel-Haenszel χ² or IRT-based (flag if p &lt; .05 with material effect)</li>
+                  <li>Adverse impact: 80% rule (selection rate ratios ≥ 0.80)</li>
+                  <li>Item-level fairness: Review flagged items for content bias</li>
+                  <li>Group comparisons: Monitor performance across demographics</li>
                 </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Calibration Standards</h4>
+                <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                  <li>Expected Calibration Error (ECE) &lt; 0.05 (excellent), &lt; 0.10 (acceptable)</li>
+                  <li>Brier Score: Lower is better (theoretical min = 0)</li>
+                  <li>Reliability curve: 10 bins showing p_pred vs p_obs alignment</li>
+                  <li>Confidence intervals: Well-calibrated across prediction ranges</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2 text-amber-600">⚠️ Setup Required</h4>
+                <p className="text-sm text-muted-foreground mb-2">
+                  These metrics require offline computation jobs. See{' '}
+                  <code className="text-xs bg-muted px-2 py-1 rounded">
+                    edge-jobs/psychometrics/README_FAIRNESS_CALIBRATION.md
+                  </code>{' '}
+                  for setup instructions.
+                </p>
               </div>
             </CardContent>
           </Card>
