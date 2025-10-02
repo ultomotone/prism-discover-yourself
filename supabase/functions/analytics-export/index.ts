@@ -45,11 +45,39 @@ Deno.serve(async (req) => {
     } as any);
     
     const { data: reliability } = await sb.rpc("exec_sql", { 
-      q: `SELECT * FROM mv_kpi_reliability ORDER BY scale_id` 
+      q: `SELECT * FROM mv_kpi_reliability WHERE results_version='${ver}' ORDER BY scale_code` 
     } as any);
     
     const { data: retest } = await sb.rpc("exec_sql", { 
       q: `SELECT * FROM mv_kpi_retest WHERE results_version='${ver}' ORDER BY scale_code` 
+    } as any);
+
+    const { data: coverage } = await sb.rpc("exec_sql", {
+      q: `SELECT scale_id, scale_code, scale_name, keyed_items, total_items, coverage_pct FROM mv_kpi_construct_coverage ORDER BY scale_code NULLS LAST, scale_id`
+    } as any);
+
+    const { data: fairness } = await sb.rpc("exec_sql", {
+      q: `SELECT * FROM mv_kpi_fairness_dif`
+    } as any);
+
+    const { data: calibration } = await sb.rpc("exec_sql", {
+      q: `SELECT results_version, ece, brier FROM mv_kpi_calibration WHERE results_version='${ver}'`
+    } as any);
+
+    const { data: calibrationBins } = await sb.rpc("exec_sql", {
+      q: `SELECT bin_index, p_pred, p_obs, n FROM calibration_bins WHERE results_version='${ver}' ORDER BY bin_index`
+    } as any);
+
+    const { data: splitHalf } = await sb.rpc("exec_sql", {
+      q: `SELECT scale_code, lambda2, n_respondents FROM split_half_results WHERE results_version='${ver}' ORDER BY scale_code`
+    } as any);
+
+    const { data: itemDiscrimination } = await sb.rpc("exec_sql", {
+      q: `SELECT scale_code, question_id, r_it, n FROM item_discrimination WHERE results_version='${ver}' ORDER BY scale_code, question_id`
+    } as any);
+
+    const { data: cfaFit } = await sb.rpc("exec_sql", {
+      q: `SELECT model_name, cfi, tli, rmsea, srmr, n FROM cfa_fit WHERE results_version='${ver}' ORDER BY model_name`
     } as any);
 
     // Build CSV bundle
@@ -59,7 +87,7 @@ Deno.serve(async (req) => {
       `# Version: ${ver}, Period: ${period}`,
       "",
       "# ==========================================",
-      "# Engagement Metrics",
+      "# Engagement Metrics (Period-based)",
       "# ==========================================",
       toCSV(engagement || []),
       "",
@@ -72,6 +100,41 @@ Deno.serve(async (req) => {
       "# Test-Retest Reliability (Pearson r)",
       "# ==========================================",
       toCSV(retest || []),
+      "",
+      "# ==========================================",
+      "# Construct Coverage (Item Bank)",
+      "# ==========================================",
+      toCSV(coverage || []),
+      "",
+      "# ==========================================",
+      "# Fairness - DIF Analysis",
+      "# ==========================================",
+      toCSV(fairness || []),
+      "",
+      "# ==========================================",
+      "# Calibration Summary (ECE & Brier)",
+      "# ==========================================",
+      toCSV(calibration || []),
+      "",
+      "# ==========================================",
+      "# Calibration Bins (10 bins: p_pred vs p_obs)",
+      "# ==========================================",
+      toCSV(calibrationBins || []),
+      "",
+      "# ==========================================",
+      "# Split-Half Reliability (Guttman λ₂)",
+      "# ==========================================",
+      toCSV(splitHalf || []),
+      "",
+      "# ==========================================",
+      "# Item Discrimination (Corrected Item-Total r)",
+      "# ==========================================",
+      toCSV(itemDiscrimination || []),
+      "",
+      "# ==========================================",
+      "# CFA Fit Indices",
+      "# ==========================================",
+      toCSV(cfaFit || []),
     ].join("\n");
 
     console.log(`[analytics-export] CSV generated, size=${bundle.length} bytes`);

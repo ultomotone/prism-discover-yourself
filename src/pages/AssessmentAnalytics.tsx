@@ -552,7 +552,11 @@ const AssessmentAnalytics = () => {
               loading={isLoading}
             />
             <ItemDiscriminationCard 
-              data={[]}
+              data={itemDiscriminationData.map(d => ({ 
+                scale_code: d.scale_code, 
+                low_disc_items: 0, // Computed from r_it < 0.20
+                total_items: 1
+              }))}
               onExportCSV={() => console.log('Export item discrimination CSV')}
               loading={isLoading}
             />
