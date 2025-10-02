@@ -41,15 +41,15 @@ Deno.serve(async (req) => {
 
     // Fetch all data
     const { data: engagement } = await sb.rpc("exec_sql", { 
-      q: `SELECT * FROM mv_kpi_engagement WHERE true ${periodFilter} ORDER BY day;` 
+      q: `SELECT * FROM mv_kpi_engagement WHERE true ${periodFilter} ORDER BY day` 
     } as any);
     
     const { data: reliability } = await sb.rpc("exec_sql", { 
-      q: `SELECT * FROM mv_kpi_reliability ORDER BY scale_id;` 
+      q: `SELECT * FROM mv_kpi_reliability ORDER BY scale_id` 
     } as any);
     
     const { data: retest } = await sb.rpc("exec_sql", { 
-      q: `SELECT * FROM mv_kpi_retest WHERE results_version='${ver}' ORDER BY scale_code;` 
+      q: `SELECT * FROM mv_kpi_retest WHERE results_version='${ver}' ORDER BY scale_code` 
     } as any);
 
     // Build CSV bundle

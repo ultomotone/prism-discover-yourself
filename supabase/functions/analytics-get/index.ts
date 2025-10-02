@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
       q: `
         SELECT * FROM mv_kpi_engagement
         WHERE true ${periodFilter}
-        ORDER BY day DESC;
+        ORDER BY day DESC
       `
     } as any);
     if (e1) {
@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
     const { data: reliability, error: e2 } = await sb.rpc("exec_sql", {
       q: `
         SELECT * FROM mv_kpi_reliability
-        ORDER BY scale_id;
+        ORDER BY scale_id
       `
     } as any);
     if (e2) {
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
       q: `
         SELECT * FROM mv_kpi_retest 
         WHERE results_version='${ver}'
-        ORDER BY scale_code;
+        ORDER BY scale_code
       `
     } as any);
     if (e3) {
@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
 
     // Construct coverage
     const { data: coverage, error: e4 } = await sb.rpc("exec_sql", {
-      q: `SELECT * FROM mv_kpi_construct_coverage ORDER BY scale_code;`
+      q: `SELECT * FROM mv_kpi_construct_coverage ORDER BY scale_code`
     } as any);
     if (e4) {
       console.error("[analytics-get] Coverage error:", e4);
