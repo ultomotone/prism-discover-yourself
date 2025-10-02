@@ -74,33 +74,60 @@ Deno.serve(async (req) => {
       throw e4;
     }
 
-    // Fairness metrics (placeholder until DIF implemented)
-    const fairness = [{ flagged_items: 0, total_items: 0 }];
-
-    // Calibration metrics
-    const { data: calibration, error: e6 } = await sb.rpc("exec_sql", {
-      q: `SELECT * FROM mv_kpi_calibration LIMIT 1`
+    // Fairness metrics (DIF)
+    const { data: fairness, error: e6 } = await sb.rpc("exec_sql", {
+      q: `SELECT * FROM mv_kpi_fairness_dif LIMIT 1`
     } as any);
     if (e6) {
-      console.error("[analytics-get] Calibration error:", e6);
-      throw e6;
+      console.error("[analytics-get] Fairness error:", e6);
+    }
+
+    // Calibration metrics
+    const { data: calibration, error: e7 } = await sb.rpc("exec_sql", {
+      q: `SELECT * FROM mv_kpi_calibration WHERE results_version='${ver}' LIMIT 1`
+    } as any);
+    if (e7) {
+      console.error("[analytics-get] Calibration error:", e7);
     }
 
     // Classification stability
-    const { data: classificationStability, error: e7 } = await sb.rpc("exec_sql", {
+    const { data: classificationStability, error: e8 } = await sb.rpc("exec_sql", {
       q: `SELECT * FROM mv_kpi_classification_stability LIMIT 1`
     } as any);
-    if (e7) {
-      console.error("[analytics-get] Classification stability error:", e7);
-      throw e7;
+    if (e8) {
+      console.error("[analytics-get] Classification stability error:", e8);
+    }
+
+    // Split-Half Reliability (λ₂)
+    const { data: splitHalf, error: e9 } = await sb.rpc("exec_sql", {
+      q: `SELECT * FROM mv_kpi_split_half WHERE results_version='${ver}' ORDER BY scale_code`
+    } as any);
+    if (e9) {
+      console.error("[analytics-get] Split-half error:", e9);
+    }
+
+    // Item Discrimination
+    const { data: itemDiscrimination, error: e10 } = await sb.rpc("exec_sql", {
+      q: `SELECT * FROM mv_kpi_items_discrimination ORDER BY scale_code`
+    } as any);
+    if (e10) {
+      console.error("[analytics-get] Item discrimination error:", e10);
+    }
+
+    // CFA Fit Indices
+    const { data: cfaFit, error: e11 } = await sb.rpc("exec_sql", {
+      q: `SELECT * FROM mv_kpi_cfa WHERE results_version='${ver}' ORDER BY model_name`
+    } as any);
+    if (e11) {
+      console.error("[analytics-get] CFA fit error:", e11);
     }
 
     // Business metrics  
-    const { count, error: e8 } = await sb.from('profiles')
+    const { count, error: e12 } = await sb.from('profiles')
       .select('session_id', { count: 'exact' });
     
-    if (e8) {
-      console.error("[analytics-get] Business metrics error:", e8);
+    if (e12) {
+      console.error("[analytics-get] Business metrics error:", e12);
     }
     
     const businessMetrics = [{
@@ -116,9 +143,12 @@ Deno.serve(async (req) => {
         reliability: reliability ?? [], 
         retest: retest ?? [], 
         coverage: coverage ?? [],
-        fairness: fairness?.[0] ?? { flagged_items: 0, total_items: 0 },
-        calibration: calibration?.[0] ?? { avg_confidence: null, avg_top_gap: null, ece: null },
+        fairness: fairness?.[0] ?? { flagged_items: 0, total_items: 0, dif_flag_rate_pct: null },
+        calibration: calibration?.[0] ?? { avg_confidence: null, avg_top_gap: null, ece: null, brier: null, bins: null },
         classificationStability: classificationStability?.[0] ?? { n_pairs: 0, stability_rate: null },
+        splitHalf: splitHalf ?? [],
+        itemDiscrimination: itemDiscrimination ?? [],
+        cfaFit: cfaFit ?? [],
         business: businessMetrics?.[0] ?? { total_completions: 0, unique_users: 0 }
       }), 
       {

@@ -102,6 +102,29 @@ export interface RetestMetrics {
   median_days_between: number | null;
 }
 
+export interface SplitHalfMetrics {
+  scale_code: string;
+  results_version: string;
+  lambda2_mean: number | null;
+  n_total: number;
+}
+
+export interface ItemDiscriminationMetrics {
+  scale_code: string;
+  low_disc_items: number;
+  total_items: number;
+}
+
+export interface CFAFitMetrics {
+  model_name: string;
+  results_version: string;
+  cfi: number | null;
+  tli: number | null;
+  rmsea: number | null;
+  srmr: number | null;
+  n: number;
+}
+
 export const useAssessmentKpis = (filters: KpiFilters = {}) => {
   const { 
     period = "all", 
@@ -163,6 +186,9 @@ export const useAssessmentKpis = (filters: KpiFilters = {}) => {
       const calibration = response_mapped.calibration as any;
       const classificationStability = response_mapped.classificationStability as any;
       const business = response_mapped.business as any;
+      const splitHalf = (data.splitHalf || []) as unknown as SplitHalfMetrics[];
+      const itemDiscrimination = (data.itemDiscrimination || []) as unknown as ItemDiscriminationMetrics[];
+      const cfaFit = (data.cfaFit || []) as unknown as CFAFitMetrics[];
 
       // Calculate aggregate metrics from engagement data
       const totalStarted = engagement.reduce((sum, d) => sum + (d.sessions_started || 0), 0);
@@ -195,6 +221,9 @@ export const useAssessmentKpis = (filters: KpiFilters = {}) => {
         fairness,
         calibration,
         classificationStability,
+        splitHalf,
+        itemDiscrimination,
+        cfaFit,
         business,
         summary: {
           totalStarted,
