@@ -200,15 +200,30 @@ const AssessmentAnalytics = () => {
             </div>
           </div>
           
-          <Button
-            onClick={handleDownloadCSV}
-            variant="outline"
-            disabled={isLoading || !data}
-            className="gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Download CSV
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleRecomputeAnalytics}
+              variant="default"
+              disabled={isRefreshing || isLoading}
+              className="gap-2"
+            >
+              {isRefreshing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Activity className="h-4 w-4" />
+              )}
+              {isRefreshing ? "Refreshing..." : "Recompute Analytics"}
+            </Button>
+            <Button
+              onClick={handleDownloadCSV}
+              variant="outline"
+              disabled={isLoading || !data}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Download CSV
+            </Button>
+          </div>
         </div>
         
         {/* Time Period Filter */}
@@ -416,12 +431,18 @@ const AssessmentAnalytics = () => {
                   Cronbach's α and McDonald's ω (Target: ≥ .70)
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+               <CardContent>
                 {reliabilityData.length === 0 || !reliabilityData[0]?.scale_id ? (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground mb-2">No reliability data available yet</p>
-                    <p className="text-sm text-muted-foreground">
-                      Load data using the batch computation script to populate α and ω values
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Run the batch computation script to populate α and ω values:
+                    </p>
+                    <code className="text-xs bg-muted px-3 py-2 rounded block mx-auto max-w-md">
+                      python edge-jobs/psychometrics/compute_reliability.py
+                    </code>
+                    <p className="text-xs text-muted-foreground mt-3">
+                      After running the script, click "Recompute Analytics" to refresh
                     </p>
                   </div>
                 ) : (
@@ -464,8 +485,17 @@ const AssessmentAnalytics = () => {
                 {!retestData || retestData.length === 0 || retestData[0]?.n_pairs === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground mb-2">No retest data available yet</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Run the batch computation script to calculate correlations:
+                    </p>
+                    <code className="text-xs bg-muted px-3 py-2 rounded block mx-auto max-w-md">
+                      python edge-jobs/psychometrics/compute_retest.py
+                    </code>
+                    <p className="text-xs text-muted-foreground mt-3">
                       Requires users to complete the assessment multiple times within 2-6 weeks
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      After running the script, click "Recompute Analytics" to refresh
                     </p>
                   </div>
                 ) : (
