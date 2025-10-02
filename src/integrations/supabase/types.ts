@@ -1327,7 +1327,7 @@ export type Database = {
       }
       mv_kpi_construct_coverage: {
         Row: {
-          construct_coverage_index: number | null
+          coverage_pct: number | null
           keyed_items: number | null
           scale_code: string | null
           total_items: number | null
