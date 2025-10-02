@@ -462,49 +462,69 @@ const AssessmentAnalytics = () => {
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Reliability Metrics (Internal Consistency)</CardTitle>
-                <CardDescription>
-                  Cronbach's α and McDonald's ω (Target: ≥ .70)
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Reliability Metrics (Internal Consistency)</CardTitle>
+                    <CardDescription>
+                      Cronbach's α and McDonald's ω (Target: ≥ .70)
+                    </CardDescription>
+                  </div>
+                  {reliabilityData.length > 0 && (
+                    <div className="text-right">
+                      <p className="text-sm font-medium">
+                        Computed {reliabilityData.filter(r => r.alpha_mean !== null).length}/{reliabilityData.length} scales
+                      </p>
+                      <p className="text-xs text-muted-foreground">n={reliabilityData[0]?.n_total || 0} sessions</p>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {reliabilityData.length === 0 || !reliabilityData[0]?.scale_code ? (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground mb-2">No reliability data available yet</p>
                     <p className="text-sm text-muted-foreground mb-3">
-                      Run the batch computation script to populate α and ω values:
-                    </p>
-                    <code className="text-xs bg-muted px-3 py-2 rounded block mx-auto max-w-md">
-                      python edge-jobs/psychometrics/compute_reliability.py
-                    </code>
-                    <p className="text-xs text-muted-foreground mt-3">
-                      After running the script, click "Recompute Analytics" to refresh
+                      Click "Recompute Analytics" to compute α and ω values
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                    {reliabilityData.map((rel: any, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-2 border rounded hover:bg-muted/50 transition-colors">
-                        <span className="font-medium">{rel.scale_code || 'Unknown Scale'}</span>
-                        <div className="flex gap-4 text-sm">
-                          {rel.alpha_mean !== null && rel.alpha_mean !== undefined && (
-                            <span className={rel.alpha_mean >= 0.70 ? 'text-green-600' : 'text-orange-600'}>
-                              α: {rel.alpha_mean.toFixed(3)}
-                            </span>
-                          )}
-                          {rel.omega_mean !== null && rel.omega_mean !== undefined && (
-                            <span className={rel.omega_mean >= 0.70 ? 'text-green-600' : 'text-orange-600'}>
-                              ω: {rel.omega_mean.toFixed(3)}
-                            </span>
-                          )}
-                          {rel.n_total && (
-                            <span className="text-muted-foreground">
-                              n={rel.n_total}
-                            </span>
-                          )}
+                    {reliabilityData.map((rel: any, idx) => {
+                      const alphaColor = rel.alpha_mean === null ? 'text-muted-foreground' 
+                        : rel.alpha_mean < 0 ? 'text-red-600' 
+                        : rel.alpha_mean >= 0.80 ? 'text-green-600' 
+                        : rel.alpha_mean >= 0.70 ? 'text-yellow-600' 
+                        : 'text-orange-600';
+                      
+                      const omegaColor = rel.omega_mean === null ? 'text-muted-foreground'
+                        : rel.omega_mean < 0 ? 'text-red-600'
+                        : rel.omega_mean >= 0.80 ? 'text-green-600'
+                        : rel.omega_mean >= 0.70 ? 'text-yellow-600'
+                        : 'text-orange-600';
+
+                      return (
+                        <div key={idx} className="flex items-center justify-between p-2 border rounded hover:bg-muted/50 transition-colors">
+                          <span className="font-medium">{rel.scale_code || 'Unknown Scale'}</span>
+                          <div className="flex gap-4 text-sm items-center">
+                            {rel.alpha_mean !== null && rel.alpha_mean !== undefined && (
+                              <span className={alphaColor} title={rel.alpha_mean < 0 ? 'Check reverse-keying or increase n' : ''}>
+                                α: {rel.alpha_mean.toFixed(3)}
+                              </span>
+                            )}
+                            {rel.omega_mean !== null && rel.omega_mean !== undefined && (
+                              <span className={omegaColor}>
+                                ω: {rel.omega_mean.toFixed(3)}
+                              </span>
+                            )}
+                            {rel.n_total && (
+                              <span className="text-muted-foreground text-xs">
+                                n={rel.n_total}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>

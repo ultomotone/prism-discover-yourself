@@ -980,13 +980,6 @@ export type Database = {
             foreignKeyName: "item_catalog_scale_id_fkey"
             columns: ["scale_id"]
             isOneToOne: false
-            referencedRelation: "mv_kpi_construct_coverage"
-            referencedColumns: ["scale_code"]
-          },
-          {
-            foreignKeyName: "item_catalog_scale_id_fkey"
-            columns: ["scale_id"]
-            isOneToOne: false
             referencedRelation: "scale_catalog"
             referencedColumns: ["scale_id"]
           },
@@ -1549,22 +1542,7 @@ export type Database = {
           scale_name: string | null
           total_items: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "item_catalog_scale_id_fkey"
-            columns: ["scale_id"]
-            isOneToOne: false
-            referencedRelation: "mv_kpi_construct_coverage"
-            referencedColumns: ["scale_code"]
-          },
-          {
-            foreignKeyName: "item_catalog_scale_id_fkey"
-            columns: ["scale_id"]
-            isOneToOne: false
-            referencedRelation: "scale_catalog"
-            referencedColumns: ["scale_id"]
-          },
-        ]
+        Relationships: []
       }
       mv_kpi_engagement: {
         Row: {
@@ -1696,13 +1674,6 @@ export type Database = {
             foreignKeyName: "item_catalog_scale_id_fkey"
             columns: ["scale_id"]
             isOneToOne: false
-            referencedRelation: "mv_kpi_construct_coverage"
-            referencedColumns: ["scale_code"]
-          },
-          {
-            foreignKeyName: "item_catalog_scale_id_fkey"
-            columns: ["scale_id"]
-            isOneToOne: false
             referencedRelation: "scale_catalog"
             referencedColumns: ["scale_id"]
           },
@@ -1714,13 +1685,6 @@ export type Database = {
           split_half_corr: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "item_catalog_scale_id_fkey"
-            columns: ["scale_id"]
-            isOneToOne: false
-            referencedRelation: "mv_kpi_construct_coverage"
-            referencedColumns: ["scale_code"]
-          },
           {
             foreignKeyName: "item_catalog_scale_id_fkey"
             columns: ["scale_id"]
@@ -1808,6 +1772,17 @@ export type Database = {
           results_version: string | null
           second_session_id: string | null
           user_id: string | null
+        }
+        Relationships: []
+      }
+      v_scales_reliability_coverage: {
+        Row: {
+          alpha_mean: number | null
+          last_updated: string | null
+          n_total: number | null
+          omega_mean: number | null
+          results_version: string | null
+          scale_code: string | null
         }
         Relationships: []
       }
