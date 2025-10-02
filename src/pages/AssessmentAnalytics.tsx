@@ -2,20 +2,20 @@ import { useState } from "react";
 import { useAssessmentKpis } from "@/hooks/useAssessmentKpis";
 import { MetricCard } from "@/components/analytics/MetricCard";
 import { ItemFlagsTable } from "@/components/analytics/ItemFlagsTable";
-import { Activity, CheckCircle, TrendingUp, Users, Brain, Target, Loader2 } from "lucide-react";
+import { Activity, CheckCircle, TrendingUp, Users, Brain, Target, Loader2, Download } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { subDays } from "date-fns";
+import { subDays, subYears, format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 
+type TimePeriod = 'lifetime' | '7d' | '30d' | '60d' | '90d' | '1y';
+
 const AssessmentAnalytics = () => {
-  const [dateRange] = useState({
-    startDate: subDays(new Date(), 7),
-    endDate: new Date(),
-  });
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('lifetime');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [logsOpen, setLogsOpen] = useState(false);
@@ -24,7 +24,38 @@ const AssessmentAnalytics = () => {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data, isLoading, error, refetch } = useAssessmentKpis(dateRange);
+  
+  // Calculate date range based on selected period
+  const getDateRange = () => {
+    const endDate = new Date();
+    let startDate: Date;
+    
+    switch (timePeriod) {
+      case '7d':
+        startDate = subDays(endDate, 7);
+        break;
+      case '30d':
+        startDate = subDays(endDate, 30);
+        break;
+      case '60d':
+        startDate = subDays(endDate, 60);
+        break;
+      case '90d':
+        startDate = subDays(endDate, 90);
+        break;
+      case '1y':
+        startDate = subYears(endDate, 1);
+        break;
+      case 'lifetime':
+      default:
+        startDate = new Date('2020-01-01'); // Far back date for lifetime
+        break;
+    }
+    
+    return { startDate, endDate };
+  };
+  
+  const { data, isLoading, error, refetch } = useAssessmentKpis(getDateRange());
   
   const engagementData = data?.engagement || [];
   const reliabilityData = data?.reliability || [];
@@ -131,6 +162,81 @@ const AssessmentAnalytics = () => {
     }
   };
 
+  const handleDownloadCSV = () => {
+    if (!data) return;
+
+    const csvRows = [];
+    
+    // Header
+    csvRows.push(['Assessment Analytics Report']);
+    csvRows.push([`Period: ${timePeriod === 'lifetime' ? 'All Time' : timePeriod}`]);
+    csvRows.push([`Generated: ${format(new Date(), 'yyyy-MM-dd HH:mm:ss')}`]);
+    csvRows.push([]);
+    
+    // Summary metrics
+    csvRows.push(['Summary Metrics']);
+    csvRows.push(['Metric', 'Value']);
+    csvRows.push(['Total Sessions Started', summary.totalStarted]);
+    csvRows.push(['Total Sessions Completed', summary.totalCompleted]);
+    csvRows.push(['Completion Rate', `${summary.completionRate.toFixed(1)}%`]);
+    csvRows.push(['Average Top Gap', summary.avgTopGap.toFixed(2)]);
+    csvRows.push(['Average Confidence', summary.avgConfidence.toFixed(2)]);
+    csvRows.push(['Average NPS', summary.avgNPS.toFixed(1)]);
+    csvRows.push(['Average Clarity', summary.avgClarity.toFixed(1)]);
+    csvRows.push(['Average Drop-off Rate', `${summary.avgDropOffRate.toFixed(1)}%`]);
+    csvRows.push(['Average Engagement Rating', summary.avgEngagementRating.toFixed(1)]);
+    csvRows.push([]);
+    
+    // Session metrics by day
+    if (data.sessions && data.sessions.length > 0) {
+      csvRows.push(['Daily Session Metrics']);
+      csvRows.push(['Date', 'Sessions Started', 'Sessions Completed', 'Completion Rate %']);
+      data.sessions.forEach((s: any) => {
+        csvRows.push([
+          format(new Date(s.day), 'yyyy-MM-dd'),
+          s.sessions_started || 0,
+          s.sessions_completed || 0,
+          s.completion_rate_pct || 0
+        ]);
+      });
+      csvRows.push([]);
+    }
+    
+    // Item flags
+    if (data.itemFlags && data.itemFlags.length > 0) {
+      csvRows.push(['Top Flagged Items']);
+      csvRows.push(['Question ID', 'Flag Count', 'Session Count', 'Flag Rate']);
+      data.itemFlags.slice(0, 20).forEach((item: any) => {
+        csvRows.push([
+          item.question_id,
+          item.flag_count,
+          item.session_count,
+          (item.flag_rate * 100).toFixed(2) + '%'
+        ]);
+      });
+      csvRows.push([]);
+    }
+    
+    // Convert to CSV string
+    const csvContent = csvRows.map(row => row.join(',')).join('\n');
+    
+    // Create download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `assessment-analytics-${timePeriod}-${format(new Date(), 'yyyyMMdd')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "CSV Downloaded",
+      description: "Analytics data has been exported successfully",
+    });
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
       {isRefreshing && (
@@ -144,14 +250,78 @@ const AssessmentAnalytics = () => {
       )}
 
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Assessment Analytics Dashboard</h1>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <p>Standards-aligned metrics (APA/AERA/NCME) - Last 7 days</p>
-          <span className="text-xs">• Updated: {new Date().toLocaleTimeString()}</span>
-          {lastRefresh && (
-            <span className="text-xs">• Last refresh: {lastRefresh.toLocaleTimeString()}</span>
-          )}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Assessment Analytics Dashboard</h1>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <p>Standards-aligned metrics (APA/AERA/NCME)</p>
+              <span className="text-xs">• Updated: {new Date().toLocaleTimeString()}</span>
+              {lastRefresh && (
+                <span className="text-xs">• Last refresh: {lastRefresh.toLocaleTimeString()}</span>
+              )}
+            </div>
+          </div>
+          
+          <Button
+            onClick={handleDownloadCSV}
+            variant="outline"
+            disabled={isLoading || !data}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Download CSV
+          </Button>
         </div>
+        
+        {/* Time Period Filter */}
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-sm font-medium text-muted-foreground">Period:</span>
+          <div className="flex gap-1">
+            <Button
+              variant={timePeriod === 'lifetime' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTimePeriod('lifetime')}
+            >
+              All Time
+            </Button>
+            <Button
+              variant={timePeriod === '7d' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTimePeriod('7d')}
+            >
+              7 Days
+            </Button>
+            <Button
+              variant={timePeriod === '30d' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTimePeriod('30d')}
+            >
+              30 Days
+            </Button>
+            <Button
+              variant={timePeriod === '60d' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTimePeriod('60d')}
+            >
+              60 Days
+            </Button>
+            <Button
+              variant={timePeriod === '90d' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTimePeriod('90d')}
+            >
+              90 Days
+            </Button>
+            <Button
+              variant={timePeriod === '1y' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTimePeriod('1y')}
+            >
+              1 Year
+            </Button>
+          </div>
+        </div>
+        
         {alerts.length > 0 && (
           <div className="mt-4 space-y-2">
             {alerts.map((alert) => (
