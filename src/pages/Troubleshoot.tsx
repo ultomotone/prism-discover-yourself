@@ -225,37 +225,32 @@ const Troubleshoot: React.FC = () => {
   const recomputeBatch = async (limit: number = 100, sinceDate?: string) => {
     setRecomputeLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({ title: "Authentication required", variant: "destructive" });
-        return;
-      }
-
-      const payload: any = { limit, dry_run: false };
-      if (sinceDate) payload.since = sinceDate;
-
-      const response = await fetch(`https://gnkuikentdtnatazeriu.supabase.co/functions/v1/admin-batch-recompute`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify(payload)
+      const { data, error } = await supabase.functions.invoke('recompute-completed-248', {
+        body: { limit, dry_run: false }
       });
 
-      const result = await response.json();
+      if (error) {
+        toast({ 
+          title: "Error in batch recompute", 
+          description: error.message, 
+          variant: "destructive" 
+        });
+        return;
+      }
       
-      if (response.ok) {
+      if (data) {
         toast({ 
           title: "Batch recompute completed!", 
-          description: `Processed: ${result.scanned}, Success: ${result.ok}, Failed: ${result.fail}` 
+          description: `Processed: ${data.scanned || 0}, Success: ${data.ok || 0}, Failed: ${data.fail || 0}` 
         });
         loadRecentSessions();
-      } else {
-        toast({ title: "Error in batch recompute", description: result.error, variant: "destructive" });
       }
     } catch (error) {
-      toast({ title: "Network error", variant: "destructive" });
+      toast({ 
+        title: "Network error", 
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: "destructive" 
+      });
     } finally {
       setRecomputeLoading(false);
     }
