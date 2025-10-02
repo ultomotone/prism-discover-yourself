@@ -95,11 +95,16 @@ Deno.serve(async (req) => {
       throw e7;
     }
 
-    // Business metrics
-    const { data: business, error: e8 } = await sb.from('profiles')
-      .select('session_id', { count: 'exact', head: true });
+    // Business metrics  
+    const { count, error: e8 } = await sb.from('profiles')
+      .select('session_id', { count: 'exact' });
+    
+    if (e8) {
+      console.error("[analytics-get] Business metrics error:", e8);
+    }
+    
     const businessMetrics = [{
-      total_completions: business?.count ?? 0,
+      total_completions: count ?? 0,
       unique_users: 0 // placeholder until user tracking implemented
     }];
 
