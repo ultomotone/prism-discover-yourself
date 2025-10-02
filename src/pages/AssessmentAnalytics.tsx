@@ -463,16 +463,16 @@ const AssessmentAnalytics = () => {
                   <div className="space-y-2 max-h-[400px] overflow-y-auto">
                     {reliabilityData.map((rel: any, idx) => (
                       <div key={idx} className="flex items-center justify-between p-2 border rounded hover:bg-muted/50 transition-colors">
-                        <span className="font-medium">{rel.scale_id}</span>
+                        <span className="font-medium">{rel.scale_code || 'Unknown Scale'}</span>
                         <div className="flex gap-4 text-sm">
-                          {rel.cronbach_alpha && (
-                            <span className={rel.cronbach_alpha >= 0.70 ? 'text-green-600' : 'text-orange-600'}>
-                              α: {rel.cronbach_alpha.toFixed(3)}
+                          {rel.alpha_mean !== null && rel.alpha_mean !== undefined && (
+                            <span className={rel.alpha_mean >= 0.70 ? 'text-green-600' : 'text-orange-600'}>
+                              α: {rel.alpha_mean.toFixed(3)}
                             </span>
                           )}
-                          {rel.mcdonald_omega && (
-                            <span className={rel.mcdonald_omega >= 0.70 ? 'text-green-600' : 'text-orange-600'}>
-                              ω: {rel.mcdonald_omega.toFixed(3)}
+                          {rel.omega_mean !== null && rel.omega_mean !== undefined && (
+                            <span className={rel.omega_mean >= 0.70 ? 'text-green-600' : 'text-orange-600'}>
+                              ω: {rel.omega_mean.toFixed(3)}
                             </span>
                           )}
                           {rel.n_total && (
@@ -562,13 +562,7 @@ const AssessmentAnalytics = () => {
             />
           </div>
 
-          {/* Construct Coverage */}
-          <ConstructCoverageCard 
-            data={coverageData}
-            loading={isLoading}
-          />
-
-          <CFAFitCard 
+          <CFAFitCard
             data={cfaFitData}
             onExportCSV={() => console.log('Export CFA CSV')}
             loading={isLoading}
