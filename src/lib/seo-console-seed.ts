@@ -7,8 +7,8 @@ export const seedGlossaryEntries: Omit<GlossaryEntry, 'id' | 'createdAt'>[] = [
     title: 'Dimensionality',
     slug: 'dimensionality',
     template: 'dimensionality',
-    lead: "In PRISM Dynamics™, Dimensionality describes how deeply a function is developed—from 1D (novice) to 4D (adaptive expert)—and how it shifts with context and regulation (state).",
-    why: "Skill isn't fixed. Dimensionality explains variability across settings and how targeted practice grows depth.",
+    lead: "In PRISM Dynamics, Dimensionality describes how deeply a function is developed - from 1D (novice) to 4D (adaptive expert) - and how it shifts with context and regulation (state).",
+    why: "Skill is not fixed. Dimensionality explains variability across settings and how targeted practice grows depth.",
     habits: [
       "1D to 2D: 5-minute daily drill on one sub-skill; note friction.",
       "2D to 3D: weekly edge-case review; simulate exceptions.",
@@ -41,8 +41,8 @@ export const seedGlossaryEntries: Omit<GlossaryEntry, 'id' | 'createdAt'>[] = [
       }
     },
     meta: {
-      title: 'Dimensionality — PRISM Dynamics™ Glossary',
-      description: 'Learn how Dimensionality in PRISM Dynamics™ tracks skill depth from 1D novice to 4D adaptive expert, and how it shifts with context.',
+      title: 'Dimensionality - PRISM Dynamics Glossary',
+      description: 'Learn how Dimensionality in PRISM Dynamics tracks skill depth from 1D novice to 4D adaptive expert, and how it shifts with context.',
       ogImageAlt: 'PRISM Dimensionality concept diagram showing progression from 1D to 4D'
     }
   },
@@ -50,7 +50,7 @@ export const seedGlossaryEntries: Omit<GlossaryEntry, 'id' | 'createdAt'>[] = [
     title: 'Relational Fit',
     slug: 'relational-fit',
     template: 'relational-fit',
-    lead: "Relational Fit maps Supply and Demand across five lanes—Structure, Care, Energy, Timing, Meaning—to reveal Support, Stretch, or Friction.",
+    lead: "Relational Fit maps Supply and Demand across five lanes - Structure, Care, Energy, Timing, Meaning - to reveal Support, Stretch, or Friction.",
     why: "Compatibility is adjustable. Lane awareness guides roles, cadence, and communication.",
     habits: [
       "Map your lanes: identify which of the five you naturally supply vs. demand.",
@@ -65,7 +65,7 @@ export const seedGlossaryEntries: Omit<GlossaryEntry, 'id' | 'createdAt'>[] = [
       },
       {
         id: 'rf-faq-2',
-        question: 'What do I do if there's a mismatch in multiple lanes?',
+        question: 'What do I do if there is a mismatch in multiple lanes?',
         answer: 'Start with the lane causing the most friction. Design explicit agreements (e.g., Structure: weekly check-ins; Care: defined feedback cadence). Small adjustments in one lane often cascade positively.'
       },
       {
@@ -84,7 +84,7 @@ export const seedGlossaryEntries: Omit<GlossaryEntry, 'id' | 'createdAt'>[] = [
       }
     },
     meta: {
-      title: 'Relational Fit — PRISM Dynamics™ Glossary',
+      title: 'Relational Fit - PRISM Dynamics Glossary',
       description: 'Understand Relational Fit: how Supply and Demand across Structure, Care, Energy, Timing, and Meaning lanes shapes compatibility.',
       ogImageAlt: 'PRISM Relational Fit five-lane framework diagram'
     }
@@ -105,7 +105,7 @@ export const seedSchemaExamples = [
         "https://twitter.com/prismdynamics",
         "https://linkedin.com/company/prism-dynamics"
       ],
-      "description": "PRISM — Personality. Regulation. Information System Mapping. Educational framework for understanding cognitive functions, dimensionality, and relational fit."
+      "description": "PRISM - Personality. Regulation. Information System Mapping. Educational framework for understanding cognitive functions, dimensionality, and relational fit."
     }
   },
   {
@@ -121,7 +121,7 @@ export const seedSchemaExamples = [
         "price": "0",
         "priceCurrency": "USD"
       },
-      "description": "Self-assessment tool for exploring cognitive function preferences, dimensionality, and developmental pathways through the PRISM Dynamics™ framework.",
+      "description": "Self-assessment tool for exploring cognitive function preferences, dimensionality, and developmental pathways through the PRISM Dynamics framework.",
       "url": "https://prismpersonality.com/assessment",
       "provider": {
         "@type": "Organization",
