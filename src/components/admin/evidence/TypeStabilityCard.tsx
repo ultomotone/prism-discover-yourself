@@ -1,6 +1,11 @@
 import React from 'react';
 import { EvidenceKPICard } from './EvidenceKPICard';
-import type { TypeStabilityData } from '@/hooks/useEvidenceAnalytics';
+
+export interface TypeStabilityData {
+  stabilityPercent: number;
+  adjacentFlipPercent: number;
+  n: number;
+}
 
 interface TypeStabilityCardProps {
   data: TypeStabilityData | null;

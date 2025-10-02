@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { invokeEdge } from "@/lib/edge-functions";
 import { subDays, format } from "date-fns";
 
 export interface KpiFilters {
   startDate?: Date;
   endDate?: Date;
+  period?: "all" | "7" | "30" | "60" | "90" | "365";
+  resultsVersion?: string;
 }
 
 interface KpiRpcResponse {
@@ -101,66 +103,82 @@ export interface RetestMetrics {
 }
 
 export const useAssessmentKpis = (filters: KpiFilters = {}) => {
-  const { startDate = subDays(new Date(), 7), endDate = new Date() } = filters;
+  const { 
+    period = "all", 
+    resultsVersion = "v1.2.1" 
+  } = filters;
 
   const query = useQuery({
-    queryKey: ["assessment-kpis", format(startDate, "yyyy-MM-dd"), format(endDate, "yyyy-MM-dd")],
+    queryKey: ["assessment-kpis", period, resultsVersion],
     queryFn: async () => {
-      // Call consolidated RPC for all KPIs
-      const { data, error } = await supabase.rpc("get_assessment_kpis", {
-        start_date: format(startDate, "yyyy-MM-dd"),
-        end_date: format(endDate, "yyyy-MM-dd"),
-      });
+      // Call analytics-get edge function with period filter
+      const response = await invokeEdge(
+        `analytics-get?period=${period}&ver=${resultsVersion}`
+      );
 
-      if (error) throw error;
-      if (!data) throw new Error("No data returned from KPI function");
+      if (!response.ok) {
+        throw new Error(`Analytics fetch failed: ${response.statusText}`);
+      }
 
-      const response = data as KpiRpcResponse;
-      const sessions = (response.sessions || []) as unknown as SessionMetricsKpi[];
-      const feedback = (response.feedback || []) as unknown as FeedbackMetricsKpi[];
-      const scoring = (response.scoring || []) as unknown as ScoringMetricsKpi[];
-      const itemFlags = (response.itemFlags || []) as unknown as ItemFlagMetricsKpi[];
-      const alerts = (response.alerts || []) as string[];
+      const data = await response.json();
       
-      // New comprehensive metrics
-      const engagement = (response.engagement || []) as unknown as EngagementMetrics[];
-      const reliability = (response.reliability || []) as unknown as ReliabilityMetrics[];
-      const retest = (response.retest || []) as unknown as RetestMetrics[];
-      const userExperience = (response.userExperience || []) as unknown as UserExperienceMetrics[];
-      const constructCoverage = response.constructCoverage as any;
-      const fairness = response.fairness as any;
-      const calibration = response.calibration as any;
-      const classificationStability = response.classificationStability as any;
-      const business = response.business as any;
+      // Map new structure to expected format
+      const engagement = (data.engagement || []) as unknown as EngagementMetrics[];
+      const reliability = (data.reliability || []) as unknown as ReliabilityMetrics[];
+      const retest = (data.retest || []) as unknown as RetestMetrics[];
+      const constructCoverage = data.coverage?.[0] || {};
 
-      // Calculate aggregate metrics for header
-      const totalStarted = sessions.reduce((sum, d) => sum + (d.sessions_started || 0), 0);
-      const totalCompleted = sessions.reduce((sum, d) => sum + (d.sessions_completed || 0), 0);
+      const response_mapped = {
+        sessions: [],
+        itemFlags: [],
+        feedback: [],
+        scoring: [],
+        alerts: [],
+        engagement,
+        itemFlow: [],
+        itemClarity: [],
+        responseProcess: [],
+        reliability,
+        retest,
+        cfa: [],
+        constructCoverage,
+        fairness: {},
+        calibration: {},
+        classificationStability: {},
+        confidenceSpread: {},
+        userExperience: [],
+        business: {},
+        followup: {},
+        behavioralImpact: {},
+        trajectoryAlignment: {},
+      } as KpiRpcResponse;
+      const sessions = (response_mapped.sessions || []) as unknown as SessionMetricsKpi[];
+      const feedback = (response_mapped.feedback || []) as unknown as FeedbackMetricsKpi[];
+      const scoring = (response_mapped.scoring || []) as unknown as ScoringMetricsKpi[];
+      const itemFlags = (response_mapped.itemFlags || []) as unknown as ItemFlagMetricsKpi[];
+      const alerts = (response_mapped.alerts || []) as string[];
+      
+      const userExperience = (response_mapped.userExperience || []) as unknown as UserExperienceMetrics[];
+      const fairness = response_mapped.fairness as any;
+      const calibration = response_mapped.calibration as any;
+      const classificationStability = response_mapped.classificationStability as any;
+      const business = response_mapped.business as any;
+
+      // Calculate aggregate metrics from engagement data
+      const totalStarted = engagement.reduce((sum, d) => sum + (d.sessions_started || 0), 0);
+      const totalCompleted = engagement.reduce((sum, d) => sum + (d.sessions_completed || 0), 0);
       const completionRate = totalStarted > 0 ? (totalCompleted / totalStarted) * 100 : 0;
-
-      const avgTopGap = scoring.length > 0
-        ? scoring.reduce((sum, d) => sum + (d.avg_top_gap || 0), 0) / scoring.length
-        : 0;
       
-      const avgConfidence = scoring.length > 0
-        ? scoring.reduce((sum, d) => sum + (d.avg_conf_cal || 0), 0) / scoring.length
-        : 0;
-
-      const avgNPS = feedback.length > 0
-        ? feedback.reduce((sum, d) => sum + (d.avg_nps || 0), 0) / feedback.length
-        : 0;
-      
-      const avgClarity = feedback.length > 0
-        ? feedback.reduce((sum, d) => sum + (d.avg_clarity || 0), 0) / feedback.length
-        : 0;
-        
-      // New metric aggregations
       const avgDropOffRate = engagement.length > 0
-        ? (engagement.reduce((sum, d) => sum + (d.drop_off_rate || 0), 0) / engagement.length) * 100
+        ? (engagement.reduce((sum, d) => sum + ((d.drop_off_rate || 0) * 100), 0) / engagement.length)
         : 0;
-        
-      const avgEngagementRating = userExperience.length > 0
-        ? userExperience.reduce((sum, d) => sum + (d.engagement_rating || 0), 0) / userExperience.length
+      
+      const medianCompletionTime = engagement.length > 0 && engagement.some(d => d.avg_completion_sec)
+        ? engagement
+            .filter(d => d.avg_completion_sec)
+            .sort((a, b) => (a.avg_completion_sec || 0) - (b.avg_completion_sec || 0))
+            [Math.floor(engagement.filter(d => d.avg_completion_sec).length / 2)]
+            ?.avg_completion_sec || 0
         : 0;
 
       return {
@@ -182,12 +200,13 @@ export const useAssessmentKpis = (filters: KpiFilters = {}) => {
           totalStarted,
           totalCompleted,
           completionRate,
-          avgTopGap,
-          avgConfidence,
-          avgNPS,
-          avgClarity,
+          avgTopGap: 0,
+          avgConfidence: 0,
+          avgNPS: 0,
+          avgClarity: 0,
           avgDropOffRate,
-          avgEngagementRating,
+          avgEngagementRating: 0,
+          medianCompletionTime,
           constructCoverageIndex: constructCoverage?.construct_coverage_index || 0,
           difFlagRate: (fairness?.dif_flag_rate || 0) * 100,
           calibrationError: calibration?.ece || 0,

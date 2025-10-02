@@ -1327,8 +1327,9 @@ export type Database = {
       }
       mv_kpi_construct_coverage: {
         Row: {
-          constructs_covered: number | null
-          row_id: number | null
+          construct_coverage_index: number | null
+          keyed_items: number | null
+          scale_code: string | null
           total_items: number | null
         }
         Relationships: []
@@ -1336,11 +1337,9 @@ export type Database = {
       mv_kpi_engagement: {
         Row: {
           avg_completion_sec: number | null
-          completion_rate_pct: number | null
           completion_time_sd_sec: number | null
           day: string | null
           drop_off_rate: number | null
-          sessions_abandoned: number | null
           sessions_completed: number | null
           sessions_started: number | null
         }
@@ -1431,12 +1430,8 @@ export type Database = {
       mv_kpi_reliability: {
         Row: {
           cronbach_alpha: number | null
-          last_updated: string | null
           mcdonald_omega: number | null
-          n_total: number | null
-          results_version: string | null
           scale_id: string | null
-          sem_mean: number | null
           split_half_corr: number | null
         }
         Relationships: []
@@ -1647,6 +1642,10 @@ export type Database = {
       example_rate_limited_function: {
         Args: { client_ip: string }
         Returns: string
+      }
+      exec_sql: {
+        Args: { q: string }
+        Returns: Json
       }
       fetch_live_assessments: {
         Args: Record<PropertyKey, never>

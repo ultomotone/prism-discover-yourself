@@ -5,7 +5,6 @@ import { KPICard } from "@/components/admin/KPICard";
 import { QualityPanel } from "@/components/admin/QualityPanel";
 import { ChartsSection } from "@/components/admin/ChartsSection";
 import { MethodHealthSection } from "@/components/admin/MethodHealthSection";
-import { EvidenceTab } from "@/components/admin/evidence/EvidenceTab";
 import { SystemStatusControl } from "@/components/admin/SystemStatusControl";
 import { LatestAssessmentsTable } from "@/components/admin/LatestAssessmentsTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,10 +15,8 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import AdminControls from "@/components/admin/AdminControls";
 import {
-  fetchEvidenceKpis,
   fetchDashboardSnapshot,
   refreshDashboardStats,
-  refreshEvidenceKpis,
 } from "@/lib/api/admin";
 import { AdminPasswordProtection } from "@/components/AdminPasswordProtection";
 
@@ -40,8 +37,7 @@ const Admin: React.FC = () => {
 
   const { toast } = useToast();
 
-  // Evidence + snapshot state (for the top tiles & buttons)
-  const [kpis, setKpis] = useState<any>(null);
+  // Snapshot state (for the top tiles & buttons)
   const [snapshot, setSnapshot] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -50,11 +46,7 @@ const Admin: React.FC = () => {
     setBusy(true);
     setErr(null);
     try {
-      const [k, s] = await Promise.all([
-        fetchEvidenceKpis(),
-        fetchDashboardSnapshot(),
-      ]);
-      setKpis(k);
+      const s = await fetchDashboardSnapshot();
       setSnapshot(s);
     } catch (e: any) {
       setErr(e.message ?? String(e));
@@ -68,19 +60,6 @@ const Admin: React.FC = () => {
     setErr(null);
     try {
       await refreshDashboardStats();
-      await loadAll();
-    } catch (e: any) {
-      setErr(e.message ?? String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onRefreshKpisClick() {
-    setBusy(true);
-    setErr(null);
-    try {
-      await refreshEvidenceKpis();
       await loadAll();
     } catch (e: any) {
       setErr(e.message ?? String(e));
@@ -159,8 +138,9 @@ const Admin: React.FC = () => {
             <Button onClick={onRefreshSnapshotClick} disabled={busy}>
               Refresh Snapshot
             </Button>
-            <Button onClick={onRefreshKpisClick} disabled={busy}>
-              Refresh KPIs
+            <Button onClick={() => refreshData()} variant="outline" disabled={loading}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
             </Button>
           </div>
         </div>
@@ -173,8 +153,8 @@ const Admin: React.FC = () => {
           </Alert>
         )}
 
-        {/* Top quick tiles (snapshot + evidence) */}
-        {snapshot && kpis && (
+        {/* Top quick tiles (snapshot) */}
+        {snapshot && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Card>
               <CardHeader>
@@ -187,10 +167,12 @@ const Admin: React.FC = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>Test–Retest Reliability (r)</CardTitle>
+                <CardTitle>Completion Rate</CardTitle>
               </CardHeader>
               <CardContent>
-                {kpis?.r_overall != null ? Number(kpis.r_overall).toFixed(3) : "—"}
+                {snapshot?.completion_rate != null 
+                  ? `${Number(snapshot.completion_rate).toFixed(1)}%` 
+                  : "—"}
               </CardContent>
             </Card>
           </div>
@@ -198,10 +180,9 @@ const Admin: React.FC = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="health" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="health">Health Monitor</TabsTrigger>
             <TabsTrigger value="system">System Control</TabsTrigger>
-            <TabsTrigger value="evidence">Evidence</TabsTrigger>
           </TabsList>
 
           {/* Health Monitor */}
@@ -338,11 +319,6 @@ const Admin: React.FC = () => {
           <TabsContent value="system" className="space-y-6">
             <SystemStatusControl />
           </TabsContent>
-
-          {/* Evidence */}
-          <TabsContent value="evidence">
-            <EvidenceTab />
-          </TabsContent>
         </Tabs>
 
         {/* Loading Overlay */}
@@ -361,7 +337,7 @@ const Admin: React.FC = () => {
         )}
 
         {/* Hidden debug to avoid unused warnings */}
-        <pre className="hidden">{JSON.stringify({ kpis, snapshot })}</pre>
+        <pre className="hidden">{JSON.stringify({ snapshot })}</pre>
       </div>
     </AdminPasswordProtection>
   );

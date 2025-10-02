@@ -12,10 +12,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { subDays, subYears, format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 
-type TimePeriod = 'lifetime' | '7d' | '30d' | '60d' | '90d' | '1y';
+type TimePeriod = 'all' | '7' | '30' | '60' | '90' | '365';
 
 const AssessmentAnalytics = () => {
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('lifetime');
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [logsOpen, setLogsOpen] = useState(false);
@@ -25,37 +25,11 @@ const AssessmentAnalytics = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Calculate date range based on selected period
-  const getDateRange = () => {
-    const endDate = new Date();
-    let startDate: Date;
-    
-    switch (timePeriod) {
-      case '7d':
-        startDate = subDays(endDate, 7);
-        break;
-      case '30d':
-        startDate = subDays(endDate, 30);
-        break;
-      case '60d':
-        startDate = subDays(endDate, 60);
-        break;
-      case '90d':
-        startDate = subDays(endDate, 90);
-        break;
-      case '1y':
-        startDate = subYears(endDate, 1);
-        break;
-      case 'lifetime':
-      default:
-        startDate = new Date('2020-01-01'); // Far back date for lifetime
-        break;
-    }
-    
-    return { startDate, endDate };
-  };
-  
-  const { data, isLoading, error, refetch } = useAssessmentKpis(getDateRange());
+  // Use new hook with period filter
+  const { data, isLoading, error, refetch } = useAssessmentKpis({ 
+    period: timePeriod,
+    resultsVersion: "v1.2.1"
+  });
   
   const engagementData = data?.engagement || [];
   const reliabilityData = data?.reliability || [];
@@ -163,79 +137,42 @@ const AssessmentAnalytics = () => {
     }
   };
 
-  const handleDownloadCSV = () => {
-    if (!data) return;
-
-    const csvRows = [];
-    
-    // Header
-    csvRows.push(['Assessment Analytics Report']);
-    csvRows.push([`Period: ${timePeriod === 'lifetime' ? 'All Time' : timePeriod}`]);
-    csvRows.push([`Generated: ${format(new Date(), 'yyyy-MM-dd HH:mm:ss')}`]);
-    csvRows.push([]);
-    
-    // Summary metrics
-    csvRows.push(['Summary Metrics']);
-    csvRows.push(['Metric', 'Value']);
-    csvRows.push(['Total Sessions Started', summary.totalStarted]);
-    csvRows.push(['Total Sessions Completed', summary.totalCompleted]);
-    csvRows.push(['Completion Rate', `${summary.completionRate.toFixed(1)}%`]);
-    csvRows.push(['Average Top Gap', summary.avgTopGap.toFixed(2)]);
-    csvRows.push(['Average Confidence', summary.avgConfidence.toFixed(2)]);
-    csvRows.push(['Average NPS', summary.avgNPS.toFixed(1)]);
-    csvRows.push(['Average Clarity', summary.avgClarity.toFixed(1)]);
-    csvRows.push(['Average Drop-off Rate', `${summary.avgDropOffRate.toFixed(1)}%`]);
-    csvRows.push(['Average Engagement Rating', summary.avgEngagementRating.toFixed(1)]);
-    csvRows.push([]);
-    
-    // Session metrics by day
-    if (data.sessions && data.sessions.length > 0) {
-      csvRows.push(['Daily Session Metrics']);
-      csvRows.push(['Date', 'Sessions Started', 'Sessions Completed', 'Completion Rate %']);
-      data.sessions.forEach((s: any) => {
-        csvRows.push([
-          format(new Date(s.day), 'yyyy-MM-dd'),
-          s.sessions_started || 0,
-          s.sessions_completed || 0,
-          s.completion_rate_pct || 0
-        ]);
+  const handleDownloadCSV = async () => {
+    try {
+      const response = await fetch(
+        `https://gnkuikentdtnatazeriu.supabase.co/functions/v1/analytics-export?period=${timePeriod}&ver=v1.2.1`,
+        {
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdua3Vpa2VudGR0bmF0YXplcml1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3MzI2MDQsImV4cCI6MjA2OTMwODYwNH0.wCk8ngoDqGW4bMIAjH5EttXsoBwdk4xnIViJZCezs-U'}`
+          }
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error("Failed to generate CSV");
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `prism_analytics_${timePeriod}_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "CSV Downloaded",
+        description: "Analytics data has been exported successfully",
       });
-      csvRows.push([]);
-    }
-    
-    // Item flags
-    if (data.itemFlags && data.itemFlags.length > 0) {
-      csvRows.push(['Top Flagged Items']);
-      csvRows.push(['Question ID', 'Flag Count', 'Session Count', 'Flag Rate']);
-      data.itemFlags.slice(0, 20).forEach((item: any) => {
-        csvRows.push([
-          item.question_id,
-          item.flag_count,
-          item.session_count,
-          (item.flag_rate * 100).toFixed(2) + '%'
-        ]);
+    } catch (err) {
+      toast({
+        title: "Export Failed",
+        description: (err as Error).message,
+        variant: "destructive",
       });
-      csvRows.push([]);
     }
-    
-    // Convert to CSV string
-    const csvContent = csvRows.map(row => row.join(',')).join('\n');
-    
-    // Create download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `assessment-analytics-${timePeriod}-${format(new Date(), 'yyyyMMdd')}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast({
-      title: "CSV Downloaded",
-      description: "Analytics data has been exported successfully",
-    });
   };
 
   return (
@@ -279,44 +216,44 @@ const AssessmentAnalytics = () => {
           <span className="text-sm font-medium text-muted-foreground">Period:</span>
           <div className="flex gap-1">
             <Button
-              variant={timePeriod === 'lifetime' ? 'default' : 'outline'}
+              variant={timePeriod === 'all' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setTimePeriod('lifetime')}
+              onClick={() => setTimePeriod('all')}
             >
               All Time
             </Button>
             <Button
-              variant={timePeriod === '7d' ? 'default' : 'outline'}
+              variant={timePeriod === '7' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setTimePeriod('7d')}
+              onClick={() => setTimePeriod('7')}
             >
               7 Days
             </Button>
             <Button
-              variant={timePeriod === '30d' ? 'default' : 'outline'}
+              variant={timePeriod === '30' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setTimePeriod('30d')}
+              onClick={() => setTimePeriod('30')}
             >
               30 Days
             </Button>
             <Button
-              variant={timePeriod === '60d' ? 'default' : 'outline'}
+              variant={timePeriod === '60' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setTimePeriod('60d')}
+              onClick={() => setTimePeriod('60')}
             >
               60 Days
             </Button>
             <Button
-              variant={timePeriod === '90d' ? 'default' : 'outline'}
+              variant={timePeriod === '90' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setTimePeriod('90d')}
+              onClick={() => setTimePeriod('90')}
             >
               90 Days
             </Button>
             <Button
-              variant={timePeriod === '1y' ? 'default' : 'outline'}
+              variant={timePeriod === '365' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setTimePeriod('1y')}
+              onClick={() => setTimePeriod('365')}
             >
               1 Year
             </Button>
