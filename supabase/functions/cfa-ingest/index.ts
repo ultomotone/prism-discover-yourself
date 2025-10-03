@@ -16,6 +16,7 @@ interface LoadingRow {
 
 interface FitRow {
   results_version: string;
+  model_name: string;
   n: number;
   cfi: number;
   tli: number;
@@ -101,7 +102,7 @@ serve(async (req) => {
     if (fit) {
       const { error: e2 } = await supabase
         .from("cfa_fit")
-        .upsert([fit], { onConflict: "results_version" });
+        .upsert([fit], { onConflict: "results_version,model_name" });
       
       if (e2) {
         console.error("[cfa-ingest] Fit upsert error:", e2);

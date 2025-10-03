@@ -152,6 +152,7 @@ fit_measures <- tryCatch({
 
 fit_row <- data.frame(
   results_version = ver,
+  model_name = "22-Factor PRISM Model",
   n = nrow(wide),
   cfi = unname(fit_measures["cfi"]),
   tli = unname(fit_measures["tli"]),
