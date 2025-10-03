@@ -1983,6 +1983,15 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_kpi_external: {
+        Row: {
+          convergent_r: number | null
+          max_non_target_r: number | null
+          n_anchors: number | null
+          scale_tag: string | null
+        }
+        Relationships: []
+      }
       mv_kpi_fairness_air: {
         Row: {
           adverse_impact_ratio: number | null
@@ -2100,6 +2109,29 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_kpi_neuroticism: {
+        Row: {
+          alpha: number | null
+          ave: number | null
+          cr: number | null
+          fornell_larcker_pass: boolean | null
+          max_abs_corr: number | null
+          max_corr_with: string | null
+          mean_idx_0_100: number | null
+          mean_raw_1_5: number | null
+          n_items: number | null
+          n_pairs: number | null
+          n_resp: number | null
+          omega_total: number | null
+          pct_items_low: number | null
+          results_version: string | null
+          retest_r: number | null
+          scale_tag: string | null
+          sd_raw_1_5: number | null
+          split_half_sb: number | null
+        }
+        Relationships: []
+      }
       mv_kpi_post_survey: {
         Row: {
           accuracy_idx: number | null
@@ -2111,6 +2143,29 @@ export type Database = {
           nps_score: number | null
           trust_idx: number | null
           wtp_idx: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_release_gates: {
+        Row: {
+          alpha: number | null
+          ave: number | null
+          convergent_r: number | null
+          cr: number | null
+          max_non_target_r: number | null
+          n_items: number | null
+          omega_total: number | null
+          pass_item_quality: boolean | null
+          pass_reliability: boolean | null
+          pass_stability: boolean | null
+          pass_validity: boolean | null
+          pct_items_low: number | null
+          r_it_median: number | null
+          release_ready: boolean | null
+          retest_n_pairs: number | null
+          retest_r: number | null
+          scale_tag: string | null
+          split_half_sb: number | null
         }
         Relationships: []
       }
@@ -2171,6 +2226,29 @@ export type Database = {
           r_mean: number | null
           results_version: string | null
           scale_code: string | null
+        }
+        Relationships: []
+      }
+      mv_kpi_scale_corr: {
+        Row: {
+          n_pairs: number | null
+          r: number | null
+          scale_a: string | null
+          scale_b: string | null
+        }
+        Relationships: []
+      }
+      mv_kpi_scale_norms: {
+        Row: {
+          n_scores: number | null
+          p05: number | null
+          p10: number | null
+          p25: number | null
+          p50: number | null
+          p75: number | null
+          p90: number | null
+          p95: number | null
+          scale_tag: string | null
         }
         Relationships: []
       }
