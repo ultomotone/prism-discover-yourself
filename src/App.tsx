@@ -92,6 +92,7 @@ import RelationalFitTypes from "./pages/relational-fit/RelationalFitTypes";
 import RelationalFitPair from "./pages/relational-fit/RelationalFitPair";
 import AssessmentAnalytics from "./pages/AssessmentAnalytics";
 import ContentStudio from "./pages/ContentStudio";
+import PostSurveyKPIs from "./pages/PostSurveyKPIs";
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -229,6 +230,7 @@ const App = () => (
                   <Route path="/dashboard" element={<UserDashboard />} />
                   <Route path="/analytics" element={<AssessmentAnalytics />} />
                   <Route path="/content-studio" element={<ContentStudio />} />
+                  <Route path="/post-survey-kpis" element={<PostSurveyKPIs />} />
                   <Route path="/troubleshoot" element={
                     <Suspense fallback={<div className="p-6">Loading...</div>}>
                       <Troubleshoot />
