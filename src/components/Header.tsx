@@ -330,14 +330,24 @@ const Header = () => {
                         Dashboard
                       </Link>
                       {ADMIN_EMAILS.includes(user.email || '') && (
-                        <Link
-                          to="/analytics"
-                          className="block px-3 py-2 text-foreground hover:text-primary prism-transition font-medium"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          <BarChart3 className="h-4 w-4 inline mr-2" />
-                          Analytics
-                        </Link>
+                        <>
+                          <Link
+                            to="/analytics"
+                            className="block px-3 py-2 text-foreground hover:text-primary prism-transition font-medium"
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            <BarChart3 className="h-4 w-4 inline mr-2" />
+                            Analytics
+                          </Link>
+                          <Link
+                            to="/troubleshoot"
+                            className="block px-3 py-2 text-foreground hover:text-primary prism-transition font-medium"
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            <Bug className="h-4 w-4 inline mr-2" />
+                            Troubleshoot
+                          </Link>
+                        </>
                       )}
                       <Button
                         variant="ghost"
