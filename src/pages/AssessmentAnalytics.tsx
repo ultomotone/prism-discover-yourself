@@ -205,7 +205,21 @@ const AssessmentAnalytics = () => {
         console.log('Psychometric result:', psychResult);
       }
 
-      // Step 4: Refresh materialized views
+      // Step 4: Compute CFA loadings
+      toast({
+        title: "Computing CFA",
+        description: "Computing factor loadings for validity metrics (this may take 2-5 minutes)...",
+      });
+      
+      const { data: cfaResult, error: cfaError } = await supabase.functions.invoke('compute-cfa-loadings');
+      
+      if (cfaError) {
+        console.error('CFA computation error:', cfaError);
+      } else {
+        console.log('CFA result:', cfaResult);
+      }
+
+      // Step 5: Refresh materialized views
       toast({
         title: "Refreshing Views",
         description: "Refreshing all analytics views...",
@@ -224,9 +238,10 @@ const AssessmentAnalytics = () => {
 
       const refreshResult = result as any;
       const psychResultData = psychResult as any;
+      const cfaResultData = cfaResult as any;
       toast({
         title: "Analytics Updated",
-        description: `Computed reliability (${reliabilityResult?.scales_processed || 0} scales), psychometrics (${psychResultData?.scales_processed || 0} scales), retest (${retestResult?.pairs_processed || 0} pairs).`,
+        description: `Computed reliability (${reliabilityResult?.scales_processed || 0} scales), psychometrics (${psychResultData?.scales_processed || 0} scales), CFA (${cfaResultData?.scales_processed || 0} scales), retest (${retestResult?.pairs_processed || 0} pairs).`,
       });
     } catch (error: any) {
       console.error("Refresh error:", error);
