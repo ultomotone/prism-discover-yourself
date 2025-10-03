@@ -1443,13 +1443,20 @@ export function AssessmentForm({
                   onChange={handleAnswerChange}
                 />
                 
-                {/* Flag Button */}
+                {/* Flag Button with CTA */}
                 {sessionId && (
-                  <div className="mt-4 pt-4 border-t border-border flex justify-start">
-                    <QuestionFlagButton 
-                      sessionId={sessionId} 
-                      questionId={currentQuestion.id} 
-                    />
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <p className="text-sm text-muted-foreground">
+                          Help us improve! Flag any question that feels unclear or confusing.
+                        </p>
+                      </div>
+                      <QuestionFlagButton 
+                        sessionId={sessionId} 
+                        questionId={currentQuestion.id} 
+                      />
+                    </div>
                   </div>
                 )}
               </CardContent>
