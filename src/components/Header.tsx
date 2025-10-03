@@ -218,8 +218,8 @@ const Header = () => {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden fixed left-0 right-0 top-20 bottom-0 bg-background z-40">
-            <div className="h-full overflow-y-auto overscroll-contain px-4 pt-4 pb-6 space-y-2 border-t border-border" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="md:hidden absolute left-0 right-0 top-full bg-background z-40 max-h-[calc(100vh-5rem)] overflow-y-auto border-t border-border" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="px-4 pt-4 pb-6 space-y-2">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
