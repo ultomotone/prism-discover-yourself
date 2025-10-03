@@ -63,15 +63,15 @@ export interface RetestMetrics {
 
 export interface SplitHalfMetrics {
   scale_code: string;
-  lambda2: number | null;
-  n_respondents: number;
+  split_half_sb: number | null;
+  split_half_n: number;
 }
 
 export interface ItemDiscriminationMetrics {
   scale_code: string;
   question_id: number;
   r_it: number | null;
-  n: number;
+  n_used: number;
 }
 
 export interface CFAFitMetrics {

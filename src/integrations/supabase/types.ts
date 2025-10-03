@@ -1458,6 +1458,8 @@ export type Database = {
           results_version: string
           scale_code: string
           sem: number | null
+          split_half_n: number | null
+          split_half_sb: number | null
         }
         Insert: {
           cohort_end: string
@@ -1471,6 +1473,8 @@ export type Database = {
           results_version: string
           scale_code: string
           sem?: number | null
+          split_half_n?: number | null
+          split_half_sb?: number | null
         }
         Update: {
           cohort_end?: string
@@ -1484,6 +1488,38 @@ export type Database = {
           results_version?: string
           scale_code?: string
           sem?: number | null
+          split_half_n?: number | null
+          split_half_sb?: number | null
+        }
+        Relationships: []
+      }
+      psychometrics_item_stats: {
+        Row: {
+          computed_at: string | null
+          id: number
+          n_used: number | null
+          question_id: number
+          r_it: number | null
+          results_version: string
+          scale_code: string
+        }
+        Insert: {
+          computed_at?: string | null
+          id?: number
+          n_used?: number | null
+          question_id: number
+          r_it?: number | null
+          results_version: string
+          scale_code: string
+        }
+        Update: {
+          computed_at?: string | null
+          id?: number
+          n_used?: number | null
+          question_id?: number
+          r_it?: number | null
+          results_version?: string
+          scale_code?: string
         }
         Relationships: []
       }
@@ -2043,6 +2079,16 @@ export type Database = {
         }
         Relationships: []
       }
+      v_active_scale_items: {
+        Row: {
+          question_id: number | null
+          question_type: string | null
+          reverse_scored: boolean | null
+          scale_code: string | null
+          weight: number | null
+        }
+        Relationships: []
+      }
       v_kpi_live_today: {
         Row: {
           completion_rate_pct: number | null
@@ -2437,6 +2483,10 @@ export type Database = {
         Returns: Json
       }
       refresh_evidence_kpis: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      refresh_psych_kpis: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

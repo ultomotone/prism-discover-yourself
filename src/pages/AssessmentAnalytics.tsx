@@ -639,20 +639,12 @@ const AssessmentAnalytics = () => {
           {/* Enhanced Psychometric KPIs */}
           <div className="grid gap-4 md:grid-cols-2">
             <SplitHalfCard 
-              data={splitHalfData.map(d => ({ 
-                scale_code: d.scale_code, 
-                lambda2_mean: d.lambda2, 
-                n_total: d.n_respondents 
-              }))}
+              data={splitHalfData}
               onExportCSV={() => console.log('Export split-half CSV')}
               loading={isLoading}
             />
             <ItemDiscriminationCard 
-              data={itemDiscriminationData.map(d => ({ 
-                scale_code: d.scale_code, 
-                low_disc_items: 0, // Computed from r_it < 0.20
-                total_items: 1
-              }))}
+              data={itemDiscriminationData}
               onExportCSV={() => console.log('Export item discrimination CSV')}
               loading={isLoading}
             />

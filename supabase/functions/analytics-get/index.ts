@@ -98,9 +98,9 @@ Deno.serve(async (req) => {
       console.error("[analytics-get] Classification stability error:", e8);
     }
 
-    // Split-Half Reliability (λ₂)
+    // Split-Half Reliability (SB)
     const { data: splitHalf, error: e9 } = await sb.rpc("exec_sql", {
-      q: `SELECT scale_code, lambda2, n_respondents FROM split_half_results WHERE results_version='${ver}' ORDER BY scale_code`
+      q: `SELECT scale_code, split_half_sb, split_half_n FROM psychometrics_external WHERE results_version='${ver}' AND split_half_sb IS NOT NULL ORDER BY scale_code`
     } as any);
     if (e9) {
       console.error("[analytics-get] Split-half error:", e9);
@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
 
     // Item Discrimination
     const { data: itemDiscrimination, error: e10 } = await sb.rpc("exec_sql", {
-      q: `SELECT scale_code, question_id, r_it, n FROM item_discrimination WHERE results_version='${ver}' ORDER BY scale_code`
+      q: `SELECT scale_code, question_id, r_it, n_used FROM psychometrics_item_stats WHERE results_version='${ver}' ORDER BY scale_code, question_id`
     } as any);
     if (e10) {
       console.error("[analytics-get] Item discrimination error:", e10);
