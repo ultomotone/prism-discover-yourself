@@ -28,6 +28,7 @@ serve(async (req) => {
       .from('assessment_scoring_key')
       .select('scale_type, tag, question_id')
       .neq('scale_type', 'META')
+      .not('scale_type', 'in', '("STATE_1_7")') // Exclude STATE scales (single-item)
       .not('tag', 'is', null);
 
     if (scalesError) throw scalesError;
@@ -40,7 +41,7 @@ serve(async (req) => {
       scaleMap.get(key)!.push(s.question_id);
     });
 
-    console.log(`[compute-reliability] Found ${scaleMap.size} scales to process`);
+    console.log(`[compute-reliability] Found ${scaleMap.size} scales to process (STATE scales excluded - single-item measures)`);
 
     // Get responses in date range
     const { data: sessions, error: sessionsError } = await supabase
@@ -97,13 +98,19 @@ serve(async (req) => {
       }
 
       if (completeRows.length < 10) {
-        console.log(`[compute-reliability] Skipping ${scaleCode}: only ${completeRows.length} complete responses`);
+        console.log(`[compute-reliability] Skipping ${scaleCode}: only ${completeRows.length} complete responses (need ≥10)`);
         continue;
       }
 
       // Compute Cronbach's Alpha
       const nItems = questionIds.length;
       const nRespondents = completeRows.length;
+
+      // Skip single-item scales (can't compute alpha)
+      if (nItems < 2) {
+        console.log(`[compute-reliability] Skipping ${scaleCode}: single-item scale (α not computable)`);
+        continue;
+      }
 
       // Item variances and total variance
       const itemVars: number[] = [];
