@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { useAssessmentKpis } from "@/hooks/useAssessmentKpis";
+import { useComponentKpis } from "@/hooks/useComponentKpis";
+import { useNeuroticismKpis } from "@/hooks/useNeuroticismKpis";
+import { useScaleNorms } from "@/hooks/useScaleNorms";
 import { MetricCard } from "@/components/analytics/MetricCard";
 import { ItemFlagsTable } from "@/components/analytics/ItemFlagsTable";
 import { Activity, CheckCircle, TrendingUp, Users, Brain, Target, Loader2, Download } from "lucide-react";
@@ -18,7 +21,10 @@ import {
   SplitHalfCard, 
   ItemDiscriminationCard, 
   CFAFitCard,
-  MeasurementInvarianceCard
+  MeasurementInvarianceCard,
+  ComponentKPICard,
+  NeuroticismKPICard,
+  ScaleNormsCard
 } from "@/components/admin/evidence";
 import { useEffect } from "react";
 
@@ -50,6 +56,11 @@ const AssessmentAnalytics = () => {
     period: timePeriod,
     resultsVersion: "v1.2.1"
   });
+  
+  // Fetch new psychometric KPIs
+  const { data: componentKpis, isLoading: componentKpisLoading } = useComponentKpis("v1.2.1");
+  const { data: neuroticismKpis, isLoading: neuroticismKpisLoading } = useNeuroticismKpis();
+  const { data: scaleNorms, isLoading: scaleNormsLoading } = useScaleNorms();
   
   const engagementData = data?.engagement || [];
   const reliabilityData = data?.reliability || [];
@@ -206,6 +217,9 @@ const AssessmentAnalytics = () => {
 
       // Invalidate React Query cache and force refetch
       await queryClient.invalidateQueries({ queryKey: ["assessment-kpis"] });
+      await queryClient.invalidateQueries({ queryKey: ["component-kpis"] });
+      await queryClient.invalidateQueries({ queryKey: ["neuroticism-kpis"] });
+      await queryClient.invalidateQueries({ queryKey: ["scale-norms"] });
       await refetch();
 
       const refreshResult = result as any;
@@ -651,6 +665,26 @@ const AssessmentAnalytics = () => {
                 )}
               </CardContent>
             </Card>
+          </div>
+
+          {/* Component Release Gates */}
+          <ComponentKPICard 
+            data={componentKpis?.gates || null}
+            loading={componentKpisLoading}
+          />
+
+          {/* Scale Deep Dives */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <NeuroticismKPICard 
+              data={neuroticismKpis?.neuroticism || null}
+              topCorr={neuroticismKpis?.topCorr || []}
+              onExportCSV={() => console.log('Export neuroticism CSV')}
+              loading={neuroticismKpisLoading}
+            />
+            <ScaleNormsCard 
+              data={scaleNorms || null}
+              loading={scaleNormsLoading}
+            />
           </div>
 
           {/* Enhanced Psychometric KPIs */}
