@@ -213,8 +213,20 @@ Deno.serve(async (req) => {
       RESULTS_VERSION,
     });
 
-    // Remove sendConversions call - function doesn't exist in edge function context
-    // This functionality should be handled differently in the edge function environment
+    // Send completion email (non-blocking)
+    if (finalizedSession.email && finalizeResult.profile?.type_code) {
+      supabase.functions.invoke('send-completion-email', {
+        body: { 
+          session_id: sessionId,
+          email: finalizedSession.email,
+          share_token: finalizedSession.share_token || '',
+          type_code: finalizeResult.profile.type_code
+        }
+      }).catch(err => {
+        console.error('Completion email failed (non-blocking):', err);
+        // Don't fail finalization if email fails
+      });
+    }
 
     return json(origin, { ...responseBody, status: "success", session_id: sessionId });
   } catch (e: any) {

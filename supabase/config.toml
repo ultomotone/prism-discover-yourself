@@ -87,5 +87,11 @@ verify_jwt = false
 [functions.post-survey-submit]
 verify_jwt = false
 
+[functions.send-completion-email]
+verify_jwt = false
+
+[functions.send-feedback-reminders]
+verify_jwt = false
+
 [auth]
 # (manage OTP expiry & password policies in the Supabase Dashboard)
