@@ -1,0 +1,51 @@
+name: CFA Nightly Computation
+
+on:
+  schedule:
+    - cron: "17 3 * * *"   # Daily at 03:17 UTC
+  workflow_dispatch:       # Allow manual trigger
+
+jobs:
+  run-cfa:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.3.0'
+
+      - name: Install R packages
+        run: |
+          R -e 'install.packages(c("DBI","RPostgres","dplyr","tidyr","jsonlite","lavaan"), repos="https://cloud.r-project.org")'
+
+      - name: Run CFA computation
+        env:
+          PGHOST: ${{ secrets.PGHOST }}
+          PGPORT: ${{ secrets.PGPORT }}
+          PGDATABASE: ${{ secrets.PGDATABASE }}
+          PGUSER: ${{ secrets.PGUSER }}
+          PGPASSWORD: ${{ secrets.PGPASSWORD }}
+          RESULTS_VERSION: v1.2.1
+        run: |
+          R -e 'source("ops/cfa/run_cfa_lavaan.R")'
+
+      - name: POST results to Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          CFA_INGEST_TOKEN: ${{ secrets.CFA_INGEST_TOKEN }}
+        run: |
+          curl -sS -X POST "$SUPABASE_URL/functions/v1/cfa-ingest" \
+            -H "Content-Type: application/json" \
+            -H "x-cfa-ingest-token: $CFA_INGEST_TOKEN" \
+            --data-binary @ops/cfa/out/cfa_payload.json
+
+      - name: Upload CFA results as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cfa-results
+          path: ops/cfa/out/cfa_payload.json
+          retention-days: 30

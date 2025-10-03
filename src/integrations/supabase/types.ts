@@ -2111,24 +2111,26 @@ export type Database = {
       }
       mv_kpi_neuroticism: {
         Row: {
-          alpha: number | null
           ave: number | null
           cr: number | null
+          cronbach_alpha: number | null
           fornell_larcker_pass: boolean | null
-          max_abs_corr: number | null
-          max_corr_with: string | null
-          mean_idx_0_100: number | null
-          mean_raw_1_5: number | null
+          mcdonald_omega: number | null
+          mean_r_it: number | null
+          mean_raw: number | null
+          min_r_it: number | null
           n_items: number | null
-          n_pairs: number | null
-          n_resp: number | null
-          omega_total: number | null
-          pct_items_low: number | null
+          n_sessions: number | null
+          pct_crossloading_gt_30: number | null
+          pct_load_ge_40: number | null
+          pct_load_ge_60: number | null
+          r_retest: number | null
           results_version: string | null
-          retest_r: number | null
-          scale_tag: string | null
-          sd_raw_1_5: number | null
-          split_half_sb: number | null
+          retest_days: number | null
+          retest_n: number | null
+          sd_raw: number | null
+          split_half: number | null
+          split_half_n: number | null
         }
         Relationships: []
       }
