@@ -228,16 +228,27 @@ export function AssessmentForm({
         questionId: r.question_id,
         answer: r.answer_array || r.answer_numeric || r.answer_value || '',
       }));
-      const last = Math.max(
-        0,
-        data.reduce(
-          (m: number, r: any) => Math.max(m, r.question_order ?? 0),
-          0,
-        ),
-      );
+      
+      // Find the highest question ID that was answered
+      const maxQuestionId = Math.max(0, ...data.map((r: any) => r.question_id || 0));
+      
+      // Find the index of that question in the assessment library
+      const questionIndex = assessmentLibrary.findIndex(q => q.id === maxQuestionId);
+      
+      // Set current index to the next unanswered question (or 0 if not found)
+      const nextIndex = questionIndex >= 0 ? questionIndex + 1 : data.length;
+      
+      console.log('📊 Resume calculation:', {
+        totalResponses: data.length,
+        maxQuestionId,
+        questionIndex,
+        nextIndex,
+        librarySize: assessmentLibrary.length
+      });
+      
       setSessionId(sessionId);
       setResponses(mapped);
-      setCurrentQuestionIndex(last);
+      setCurrentQuestionIndex(Math.min(nextIndex, assessmentLibrary.length - 1));
       setQuestionStartTime(Date.now());
       setIsResumingSession(false);
     } catch (error) {
