@@ -60,7 +60,7 @@ verify_jwt = false
 [functions.admin-run-retest]
 verify_jwt = false
 
-[functions.admin-run-calibration]
+[functions.admin-calibration]
 verify_jwt = false
 
 [functions.admin-get-metrics]
@@ -79,6 +79,12 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.health-check-scoring]
+verify_jwt = false
+
+[functions.post-survey-questions]
+verify_jwt = false
+
+[functions.post-survey-submit]
 verify_jwt = false
 
 [auth]

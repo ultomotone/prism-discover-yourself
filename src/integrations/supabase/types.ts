@@ -1102,6 +1102,280 @@ export type Database = {
         }
         Relationships: []
       }
+      post_survey_questions: {
+        Row: {
+          id: number
+          item_code: string
+          item_text: string
+          position: number
+          required: boolean | null
+          response_type: string
+          reverse_scored: boolean | null
+          version: string
+        }
+        Insert: {
+          id?: number
+          item_code: string
+          item_text: string
+          position: number
+          required?: boolean | null
+          response_type: string
+          reverse_scored?: boolean | null
+          version: string
+        }
+        Update: {
+          id?: number
+          item_code?: string
+          item_text?: string
+          position?: number
+          required?: boolean | null
+          response_type?: string
+          reverse_scored?: boolean | null
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_survey_questions_version_fkey"
+            columns: ["version"]
+            isOneToOne: false
+            referencedRelation: "post_survey_versions"
+            referencedColumns: ["version"]
+          },
+        ]
+      }
+      post_survey_responses: {
+        Row: {
+          created_at: string | null
+          id: number
+          item_code: string
+          session_id: string
+          value_numeric: number | null
+          value_text: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          item_code: string
+          session_id: string
+          value_numeric?: number | null
+          value_text?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          item_code?: string
+          session_id?: string
+          value_numeric?: number | null
+          value_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_survey_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "post_survey_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_survey_scale_items: {
+        Row: {
+          id: number
+          item_code: string
+          scale_code: string
+          version: string
+        }
+        Insert: {
+          id?: number
+          item_code: string
+          scale_code: string
+          version: string
+        }
+        Update: {
+          id?: number
+          item_code?: string
+          scale_code?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_survey_scale_items_version_item_code_fkey"
+            columns: ["version", "item_code"]
+            isOneToOne: false
+            referencedRelation: "post_survey_questions"
+            referencedColumns: ["version", "item_code"]
+          },
+          {
+            foreignKeyName: "post_survey_scale_items_version_scale_code_fkey"
+            columns: ["version", "scale_code"]
+            isOneToOne: false
+            referencedRelation: "post_survey_scales"
+            referencedColumns: ["version", "scale_code"]
+          },
+        ]
+      }
+      post_survey_scales: {
+        Row: {
+          description: string | null
+          id: number
+          scale_code: string
+          scale_name: string
+          target_good: number | null
+          target_min: number | null
+          version: string
+        }
+        Insert: {
+          description?: string | null
+          id?: number
+          scale_code: string
+          scale_name: string
+          target_good?: number | null
+          target_min?: number | null
+          version: string
+        }
+        Update: {
+          description?: string | null
+          id?: number
+          scale_code?: string
+          scale_name?: string
+          target_good?: number | null
+          target_min?: number | null
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_survey_scales_version_fkey"
+            columns: ["version"]
+            isOneToOne: false
+            referencedRelation: "post_survey_versions"
+            referencedColumns: ["version"]
+          },
+        ]
+      }
+      post_survey_scores: {
+        Row: {
+          accuracy_idx: number | null
+          clarity_idx: number | null
+          computed_at: string | null
+          engagement_idx: number | null
+          id: number
+          insight_idx: number | null
+          nps_score: number | null
+          session_id: string
+          trust_idx: number | null
+          wtp_idx: number | null
+        }
+        Insert: {
+          accuracy_idx?: number | null
+          clarity_idx?: number | null
+          computed_at?: string | null
+          engagement_idx?: number | null
+          id?: number
+          insight_idx?: number | null
+          nps_score?: number | null
+          session_id: string
+          trust_idx?: number | null
+          wtp_idx?: number | null
+        }
+        Update: {
+          accuracy_idx?: number | null
+          clarity_idx?: number | null
+          computed_at?: string | null
+          engagement_idx?: number | null
+          id?: number
+          insight_idx?: number | null
+          nps_score?: number | null
+          session_id?: string
+          trust_idx?: number | null
+          wtp_idx?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_survey_scores_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "post_survey_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_survey_sessions: {
+        Row: {
+          assessment_session_id: string
+          completed_at: string | null
+          id: string
+          started_at: string | null
+          user_id: string | null
+          version: string
+        }
+        Insert: {
+          assessment_session_id: string
+          completed_at?: string | null
+          id?: string
+          started_at?: string | null
+          user_id?: string | null
+          version: string
+        }
+        Update: {
+          assessment_session_id?: string
+          completed_at?: string | null
+          id?: string
+          started_at?: string | null
+          user_id?: string | null
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_survey_sessions_assessment_session_id_fkey"
+            columns: ["assessment_session_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_survey_sessions_assessment_session_id_fkey"
+            columns: ["assessment_session_id"]
+            isOneToOne: true
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["first_session_id"]
+          },
+          {
+            foreignKeyName: "post_survey_sessions_assessment_session_id_fkey"
+            columns: ["assessment_session_id"]
+            isOneToOne: true
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["second_session_id"]
+          },
+          {
+            foreignKeyName: "post_survey_sessions_version_fkey"
+            columns: ["version"]
+            isOneToOne: false
+            referencedRelation: "post_survey_versions"
+            referencedColumns: ["version"]
+          },
+        ]
+      }
+      post_survey_versions: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          description: string | null
+          version: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          version: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           computed_at: string
@@ -1651,6 +1925,20 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_kpi_post_survey: {
+        Row: {
+          accuracy_idx: number | null
+          clarity_idx: number | null
+          day: string | null
+          engagement_idx: number | null
+          insight_idx: number | null
+          n_surveys: number | null
+          nps_score: number | null
+          trust_idx: number | null
+          wtp_idx: number | null
+        }
+        Relationships: []
+      }
       mv_kpi_reliability: {
         Row: {
           alpha_mean: number | null
@@ -1886,6 +2174,10 @@ export type Database = {
           deleted_count: number
           session_ids: string[]
         }[]
+      }
+      compute_post_survey_score: {
+        Args: { p_session: string }
+        Returns: undefined
       }
       compute_session_responses_hash: {
         Args: { p_session: string }

@@ -31,6 +31,8 @@ import { IS_PREVIEW } from "@/lib/env";
 import { ensureSessionLinked } from "@/services/sessionLinking";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { resultsQueryKeys } from "@/features/results/queryKeys";
+import { PostSurveyModal } from "@/components/assessment/PostSurveyModal";
+import { usePostSurvey } from "@/hooks/usePostSurvey";
 
 // Function to trigger scoring for missing results
 async function triggerScoring(sessionId: string): Promise<void> {
@@ -447,6 +449,19 @@ export default function Results({ components }: ResultsProps = {}) {
 
   const profile = data?.profile ?? undefined;
 
+  // Post-survey modal state
+  const [showPostSurvey, setShowPostSurvey] = useState(false);
+  const { hasSeenSurvey, markSurveyShown } = usePostSurvey();
+
+  // Show post-survey modal once after results load
+  useEffect(() => {
+    if (profile && data?.session?.status === 'completed' && !hasSeenSurvey(sessionId)) {
+      // Mark as shown IMMEDIATELY to prevent duplicates on refresh
+      markSurveyShown(sessionId);
+      setShowPostSurvey(true);
+    }
+  }, [profile, data?.session?.status, sessionId, hasSeenSurvey, markSurveyShown]);
+
   // Auto-trigger scoring if results are missing
   useEffect(() => {
     if (err?.includes("Results updating") || err?.includes("SCORING_ROWS_MISSING") || 
@@ -634,6 +649,15 @@ export default function Results({ components }: ResultsProps = {}) {
               resultsVersion={data.results_version}
             />
           </div>
+
+          {/* Post-Survey Modal */}
+          {showPostSurvey && (
+            <PostSurveyModal
+              sessionId={sessionId}
+              isOpen={showPostSurvey}
+              onClose={() => setShowPostSurvey(false)}
+            />
+          )}
         </div>
       </div>
     </PaywallGuard>

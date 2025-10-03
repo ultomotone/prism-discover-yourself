@@ -19,6 +19,7 @@ import {
   ItemDiscriminationCard, 
   CFAFitCard 
 } from "@/components/admin/evidence";
+import { useEffect } from "react";
 
 type TimePeriod = 'all' | '7' | '30' | '60' | '90' | '365';
 
@@ -38,6 +39,7 @@ const AssessmentAnalytics = () => {
   const [logsOpen, setLogsOpen] = useState(false);
   const [logs, setLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [postSurveyData, setPostSurveyData] = useState<any>(null);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -56,6 +58,55 @@ const AssessmentAnalytics = () => {
   const cfaFitData = data?.cfaFit || [];
   const fairnessData = data?.fairness || null;
   const calibrationData = data?.calibration || null;
+
+  // Fetch post-survey data
+  useEffect(() => {
+    const fetchPostSurveyData = async () => {
+      try {
+        let startDate, endDate;
+        const now = new Date();
+        
+        if (timePeriod === 'all') {
+          startDate = subYears(now, 10);
+          endDate = now;
+        } else {
+          const days = parseInt(timePeriod);
+          startDate = subDays(now, days);
+          endDate = now;
+        }
+
+        const { data: mvData, error } = await supabase
+          .from('mv_kpi_post_survey')
+          .select('*')
+          .gte('day', format(startDate, 'yyyy-MM-dd'))
+          .lte('day', format(endDate, 'yyyy-MM-dd'));
+
+        if (error) {
+          console.error('Error fetching post-survey data:', error);
+          return;
+        }
+
+        if (mvData && mvData.length > 0) {
+          // Aggregate data across selected period
+          const aggregated = {
+            clarity_idx: Math.round(mvData.reduce((sum, d) => sum + (Number(d.clarity_idx) || 0), 0) / mvData.length),
+            engagement_idx: Math.round(mvData.reduce((sum, d) => sum + (Number(d.engagement_idx) || 0), 0) / mvData.length),
+            nps_score: Math.round(mvData.reduce((sum, d) => sum + (Number(d.nps_score) || 0), 0) / mvData.length),
+            accuracy_idx: Math.round(mvData.reduce((sum, d) => sum + (Number(d.accuracy_idx) || 0), 0) / mvData.length),
+            insight_idx: Math.round(mvData.reduce((sum, d) => sum + (Number(d.insight_idx) || 0), 0) / mvData.length),
+            trust_idx: Math.round(mvData.reduce((sum, d) => sum + (Number(d.trust_idx) || 0), 0) / mvData.length),
+            wtp_idx: Math.round(mvData.reduce((sum, d) => sum + (Number(d.wtp_idx) || 0), 0) / mvData.length),
+            n_surveys: mvData.reduce((sum, d) => sum + (Number(d.n_surveys) || 0), 0),
+          };
+          setPostSurveyData(aggregated);
+        }
+      } catch (err) {
+        console.error('Error in fetchPostSurveyData:', err);
+      }
+    };
+
+    fetchPostSurveyData();
+  }, [timePeriod]);
 
   if (isLoading) {
     return (
@@ -707,16 +758,29 @@ const AssessmentAnalytics = () => {
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Question Clarity</span>
-                  <span className="font-medium">N/A</span>
+                  <span className="font-medium">
+                    {postSurveyData?.clarity_idx ? `${postSurveyData.clarity_idx}%` : 'N/A'}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Net Promoter Score</span>
-                  <span className="font-medium">N/A</span>
+                  <span className="font-medium">
+                    {postSurveyData?.nps_score !== null && postSurveyData?.nps_score !== undefined
+                      ? postSurveyData.nps_score 
+                      : 'N/A'}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Engagement Rating</span>
-                  <span className="font-medium">N/A</span>
+                  <span className="font-medium">
+                    {postSurveyData?.engagement_idx ? `${postSurveyData.engagement_idx}%` : 'N/A'}
+                  </span>
                 </div>
+                {postSurveyData && (
+                  <div className="pt-2 mt-2 border-t text-xs text-muted-foreground">
+                    Based on {postSurveyData.n_surveys} survey responses
+                  </div>
+                )}
               </CardContent>
             </Card>
 
