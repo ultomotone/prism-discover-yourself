@@ -27,7 +27,7 @@ cat(sprintf("[CFA] Results version: %s\n", ver))
 # 1) Fetch scale-to-item mappings
 cat("[CFA] Fetching scale mappings...\n")
 map <- dbGetQuery(pg, "
-  SELECT scale_tag, question_id, weight
+  SELECT tag AS scale_tag, question_id, weight
   FROM public.assessment_scoring_key
   WHERE scale_type = 'CORE'
     AND tag IS NOT NULL
