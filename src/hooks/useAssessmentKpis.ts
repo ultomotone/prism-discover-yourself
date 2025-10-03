@@ -113,6 +113,7 @@ interface KpiRpcResponse {
   splitHalf?: SplitHalfMetrics[];
   itemDiscrimination?: ItemDiscriminationMetrics[];
   cfaFit?: CFAFitMetrics[];
+  itemFlags?: ItemFlagMetricsKpi[];
   business?: {
     total_completions: number;
     unique_users: number;
@@ -161,6 +162,7 @@ export const useAssessmentKpis = (filters: KpiFilters = {}) => {
         splitHalf: result.splitHalf || [],
         itemDiscrimination: result.itemDiscrimination || [],
         cfaFit: result.cfaFit || [],
+        itemFlags: result.itemFlags || [],
         business: result.business || { total_completions: 0, unique_users: 0 }
       };
 

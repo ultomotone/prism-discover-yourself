@@ -122,6 +122,36 @@ Deno.serve(async (req) => {
       console.error("[analytics-get] CFA fit error:", e11);
     }
 
+    // Item Flags (clarity/confusion reports)
+    const { data: itemFlags, error: e14 } = await sb.rpc("exec_sql", {
+      q: `
+        SELECT 
+          f.question_id,
+          q.section,
+          COUNT(*) as flags,
+          COALESCE(
+            (SELECT COUNT(DISTINCT session_id) 
+             FROM assessment_responses r 
+             WHERE r.question_id = f.question_id),
+            1
+          ) as answered,
+          (COUNT(*)::float / GREATEST(
+            (SELECT COUNT(DISTINCT session_id) 
+             FROM assessment_responses r 
+             WHERE r.question_id = f.question_id),
+            1
+          ))::numeric as flag_rate
+        FROM assessment_item_flags f
+        LEFT JOIN assessment_questions q ON q.id = f.question_id
+        GROUP BY f.question_id, q.section
+        ORDER BY flag_rate DESC NULLS LAST
+        LIMIT 50
+      `
+    } as any);
+    if (e14) {
+      console.error("[analytics-get] Item flags error:", e14);
+    }
+
     // Live today metrics (always fresh, <1s query)
     const { data: liveToday, error: e12 } = await sb.rpc("exec_sql", {
       q: `SELECT * FROM v_kpi_live_today`
@@ -139,11 +169,11 @@ Deno.serve(async (req) => {
     }
 
     // Business metrics  
-    const { count, error: e14 } = await sb.from('profiles')
+    const { count, error: e15 } = await sb.from('profiles')
       .select('session_id', { count: 'exact' });
     
-    if (e14) {
-      console.error("[analytics-get] Business metrics error:", e14);
+    if (e15) {
+      console.error("[analytics-get] Business metrics error:", e15);
     }
     
     const businessMetrics = [{
@@ -151,7 +181,7 @@ Deno.serve(async (req) => {
       unique_users: 0 // placeholder until user tracking implemented
     }];
 
-    console.log(`[analytics-get] Success: engagement=${engagement?.length ?? 0} rows, reliability=${reliability?.length ?? 0} scales, live=${liveToday?.[0] ? 'yes' : 'no'}`);
+    console.log(`[analytics-get] Success: engagement=${engagement?.length ?? 0} rows, reliability=${reliability?.length ?? 0} scales, live=${liveToday?.[0] ? 'yes' : 'no'}, itemFlags=${itemFlags?.length ?? 0}`);
 
     return new Response(
       JSON.stringify({ 
@@ -167,8 +197,9 @@ Deno.serve(async (req) => {
         splitHalf: splitHalf ?? [],
         itemDiscrimination: itemDiscrimination ?? [],
         cfaFit: cfaFit ?? [],
+        itemFlags: itemFlags ?? [],
         business: businessMetrics?.[0] ?? { total_completions: 0, unique_users: 0 }
-      }), 
+      }),
       {
         headers: { ...corsHeaders, "content-type": "application/json" },
         status: 200

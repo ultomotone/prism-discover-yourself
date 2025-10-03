@@ -58,6 +58,7 @@ const AssessmentAnalytics = () => {
   const cfaFitData = data?.cfaFit || [];
   const fairnessData = data?.fairness || null;
   const calibrationData = data?.calibration || null;
+  const itemFlagsData = data?.itemFlags || [];
 
   // Fetch post-survey data
   useEffect(() => {
@@ -478,15 +479,7 @@ const AssessmentAnalytics = () => {
         </TabsContent>
 
         <TabsContent value="quality" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Item Flags</CardTitle>
-              <CardDescription>No item flag data available in current implementation</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">Item flagging functionality will be added in a future update.</p>
-            </CardContent>
-          </Card>
+          <ItemFlagsTable items={itemFlagsData} />
           
           <Card>
             <CardHeader>
