@@ -89,6 +89,65 @@ export interface MeasurementInvarianceMetrics {
   n: number;
 }
 
+export interface ComponentKPIData {
+  scale_tag: string;
+  n_items: number;
+  split_half_sb: number | null;
+  omega_total: number | null;
+  alpha: number | null;
+  r_it_median: number | null;
+  pct_items_low: number | null;
+  convergent_r: number | null;
+  max_non_target_r: number | null;
+  retest_r: number | null;
+  n_pairs: number | null;
+  ave: number | null;
+  cr: number | null;
+  pass_reliability: boolean;
+  pass_item_quality: boolean;
+  pass_validity: boolean;
+  pass_stability: boolean;
+  release_ready: boolean;
+}
+
+export interface ScaleNorm {
+  scale_tag: string;
+  p05: number;
+  p10: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p90: number;
+  p95: number;
+}
+
+export interface NeuroticismData {
+  results_version: string;
+  scale_tag: string;
+  n_resp: number;
+  mean_raw_1_5: number;
+  sd_raw_1_5: number;
+  mean_idx_0_100: number;
+  alpha: number | null;
+  omega_total: number | null;
+  split_half_sb: number | null;
+  pct_items_low: number | null;
+  n_items: number;
+  retest_r: number | null;
+  n_pairs: number | null;
+  max_abs_corr: number | null;
+  max_corr_with: string | null;
+  ave: number | null;
+  cr: number | null;
+  fornell_larcker_pass: boolean | null;
+}
+
+export interface NeuroticismCorrelation {
+  other: string;
+  r: number;
+  n_pairs: number;
+}
+
 export interface LiveToday {
   sessions_started: number;
   sessions_completed: number;

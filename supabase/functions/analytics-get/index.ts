@@ -15,10 +15,52 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const ver = url.searchParams.get("ver") ?? "v1.2.1";
     const period = url.searchParams.get("period") ?? "all";
+    const block = url.searchParams.get("block") ?? "default";
     
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const anon = createClient(SUPABASE_URL, ANON_KEY);
+
+    // Handle new KPI endpoints
+    if (block === "component_kpis") {
+      const [{ data: gates }, { data: fit }, { data: inv }] = await Promise.all([
+        anon.from("mv_kpi_release_gates").select("*"),
+        anon.from("cfa_fit").select("*").eq("results_version", ver),
+        anon.from("mv_kpi_invariance").select("*").eq("results_version", ver)
+      ]);
+      return new Response(JSON.stringify({ gates: gates ?? [], fit: fit ?? [], invariance: inv?.[0] ?? null }), {
+        headers: { ...corsHeaders, "content-type": "application/json" }
+      });
+    }
+
+    if (block === "scale_norms") {
+      const { data, error } = await anon.from("mv_kpi_scale_norms").select("*");
+      if (error) {
+        console.error("[analytics-get] Norms error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { 
+          status: 500, 
+          headers: { ...corsHeaders, "content-type": "application/json" } 
+        });
+      }
+      return new Response(JSON.stringify({ norms: data ?? [] }), {
+        headers: { ...corsHeaders, "content-type": "application/json" }
+      });
+    }
+
+    if (block === "neuroticism") {
+      const { data: n } = await anon.from("mv_kpi_neuroticism").select("*").limit(1);
+      const { data: corrA } = await anon.from("mv_kpi_scale_corr").select("*").eq("scale_a", "N");
+      const { data: corrB } = await anon.from("mv_kpi_scale_corr").select("*").eq("scale_b", "N");
+      const corr = [
+        ...(corrA ?? []).map((r: any) => ({ other: r.scale_b, r: r.r, n_pairs: r.n_pairs })),
+        ...(corrB ?? []).map((r: any) => ({ other: r.scale_a, r: r.r, n_pairs: r.n_pairs }))
+      ].sort((a, b) => Math.abs(b.r) - Math.abs(a.r)).slice(0, 5);
+      return new Response(JSON.stringify({ neuroticism: n?.[0] ?? null, top_corr: corr }), {
+        headers: { ...corsHeaders, "content-type": "application/json" }
+      });
+    }
 
     console.log(`[analytics-get] Fetching data for version=${ver}, period=${period}`);
 

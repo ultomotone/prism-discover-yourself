@@ -646,6 +646,30 @@ export type Database = {
         }
         Relationships: []
       }
+      cfa_loadings: {
+        Row: {
+          lambda_std: number | null
+          question_id: number
+          results_version: string
+          scale_tag: string
+          theta: number | null
+        }
+        Insert: {
+          lambda_std?: number | null
+          question_id: number
+          results_version: string
+          scale_tag: string
+          theta?: number | null
+        }
+        Update: {
+          lambda_std?: number | null
+          question_id?: number
+          results_version?: string
+          scale_tag?: string
+          theta?: number | null
+        }
+        Relationships: []
+      }
       change_requests: {
         Row: {
           action: string
@@ -754,6 +778,27 @@ export type Database = {
           granted_at?: string | null
           product_code?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      external_anchor_scores: {
+        Row: {
+          anchor_code: string
+          scale_tag: string
+          session_id: string
+          value_numeric: number | null
+        }
+        Insert: {
+          anchor_code: string
+          scale_tag: string
+          session_id: string
+          value_numeric?: number | null
+        }
+        Update: {
+          anchor_code?: string
+          scale_tag?: string
+          session_id?: string
+          value_numeric?: number | null
         }
         Relationships: []
       }
@@ -939,6 +984,30 @@ export type Database = {
           level?: string | null
           msg?: string | null
           payload?: Json | null
+        }
+        Relationships: []
+      }
+      invariance_results: {
+        Row: {
+          delta_cfi: number | null
+          delta_rmsea: number | null
+          level: string
+          pass: boolean | null
+          results_version: string
+        }
+        Insert: {
+          delta_cfi?: number | null
+          delta_rmsea?: number | null
+          level: string
+          pass?: boolean | null
+          results_version: string
+        }
+        Update: {
+          delta_cfi?: number | null
+          delta_rmsea?: number | null
+          level?: string
+          pass?: boolean | null
+          results_version?: string
         }
         Relationships: []
       }
@@ -1477,6 +1546,7 @@ export type Database = {
       }
       psychometrics_external: {
         Row: {
+          alpha: number | null
           cohort_end: string
           cohort_start: string
           created_at: string | null
@@ -1485,6 +1555,7 @@ export type Database = {
           mcdonald_omega: number | null
           n_respondents: number
           notes: string | null
+          omega_total: number | null
           results_version: string
           scale_code: string
           sem: number | null
@@ -1492,6 +1563,7 @@ export type Database = {
           split_half_sb: number | null
         }
         Insert: {
+          alpha?: number | null
           cohort_end: string
           cohort_start: string
           created_at?: string | null
@@ -1500,6 +1572,7 @@ export type Database = {
           mcdonald_omega?: number | null
           n_respondents: number
           notes?: string | null
+          omega_total?: number | null
           results_version: string
           scale_code: string
           sem?: number | null
@@ -1507,6 +1580,7 @@ export type Database = {
           split_half_sb?: number | null
         }
         Update: {
+          alpha?: number | null
           cohort_end?: string
           cohort_start?: string
           created_at?: string | null
@@ -1515,6 +1589,7 @@ export type Database = {
           mcdonald_omega?: number | null
           n_respondents?: number
           notes?: string | null
+          omega_total?: number | null
           results_version?: string
           scale_code?: string
           sem?: number | null
@@ -1817,6 +1892,19 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_kpi_ave_cr: {
+        Row: {
+          ave: number | null
+          cr: number | null
+          k: number | null
+          pct_crossloading_gt_30: number | null
+          pct_load_ge_40: number | null
+          pct_load_ge_60: number | null
+          results_version: string | null
+          scale_tag: string | null
+        }
+        Relationships: []
+      }
       mv_kpi_behavioral_impact: {
         Row: {
           impact_rate: number | null
@@ -1895,6 +1983,15 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_kpi_external: {
+        Row: {
+          convergent_r: number | null
+          max_non_target_r: number | null
+          n_pair: number | null
+          scale_tag: string | null
+        }
+        Relationships: []
+      }
       mv_kpi_fairness_air: {
         Row: {
           adverse_impact_ratio: number | null
@@ -1922,6 +2019,27 @@ export type Database = {
           followup_count: number | null
           row_id: number | null
           total_completions: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_internal: {
+        Row: {
+          alpha: number | null
+          n_items: number | null
+          omega_total: number | null
+          pct_items_low: number | null
+          r_it_median: number | null
+          scale_tag: string | null
+          split_half_sb: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_invariance: {
+        Row: {
+          pass_configural: boolean | null
+          pass_metric: boolean | null
+          pass_scalar: boolean | null
+          results_version: string | null
         }
         Relationships: []
       }
@@ -1991,6 +2109,29 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_kpi_neuroticism: {
+        Row: {
+          alpha: number | null
+          ave: number | null
+          cr: number | null
+          fornell_larcker_pass: boolean | null
+          max_abs_corr: number | null
+          max_corr_with: string | null
+          mean_idx_0_100: number | null
+          mean_raw_1_5: number | null
+          n_items: number | null
+          n_pairs: number | null
+          n_resp: number | null
+          omega_total: number | null
+          pct_items_low: number | null
+          results_version: string | null
+          retest_r: number | null
+          scale_tag: string | null
+          sd_raw_1_5: number | null
+          split_half_sb: number | null
+        }
+        Relationships: []
+      }
       mv_kpi_post_survey: {
         Row: {
           accuracy_idx: number | null
@@ -2002,6 +2143,29 @@ export type Database = {
           nps_score: number | null
           trust_idx: number | null
           wtp_idx: number | null
+        }
+        Relationships: []
+      }
+      mv_kpi_release_gates: {
+        Row: {
+          alpha: number | null
+          ave: number | null
+          convergent_r: number | null
+          cr: number | null
+          max_non_target_r: number | null
+          n_items: number | null
+          n_pairs: number | null
+          omega_total: number | null
+          pass_item_quality: boolean | null
+          pass_reliability: boolean | null
+          pass_stability: boolean | null
+          pass_validity: boolean | null
+          pct_items_low: number | null
+          r_it_median: number | null
+          release_ready: boolean | null
+          retest_r: number | null
+          scale_tag: string | null
+          split_half_sb: number | null
         }
         Relationships: []
       }
@@ -2065,6 +2229,28 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_kpi_scale_corr: {
+        Row: {
+          n_pairs: number | null
+          r: number | null
+          scale_a: string | null
+          scale_b: string | null
+        }
+        Relationships: []
+      }
+      mv_kpi_scale_norms: {
+        Row: {
+          p05: number | null
+          p10: number | null
+          p25: number | null
+          p50: number | null
+          p75: number | null
+          p90: number | null
+          p95: number | null
+          scale_tag: string | null
+        }
+        Relationships: []
+      }
       mv_kpi_scoring: {
         Row: {
           avg_conf_calibrated: number | null
@@ -2089,6 +2275,14 @@ export type Database = {
           n_total: number | null
           results_version: string | null
           scale_code: string | null
+        }
+        Relationships: []
+      }
+      mv_kpi_stability: {
+        Row: {
+          n_pairs: number | null
+          retest_r: number | null
+          scale_tag: string | null
         }
         Relationships: []
       }
@@ -2138,6 +2332,48 @@ export type Database = {
           user_id: string | null
         }
         Relationships: []
+      }
+      v_scale_items_by_tag: {
+        Row: {
+          question_id: number | null
+          scale_tag: string | null
+          weight: number | null
+        }
+        Relationships: []
+      }
+      v_scale_scores: {
+        Row: {
+          completeness: number | null
+          idx_0_100: number | null
+          k_total: number | null
+          k_used: number | null
+          mean_raw_1_5: number | null
+          scale_tag: string | null
+          session_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["first_session_id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["second_session_id"]
+          },
+        ]
       }
       v_scales_reliability_coverage: {
         Row: {
