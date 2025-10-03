@@ -17,7 +17,8 @@ import {
   CalibrationCard, 
   SplitHalfCard, 
   ItemDiscriminationCard, 
-  CFAFitCard 
+  CFAFitCard,
+  MeasurementInvarianceCard
 } from "@/components/admin/evidence";
 import { useEffect } from "react";
 
@@ -58,6 +59,7 @@ const AssessmentAnalytics = () => {
   const cfaFitData = data?.cfaFit || [];
   const fairnessData = data?.fairness || null;
   const calibrationData = data?.calibration || null;
+  const measurementInvarianceData = data?.measurementInvariance || null;
   const itemFlagsData = data?.itemFlags || [];
 
   // Fetch post-survey data
@@ -447,12 +449,10 @@ const AssessmentAnalytics = () => {
                   description="Average coverage across scales"
                   definition="Formula: (# of keyed items / total scale items) × 100\n\nMeasures the percentage of items that contribute to scoring for each psychological construct. Higher coverage provides more reliable measurement. Target: ≥80%."
                 />
-                <MetricCard
-                  title="Measurement Invariance"
-                  value="N/A"
-                  icon={Target}
-                  description="ΔCFI across demographic groups"
-                  definition="Formula: ΔCFI = CFI(constrained) - CFI(unconstrained)\n\nTarget: ΔCFI ≤ .01\n\nMeasurement invariance tests whether the assessment measures the same construct in the same way across different groups (e.g., gender, ethnicity, age). Run multi-group CFA to populate this metric."
+                <MeasurementInvarianceCard
+                  data={measurementInvarianceData}
+                  onExportCSV={() => console.log('Export measurement invariance CSV')}
+                  loading={isLoading}
                 />
               </div>
             </CardContent>

@@ -122,6 +122,14 @@ Deno.serve(async (req) => {
       console.error("[analytics-get] CFA fit error:", e11);
     }
 
+    // Measurement Invariance
+    const { data: measurementInvariance, error: e11b } = await sb.rpc("exec_sql", {
+      q: `SELECT model_name, delta_cfi, model_comparison, n FROM measurement_invariance WHERE results_version='${ver}' ORDER BY created_at DESC LIMIT 1`
+    } as any);
+    if (e11b) {
+      console.error("[analytics-get] Measurement invariance error:", e11b);
+    }
+
     // Item Flags (clarity/confusion reports) - aggregated
     const { data: itemFlags, error: e14 } = await sb.rpc("exec_sql", {
       q: `
@@ -216,6 +224,7 @@ Deno.serve(async (req) => {
         splitHalf: splitHalf ?? [],
         itemDiscrimination: itemDiscrimination ?? [],
         cfaFit: cfaFit ?? [],
+        measurementInvariance: measurementInvariance?.[0] ?? { delta_cfi: null, model_comparison: null, n: 0 },
         itemFlags: itemFlags ?? [],
         itemFlagDetails: itemFlagDetails ?? [],
         business: businessMetrics?.[0] ?? { total_completions: 0, unique_users: 0 }

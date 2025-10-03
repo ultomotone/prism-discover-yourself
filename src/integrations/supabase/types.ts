@@ -1054,6 +1054,36 @@ export type Database = {
         }
         Relationships: []
       }
+      measurement_invariance: {
+        Row: {
+          created_at: string | null
+          delta_cfi: number | null
+          id: string
+          model_comparison: string | null
+          model_name: string
+          n: number | null
+          results_version: string
+        }
+        Insert: {
+          created_at?: string | null
+          delta_cfi?: number | null
+          id?: string
+          model_comparison?: string | null
+          model_name: string
+          n?: number | null
+          results_version: string
+        }
+        Update: {
+          created_at?: string | null
+          delta_cfi?: number | null
+          id?: string
+          model_comparison?: string | null
+          model_name?: string
+          n?: number | null
+          results_version?: string
+        }
+        Relationships: []
+      }
       mv_refresh_log: {
         Row: {
           refreshed_at: string

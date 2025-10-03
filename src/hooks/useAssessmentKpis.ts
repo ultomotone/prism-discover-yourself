@@ -83,6 +83,12 @@ export interface CFAFitMetrics {
   n: number;
 }
 
+export interface MeasurementInvarianceMetrics {
+  delta_cfi: number | null;
+  model_comparison: string | null;
+  n: number;
+}
+
 export interface LiveToday {
   sessions_started: number;
   sessions_completed: number;
@@ -121,6 +127,7 @@ interface KpiRpcResponse {
   splitHalf?: SplitHalfMetrics[];
   itemDiscrimination?: ItemDiscriminationMetrics[];
   cfaFit?: CFAFitMetrics[];
+  measurementInvariance?: MeasurementInvarianceMetrics;
   itemFlags?: ItemFlagMetricsKpi[];
   itemFlagDetails?: ItemFlagDetail[];
   business?: {
@@ -171,6 +178,7 @@ export const useAssessmentKpis = (filters: KpiFilters = {}) => {
         splitHalf: result.splitHalf || [],
         itemDiscrimination: result.itemDiscrimination || [],
         cfaFit: result.cfaFit || [],
+        measurementInvariance: result.measurementInvariance || { delta_cfi: null, model_comparison: null, n: 0 },
         itemFlags: result.itemFlags || [],
         itemFlagDetails: result.itemFlagDetails || [],
         business: result.business || { total_completions: 0, unique_users: 0 }
