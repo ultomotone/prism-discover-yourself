@@ -310,7 +310,7 @@ const UserDashboard = () => {
                                 Complete Profile
                               </Badge>
                               <span className="text-sm text-muted-foreground">
-                                {format(new Date(result.submitted_at), 'MMM dd, yyyy HH:mm')}
+                                {formatTimestamp(result.submitted_at)}
                               </span>
                             </div>
                             
@@ -383,7 +383,7 @@ const UserDashboard = () => {
                           </div>
                           <div className="text-sm text-gray-600">
                             Score: {result.score_fit_calibrated?.toFixed(1)} • 
-                            Updated: {format(new Date(result.computed_at), 'MMM dd, yyyy HH:mm')}
+                            Updated: {formatTimestamp(result.computed_at)}
                           </div>
                         </div>
                         <Button
@@ -543,7 +543,7 @@ const UserDashboard = () => {
                                   {isDone ? 'Completed' : 'In Progress'}
                                 </Badge>
                                 <span className="text-sm text-muted-foreground">
-                                  {format(new Date(session.started_at), 'MMM dd, yyyy HH:mm')}
+                                  {formatTimestamp(session.started_at)}
                                 </span>
                               </div>
 
