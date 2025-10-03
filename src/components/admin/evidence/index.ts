@@ -9,3 +9,4 @@ export { SplitHalfCard } from './SplitHalfCard';
 export { ItemDiscriminationCard } from './ItemDiscriminationCard';
 export { CFAFitCard } from './CFAFitCard';
 export { ConstructCoverageCard } from './ConstructCoverageCard';
+export { MeasurementInvarianceCard } from './MeasurementInvarianceCard';

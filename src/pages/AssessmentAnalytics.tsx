@@ -448,11 +448,11 @@ const AssessmentAnalytics = () => {
                   definition="Formula: (# of keyed items / total scale items) × 100\n\nMeasures the percentage of items that contribute to scoring for each psychological construct. Higher coverage provides more reliable measurement. Target: ≥80%."
                 />
                 <MetricCard
-                  title="Classification Stability"
-                  value={classificationStability.n_pairs > 0 ? `${summary.classificationStabilityRate.toFixed(0)}%` : '0% / N/A'}
-                  icon={CheckCircle}
-                  description={classificationStability.n_pairs > 0 ? "Retest type consistency" : "No retest data yet"}
-                  definition="Formula: (# of pairs with same type code / total pairs) × 100\n\nMeasures test-retest reliability by comparing personality type classifications from the same users across two assessment sessions. Higher stability indicates more reliable typing. Target: ≥70%."
+                  title="Measurement Invariance"
+                  value="N/A"
+                  icon={Target}
+                  description="ΔCFI across demographic groups"
+                  definition="Formula: ΔCFI = CFI(constrained) - CFI(unconstrained)\n\nTarget: ΔCFI ≤ .01\n\nMeasurement invariance tests whether the assessment measures the same construct in the same way across different groups (e.g., gender, ethnicity, age). Run multi-group CFA to populate this metric."
                 />
               </div>
             </CardContent>
