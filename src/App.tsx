@@ -60,6 +60,7 @@ import FAQ from "./pages/FAQ";
 import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import ReturnPolicy from "./pages/ReturnPolicy";
 import Accessibility from "./pages/Accessibility";
 import CoreAlignments from "./pages/CoreAlignments";
 import Resources from "./pages/Resources";
@@ -340,6 +341,7 @@ const App = () => (
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/terms" element={<Terms />} />
+                  <Route path="/return-policy" element={<ReturnPolicy />} />
                   <Route path="/accessibility" element={<Accessibility />} />
                   <Route path="/core-alignments" element={<CoreAlignments />} />
                   <Route path="/resources" element={<Resources />} />

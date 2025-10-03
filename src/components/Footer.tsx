@@ -33,12 +33,13 @@ const Footer = () => {
     legal: [
       { name: "Privacy Policy", href: "/privacy" },
       { name: "Terms of Service", href: "/terms" },
+      { name: "Return Policy", href: "/return-policy" },
     ],
   };
 
   return (
     <footer className="bg-indigo-900 text-white py-12">
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-5 gap-10 text-sm">
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-6 gap-10 text-sm">
         
         {/* About PRISM Dynamics */}
         <div>
@@ -135,6 +136,20 @@ const Footer = () => {
                 Education
               </button>
             </li>
+          </ul>
+        </div>
+
+        {/* Legal */}
+        <div>
+          <h3 className="font-semibold mb-4">Legal</h3>
+          <ul className="space-y-2 text-gray-300">
+            {popularLinks.legal.map((link) => (
+              <li key={link.name}>
+                <button onClick={() => navigate(link.href)} className="hover:text-white transition-colors text-left">
+                  {link.name}
+                </button>
+              </li>
+            ))}
           </ul>
         </div>
 
