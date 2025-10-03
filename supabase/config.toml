@@ -66,6 +66,9 @@ verify_jwt = false
 [functions.admin-get-metrics]
 verify_jwt = false
 
+[functions.compute-cfa-loadings]
+verify_jwt = false
+
 [functions.admin-backfill-profiles]
 verify_jwt = false
 
