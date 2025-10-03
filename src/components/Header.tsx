@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Menu, X, ChevronDown, User, LogOut, Bug, BarChart3 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Menu, X, ChevronDown, ChevronRight, User, LogOut, Bug, BarChart3 } from "lucide-react";
 import { prismTypes } from "@/data/prismTypes";
 import { useAuth } from "@/contexts/AuthContext";
 import prismLogo from "@/assets/prism-logo.png";
@@ -12,6 +13,9 @@ const ADMIN_EMAILS = ['daniel.joseph.speiss@gmail.com'];
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [solutionsOpen, setSolutionsOpen] = useState(false);
+  const [typesOpen, setTypesOpen] = useState(false);
+  const [componentsOpen, setComponentsOpen] = useState(false);
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
 
@@ -233,50 +237,71 @@ const Header = () => {
               
               {/* Solutions in Mobile */}
               <div className="border-t border-border mt-4 pt-4">
-                <div className="px-3 py-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Solutions</div>
-                {solutionsItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className="block px-3 py-3 text-sm font-medium text-foreground hover:text-primary prism-transition rounded-md hover:bg-accent/50"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
+                <Collapsible open={solutionsOpen} onOpenChange={setSolutionsOpen}>
+                  <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground prism-transition">
+                    Solutions
+                    {solutionsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    {solutionsItems.map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        className="block px-3 py-3 text-sm font-medium text-foreground hover:text-primary prism-transition rounded-md hover:bg-accent/50"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
               
               {/* Types in Mobile */}  
               <div className="border-t border-border mt-4 pt-4">
-                <div className="px-3 py-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Types</div>
-                {prismTypes.map((type) => (
-                  <Link
-                    key={type.code}
-                    to={`/types/${type.slug}`}
-                    className="block px-3 py-3 text-sm font-medium text-foreground hover:text-primary prism-transition rounded-md hover:bg-accent/50"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{type.code} - {type.publicArchetype}</span>
-                      <span className="text-xs text-muted-foreground mt-1">{type.baseCreative}</span>
-                    </div>
-                  </Link>
-                ))}
+                <Collapsible open={typesOpen} onOpenChange={setTypesOpen}>
+                  <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground prism-transition">
+                    Types
+                    {typesOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    {prismTypes.map((type) => (
+                      <Link
+                        key={type.code}
+                        to={`/types/${type.slug}`}
+                        className="block px-3 py-3 text-sm font-medium text-foreground hover:text-primary prism-transition rounded-md hover:bg-accent/50"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium">{type.code} - {type.publicArchetype}</span>
+                          <span className="text-xs text-muted-foreground mt-1">{type.baseCreative}</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
               
               {/* Components in Mobile */}
               <div className="border-t border-border mt-4 pt-4">
-                <div className="px-3 py-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Components</div>
-                {prismComponents.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className="block px-3 py-3 text-sm font-medium text-foreground hover:text-primary prism-transition rounded-md hover:bg-accent/50"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
+                <Collapsible open={componentsOpen} onOpenChange={setComponentsOpen}>
+                  <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground prism-transition">
+                    Components
+                    {componentsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    {prismComponents.map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        className="block px-3 py-3 text-sm font-medium text-foreground hover:text-primary prism-transition rounded-md hover:bg-accent/50"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
               
               
