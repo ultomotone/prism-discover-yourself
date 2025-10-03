@@ -39,10 +39,10 @@ const Footer = () => {
 
   return (
     <footer className="bg-indigo-900 text-white py-12">
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-6 gap-10 text-sm">
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-6 gap-6 text-sm">
         
         {/* About PRISM Dynamics */}
-        <div>
+        <div className="md:col-span-2">
           <div className="flex items-center space-x-2 mb-4">
             <button onClick={() => navigate('/')} className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
               <img src={prismLogo} alt="PRISM Dynamics Logo" className="w-6 h-6" />
@@ -150,6 +150,22 @@ const Footer = () => {
                 </button>
               </li>
             ))}
+            <li>
+              <button
+                onClick={() => {
+                  if (typeof window !== 'undefined' && (window as any).rdtTrack) {
+                    (window as any).rdtTrack('Custom', { custom_event_name: 'DonateClick' });
+                  }
+                  if (typeof window !== 'undefined' && (window as any).fbTrack) {
+                    (window as any).fbTrack('Custom', { custom_event_name: 'DonateClick' });
+                  }
+                  window.open('https://donate.stripe.com/3cI6oHdR3cLg4n0eK56Ri04', '_blank');
+                }}
+                className="hover:text-white transition-colors text-left"
+              >
+                Donate via Stripe
+              </button>
+            </li>
           </ul>
         </div>
 
@@ -211,22 +227,6 @@ const Footer = () => {
             >
               <Users className="h-5 w-5" />
             </Button>
-          </div>
-          <div className="mt-4 text-gray-300">
-            <button
-              onClick={() => {
-                if (typeof window !== 'undefined' && (window as any).rdtTrack) {
-                  (window as any).rdtTrack('Custom', { custom_event_name: 'DonateClick' });
-                }
-                if (typeof window !== 'undefined' && (window as any).fbTrack) {
-                  (window as any).fbTrack('Custom', { custom_event_name: 'DonateClick' });
-                }
-                window.open('https://donate.stripe.com/3cI6oHdR3cLg4n0eK56Ri04', '_blank');
-              }}
-              className="hover:underline"
-            >
-              Donate via Stripe
-            </button>
           </div>
         </div>
       </div>
