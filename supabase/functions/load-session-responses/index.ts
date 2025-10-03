@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
       .from('assessment_responses')
       .select('*')
       .eq('session_id', session_id)
-      .order('question_order', { ascending: true });
+      .order('created_at', { ascending: true });
 
     if (error) {
       console.error('Error loading responses:', error);

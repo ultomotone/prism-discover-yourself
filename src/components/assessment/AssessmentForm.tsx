@@ -67,7 +67,7 @@ async function loadResponsesForSession(sessionId: string) {
     .from('assessment_responses')
     .select('*')
     .eq('session_id', sessionId)
-    .order('question_order', { ascending: true });
+    .order('created_at', { ascending: true });
 
   if (error) {
     console.warn('Direct responses query failed (expected for anonymous users):', error);
