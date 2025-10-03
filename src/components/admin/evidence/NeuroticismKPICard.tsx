@@ -45,7 +45,7 @@ export const NeuroticismKPICard: React.FC<NeuroticismKPICardProps> = ({
   const definition = "Comprehensive Neuroticism (N) KPIs:\n\n• Distribution: Mean ± SD (1-5 scale), 0-100 index\n• Internal: ω, α, Split-Half (SB), item discrimination\n• Stability: Test-retest r (14-180 day window)\n• Discriminant: Max correlation with other scales, Fornell-Larcker test\n• Target: SB≥.70, ω≥.75, retest≥.70, FL pass (AVE > r²)";
   
   const formatValue = () => {
-    if (!data) return 'N/A';
+    if (!data || data.mean_raw_1_5 === null || data.sd_raw_1_5 === null) return 'N/A';
     return `${data.mean_raw_1_5.toFixed(2)} ± ${data.sd_raw_1_5.toFixed(2)}`;
   };
 
@@ -66,7 +66,7 @@ export const NeuroticismKPICard: React.FC<NeuroticismKPICardProps> = ({
       title="🧠 Neuroticism (N) — Deep Dive"
       definition={definition}
       value={formatValue()}
-      subtitle={data ? `n=${data.n_resp} | Index: ${data.mean_idx_0_100.toFixed(1)}` : undefined}
+      subtitle={data && data.mean_idx_0_100 !== null ? `n=${data.n_resp} | Index: ${data.mean_idx_0_100.toFixed(1)}` : undefined}
       badge={reliability.label}
       badgeVariant={reliability.variant}
       onExportCSV={onExportCSV}
