@@ -337,24 +337,28 @@ const AssessmentAnalytics = () => {
                   value={summary.totalSessionsStarted}
                   icon={Users}
                   description="Assessment sessions initiated"
+                  definition="The total number of unique assessment sessions that were initiated during the selected time period. Each session represents a user who began taking the PRISM assessment."
                 />
                 <MetricCard
                   title="Sessions Completed"
                   value={summary.totalSessionsCompleted}
                   icon={CheckCircle}
                   description="Successfully finished assessments"
+                  definition="The total number of assessment sessions that were successfully completed (submitted) during the selected time period. A completed session includes all required responses and a generated results profile."
                 />
                 <MetricCard
                   title="Completion Rate"
                   value={`${summary.periodCompletionRate.toFixed(1)}%`}
                   icon={TrendingUp}
                   description="Percentage of started sessions completed"
+                  definition="Formula: (Sessions Completed / Sessions Started) × 100\n\nThe percentage of initiated assessment sessions that were successfully completed. Target: ≥75% for good user engagement."
                 />
                 <MetricCard
                   title="Median Time"
                   value={summary.medianCompletionTime !== null ? `${summary.medianCompletionTime.toFixed(0)} min` : '—'}
                   icon={Target}
                   description="Median completion time"
+                  definition="The median time (in minutes) it takes users to complete the entire assessment. Median is used instead of mean to avoid skew from outliers. Target: 15-25 minutes for optimal engagement."
                 />
               </div>
 
@@ -365,18 +369,21 @@ const AssessmentAnalytics = () => {
                   value={`${summary.periodDropOffRate.toFixed(1)}%`}
                   icon={Activity}
                   description="% who started but didn't complete"
+                  definition="Formula: (1 - Completion Rate) × 100\n\nThe percentage of users who initiated the assessment but did not complete it. High drop-off may indicate UX issues, excessive length, or unclear instructions. Target: ≤25%."
                 />
                 <MetricCard
                   title="Construct Coverage"
                   value={`${summary.constructCoverageAvg.toFixed(0)}%`}
                   icon={Target}
                   description="Average coverage across scales"
+                  definition="Formula: (# of keyed items / total scale items) × 100\n\nMeasures the percentage of items that contribute to scoring for each psychological construct. Higher coverage provides more reliable measurement. Target: ≥80%."
                 />
                 <MetricCard
                   title="Classification Stability"
                   value={classificationStability.n_pairs > 0 ? `${summary.classificationStabilityRate.toFixed(0)}%` : '0% / N/A'}
                   icon={CheckCircle}
                   description={classificationStability.n_pairs > 0 ? "Retest type consistency" : "No retest data yet"}
+                  definition="Formula: (# of pairs with same type code / total pairs) × 100\n\nMeasures test-retest reliability by comparing personality type classifications from the same users across two assessment sessions. Higher stability indicates more reliable typing. Target: ≥70%."
                 />
               </div>
             </CardContent>
