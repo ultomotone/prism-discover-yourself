@@ -141,8 +141,14 @@ cat(sprintf("[CFA] Extracted %d loadings\n", nrow(loadings)))
 
 # 8) Extract global fit indices
 cat("[CFA] Extracting fit indices...\n")
-fit_measures <- fitMeasures(fit, c("npar", "cfi", "tli", "rmsea", 
-                                    "rmsea.ci.lower", "rmsea.ci.upper", "srmr"))
+fit_measures <- tryCatch({
+  fitMeasures(fit, c("npar", "cfi", "tli", "rmsea", 
+                     "rmsea.ci.lower", "rmsea.ci.upper", "srmr"))
+}, error = function(e) {
+  cat(sprintf("[CFA] WARNING: Could not extract all fit indices: %s\n", e$message))
+  # Return basic fit indices only
+  fitMeasures(fit, c("cfi", "tli", "rmsea", "srmr"))
+})
 
 fit_row <- data.frame(
   results_version = ver,
@@ -150,8 +156,10 @@ fit_row <- data.frame(
   cfi = unname(fit_measures["cfi"]),
   tli = unname(fit_measures["tli"]),
   rmsea = unname(fit_measures["rmsea"]),
-  rmsea_lo = unname(fit_measures["rmsea.ci.lower"]),
-  rmsea_hi = unname(fit_measures["rmsea.ci.upper"]),
+  rmsea_lo = ifelse("rmsea.ci.lower" %in% names(fit_measures), 
+                    unname(fit_measures["rmsea.ci.lower"]), NA_real_),
+  rmsea_hi = ifelse("rmsea.ci.upper" %in% names(fit_measures), 
+                    unname(fit_measures["rmsea.ci.upper"]), NA_real_),
   srmr = unname(fit_measures["srmr"])
 )
 
