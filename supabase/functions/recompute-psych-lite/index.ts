@@ -185,6 +185,9 @@ serve(async (req) => {
 
       // 5) Persist
       // 5a) per-scale SB
+      const cohortStart = '2024-01-01';
+      const cohortEnd = new Date().toISOString().split('T')[0];
+      
       const { error: eSB } = await supaSrv
         .from("psychometrics_external")
         .upsert({
@@ -192,10 +195,11 @@ serve(async (req) => {
           scale_code: scale,
           split_half_sb: sb.rho,
           split_half_n: sb.n,
-          cohort_start: '2024-01-01',
-          cohort_end: new Date().toISOString().split('T')[0],
-          n_respondents: complete.length
-        }, { onConflict: "results_version,scale_code" });
+          cohort_start: cohortStart,
+          cohort_end: cohortEnd,
+          n_respondents: complete.length,
+          notes: 'Computed by recompute-psych-lite'
+        }, { onConflict: "scale_code,results_version,cohort_start,cohort_end" });
 
       if (eSB) {
         console.error(`[recompute-psych-lite] Error upserting SB for ${scale}:`, eSB);
