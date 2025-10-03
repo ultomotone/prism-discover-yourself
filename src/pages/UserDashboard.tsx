@@ -621,7 +621,7 @@ const UserDashboard = () => {
                               ) : (
                                 <Button
                                   size="sm"
-                                  onClick={() => navigate('/assessment')}
+                                  onClick={() => navigate(`/assessment?resume=${session.id}`)}
                                 >
                                   Continue
                                   <ChevronRight className="h-4 w-4 ml-2" />
