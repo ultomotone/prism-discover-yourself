@@ -1370,8 +1370,7 @@ export function AssessmentForm({
               aria-label="Assessment progress"
             />
 
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>{currentSection}</span>
+            <div className="flex justify-end text-sm text-muted-foreground">
               <span>{Math.round(progress)}% Complete</span>
             </div>
 
