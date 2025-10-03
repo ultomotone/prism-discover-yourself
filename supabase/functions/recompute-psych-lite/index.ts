@@ -224,9 +224,10 @@ serve(async (req) => {
 
     // 6) Refresh views (best-effort)
     console.log("[recompute-psych-lite] Refreshing materialized views...");
-    await supaSrv.rpc("refresh_psych_kpis").catch((e) => {
-      console.warn("[recompute-psych-lite] View refresh warning:", e);
-    });
+    const { error: viewErr } = await supaSrv.rpc("refresh_psych_kpis");
+    if (viewErr) {
+      console.warn("[recompute-psych-lite] View refresh warning:", viewErr);
+    }
 
     console.log("[recompute-psych-lite] Computation complete!");
 
