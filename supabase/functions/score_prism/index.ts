@@ -112,7 +112,7 @@ serve(async (req) => {
           dim_thresholds: { one: 0, two: 0, three: 0 },
           neuro_norms: { mean: 0, sd: 1 },
           overlay_neuro_cut: 0,
-          overlay_state_weights: { stress: 0, time: 0, sleep: 0, focus: 0 },
+          overlay_state_weights: { stress: 1.5, mood: 1.2, sleep: 1.0, focus: 0.8, time: 0.8 },
           softmax_temp: cfg.softmax_temp || 1,
           conf_raw_params: cfg.conf_raw_params || { a: 0.25, b: 0.35, c: 0.2 },
           fit_band_thresholds: cfg.fit_band_thresholds || { high_fit: 10, moderate_fit: 5, high_gap: 0.2, moderate_gap: 0.1 },

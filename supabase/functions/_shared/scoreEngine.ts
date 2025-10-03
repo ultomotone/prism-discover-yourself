@@ -306,6 +306,7 @@ function buildDistanceMetrics(
 export function scoreAssessment(input: ProfileInput): ProfileResult {
   const { responses, scoringKey, config, fcFunctionScores } = input;
   const likert: Record<Func, { sum: number; count: number }> = {} as any;
+  const stateScores: Record<string, number> = {};
   let fcQuestionsAnswered = 0;
 
   for (const r of responses) {
@@ -334,6 +335,14 @@ export function scoreAssessment(input: ProfileInput): ProfileResult {
       entry.sum += Number(r.answer_value);
       entry.count += 1;
       likert[tag] = entry;
+    }
+    
+    // Extract STATE responses
+    if (key.scale_type === 'STATE_1_7' && key.tag) {
+      const stateKey = key.tag.replace('STATE_', '').toLowerCase();
+      if (stateKey) {
+        stateScores[stateKey] = Number(r.answer_value);
+      }
     }
   }
 
@@ -490,10 +499,63 @@ export function scoreAssessment(input: ProfileInput): ProfileResult {
     },
     neuro_mean:0,
     neuro_z:0,
-    overlay_neuro:'none',
-    overlay_state:'none',
-    state_index:0,
-    overlay:'0',
+    overlay_neuro:'N0',
+    overlay_state: (() => {
+      // Compute weighted state index (1-7 scale, higher = more dysregulated)
+      const weights = config.overlay_state_weights;
+      let state_index = 3.5; // neutral default
+      let totalWeight = 0;
+
+      if (Object.keys(stateScores).length > 0) {
+        let weightedSum = 0;
+        for (const [key, value] of Object.entries(stateScores)) {
+          const weight = weights[key as keyof typeof weights] || 1;
+          weightedSum += value * weight;
+          totalWeight += weight;
+        }
+        state_index = totalWeight > 0 ? weightedSum / totalWeight : 3.5;
+      }
+
+      return state_index >= 5.5 ? 'N+' : state_index <= 2.5 ? 'N-' : 'N0';
+    })(),
+    state_index: (() => {
+      const weights = config.overlay_state_weights;
+      let state_index = 3.5;
+      let totalWeight = 0;
+
+      if (Object.keys(stateScores).length > 0) {
+        let weightedSum = 0;
+        for (const [key, value] of Object.entries(stateScores)) {
+          const weight = weights[key as keyof typeof weights] || 1;
+          weightedSum += value * weight;
+          totalWeight += weight;
+        }
+        state_index = totalWeight > 0 ? weightedSum / totalWeight : 3.5;
+      }
+      return Number(state_index.toFixed(2));
+    })(),
+    overlay: (() => {
+      const weights = config.overlay_state_weights;
+      let state_index = 3.5;
+      let totalWeight = 0;
+
+      if (Object.keys(stateScores).length > 0) {
+        let weightedSum = 0;
+        for (const [key, value] of Object.entries(stateScores)) {
+          const weight = weights[key as keyof typeof weights] || 1;
+          weightedSum += value * weight;
+          totalWeight += weight;
+        }
+        state_index = totalWeight > 0 ? weightedSum / totalWeight : 3.5;
+      }
+
+      const overlay_state = state_index >= 5.5 ? 'N+' : state_index <= 2.5 ? 'N-' : 'N0';
+      const overlay_neuro = 'N0'; // placeholder until neuroticism scoring implemented
+      
+      return overlay_neuro === 'N+' || overlay_state === 'N+' ? 'N+'
+           : overlay_neuro === 'N-' && overlay_state === 'N-' ? 'N-'
+           : 'N0';
+    })(),
     validity_status:'valid',
     validity:{ attention:0, inconsistency:0, sd_index:0 },
     confidence,
