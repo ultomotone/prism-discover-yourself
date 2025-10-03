@@ -176,7 +176,23 @@ const AssessmentAnalytics = () => {
         console.log('Retest result:', retestResult);
       }
 
-      // Step 3: Refresh materialized views
+      // Step 3: Compute Split-Half & Item Discrimination
+      toast({
+        title: "Computing Metrics",
+        description: "Computing Split-Half & Item Discrimination...",
+      });
+      
+      const { data: psychResult, error: psychError } = await supabase.functions.invoke('recompute-psych-lite', {
+        body: { results_version: 'v1.2.1' }
+      });
+      
+      if (psychError) {
+        console.error('Psychometric computation error:', psychError);
+      } else {
+        console.log('Psychometric result:', psychResult);
+      }
+
+      // Step 4: Refresh materialized views
       toast({
         title: "Refreshing Views",
         description: "Refreshing all analytics views...",
@@ -191,9 +207,10 @@ const AssessmentAnalytics = () => {
       await refetch();
 
       const refreshResult = result as any;
+      const psychResultData = psychResult as any;
       toast({
         title: "Analytics Updated",
-        description: `Computed reliability (${reliabilityResult?.scales_processed || 0} scales), retest (${retestResult?.pairs_processed || 0} pairs). Refreshed ${refreshResult?.refreshed_count || 0} views.`,
+        description: `Computed reliability (${reliabilityResult?.scales_processed || 0} scales), psychometrics (${psychResultData?.scales_processed || 0} scales), retest (${retestResult?.pairs_processed || 0} pairs).`,
       });
     } catch (error: any) {
       console.error("Refresh error:", error);
