@@ -479,7 +479,10 @@ const AssessmentAnalytics = () => {
         </TabsContent>
 
         <TabsContent value="quality" className="space-y-6">
-          <ItemFlagsTable items={itemFlagsData} />
+          <ItemFlagsTable 
+            items={itemFlagsData} 
+            flagDetails={data?.itemFlagDetails || []} 
+          />
           
           <Card>
             <CardHeader>

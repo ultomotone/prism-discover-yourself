@@ -9,11 +9,13 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight } from "lucide-react";
-import { ItemFlagMetricsKpi } from "@/hooks/useAssessmentKpis";
+import { ChevronRight, MessageSquare } from "lucide-react";
+import { ItemFlagMetricsKpi, ItemFlagDetail } from "@/hooks/useAssessmentKpis";
+import { format } from "date-fns";
 
 interface ItemFlagsTableProps {
   items: ItemFlagMetricsKpi[];
+  flagDetails: ItemFlagDetail[];
 }
 
 const getFlagRateColor = (rate: number | null): "destructive" | "outline" | "secondary" => {
@@ -28,8 +30,13 @@ const formatRate = (rate: number | null): string => {
   return `${(rate * 100).toFixed(2)}%`;
 };
 
-export const ItemFlagsTable = ({ items }: ItemFlagsTableProps) => {
+export const ItemFlagsTable = ({ items, flagDetails }: ItemFlagsTableProps) => {
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
+  
+  // Get flag details for the selected question
+  const selectedItemDetails = selectedItem 
+    ? flagDetails.filter(detail => detail.question_id === selectedItem)
+    : [];
 
   return (
     <Card>
@@ -86,11 +93,41 @@ export const ItemFlagsTable = ({ items }: ItemFlagsTableProps) => {
         </Table>
         
         {selectedItem && (
-          <div className="rounded-lg border border-muted bg-muted/30 p-4">
-            <h4 className="font-semibold mb-2">Question #{selectedItem} Details</h4>
-            <p className="text-sm text-muted-foreground">
-              Drill-in panel for individual flag notes and A/B variant will be populated when assessment_item_flags data is available.
-            </p>
+          <div className="rounded-lg border bg-card p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              <h4 className="font-semibold">Question #{selectedItem} — User Feedback</h4>
+              <Badge variant="outline" className="ml-auto">
+                {selectedItemDetails.length} {selectedItemDetails.length === 1 ? 'note' : 'notes'}
+              </Badge>
+            </div>
+            
+            {selectedItemDetails.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">
+                No detailed notes available for this question.
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {selectedItemDetails.map((detail, idx) => (
+                  <div 
+                    key={`${detail.session_id}-${idx}`}
+                    className="rounded-md border bg-muted/30 p-3 text-sm"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <Badge variant="secondary" className="text-xs">
+                        {detail.flag_type || 'unclear'}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(detail.created_at), 'MMM d, yyyy HH:mm')}
+                      </span>
+                    </div>
+                    <p className="text-foreground/90 leading-relaxed">
+                      {detail.note}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </CardContent>

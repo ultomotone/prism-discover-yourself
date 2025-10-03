@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
       console.error("[analytics-get] CFA fit error:", e11);
     }
 
-    // Item Flags (clarity/confusion reports)
+    // Item Flags (clarity/confusion reports) - aggregated
     const { data: itemFlags, error: e14 } = await sb.rpc("exec_sql", {
       q: `
         SELECT 
@@ -152,6 +152,25 @@ Deno.serve(async (req) => {
       console.error("[analytics-get] Item flags error:", e14);
     }
 
+    // Item Flag Details (individual notes for drill-in)
+    const { data: itemFlagDetails, error: e15_details } = await sb.rpc("exec_sql", {
+      q: `
+        SELECT 
+          f.question_id,
+          f.session_id,
+          f.note,
+          f.flag_type,
+          f.created_at
+        FROM assessment_item_flags f
+        WHERE f.note IS NOT NULL AND f.note != ''
+        ORDER BY f.created_at DESC
+        LIMIT 500
+      `
+    } as any);
+    if (e15_details) {
+      console.error("[analytics-get] Item flag details error:", e15_details);
+    }
+
     // Live today metrics (always fresh, <1s query)
     const { data: liveToday, error: e12 } = await sb.rpc("exec_sql", {
       q: `SELECT * FROM v_kpi_live_today`
@@ -169,11 +188,11 @@ Deno.serve(async (req) => {
     }
 
     // Business metrics  
-    const { count, error: e15 } = await sb.from('profiles')
+    const { count, error: e16 } = await sb.from('profiles')
       .select('session_id', { count: 'exact' });
     
-    if (e15) {
-      console.error("[analytics-get] Business metrics error:", e15);
+    if (e16) {
+      console.error("[analytics-get] Business metrics error:", e16);
     }
     
     const businessMetrics = [{
@@ -181,7 +200,7 @@ Deno.serve(async (req) => {
       unique_users: 0 // placeholder until user tracking implemented
     }];
 
-    console.log(`[analytics-get] Success: engagement=${engagement?.length ?? 0} rows, reliability=${reliability?.length ?? 0} scales, live=${liveToday?.[0] ? 'yes' : 'no'}, itemFlags=${itemFlags?.length ?? 0}`);
+    console.log(`[analytics-get] Success: engagement=${engagement?.length ?? 0} rows, reliability=${reliability?.length ?? 0} scales, live=${liveToday?.[0] ? 'yes' : 'no'}, itemFlags=${itemFlags?.length ?? 0}, flagDetails=${itemFlagDetails?.length ?? 0}`);
 
     return new Response(
       JSON.stringify({ 
@@ -198,6 +217,7 @@ Deno.serve(async (req) => {
         itemDiscrimination: itemDiscrimination ?? [],
         cfaFit: cfaFit ?? [],
         itemFlags: itemFlags ?? [],
+        itemFlagDetails: itemFlagDetails ?? [],
         business: businessMetrics?.[0] ?? { total_completions: 0, unique_users: 0 }
       }),
       {

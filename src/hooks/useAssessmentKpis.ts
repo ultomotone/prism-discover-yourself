@@ -16,6 +16,14 @@ export interface ItemFlagMetricsKpi {
   flag_rate: number | null;
 }
 
+export interface ItemFlagDetail {
+  question_id: number;
+  session_id: string;
+  note: string;
+  flag_type: string;
+  created_at: string;
+}
+
 export interface EngagementMetrics {
   day: string;
   sessions_started: number;
@@ -114,6 +122,7 @@ interface KpiRpcResponse {
   itemDiscrimination?: ItemDiscriminationMetrics[];
   cfaFit?: CFAFitMetrics[];
   itemFlags?: ItemFlagMetricsKpi[];
+  itemFlagDetails?: ItemFlagDetail[];
   business?: {
     total_completions: number;
     unique_users: number;
@@ -163,6 +172,7 @@ export const useAssessmentKpis = (filters: KpiFilters = {}) => {
         itemDiscrimination: result.itemDiscrimination || [],
         cfaFit: result.cfaFit || [],
         itemFlags: result.itemFlags || [],
+        itemFlagDetails: result.itemFlagDetails || [],
         business: result.business || { total_completions: 0, unique_users: 0 }
       };
 
