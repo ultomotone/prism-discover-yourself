@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogOut, User, Target, ExternalLink, ChevronRight, RefreshCw, Zap, Loader2, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -280,9 +281,17 @@ const UserDashboard = () => {
           </div>
 
           {/* Main Dashboard Content */}
-          <div className="prism-container py-8">
-            {/* PRISM Results Section */}
-            {dashboardResults.length > 0 && (
+          <div className="prism-container py-4 md:py-8">
+            <Tabs defaultValue="results" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-6">
+                <TabsTrigger value="results">Results</TabsTrigger>
+                <TabsTrigger value="attempts">Attempts</TabsTrigger>
+                <TabsTrigger value="history">History</TabsTrigger>
+              </TabsList>
+
+              {/* PRISM Results Tab */}
+              <TabsContent value="results" className="space-y-6">
+            {dashboardResults.length > 0 ? (
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-6">
                   <div>
@@ -299,52 +308,61 @@ const UserDashboard = () => {
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {dashboardResults.map((result) => (
                     <Card key={result.session_id} className="hover:shadow-md transition-shadow border-l-4 border-l-primary">
-                      <CardContent className="p-6">
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="default" className="bg-primary">
+                      <CardContent className="p-4 md:p-6">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">
+                          <div className="space-y-2 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge variant="default" className="bg-primary text-xs">
                                 Complete Profile
                               </Badge>
-                              <span className="text-sm text-muted-foreground">
+                              <span className="text-xs text-muted-foreground">
                                 {formatTimestamp(result.submitted_at)}
                               </span>
                             </div>
                             
                             <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold text-xl text-primary">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-semibold text-lg md:text-xl text-primary">
                                   {result.type_code}
                                 </span>
                                 <Badge variant="outline" className="text-xs">
-                                  Session: {result.session_id.slice(0, 8)}...
+                                  {result.session_id.slice(0, 8)}...
                                 </Badge>
                               </div>
-                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-muted-foreground">
                                 <span>Confidence: {result.conf_band}</span>
-                                <span>Fit Score: {result.score_fit_calibrated?.toFixed(1)}</span>
+                                <span>Fit: {result.score_fit_calibrated?.toFixed(1)}</span>
                               </div>
                             </div>
                           </div>
 
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => window.open(result.results_url, '_blank')}
-                              className="bg-primary hover:bg-primary/90"
-                            >
-                              View Results
-                              <ExternalLink className="h-4 w-4 ml-2" />
-                            </Button>
-                          </div>
+                          <Button
+                            onClick={() => window.open(result.results_url, '_blank')}
+                            size="sm"
+                            className="bg-primary hover:bg-primary/90 w-full md:w-auto"
+                          >
+                            View Results
+                            <ExternalLink className="h-4 w-4 ml-2" />
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
                   ))}
                 </div>
               </div>
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Target className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <h3 className="font-semibold mb-2">No Complete Results Yet</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Complete 248-question assessments will appear here
+                  </p>
+                </CardContent>
+              </Card>
             )}
 
             {/* Real-time Scoring Results */}
@@ -412,9 +430,11 @@ const UserDashboard = () => {
                 </Card>
               </div>
             )}
+              </TabsContent>
 
-            {/* Assessment Attempts */}
-            <Card className="mb-8">
+              {/* Assessment Attempts Tab */}
+              <TabsContent value="attempts" className="space-y-6">
+            <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-xl">Assessment Attempts</CardTitle>
                 <div className="flex items-center gap-2">
@@ -482,9 +502,11 @@ const UserDashboard = () => {
                 )}
               </CardContent>
             </Card>
+              </TabsContent>
 
-            {/* User Assessment History */}
-            <div className="mb-8">
+              {/* User Assessment History Tab */}
+              <TabsContent value="history" className="space-y-6">
+            <div>
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-2xl font-bold mb-2">Assessment History</h2>
@@ -501,10 +523,10 @@ const UserDashboard = () => {
               </div>
 
               {isLoading ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {[...Array(3)].map((_, i) => (
                     <Card key={i}>
-                      <CardContent className="p-6">
+                      <CardContent className="p-4">
                         <div className="space-y-2">
                           <Skeleton className="h-4 w-32" />
                           <Skeleton className="h-6 w-48" />
@@ -514,7 +536,7 @@ const UserDashboard = () => {
                     </Card>
                   ))}
                 </div>
-              ) : userSessions.length === 0 && dashboardResults.length === 0 ? (
+              ) : userSessions.length === 0 ? (
                 <Card>
                   <CardContent className="p-12 text-center">
                     <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -528,29 +550,29 @@ const UserDashboard = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {userSessions.map((session) => {
                     const normalized = (session.status || '').toLowerCase();
                     const doneStatuses = new Set(['completed', 'complete', 'finalized', 'scored']);
                     const isDone = doneStatuses.has(normalized);
                     return (
                       <Card key={session.id} className="hover:shadow-md transition-shadow">
-                        <CardContent className="p-6">
-                          <div className="flex justify-between items-start">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <Badge variant={isDone ? 'default' : 'secondary'}>
+                        <CardContent className="p-4 md:p-6">
+                          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">
+                            <div className="space-y-2 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Badge variant={isDone ? 'default' : 'secondary'} className="text-xs">
                                   {isDone ? 'Completed' : 'In Progress'}
                                 </Badge>
-                                <span className="text-sm text-muted-foreground">
+                                <span className="text-xs text-muted-foreground">
                                   {formatTimestamp(session.started_at)}
                                 </span>
                               </div>
 
                               {session.profile ? (
                                 <div className="space-y-2">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-bold text-xl text-primary">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="font-bold text-lg md:text-xl text-primary">
                                       {session.profile.type_code}
                                     </span>
                                     {(session.profile.overlay ?? '') && (
@@ -559,17 +581,17 @@ const UserDashboard = () => {
                                       </Badge>
                                     )}
                                   </div>
-                                  <div className="flex items-center gap-6 text-sm">
+                                  <div className="flex flex-wrap items-center gap-3 md:gap-6 text-xs md:text-sm">
                                     <div className="flex items-center gap-1">
-                                      <span className="font-medium">Core Type:</span>
+                                      <span className="font-medium">Type:</span>
                                       <span className="text-primary font-semibold">{session.profile.type_code}</span>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                      <span className="font-medium">Fit Score:</span>
+                                      <span className="font-medium">Fit:</span>
                                       <span className="text-primary font-semibold">{session.profile.fit_band || 'N/A'}</span>
                                     </div>
                                   </div>
-                                  <div className="text-sm text-muted-foreground">
+                                  <div className="text-xs md:text-sm text-muted-foreground">
                                     Confidence: {typeof session.profile.confidence === 'number' 
                                       ? `${Math.round(session.profile.confidence * 100)}%` 
                                       : session.profile.confidence || 'N/A'}
@@ -577,11 +599,11 @@ const UserDashboard = () => {
                                 </div>
                               ) : (
                                 <div className="space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground text-sm">
-                                      Progress: {session.completed_questions}/{session.total_questions} questions
+                                  <div className="flex items-center justify-between text-xs md:text-sm">
+                                    <span className="text-muted-foreground">
+                                      Progress: {session.completed_questions}/{session.total_questions}
                                     </span>
-                                    <span className="text-muted-foreground text-sm">
+                                    <span className="text-muted-foreground">
                                       {Math.round((session.completed_questions / Math.max(session.total_questions, 1)) * 100)}%
                                     </span>
                                   </div>
@@ -597,31 +619,34 @@ const UserDashboard = () => {
                               )}
                             </div>
 
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 w-full md:w-auto">
                               {isDone ? (
                                 <>
                                   <Button
                                     variant="outline"
                                     size="sm"
                                     onClick={() => navigate(`/results/${session.id}`)}
+                                    className="flex-1 md:flex-none"
                                   >
-                                    <Eye className="h-4 w-4 mr-1" />
-                                    View Results
+                                    <Eye className="h-4 w-4 md:mr-1" />
+                                    <span className="hidden md:inline">View</span>
                                   </Button>
                                   <Button
                                     variant="default"
                                     size="sm"
                                     onClick={() => recomputeSession(session.id)}
                                     title="Recompute with enhanced scoring metrics"
+                                    className="flex-1 md:flex-none"
                                   >
-                                    <Zap className="h-4 w-4 mr-1" />
-                                    Enhance
+                                    <Zap className="h-4 w-4 md:mr-1" />
+                                    <span className="hidden md:inline">Enhance</span>
                                   </Button>
                                 </>
                               ) : (
                                 <Button
                                   size="sm"
                                   onClick={() => navigate(`/assessment?resume=${session.id}`)}
+                                  className="w-full"
                                 >
                                   Continue
                                   <ChevronRight className="h-4 w-4 ml-2" />
@@ -636,6 +661,8 @@ const UserDashboard = () => {
                 </div>
               )}
             </div>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>
