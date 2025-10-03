@@ -16,12 +16,12 @@ import pandas as pd
 
 # Environment variables
 DATABASE_URL = os.environ.get("DATABASE_URL")
-COHORT_START = os.environ.get("COHORT_START")  # e.g., '2025-09-01'
-COHORT_END = os.environ.get("COHORT_END")      # e.g., '2025-10-02'
+COHORT_START = os.environ.get("COHORT_START", "2024-01-01")  # Default to all historical data
+COHORT_END = os.environ.get("COHORT_END", datetime.now().strftime("%Y-%m-%d"))
 RESULTS_VER = os.environ.get("RESULTS_VER", "v1.2.1")
 
-if not all([DATABASE_URL, COHORT_START, COHORT_END]):
-    print(json.dumps({"error": "Missing required env vars: DATABASE_URL, COHORT_START, COHORT_END"}))
+if not DATABASE_URL:
+    print(json.dumps({"error": "Missing required env var: DATABASE_URL"}))
     sys.exit(1)
 
 

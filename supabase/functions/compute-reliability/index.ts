@@ -20,7 +20,7 @@ serve(async (req) => {
     console.log('[compute-reliability] Starting reliability computation');
 
     const resultsVersion = 'v1.2.1';
-    const cohortStart = '2025-09-01';
+    const cohortStart = '2024-01-01'; // Use all historical data for reliability analysis
     const cohortEnd = new Date().toISOString().split('T')[0];
 
     // Get all scales from scoring key
