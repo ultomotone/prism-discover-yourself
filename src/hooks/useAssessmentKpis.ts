@@ -123,22 +123,24 @@ export interface ScaleNorm {
 
 export interface NeuroticismData {
   results_version: string;
-  scale_tag: string;
-  n_resp: number;
-  mean_raw_1_5: number;
-  sd_raw_1_5: number;
-  mean_idx_0_100: number;
-  alpha: number | null;
-  omega_total: number | null;
-  split_half_sb: number | null;
-  pct_items_low: number | null;
+  n_sessions: number;
+  mean_raw: number | null;
+  sd_raw: number | null;
+  cronbach_alpha: number | null;
+  mcdonald_omega: number | null;
+  split_half: number | null;
+  split_half_n: number | null;
+  mean_r_it: number | null;
+  min_r_it: number | null;
   n_items: number;
-  retest_r: number | null;
-  n_pairs: number | null;
-  max_abs_corr: number | null;
-  max_corr_with: string | null;
+  r_retest: number | null;
+  retest_days: number | null;
+  retest_n: number | null;
   ave: number | null;
   cr: number | null;
+  pct_load_ge_40: number | null;
+  pct_load_ge_60: number | null;
+  pct_crossloading_gt_30: number | null;
   fornell_larcker_pass: boolean | null;
 }
 
