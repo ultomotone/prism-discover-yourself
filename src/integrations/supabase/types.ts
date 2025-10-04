@@ -2449,17 +2449,6 @@ export type Database = {
           },
         ]
       }
-      v_scales_reliability_coverage: {
-        Row: {
-          alpha_mean: number | null
-          last_updated: string | null
-          n_total: number | null
-          omega_mean: number | null
-          results_version: string | null
-          scale_code: string | null
-        }
-        Relationships: []
-      }
       v_state_index: {
         Row: {
           session_id: string | null
