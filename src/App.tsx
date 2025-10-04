@@ -95,6 +95,7 @@ import AssessmentAnalytics from "./pages/AssessmentAnalytics";
 import ContentStudio from "./pages/ContentStudio";
 import PostSurveyKPIs from "./pages/PostSurveyKPIs";
 import EmailManagement from "./pages/admin/EmailManagement";
+import StripeTest from "./pages/StripeTest";
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -239,6 +240,9 @@ const App = () => (
                       <Troubleshoot />
                     </Suspense>
                   } />
+                  
+                  {/* Stripe Test Route */}
+                  <Route path="/stripe-test" element={<StripeTest />} />
 
                   {/* Live + Real-time routes */}
                   <Route path="/live" element={<Live />} />
