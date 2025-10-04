@@ -205,27 +205,27 @@ const Footer = () => {
               </button>
             </li>
           </ul>
-        </div>
 
-        {/* Stay Connected */}
-        <div>
-          <h3 className="font-semibold mb-4">Stay Connected</h3>
-          <form onSubmit={handleSubscribe} className="flex space-x-2">
-            <Input
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 px-3 py-2 rounded bg-white text-indigo-900 placeholder-gray-500 focus:outline-none border-none"
-              required
-            />
-            <Button 
-              type="submit"
-              className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded flex-shrink-0"
-            >
-              Subscribe
-            </Button>
-          </form>
+          {/* Stay Connected */}
+          <div className="mt-6">
+            <h3 className="font-semibold mb-4">Stay Connected</h3>
+            <form onSubmit={handleSubscribe} className="flex flex-col space-y-2">
+              <Input
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 py-2 rounded bg-white text-indigo-900 placeholder-gray-500 focus:outline-none border-none"
+                required
+              />
+              <Button 
+                type="submit"
+                className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded w-full"
+              >
+                Subscribe
+              </Button>
+            </form>
+          </div>
         </div>
       </div>
 
