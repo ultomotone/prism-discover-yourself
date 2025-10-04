@@ -18,10 +18,10 @@ const mockSessions = [
 const coachSpecialties = ['Career', 'Relationships', 'Team Dynamics'];
 
 const unlockBenefits = [
-  '1:1 sessions with type-certified coaches who understand your 1D–4D stack',
-  'Custom action plans tied to your drift patterns and state trends',
-  'Flexible scheduling (30/45/60 min sessions)',
-  'Session notes + follow-up resources in your dashboard',
+  'One-on-one relational fit analysis with core type & drift alignment',
+  'Similar KPIs to Cohorts: compatibility, supply/demand, core alignment',
+  'Custom reports on communication patterns and interaction dynamics',
+  'Follow-up insights tied to your dimensional stack and state trends',
 ];
 
 export function OneOnOnePreview({ onJoinBeta }: OneOnOnePreviewProps) {
@@ -104,7 +104,7 @@ export function OneOnOnePreview({ onJoinBeta }: OneOnOnePreviewProps) {
             <Calendar className="h-5 w-5" />
             What Beta Unlocks
           </CardTitle>
-          <CardDescription>Type-aware coaching, not generic life coaching</CardDescription>
+          <CardDescription>Relational fit analysis, not generic life coaching</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {unlockBenefits.map((benefit, idx) => (
@@ -124,7 +124,7 @@ export function OneOnOnePreview({ onJoinBeta }: OneOnOnePreviewProps) {
             Book Your First Session
           </Button>
           <p className="text-sm text-muted-foreground">
-            Type-aware coaching, not generic life coaching
+            Understand relational compatibility at the one-on-one level
           </p>
         </CardContent>
       </Card>

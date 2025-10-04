@@ -243,18 +243,21 @@ export default function Account() {
                   <TrendingUp className="h-4 w-4" />
                   Trends & KPIs
                 </TabsTrigger>
-                <TabsTrigger value="groups" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Cohorts
-                </TabsTrigger>
-                <TabsTrigger value="coaching" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  1:1s
-                </TabsTrigger>
-                <TabsTrigger value="ai-coach" className="flex items-center gap-2">
-                  <Bot className="h-4 w-4" />
-                  AI Coach
-                </TabsTrigger>
+            <TabsTrigger value="groups" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Cohorts
+              <Badge variant="outline" className="ml-1 text-[10px] px-1 py-0">Soon</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="coaching" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              1:1s
+              <Badge variant="outline" className="ml-1 text-[10px] px-1 py-0">Soon</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="ai-coach" className="flex items-center gap-2">
+              <Bot className="h-4 w-4" />
+              AI Coach
+              <Badge variant="outline" className="ml-1 text-[10px] px-1 py-0">Soon</Badge>
+            </TabsTrigger>
                 <TabsTrigger value="purchases" className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4" />
                   Purchases
@@ -611,10 +614,10 @@ export default function Account() {
               <Card>
                 <CardContent className="py-12 text-center">
                   <Calendar className="h-12 w-12 mx-auto mb-4 text-primary" />
-                  <h3 className="text-xl font-semibold mb-2">1:1 Coaching Coming Soon</h3>
+                  <h3 className="text-xl font-semibold mb-2">1:1s — Relational Fit Coming Soon</h3>
                   <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-                    Type-certified coaches are being onboarded. Book 1:1 sessions with 
-                    custom action plans tied to your drift patterns and dimensional stack.
+                    Analyze relational compatibility one-on-one using KPIs similar to Cohorts: 
+                    core type alignment, drift patterns, supply/demand dynamics, and compatibility scoring.
                   </p>
                   <Badge variant="outline" className="px-3 py-1">
                     <Clock className="h-3 w-3 mr-1" />
@@ -783,81 +786,171 @@ export default function Account() {
                       <CreditCounter variant="detailed" />
                     </div>
 
-                    {/* Membership Tiers & Benefits */}
-                    <div className="border-t pt-4">
-                      <h4 className="font-medium mb-3">Membership Tiers & Benefits</h4>
-                      <div className="space-y-3">
-                        {/* Monthly Tier */}
-                        <div className={`p-4 rounded-lg border ${membershipPlan === 'monthly' ? 'border-primary bg-primary/5' : 'bg-card'}`}>
-                          <div className="flex items-center justify-between mb-2">
-                            <h5 className="font-semibold">Monthly Beta</h5>
-                            <Badge variant={membershipPlan === 'monthly' ? 'default' : 'outline'}>
-                              {membershipPlan === 'monthly' ? 'Your Plan' : '$19/mo'}
-                            </Badge>
-                          </div>
-                          <ul className="text-sm space-y-1 text-muted-foreground">
-                            <li className="flex items-start gap-2">
-                              <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                              <span><strong>Today:</strong> 2 Advanced Reports per retake</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                              <Clock className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                              <span><strong>Soon:</strong> AI Coach, Cohort access, Full KPIs & Drift Map</span>
-                            </li>
-                          </ul>
-                        </div>
-
-                        {/* Annual Tier */}
-                        <div className={`p-4 rounded-lg border ${membershipPlan === 'annual' ? 'border-primary bg-primary/5' : 'bg-card'}`}>
-                          <div className="flex items-center justify-between mb-2">
-                            <h5 className="font-semibold">Annual Beta</h5>
-                            <Badge variant={membershipPlan === 'annual' ? 'default' : 'outline'}>
-                              {membershipPlan === 'annual' ? 'Your Plan' : '$190/yr'}
-                            </Badge>
-                          </div>
-                          <ul className="text-sm space-y-1 text-muted-foreground">
-                            <li className="flex items-start gap-2">
-                              <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                              <span><strong>Today:</strong> Everything in Monthly + 2 months free</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                              <Clock className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                              <span><strong>Soon:</strong> Early access to new features, priority support</span>
-                            </li>
-                          </ul>
-                        </div>
-
-                        {/* Lifetime Tier */}
-                        <div className={`p-4 rounded-lg border ${membershipPlan === 'lifetime' ? 'border-primary bg-primary/5' : 'bg-card'}`}>
-                          <div className="flex items-center justify-between mb-2">
-                            <h5 className="font-semibold">Lifetime Beta</h5>
-                            <Badge variant={membershipPlan === 'lifetime' ? 'default' : 'outline'}>
-                              {membershipPlan === 'lifetime' ? 'Your Plan' : '$499 once'}
-                            </Badge>
-                          </div>
-                          <ul className="text-sm space-y-1 text-muted-foreground">
-                            <li className="flex items-start gap-2">
-                              <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                              <span><strong>Today:</strong> All features forever, unlimited Advanced Reports</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                              <Clock className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                              <span><strong>Soon:</strong> Founding member badge, exclusive community access, lifetime updates</span>
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                      
-                      {!isMember && (
-                        <Button 
-                          className="w-full mt-3" 
-                          onClick={() => navigate('/membership')}
-                        >
-                          <Sparkles className="h-4 w-4 mr-2" />
-                          View All Plans
-                        </Button>
-                      )}
+              {/* Membership Tiers & Benefits */}
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-3">Membership Tiers & Benefits</h4>
+                <div className="space-y-6">
+                  {/* Monthly Tier */}
+                  <div className={`p-4 rounded-lg border ${membershipPlan === 'monthly' ? 'border-primary bg-primary/5' : 'bg-card'}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <h5 className="font-semibold">Monthly Beta</h5>
+                      <Badge variant={membershipPlan === 'monthly' ? 'default' : 'outline'}>
+                        {membershipPlan === 'monthly' ? 'Your Plan' : '$9.97/mo'}
+                      </Badge>
                     </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {/* Today Column */}
+                      <div>
+                        <h6 className="text-xs font-semibold text-muted-foreground uppercase mb-2 flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Available Today
+                        </h6>
+                        <ul className="text-sm space-y-1.5">
+                          <li className="flex items-start gap-2">
+                            <span className="text-green-600">✓</span>
+                            <span>2 Advanced Reports per retake</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-green-600">✓</span>
+                            <span>Full assessment history</span>
+                          </li>
+                        </ul>
+                      </div>
+                      {/* Coming Soon Column */}
+                      <div>
+                        <h6 className="text-xs font-semibold text-muted-foreground uppercase mb-2 flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          Coming Soon
+                        </h6>
+                        <ul className="text-sm space-y-1.5 text-muted-foreground">
+                          <li className="flex items-start gap-2">
+                            <Clock className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-orange-500" />
+                            <span>AI Coach access</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Clock className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-orange-500" />
+                            <span>Cohort matching</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Clock className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-orange-500" />
+                            <span>Full KPIs & Drift Map</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Annual Tier */}
+                  <div className={`p-4 rounded-lg border ${membershipPlan === 'annual' ? 'border-primary bg-primary/5' : 'bg-card'}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <h5 className="font-semibold">Annual Beta</h5>
+                      <Badge variant={membershipPlan === 'annual' ? 'default' : 'outline'}>
+                        {membershipPlan === 'annual' ? 'Your Plan' : '$79/yr'}
+                      </Badge>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {/* Today Column */}
+                      <div>
+                        <h6 className="text-xs font-semibold text-muted-foreground uppercase mb-2 flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Available Today
+                        </h6>
+                        <ul className="text-sm space-y-1.5">
+                          <li className="flex items-start gap-2">
+                            <span className="text-green-600">✓</span>
+                            <span>Everything in Monthly</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-green-600">✓</span>
+                            <span>Save 34% vs monthly</span>
+                          </li>
+                        </ul>
+                      </div>
+                      {/* Coming Soon Column */}
+                      <div>
+                        <h6 className="text-xs font-semibold text-muted-foreground uppercase mb-2 flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          Coming Soon
+                        </h6>
+                        <ul className="text-sm space-y-1.5 text-muted-foreground">
+                          <li className="flex items-start gap-2">
+                            <Clock className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-orange-500" />
+                            <span>Early access to new features</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Clock className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-orange-500" />
+                            <span>Priority support</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Lifetime Tier */}
+                  <div className={`p-4 rounded-lg border ${membershipPlan === 'lifetime' ? 'border-primary bg-primary/5' : 'bg-card'}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <h5 className="font-semibold">Lifetime Beta</h5>
+                      <Badge variant={membershipPlan === 'lifetime' ? 'default' : 'outline'}>
+                        {membershipPlan === 'lifetime' ? 'Your Plan' : '$199 once'}
+                      </Badge>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {/* Today Column */}
+                      <div>
+                        <h6 className="text-xs font-semibold text-muted-foreground uppercase mb-2 flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Available Today
+                        </h6>
+                        <ul className="text-sm space-y-1.5">
+                          <li className="flex items-start gap-2">
+                            <span className="text-green-600">✓</span>
+                            <span>All features forever</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-green-600">✓</span>
+                            <span>Unlimited Advanced Reports</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-green-600">✓</span>
+                            <span>Never pay again</span>
+                          </li>
+                        </ul>
+                      </div>
+                      {/* Coming Soon Column */}
+                      <div>
+                        <h6 className="text-xs font-semibold text-muted-foreground uppercase mb-2 flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          Coming Soon
+                        </h6>
+                        <ul className="text-sm space-y-1.5 text-muted-foreground">
+                          <li className="flex items-start gap-2">
+                            <Clock className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-orange-500" />
+                            <span>Founding member badge</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Clock className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-orange-500" />
+                            <span>Exclusive community access</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Clock className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-orange-500" />
+                            <span>Lifetime updates to all tools</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {!isMember && (
+                  <Button 
+                    className="w-full mt-3" 
+                    onClick={() => navigate('/membership')}
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    View All Plans
+                  </Button>
+                )}
+              </div>
                   </CardContent>
                 </Card>
               </TabsContent>
