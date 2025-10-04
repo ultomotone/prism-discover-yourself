@@ -62,6 +62,44 @@ const Footer = () => {
               <span>(631) 745-8686</span>
             </div>
           </div>
+          <div className="flex space-x-4 text-gray-400 mt-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white p-0"
+              aria-label="LinkedIn"
+              onClick={() => window.open('https://www.linkedin.com/company/prism-personality-regulation-information-system-mapping', '_blank')}
+            >
+              <Linkedin className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white p-0"
+              aria-label="Facebook"
+              onClick={() => window.open('https://www.facebook.com/profile.php?id=61579334970712', '_blank')}
+            >
+              <Facebook className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white p-0"
+              aria-label="YouTube"
+              onClick={() => window.open('https://www.youtube.com/channel/UCeHPDPqxfp2YVMI1aX-0Dag/', '_blank')}
+            >
+              <Youtube className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white p-0"
+              aria-label="Skool Community"
+              onClick={() => window.open('https://www.skool.com/your-personality-blueprint?c=541fd1febb454e4792fec796f6c7e5dc', '_blank')}
+            >
+              <Users className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
         {/* PRISM Components */}
@@ -172,69 +210,33 @@ const Footer = () => {
         {/* Stay Connected */}
         <div>
           <h3 className="font-semibold mb-4">Stay Connected</h3>
-          <div className="mb-4">
-            <form onSubmit={handleSubscribe} className="flex space-x-2">
-              <Input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-white text-indigo-900 placeholder-gray-500 focus:outline-none border-none"
-                required
-              />
-              <Button 
-                type="submit"
-                className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded"
-              >
-                Subscribe
-              </Button>
-            </form>
-          </div>
-          <div className="flex space-x-4 text-gray-400 mt-6">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-gray-400 hover:text-white p-0"
-              aria-label="LinkedIn"
-              onClick={() => window.open('https://www.linkedin.com/company/prism-personality-regulation-information-system-mapping', '_blank')}
+          <form onSubmit={handleSubscribe} className="flex space-x-2">
+            <Input
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="flex-1 px-3 py-2 rounded bg-white text-indigo-900 placeholder-gray-500 focus:outline-none border-none"
+              required
+            />
+            <Button 
+              type="submit"
+              className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded flex-shrink-0"
             >
-              <Linkedin className="h-5 w-5" />
+              Subscribe
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-gray-400 hover:text-white p-0"
-              aria-label="Facebook"
-              onClick={() => window.open('https://www.facebook.com/profile.php?id=61579334970712', '_blank')}
-            >
-              <Facebook className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-gray-400 hover:text-white p-0"
-              aria-label="YouTube"
-              onClick={() => window.open('https://www.youtube.com/channel/UCeHPDPqxfp2YVMI1aX-0Dag/', '_blank')}
-            >
-              <Youtube className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-gray-400 hover:text-white p-0"
-              aria-label="Skool Community"
-              onClick={() => window.open('https://www.skool.com/your-personality-blueprint?c=541fd1febb454e4792fec796f6c7e5dc', '_blank')}
-            >
-              <Users className="h-5 w-5" />
-            </Button>
-          </div>
+          </form>
         </div>
       </div>
 
-      <div className="text-center text-gray-400 text-xs mt-12 space-y-2">
-        <p>Looking for a different PRISM? We're a distinct product. <button onClick={() => navigate('/disambiguation')} className="underline hover:text-white">See Disambiguation</button>.</p>
-        <p>© 2025 PRISM Dynamics Company LLC. All rights reserved.</p>
-        <p className="text-gray-500">DBA: PRISM Dynamics™</p>
+      <div className="text-center text-gray-400 text-xs mt-12">
+        <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4">
+          <p>Looking for a different PRISM? We're a distinct product. <button onClick={() => navigate('/disambiguation')} className="underline hover:text-white">See Disambiguation</button>.</p>
+          <p className="hidden md:block">|</p>
+          <p>© 2025 PRISM Dynamics Company LLC. All rights reserved.</p>
+          <p className="hidden md:block">|</p>
+          <p className="text-gray-500">DBA: PRISM Dynamics™</p>
+        </div>
       </div>
     </footer>
   );
