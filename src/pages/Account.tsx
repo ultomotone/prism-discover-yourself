@@ -743,6 +743,34 @@ export default function Account() {
                       Manage Subscription & Billing
                     </Button>
 
+                    {/* Support the Project */}
+                    <div className="border-t pt-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h4 className="font-medium mb-1">Support the Project</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Help us build better tools for self-awareness
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400">
+                          47 supporters
+                        </Badge>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">
+                          💚 Community members are donating <strong>$687/month</strong> to support open development
+                        </p>
+                        <Button 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => window.open('https://donate.stripe.com/3cI6oHdR3cLg4n0eK56Ri04', '_blank')}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Make a Donation
+                        </Button>
+                      </div>
+                    </div>
+
                     {membershipPlan && (
                       <div className="border-t pt-4">
                         <h4 className="font-medium mb-2">Active Membership</h4>
@@ -753,6 +781,82 @@ export default function Account() {
                     <div className="border-t pt-4">
                       <h4 className="font-medium mb-2">Advanced Credits</h4>
                       <CreditCounter variant="detailed" />
+                    </div>
+
+                    {/* Membership Tiers & Benefits */}
+                    <div className="border-t pt-4">
+                      <h4 className="font-medium mb-3">Membership Tiers & Benefits</h4>
+                      <div className="space-y-3">
+                        {/* Monthly Tier */}
+                        <div className={`p-4 rounded-lg border ${membershipPlan === 'monthly' ? 'border-primary bg-primary/5' : 'bg-card'}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <h5 className="font-semibold">Monthly Beta</h5>
+                            <Badge variant={membershipPlan === 'monthly' ? 'default' : 'outline'}>
+                              {membershipPlan === 'monthly' ? 'Your Plan' : '$19/mo'}
+                            </Badge>
+                          </div>
+                          <ul className="text-sm space-y-1 text-muted-foreground">
+                            <li className="flex items-start gap-2">
+                              <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                              <span><strong>Today:</strong> 2 Advanced Reports per retake</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <Clock className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                              <span><strong>Soon:</strong> AI Coach, Cohort access, Full KPIs & Drift Map</span>
+                            </li>
+                          </ul>
+                        </div>
+
+                        {/* Annual Tier */}
+                        <div className={`p-4 rounded-lg border ${membershipPlan === 'annual' ? 'border-primary bg-primary/5' : 'bg-card'}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <h5 className="font-semibold">Annual Beta</h5>
+                            <Badge variant={membershipPlan === 'annual' ? 'default' : 'outline'}>
+                              {membershipPlan === 'annual' ? 'Your Plan' : '$190/yr'}
+                            </Badge>
+                          </div>
+                          <ul className="text-sm space-y-1 text-muted-foreground">
+                            <li className="flex items-start gap-2">
+                              <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                              <span><strong>Today:</strong> Everything in Monthly + 2 months free</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <Clock className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                              <span><strong>Soon:</strong> Early access to new features, priority support</span>
+                            </li>
+                          </ul>
+                        </div>
+
+                        {/* Lifetime Tier */}
+                        <div className={`p-4 rounded-lg border ${membershipPlan === 'lifetime' ? 'border-primary bg-primary/5' : 'bg-card'}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <h5 className="font-semibold">Lifetime Beta</h5>
+                            <Badge variant={membershipPlan === 'lifetime' ? 'default' : 'outline'}>
+                              {membershipPlan === 'lifetime' ? 'Your Plan' : '$499 once'}
+                            </Badge>
+                          </div>
+                          <ul className="text-sm space-y-1 text-muted-foreground">
+                            <li className="flex items-start gap-2">
+                              <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                              <span><strong>Today:</strong> All features forever, unlimited Advanced Reports</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <Clock className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                              <span><strong>Soon:</strong> Founding member badge, exclusive community access, lifetime updates</span>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                      
+                      {!isMember && (
+                        <Button 
+                          className="w-full mt-3" 
+                          onClick={() => navigate('/membership')}
+                        >
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          View All Plans
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

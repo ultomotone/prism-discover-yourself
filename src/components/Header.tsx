@@ -160,7 +160,7 @@ const Header = () => {
                       <Link to="/account?tab=dashboard" className="w-full">Dashboard</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/account?tab=profile" className="w-full">Profile</Link>
+                      <Link to="/account?tab=profile" className="w-full">Trends & KPIs</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/account?tab=purchases" className="w-full">Purchases & Billing</Link>
@@ -344,7 +344,7 @@ const Header = () => {
                         className="block px-3 py-2 text-foreground hover:text-primary prism-transition font-medium"
                         onClick={() => setIsMenuOpen(false)}
                       >
-                        Profile
+                        Trends & KPIs
                       </Link>
                       <Link
                         to="/account?tab=purchases"
