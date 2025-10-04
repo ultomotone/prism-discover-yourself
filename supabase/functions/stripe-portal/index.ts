@@ -27,7 +27,7 @@ serve(async (req) => {
     // Create portal session
     const session = await stripe.billingPortal.sessions.create({
       customer: stripeCustomer.stripe_customer_id,
-      return_url: `${Deno.env.get("APP_URL")}/account/billing`
+      return_url: `${Deno.env.get("APP_URL")}/account?tab=purchases`
     });
 
     return new Response(

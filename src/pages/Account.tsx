@@ -44,10 +44,18 @@ export default function Account() {
       try {
         const { data, error } = await supabase
           .from('assessment_sessions')
-          .select('*')
+          .select(`
+            *,
+            profiles (
+              type_code,
+              confidence,
+              overlay,
+              score_fit_calibrated
+            )
+          `)
           .eq('user_id', user.id)
           .order('started_at', { ascending: false })
-          .limit(10);
+          .limit(50);
 
         if (error) throw error;
         setSessions(data || []);
@@ -168,41 +176,100 @@ export default function Account() {
                   </Card>
                 </div>
 
-                {/* Latest Assessment */}
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <Button onClick={() => navigate('/assessment')} size="lg">
+                    Start the Test
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate('/survey')}
+                    size="lg"
+                  >
+                    Take 2-Min Survey
+                  </Button>
+                </div>
+
+                {/* Complete Results */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Latest Assessment</CardTitle>
+                    <CardTitle>Complete Results</CardTitle>
+                    <CardDescription>
+                      Your assessment history with detailed metrics
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {loadingSessions ? (
                       <p className="text-muted-foreground">Loading...</p>
                     ) : completedSessions.length > 0 ? (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium">Session {completedSessions[0].id.slice(0, 8)}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(completedSessions[0].started_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="outline"
-                              onClick={() => navigate(`/results/${completedSessions[0].id}`)}
-                            >
-                              View Results
-                            </Button>
-                            <Button onClick={() => navigate('/assessment')}>
-                              Retake
-                            </Button>
-                          </div>
-                        </div>
+                      <div className="space-y-3">
+                        {completedSessions.map((session: any) => {
+                          const profile = session.profiles?.[0] || session.profiles;
+                          return (
+                            <Card key={session.id} className="p-4">
+                              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                                <div className="space-y-2 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-sm text-muted-foreground">
+                                      Session {session.id.slice(0, 6)} · {new Date(session.completed_at || session.started_at).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                                    <div>
+                                      <span className="text-muted-foreground">Core Type:</span>{' '}
+                                      <span className="font-medium">{profile?.type_code || '—'}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">Fit Score:</span>{' '}
+                                      <span className="font-medium">
+                                        {profile?.score_fit_calibrated 
+                                          ? `${(profile.score_fit_calibrated * 100).toFixed(0)}%` 
+                                          : '—'}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">Overlay:</span>{' '}
+                                      <span className="font-medium">{profile?.overlay || 'None'}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">Confidence:</span>{' '}
+                                      <span className="font-medium">{profile?.confidence || '—'}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex gap-2 flex-wrap lg:flex-nowrap">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => navigate(`/results/${session.id}`)}
+                                  >
+                                    View Results
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => navigate(`/assessment?retake=${session.id}`)}
+                                  >
+                                    Retake
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => navigate(`/survey/${session.id}`)}
+                                  >
+                                    Post-Survey
+                                  </Button>
+                                </div>
+                              </div>
+                            </Card>
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="text-center py-8">
                         <p className="text-muted-foreground mb-4">No completed assessments yet</p>
                         <Button onClick={() => navigate('/assessment')}>
-                          Take Assessment
+                          Take Your First Assessment
                         </Button>
                       </div>
                     )}
