@@ -105,14 +105,16 @@ export const ComponentKPICard: React.FC<ComponentKPICardProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {data.map((scale) => {
-                  const reliabilityBadge = getReliabilityBadge(scale.split_half_sb, scale.omega_total);
-                  const itemQualityBadge = getItemQualityBadge(scale.r_it_median, scale.pct_items_low);
-                  const validityBadge = getValidityBadge(scale.convergent_r, scale.ave);
-                  const stabilityBadge = getStabilityBadge(scale.retest_r);
-                  
-                  return (
-                    <tr key={scale.scale_tag} className="border-b hover:bg-muted/50">
+                {data
+                  .filter((scale) => scale.scale_tag != null) // Filter out NULL scale_tags
+                  .map((scale) => {
+                    const reliabilityBadge = getReliabilityBadge(scale.split_half_sb, scale.omega_total);
+                    const itemQualityBadge = getItemQualityBadge(scale.r_it_median, scale.pct_items_low);
+                    const validityBadge = getValidityBadge(scale.convergent_r, scale.ave);
+                    const stabilityBadge = getStabilityBadge(scale.retest_r);
+                    
+                    return (
+                      <tr key={scale.scale_tag} className="border-b hover:bg-muted/50">
                       <td className="p-2 font-medium">{scale.scale_tag}</td>
                       <td className="p-2 text-center">{scale.n_items}</td>
                       <td className="p-2 text-center">
