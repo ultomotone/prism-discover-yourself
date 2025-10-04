@@ -2917,6 +2917,10 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: Json
       }
+      get_user_sessions_with_survey_status: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       health_probe: {
         Args: Record<PropertyKey, never>
         Returns: {

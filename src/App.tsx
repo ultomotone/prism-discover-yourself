@@ -96,6 +96,7 @@ import ContentStudio from "./pages/ContentStudio";
 import PostSurveyKPIs from "./pages/PostSurveyKPIs";
 import EmailManagement from "./pages/admin/EmailManagement";
 import StripeTest from "./pages/StripeTest";
+import SurveyPage from "./pages/SurveyPage";
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -210,6 +211,7 @@ const App = () => (
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/assessment" element={<Assessment />} />
                   <Route path="/results/:sessionId" element={<Results />} />
+                  <Route path="/survey/:sessionId" element={<SurveyPage />} />
                   {/* Debug route for Results testing */}
                   <Route
                     path="/results"

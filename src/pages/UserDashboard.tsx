@@ -19,6 +19,7 @@ import {
 } from "@/hooks/useEmailSessionManager";
 import { RetakeLimitNotice } from "@/components/assessment/RetakeLimitNotice";
 import { CleanupSessionsButton } from "@/components/CleanupSessionsButton";
+import { PostSurveyModal } from "@/components/assessment/PostSurveyModal";
 
 interface UserSession {
   id: string;
@@ -32,7 +33,10 @@ interface UserSession {
     confidence: string;
     fit_band: string;
     overlay: string;
+    computed_at: string;
   };
+  survey_completed?: boolean;
+  survey_session_id?: string;
 }
 
 const UserDashboard = () => {
@@ -43,6 +47,8 @@ const UserDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [retakeBlock, setRetakeBlock] = useState<RetakeBlock | null>(null);
   const [isMigrating, setIsMigrating] = useState(false);
+  const [surveyModalOpen, setSurveyModalOpen] = useState(false);
+  const [surveySessionId, setSurveySessionId] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Real-time scoring hook
@@ -78,9 +84,9 @@ const UserDashboard = () => {
         setDashboardResults([]);
       }
 
-      // Fetch user's regular assessment sessions with profiles using secure RPC
+      // Fetch user's assessment sessions with survey status using secure RPC
       const { data: sessionsResult, error: sessionsError } = await supabase
-        .rpc('get_user_sessions_with_scoring', { p_user_id: user.id });
+        .rpc('get_user_sessions_with_survey_status', { p_user_id: user.id });
 
       if (sessionsError) {
         console.error('Error fetching user sessions:', sessionsError);
@@ -546,6 +552,30 @@ const UserDashboard = () => {
                                   </Button>
                                 )}
                               </div>
+
+                              {/* Post-Survey Section */}
+                              {session.status === 'completed' && (
+                                <div className="mt-4 pt-4 border-t border-border">
+                                  {session.survey_completed ? (
+                                    <div className="flex items-center justify-center gap-2 text-sm text-green-600 dark:text-green-400">
+                                      <span>✅</span>
+                                      <span className="font-medium">Survey Complete</span>
+                                    </div>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSurveySessionId(session.id);
+                                        setSurveyModalOpen(true);
+                                      }}
+                                      className="w-full border-primary/20 hover:bg-primary/10"
+                                    >
+                                      📋 Take 2-Min Survey
+                                    </Button>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </CardContent>
                         </Card>
@@ -557,6 +587,19 @@ const UserDashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* Post-Survey Modal */}
+        {surveySessionId && (
+          <PostSurveyModal
+            sessionId={surveySessionId}
+            isOpen={surveyModalOpen}
+            onClose={() => {
+              setSurveyModalOpen(false);
+              setSurveySessionId(null);
+              fetchUserData(); // Refresh to show updated survey status
+            }}
+          />
+        )}
       </div>
     </ProtectedRoute>
   );

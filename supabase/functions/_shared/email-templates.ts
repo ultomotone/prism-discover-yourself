@@ -162,3 +162,46 @@ export const feedbackReminder2 = (feedbackUrl: string): EmailTemplate => ({
     </html>
   `,
 });
+
+export const postSurveyInvite = (surveyUrl: string, sessionId: string): EmailTemplate => ({
+  subject: '📋 Quick PRISM Survey – Help us improve! (2 mins)',
+  html: `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h1 style="color: #1a1a1a; font-size: 28px; margin-bottom: 20px;">We'd love your feedback!</h1>
+      
+      <p style="color: #4a4a4a; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+        Thank you for completing your PRISM assessment. Your results are ready, but first—would you mind sharing your experience with us?
+      </p>
+
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center;">
+        <h2 style="color: white; font-size: 24px; margin: 0 0 10px 0;">⏱️ Takes just 2 minutes</h2>
+        <p style="color: rgba(255,255,255,0.9); font-size: 16px; margin: 0 0 20px 0;">
+          Your feedback helps us improve PRISM for everyone
+        </p>
+        <a href="${surveyUrl}" style="display: inline-block; background-color: white; color: #667eea; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+          Take Survey Now
+        </a>
+      </div>
+
+      <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
+        <p style="color: #2c3e50; font-size: 14px; margin: 0 0 10px 0;">
+          <strong>What we'll ask:</strong>
+        </p>
+        <ul style="color: #4a4a4a; font-size: 14px; margin: 0; padding-left: 20px;">
+          <li>How clear and engaging the questions were</li>
+          <li>How accurate your results feel</li>
+          <li>Whether you'd recommend PRISM to others</li>
+        </ul>
+      </div>
+
+      <p style="color: #666666; font-size: 13px; line-height: 1.5; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+        Session ID: <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-family: monospace;">${sessionId.slice(0, 8)}...</code>
+      </p>
+
+      <p style="color: #666666; font-size: 14px; line-height: 1.6; margin-top: 20px;">
+        Thank you for being part of the PRISM community!<br>
+        <strong>The PRISM Team</strong>
+      </p>
+    </div>
+  `,
+});

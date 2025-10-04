@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
-import { completionEmail } from "../_shared/email-templates.ts";
+import { completionEmail, postSurveyInvite } from "../_shared/email-templates.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,16 +40,16 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Check if email already sent (idempotency)
-    const { data: existingLog } = await supabase
+    // Check if completion email already sent (idempotency)
+    const { data: existingCompletionLog } = await supabase
       .from('fn_logs')
       .select('id')
       .eq('evt', 'completion_email_sent')
-      .eq('payload->session_id', session_id)
+      .eq('payload->>session_id', session_id)
       .maybeSingle();
 
-    if (existingLog) {
-      console.log(`[send-completion-email] Email already sent for session ${session_id}`);
+    if (existingCompletionLog) {
+      console.log(`[send-completion-email] Completion email already sent for session ${session_id}`);
       return new Response(
         JSON.stringify({ success: true, message: 'Email already sent' }),
         {
@@ -59,15 +59,24 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Check if post-survey invitation already sent
+    const { data: existingSurveyLog } = await supabase
+      .from('fn_logs')
+      .select('id')
+      .eq('evt', 'post_survey_invite_sent')
+      .eq('payload->>session_id', session_id)
+      .maybeSingle();
+
     // Build URLs
     const baseUrl = Deno.env.get('RESULTS_BASE_URL') || 'https://prismassessment.com';
     const resultsUrl = `${baseUrl}/results/${session_id}?t=${share_token}`;
     const feedbackUrl = `${baseUrl}/results/${session_id}?survey=true&t=${share_token}`;
+    const surveyUrl = `${baseUrl}/survey/${session_id}?t=${share_token}`;
 
-    // Generate email content
+    // Generate completion email content
     const emailContent = completionEmail(resultsUrl, feedbackUrl, type_code);
 
-    // Send email via Resend
+    // Send completion email via Resend
     const emailResponse = await resend.emails.send({
       from: 'PRISM Assessment <noreply@prismassessment.com>',
       to: [email],
@@ -75,14 +84,42 @@ Deno.serve(async (req) => {
       html: emailContent.html,
     });
 
-    console.log(`[send-completion-email] Email sent successfully:`, emailResponse);
+    console.log(`[send-completion-email] Completion email sent successfully:`, emailResponse);
 
-    // Log success
+    // Log completion email success
     await supabase.from('fn_logs').insert({
       evt: 'completion_email_sent',
       payload: { session_id, email, resend_id: emailResponse.id },
       level: 'info',
     });
+
+    // Send post-survey invitation email (Day 1) if not already sent
+    if (!existingSurveyLog) {
+      const surveyEmailContent = postSurveyInvite(surveyUrl, session_id);
+
+      const { data: surveyEmailData, error: surveyEmailError } = await resend.emails.send({
+        from: 'PRISM Assessment <noreply@prismassessment.com>',
+        to: [email],
+        subject: surveyEmailContent.subject,
+        html: surveyEmailContent.html,
+      });
+
+      if (surveyEmailError) {
+        console.error('[send-completion-email] Survey email error:', surveyEmailError);
+        // Don't throw - completion email was sent successfully
+      } else {
+        console.log('[send-completion-email] Post-survey invitation sent:', surveyEmailData?.id);
+
+        // Log survey invitation success
+        await supabase.from('fn_logs').insert({
+          evt: 'post_survey_invite_sent',
+          payload: { session_id, email, resend_id: surveyEmailData?.id },
+          level: 'info',
+        });
+      }
+    } else {
+      console.log('[send-completion-email] Post-survey invitation already sent, skipping');
+    }
 
     // Update session metadata
     const { error: updateError } = await supabase
@@ -90,6 +127,7 @@ Deno.serve(async (req) => {
       .update({
         metadata: {
           completion_email_sent_at: new Date().toISOString(),
+          post_survey_invite_sent_at: !existingSurveyLog ? new Date().toISOString() : undefined,
           completion_email_id: emailResponse.id,
         },
       })

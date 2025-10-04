@@ -15,6 +15,7 @@ interface PostSurveyModalProps {
   sessionId: string;
   isOpen: boolean;
   onClose: () => void;
+  onComplete?: () => void;
 }
 
 const LIKERT_OPTIONS = [
@@ -25,7 +26,7 @@ const LIKERT_OPTIONS = [
   { value: 5, label: 'Strongly Agree' },
 ];
 
-export const PostSurveyModal: React.FC<PostSurveyModalProps> = ({ sessionId, isOpen, onClose }) => {
+export const PostSurveyModal: React.FC<PostSurveyModalProps> = ({ sessionId, isOpen, onClose, onComplete }) => {
   const [step, setStep] = useState(1);
   const [questions, setQuestions] = useState<PostSurveyQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, PostSurveyAnswer>>({});
@@ -88,11 +89,25 @@ export const PostSurveyModal: React.FC<PostSurveyModalProps> = ({ sessionId, isO
   };
 
   const handleSubmit = async () => {
+    if (!isStepComplete(step)) {
+      toast({
+        title: 'Incomplete',
+        description: 'Please answer all required questions.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       const answerArray = Object.values(answers);
       await submitSurvey(sessionId, answerArray);
       
       setSubmitted(true);
+      
+      // Call optional completion callback
+      if (onComplete) {
+        onComplete();
+      }
       
       toast({
         title: 'Thank you!',
@@ -251,7 +266,12 @@ export const PostSurveyModal: React.FC<PostSurveyModalProps> = ({ sessionId, isO
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{getStepTitle()}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2 flex-wrap">
+            {getStepTitle()}
+            <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-1 rounded">
+              Session: {sessionId.slice(0, 8)}...
+            </span>
+          </DialogTitle>
           <DialogDescription>{getStepDescription()}</DialogDescription>
         </DialogHeader>
 
