@@ -3,6 +3,7 @@ import { useAssessmentKpis } from "@/hooks/useAssessmentKpis";
 import { useComponentKpis } from "@/hooks/useComponentKpis";
 import { useNeuroticismKpis } from "@/hooks/useNeuroticismKpis";
 import { useScaleNorms } from "@/hooks/useScaleNorms";
+import { useStateOverlayKpis } from "@/hooks/useStateOverlayKpis";
 import { MetricCard } from "@/components/analytics/MetricCard";
 import { ItemFlagsTable } from "@/components/analytics/ItemFlagsTable";
 import { Activity, CheckCircle, TrendingUp, Users, Brain, Target, Loader2, Download } from "lucide-react";
@@ -24,7 +25,8 @@ import {
   MeasurementInvarianceCard,
   ComponentKPICard,
   NeuroticismKPICard,
-  ScaleNormsCard
+  ScaleNormsCard,
+  StateOverlayAnalyticsCard
 } from "@/components/admin/evidence";
 import { useEffect } from "react";
 
@@ -61,6 +63,12 @@ const AssessmentAnalytics = () => {
   const { data: componentKpis, isLoading: componentKpisLoading } = useComponentKpis("v1.2.1");
   const { data: neuroticismKpis, isLoading: neuroticismKpisLoading } = useNeuroticismKpis();
   const { data: scaleNorms, isLoading: scaleNormsLoading } = useScaleNorms();
+  
+  // Map TimePeriod to STATE overlay period format
+  const periodMap: Record<TimePeriod, "all" | "7d" | "30d" | "60d" | "90d" | "365d"> = {
+    'all': 'all', '7': '7d', '30': '30d', '60': '60d', '90': '90d', '365': '365d'
+  };
+  const { data: stateOverlayData, isLoading: stateOverlayLoading } = useStateOverlayKpis(periodMap[timePeriod]);
   
   const engagementData = data?.engagement || [];
   const reliabilityData = data?.reliability || [];
@@ -220,6 +228,7 @@ const AssessmentAnalytics = () => {
       await queryClient.invalidateQueries({ queryKey: ["component-kpis"] });
       await queryClient.invalidateQueries({ queryKey: ["neuroticism-kpis"] });
       await queryClient.invalidateQueries({ queryKey: ["scale-norms"] });
+      await queryClient.invalidateQueries({ queryKey: ["state-overlay-kpis"] });
       await refetch();
 
       const refreshResult = result as any;
@@ -684,6 +693,26 @@ const AssessmentAnalytics = () => {
             <ScaleNormsCard 
               data={scaleNorms || null}
               loading={scaleNormsLoading}
+            />
+            <StateOverlayAnalyticsCard 
+              data={stateOverlayData?.state_overlay || null}
+              series={stateOverlayData?.series || []}
+              loading={stateOverlayLoading}
+              onExportCSV={() => {
+                if (!stateOverlayData?.series?.length) return;
+                const csv = [
+                  ['day', 'n_sessions', 'pct_N_plus', 'pct_N0', 'pct_N_minus', 'mean_stress', 'mean_mood', 'mean_sleep', 'mean_focus', 'mean_time', 'r_state_traitn'].join(','),
+                  ...stateOverlayData.series.map((r: any) => 
+                    [r.day, r.n_sessions, r.pct_n_plus, r.pct_n0, r.pct_n_minus, r.mean_stress, r.mean_mood, r.mean_sleep, r.mean_focus, r.mean_time, r.r_state_traitn].join(',')
+                  )
+                ].join('\n');
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `state_overlay_${timePeriod}.csv`;
+                a.click();
+              }}
             />
           </div>
 

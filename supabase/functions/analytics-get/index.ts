@@ -62,6 +62,74 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (block === "state_overlay") {
+      const periodParam = url.searchParams.get("period") ?? "all";
+      
+      // Lifetime aggregate (single row)
+      if (periodParam === "all") {
+        const { data, error } = await anon.from("mv_kpi_state_overlay").select("*").limit(1).maybeSingle();
+        if (error) {
+          console.error("[analytics-get] State overlay error:", error);
+          return new Response(JSON.stringify({ error: error.message }), { 
+            status: 500, 
+            headers: { ...corsHeaders, "content-type": "application/json" } 
+          });
+        }
+        return new Response(JSON.stringify({ state_overlay: data ?? null }), {
+          headers: { ...corsHeaders, "content-type": "application/json" }
+        });
+      }
+
+      // Time-windowed via daily MV
+      const dayMap: Record<string, number> = { "7d": 7, "30d": 30, "60d": 60, "90d": 90, "365d": 365 };
+      const days = dayMap[periodParam] ?? 30;
+      const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+      const { data, error } = await anon
+        .from("mv_state_overlay_daily")
+        .select("*")
+        .gte("day", cutoffDate)
+        .order("day", { ascending: true });
+
+      if (error) {
+        console.error("[analytics-get] State overlay daily error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { 
+          status: 500, 
+          headers: { ...corsHeaders, "content-type": "application/json" } 
+        });
+      }
+
+      if (!data || data.length === 0) {
+        return new Response(JSON.stringify({ state_overlay: null, series: [] }), {
+          headers: { ...corsHeaders, "content-type": "application/json" }
+        });
+      }
+
+      // Aggregate windowed data
+      const mean = (arr: number[]) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+      const kpi = {
+        pct_n_plus: mean(data.map(d => Number(d.pct_n_plus) || 0))?.toFixed(2) || "0",
+        pct_n0: mean(data.map(d => Number(d.pct_n0) || 0))?.toFixed(2) || "0",
+        pct_n_minus: mean(data.map(d => Number(d.pct_n_minus) || 0))?.toFixed(2) || "0",
+        mean_stress: mean(data.map(d => Number(d.mean_stress) || 0))?.toFixed(2) || "0",
+        mean_mood: mean(data.map(d => Number(d.mean_mood) || 0))?.toFixed(2) || "0",
+        mean_sleep: mean(data.map(d => Number(d.mean_sleep) || 0))?.toFixed(2) || "0",
+        mean_focus: mean(data.map(d => Number(d.mean_focus) || 0))?.toFixed(2) || "0",
+        mean_time: mean(data.map(d => Number(d.mean_time) || 0))?.toFixed(2) || "0",
+        r_state_traitn: mean(data.map(d => Number(d.r_state_traitn) || 0))?.toFixed(3) || "0",
+        conf_mean_nplus: mean(data.map(d => Number(d.conf_mean_nplus) || 0))?.toFixed(3) || "0",
+        conf_mean_n0: mean(data.map(d => Number(d.conf_mean_n0) || 0))?.toFixed(3) || "0",
+        conf_mean_nminus: mean(data.map(d => Number(d.conf_mean_nminus) || 0))?.toFixed(3) || "0",
+        topgap_mean_nplus: mean(data.map(d => Number(d.topgap_mean_nplus) || 0))?.toFixed(3) || "0",
+        topgap_mean_n0: mean(data.map(d => Number(d.topgap_mean_n0) || 0))?.toFixed(3) || "0",
+        topgap_mean_nminus: mean(data.map(d => Number(d.topgap_mean_nminus) || 0))?.toFixed(3) || "0",
+      };
+
+      return new Response(JSON.stringify({ state_overlay: kpi, series: data }), {
+        headers: { ...corsHeaders, "content-type": "application/json" }
+      });
+    }
+
     console.log(`[analytics-get] Fetching data for version=${ver}, period=${period}`);
 
     const periodFilter = period === "all" 

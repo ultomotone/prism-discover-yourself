@@ -2289,6 +2289,26 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_kpi_state_overlay: {
+        Row: {
+          conf_mean_n0: number | null
+          conf_mean_nminus: number | null
+          conf_mean_nplus: number | null
+          mean_focus: number | null
+          mean_mood: number | null
+          mean_sleep: number | null
+          mean_stress: number | null
+          mean_time: number | null
+          pct_n_minus: number | null
+          pct_n_plus: number | null
+          pct_n0: number | null
+          r_state_traitn: number | null
+          topgap_mean_n0: number | null
+          topgap_mean_nminus: number | null
+          topgap_mean_nplus: number | null
+        }
+        Relationships: []
+      }
       mv_kpi_trajectory_alignment: {
         Row: {
           alignment_score: number | null
@@ -2303,6 +2323,28 @@ export type Database = {
           avg_nps: number | null
           day: string | null
           feedback_count: number | null
+        }
+        Relationships: []
+      }
+      mv_state_overlay_daily: {
+        Row: {
+          conf_mean_n0: number | null
+          conf_mean_nminus: number | null
+          conf_mean_nplus: number | null
+          day: string | null
+          mean_focus: number | null
+          mean_mood: number | null
+          mean_sleep: number | null
+          mean_stress: number | null
+          mean_time: number | null
+          n_sessions: number | null
+          pct_n_minus: number | null
+          pct_n_plus: number | null
+          pct_n0: number | null
+          r_state_traitn: number | null
+          topgap_mean_n0: number | null
+          topgap_mean_nminus: number | null
+          topgap_mean_nplus: number | null
         }
         Relationships: []
       }
@@ -2325,6 +2367,35 @@ export type Database = {
           sessions_started: number | null
         }
         Relationships: []
+      }
+      v_neuro_per_session: {
+        Row: {
+          neuro_1_5: number | null
+          session_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["first_session_id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["second_session_id"]
+          },
+        ]
       }
       v_retest_pairs: {
         Row: {
@@ -2388,6 +2459,137 @@ export type Database = {
           scale_code: string | null
         }
         Relationships: []
+      }
+      v_state_index: {
+        Row: {
+          session_id: string | null
+          state_index_1_7: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["first_session_id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["second_session_id"]
+          },
+        ]
+      }
+      v_state_items: {
+        Row: {
+          is_active: boolean | null
+          question_id: number | null
+          state_tag: string | null
+        }
+        Relationships: []
+      }
+      v_state_overlay: {
+        Row: {
+          overlay_state: string | null
+          session_id: string | null
+          state_index_1_7: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["first_session_id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["second_session_id"]
+          },
+        ]
+      }
+      v_state_responses: {
+        Row: {
+          created_at: string | null
+          session_id: string | null
+          state_tag: string | null
+          x_1_7: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["first_session_id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["second_session_id"]
+          },
+        ]
+      }
+      v_state_session: {
+        Row: {
+          focus_1_7: number | null
+          mood_1_7: number | null
+          session_id: string | null
+          sleep_1_7: number | null
+          stress_1_7: number | null
+          time_1_7: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["first_session_id"]
+          },
+          {
+            foreignKeyName: "assessment_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_retest_pairs"
+            referencedColumns: ["second_session_id"]
+          },
+        ]
       }
     }
     Functions: {

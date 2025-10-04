@@ -13,3 +13,4 @@ export { MeasurementInvarianceCard } from './MeasurementInvarianceCard';
 export { ComponentKPICard } from './ComponentKPICard';
 export { NeuroticismKPICard } from './NeuroticismKPICard';
 export { ScaleNormsCard } from './ScaleNormsCard';
+export { StateOverlayAnalyticsCard } from './StateOverlayAnalyticsCard';
