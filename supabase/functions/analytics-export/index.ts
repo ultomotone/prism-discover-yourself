@@ -80,6 +80,52 @@ Deno.serve(async (req) => {
       q: `SELECT model_name, cfi, tli, rmsea, srmr, n FROM cfa_fit WHERE results_version='${ver}' ORDER BY model_name`
     } as any);
 
+    // NEW: Item clarity flags (aggregated)
+    const { data: itemFlagsAgg } = await sb.rpc("exec_sql", {
+      q: `SELECT 
+        f.question_id,
+        q.section,
+        q.tag,
+        COUNT(*) as flags,
+        COALESCE((SELECT COUNT(DISTINCT session_id) 
+                  FROM assessment_responses r 
+                  WHERE r.question_id = f.question_id), 1) as answered,
+        ROUND((COUNT(*)::float / GREATEST((SELECT COUNT(DISTINCT session_id) 
+                                      FROM assessment_responses r 
+                                      WHERE r.question_id = f.question_id), 1))::numeric, 4) as flag_rate
+      FROM assessment_item_flags f
+      LEFT JOIN assessment_questions q ON q.id = f.question_id
+      GROUP BY f.question_id, q.section, q.tag
+      ORDER BY flag_rate DESC`
+    } as any);
+
+    // NEW: Item flag comments
+    const { data: itemFlagComments } = await sb.rpc("exec_sql", {
+      q: `SELECT 
+        f.question_id,
+        f.flag_type,
+        f.note,
+        f.created_at,
+        LEFT(f.session_id::text, 8) as session_preview
+      FROM assessment_item_flags f
+      WHERE f.note IS NOT NULL AND f.note != ''
+      ORDER BY f.created_at DESC
+      LIMIT 500`
+    } as any);
+
+    // NEW: Low discrimination items (flagged for review)
+    const { data: lowDiscItems } = await sb.rpc("exec_sql", {
+      q: `SELECT 
+        scale_code, 
+        question_id, 
+        ROUND(r_it::numeric, 3) as r_it, 
+        n 
+      FROM item_discrimination 
+      WHERE results_version='${ver}' 
+        AND r_it < 0.20 
+      ORDER BY r_it ASC`
+    } as any);
+
     // Build CSV bundle
     const bundle = [
       "# PRISM Analytics Export",
@@ -135,6 +181,24 @@ Deno.serve(async (req) => {
       "# CFA Fit Indices",
       "# ==========================================",
       toCSV(cfaFit || []),
+      "",
+      "# ==========================================",
+      "# Item Clarity Flags (Aggregated by Question)",
+      "# Shows which questions are frequently flagged as unclear",
+      "# ==========================================",
+      toCSV(itemFlagsAgg || []),
+      "",
+      "# ==========================================",
+      "# Item Flag Comments (User Feedback)",
+      "# Detailed notes from users about confusing items",
+      "# ==========================================",
+      toCSV(itemFlagComments || []),
+      "",
+      "# ==========================================",
+      "# LOW Discrimination Items (r_it < 0.20)",
+      "# Question IDs that need review - low item-total correlation",
+      "# ==========================================",
+      toCSV(lowDiscItems || []),
     ].join("\n");
 
     console.log(`[analytics-export] CSV generated, size=${bundle.length} bytes`);
