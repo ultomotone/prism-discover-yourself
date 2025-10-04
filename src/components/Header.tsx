@@ -157,7 +157,7 @@ const Header = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48 bg-background border border-border shadow-lg z-50">
                     <DropdownMenuItem asChild>
-                      <Link to="/dashboard" className="w-full">Dashboard</Link>
+                      <Link to="/account?tab=dashboard" className="w-full">Dashboard</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/account?tab=profile" className="w-full">Profile</Link>
@@ -333,7 +333,7 @@ const Header = () => {
                   user ? (
                     <>
                       <Link
-                        to="/dashboard"
+                        to="/account?tab=dashboard"
                         className="block px-3 py-2 text-foreground hover:text-primary prism-transition font-medium"
                         onClick={() => setIsMenuOpen(false)}
                       >
