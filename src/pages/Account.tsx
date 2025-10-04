@@ -26,7 +26,8 @@ import {
   Share2,
   Sparkles
 } from 'lucide-react';
-import { FaDiscord, FaTwitter, FaLinkedin } from 'react-icons/fa';
+import { FaReddit, FaLinkedin, FaFacebook } from 'react-icons/fa';
+import { Users2 } from 'lucide-react';
 
 export default function Account() {
   const [searchParams] = useSearchParams();
@@ -167,9 +168,10 @@ export default function Account() {
       title: 'Join Our Community',
       description: 'Connect with us on social media',
       socialLinks: [
-        { name: 'Discord', Icon: FaDiscord, url: 'https://discord.gg/lovable' },
-        { name: 'Twitter', Icon: FaTwitter, url: 'https://twitter.com/lovabledev' },
-        { name: 'LinkedIn', Icon: FaLinkedin, url: 'https://linkedin.com/company/lovable' }
+        { name: 'LinkedIn', Icon: FaLinkedin, url: 'https://linkedin.com/company/prism-personality-regulation-information-system-mapping' },
+        { name: 'Facebook', Icon: FaFacebook, url: 'https://www.facebook.com/profile.php?id=61579334970712' },
+        { name: 'Skool', Icon: Users2, url: 'https://www.skool.com/prism-dynamics-5834/about?ref=931e57f033d34f3eb64db45f22b1389e' },
+        { name: 'Reddit', Icon: FaReddit, url: 'https://www.reddit.com/r/PrismPersonality' }
       ],
       variant: 'default' as const,
       completed: false
