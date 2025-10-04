@@ -4,7 +4,7 @@ const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
 if (!stripeSecretKey) throw new Error("STRIPE_SECRET_KEY not set");
 
 export const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: "2024-06-20",
+  apiVersion: "2025-09-30.clover",
   httpClient: Stripe.createFetchHttpClient(),
 });
 

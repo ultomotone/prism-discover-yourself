@@ -46,7 +46,7 @@ From your existing Stripe products:
 3. Configure:
    - **Endpoint URL**: `https://gnkuikentdtnatazeriu.functions.supabase.co/stripe-webhook`
    - **Payload style**: **Thin** (recommended for performance)
-   - **API version**: `2024-06-20`
+   - **API version**: `2025-09-30.clover`
    - **Events to send**:
      - `checkout.session.completed`
      - `customer.subscription.created`
