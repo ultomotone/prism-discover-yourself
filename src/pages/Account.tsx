@@ -242,6 +242,7 @@ export default function Account() {
                 <TabsTrigger value="profile" className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />
                   Trends & KPIs
+                  <Badge variant="outline" className="ml-1 text-[10px] px-1 py-0">Soon</Badge>
                 </TabsTrigger>
             <TabsTrigger value="groups" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
