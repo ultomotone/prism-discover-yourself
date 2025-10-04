@@ -141,9 +141,9 @@ const Header = () => {
             <Button
               variant="assessment"
               size="sm"
-              onClick={() => navigate('/membership')}
+              onClick={() => navigate('/assessment')}
             >
-              Join Beta
+              Start the Test
             </Button>
             {!loading && (
               user ? (
@@ -160,10 +160,17 @@ const Header = () => {
                       <Link to="/dashboard" className="w-full">Dashboard</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/account?tab=purchases" className="w-full">Manage Purchases</Link>
+                      <Link to="/account?tab=profile" className="w-full">Profile</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/account?tab=purchases" className="w-full">Purchases & Billing</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/account?tab=settings" className="w-full">Settings</Link>
                     </DropdownMenuItem>
                     {ADMIN_EMAILS.includes(user.email || '') && (
                       <>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
                           <Link to="/analytics" className="w-full">
                             <BarChart3 className="h-4 w-4 mr-2" />
@@ -313,11 +320,11 @@ const Header = () => {
                   variant="assessment"
                   className="w-full"
                   onClick={() => {
-                    navigate('/membership');
+                    navigate('/assessment');
                     setIsMenuOpen(false);
                   }}
                 >
-                  Join Beta
+                  Start the Test
                 </Button>
               </div>
               
@@ -333,14 +340,29 @@ const Header = () => {
                         Dashboard
                       </Link>
                       <Link
+                        to="/account?tab=profile"
+                        className="block px-3 py-2 text-foreground hover:text-primary prism-transition font-medium"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Profile
+                      </Link>
+                      <Link
                         to="/account?tab=purchases"
                         className="block px-3 py-2 text-foreground hover:text-primary prism-transition font-medium"
                         onClick={() => setIsMenuOpen(false)}
                       >
-                        Manage Purchases
+                        Purchases & Billing
+                      </Link>
+                      <Link
+                        to="/account?tab=settings"
+                        className="block px-3 py-2 text-foreground hover:text-primary prism-transition font-medium"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Settings
                       </Link>
                       {ADMIN_EMAILS.includes(user.email || '') && (
                         <>
+                          <div className="border-t border-border my-2"></div>
                           <Link
                             to="/analytics"
                             className="block px-3 py-2 text-foreground hover:text-primary prism-transition font-medium"
@@ -359,6 +381,7 @@ const Header = () => {
                           </Link>
                         </>
                       )}
+                      <div className="border-t border-border my-2"></div>
                       <Button
                         variant="ghost"
                         className="w-full justify-start text-destructive hover:text-destructive"

@@ -1,13 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { MilestoneProgress } from "@/components/ui/milestone-progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, ResponsiveContainer } from "recharts";
-import { Search, RefreshCw, Clock, Users, Globe, ExternalLink, Eye, Zap } from "lucide-react";
+import { Search, RefreshCw, Clock, Users, Globe, ExternalLink, Eye, Zap, Lock, Bot, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEntitlementsContext } from "@/contexts/EntitlementsContext";
+import { MembershipGate } from "@/components/MembershipGate";
+import { CreditCounter } from "@/components/CreditCounter";
 import Header from "@/components/Header";
 import { CountryDistributionChart } from "@/components/CountryDistributionChart";
 import { useDashboardAnalytics } from "@/hooks/useDashboardAnalytics";
@@ -23,6 +28,9 @@ interface DashboardData {
 
 const Dashboard = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isMember } = useEntitlementsContext();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedOverlay, setSelectedOverlay] = useState<string>("all");
@@ -116,16 +124,30 @@ const Dashboard = () => {
   // Fetch user's own sessions
   useEffect(() => {
     const fetchUserSessions = async () => {
+      if (!user) {
+        setLoadingSessions(false);
+        return;
+      }
+      
       setLoadingSessions(true);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: sessions, error } = await supabase
-            .rpc('get_user_sessions_with_scoring', { p_user_id: user.id });
-          
-          if (error) throw error;
-          setUserSessions((sessions as any)?.sessions || []);
-        }
+        const { data, error } = await supabase
+          .from('assessment_sessions')
+          .select(`
+            *,
+            profiles (
+              type_code,
+              confidence,
+              overlay,
+              score_fit_calibrated
+            )
+          `)
+          .eq('user_id', user.id)
+          .order('started_at', { ascending: false })
+          .limit(50);
+
+        if (error) throw error;
+        setUserSessions(data || []);
       } catch (error) {
         console.error('Error fetching user sessions:', error);
         toast({
@@ -139,7 +161,7 @@ const Dashboard = () => {
     };
 
     fetchUserSessions();
-  }, [toast]);
+  }, [user, toast]);
 
   const recomputeSession = async (sessionId: string) => {
     try {
@@ -279,6 +301,189 @@ const Dashboard = () => {
       </section>
 
       <div className="prism-container py-8">
+        {/* Personal Stats Section (Only for logged-in users) */}
+        {user && (
+          <>
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold mb-4">Your Dashboard</h2>
+              
+              {/* KPI Strip */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Advanced Credits
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      <CreditCounter variant="compact" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Retakes This Year
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {userSessions.filter(s => 
+                        s.status === 'completed' && 
+                        new Date(s.started_at).getFullYear() === new Date().getFullYear()
+                      ).length}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Cohorts Joined
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {isMember ? '0' : <Lock className="h-6 w-6 text-muted-foreground" />}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 mb-6">
+                <Button onClick={() => navigate('/assessment')} size="lg">
+                  Start the Test
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/survey')}
+                  size="lg"
+                >
+                  Take 2-Min Survey
+                </Button>
+              </div>
+
+              {/* Complete Results */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>Your Complete Results</CardTitle>
+                  <CardDescription>
+                    Your assessment history with detailed metrics
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loadingSessions ? (
+                    <p className="text-muted-foreground">Loading...</p>
+                  ) : userSessions.filter(s => s.status === 'completed').length > 0 ? (
+                    <div className="space-y-3">
+                      {userSessions.filter(s => s.status === 'completed').slice(0, 5).map((session: any) => {
+                        const profile = session.profiles?.[0] || session.profiles;
+                        return (
+                          <Card key={session.id} className="p-4">
+                            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                              <div className="space-y-2 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm text-muted-foreground">
+                                    {new Date(session.completed_at || session.started_at).toLocaleDateString()}
+                                  </p>
+                                </div>
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                                  <div>
+                                    <span className="text-muted-foreground">Type:</span>{' '}
+                                    <span className="font-medium">{profile?.type_code || '—'}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Fit:</span>{' '}
+                                    <span className="font-medium">
+                                      {profile?.score_fit_calibrated 
+                                        ? `${(profile.score_fit_calibrated * 100).toFixed(0)}%` 
+                                        : '—'}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Overlay:</span>{' '}
+                                    <span className="font-medium">{profile?.overlay || 'None'}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Confidence:</span>{' '}
+                                    <span className="font-medium">{profile?.confidence || '—'}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => navigate(`/results/${session.id}`)}
+                              >
+                                View Results
+                              </Button>
+                            </div>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground mb-4">No completed assessments yet</p>
+                      <Button onClick={() => navigate('/assessment')}>
+                        Take Your First Assessment
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Locked Features Teasers */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <Card className="text-center p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                  <Bot className="h-12 w-12 mx-auto mb-3 text-primary" />
+                  <h3 className="font-semibold mb-2">PRISM Coach AI</h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Coming Soon — Beta members get early access
+                  </p>
+                  {!isMember && (
+                    <Button size="sm" variant="outline" onClick={() => navigate('/membership')}>
+                      Join Beta
+                    </Button>
+                  )}
+                </Card>
+                <Card className="text-center p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                  <Users className="h-12 w-12 mx-auto mb-3 text-primary" />
+                  <h3 className="font-semibold mb-2">Cohorts</h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Join exclusive cohorts for relational fit analysis
+                  </p>
+                  {!isMember && (
+                    <Button size="sm" variant="outline" onClick={() => navigate('/membership')}>
+                      Join Beta
+                    </Button>
+                  )}
+                </Card>
+                <Card className="text-center p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                  <Calendar className="h-12 w-12 mx-auto mb-3 text-primary" />
+                  <h3 className="font-semibold mb-2">1:1 Coaching</h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Beta members get priority booking
+                  </p>
+                  {!isMember && (
+                    <Button size="sm" variant="outline" onClick={() => navigate('/membership')}>
+                      Join Beta
+                    </Button>
+                  )}
+                </Card>
+              </div>
+            </div>
+
+            <div className="border-t border-border my-8"></div>
+          </>
+        )}
+
+        {/* Public Progress Section */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">PRISM Progress</h2>
+        </div>
+
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="prism-shadow-card">

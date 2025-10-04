@@ -11,11 +11,11 @@ import { CreditCounter } from '@/components/CreditCounter';
 import { supabase } from '@/lib/supabaseClient';
 import { toast } from '@/hooks/use-toast';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { Lock, CreditCard, Settings, User, Users, Calendar, Bot, BarChart3 } from 'lucide-react';
+import { CreditCard, Settings, User } from 'lucide-react';
 
 export default function Account() {
   const [searchParams] = useSearchParams();
-  const defaultTab = searchParams.get('tab') || 'dashboard';
+  const defaultTab = searchParams.get('tab') || 'profile';
   const { user } = useAuth();
   const { isMember, membershipPlan, refetch } = useEntitlementsContext();
   const [sessions, setSessions] = useState<any[]>([]);
@@ -105,26 +105,10 @@ export default function Account() {
             </div>
 
             <Tabs defaultValue={defaultTab} className="space-y-6">
-              <TabsList className="grid grid-cols-3 lg:grid-cols-7 gap-2 h-auto">
-                <TabsTrigger value="dashboard" className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  Dashboard
-                </TabsTrigger>
+              <TabsList className="grid grid-cols-3 gap-2 h-auto">
                 <TabsTrigger value="profile" className="flex items-center gap-2">
                   <User className="h-4 w-4" />
                   Profile
-                </TabsTrigger>
-                <TabsTrigger value="coach" className="flex items-center gap-2">
-                  <Bot className="h-4 w-4" />
-                  AI Coach
-                </TabsTrigger>
-                <TabsTrigger value="groups" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Groups
-                </TabsTrigger>
-                <TabsTrigger value="sessions" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  1:1s
                 </TabsTrigger>
                 <TabsTrigger value="purchases" className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4" />
@@ -135,164 +119,6 @@ export default function Account() {
                   Settings
                 </TabsTrigger>
               </TabsList>
-
-              {/* Dashboard Tab */}
-              <TabsContent value="dashboard" className="space-y-6">
-                {/* KPI Strip */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">
-                        Advanced Credits
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        <CreditCounter variant="compact" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">
-                        Retakes This Year
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{retakesThisYear}</div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">
-                        Cohorts Joined
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {isMember ? '0' : <Lock className="h-6 w-6 text-muted-foreground" />}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                  <Button onClick={() => navigate('/assessment')} size="lg">
-                    Start the Test
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => navigate('/survey')}
-                    size="lg"
-                  >
-                    Take 2-Min Survey
-                  </Button>
-                </div>
-
-                {/* Complete Results */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Complete Results</CardTitle>
-                    <CardDescription>
-                      Your assessment history with detailed metrics
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {loadingSessions ? (
-                      <p className="text-muted-foreground">Loading...</p>
-                    ) : completedSessions.length > 0 ? (
-                      <div className="space-y-3">
-                        {completedSessions.map((session: any) => {
-                          const profile = session.profiles?.[0] || session.profiles;
-                          return (
-                            <Card key={session.id} className="p-4">
-                              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                                <div className="space-y-2 flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <p className="text-sm text-muted-foreground">
-                                      Session {session.id.slice(0, 6)} · {new Date(session.completed_at || session.started_at).toLocaleDateString()}
-                                    </p>
-                                  </div>
-                                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-                                    <div>
-                                      <span className="text-muted-foreground">Core Type:</span>{' '}
-                                      <span className="font-medium">{profile?.type_code || '—'}</span>
-                                    </div>
-                                    <div>
-                                      <span className="text-muted-foreground">Fit Score:</span>{' '}
-                                      <span className="font-medium">
-                                        {profile?.score_fit_calibrated 
-                                          ? `${(profile.score_fit_calibrated * 100).toFixed(0)}%` 
-                                          : '—'}
-                                      </span>
-                                    </div>
-                                    <div>
-                                      <span className="text-muted-foreground">Overlay:</span>{' '}
-                                      <span className="font-medium">{profile?.overlay || 'None'}</span>
-                                    </div>
-                                    <div>
-                                      <span className="text-muted-foreground">Confidence:</span>{' '}
-                                      <span className="font-medium">{profile?.confidence || '—'}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex gap-2 flex-wrap lg:flex-nowrap">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => navigate(`/results/${session.id}`)}
-                                  >
-                                    View Results
-                                  </Button>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => navigate(`/assessment?retake=${session.id}`)}
-                                  >
-                                    Retake
-                                  </Button>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => navigate(`/survey/${session.id}`)}
-                                  >
-                                    Post-Survey
-                                  </Button>
-                                </div>
-                              </div>
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-muted-foreground mb-4">No completed assessments yet</p>
-                        <Button onClick={() => navigate('/assessment')}>
-                          Take Your First Assessment
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Upsell for non-members */}
-                {!isMember && (
-                  <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-                    <CardHeader>
-                      <CardTitle>Unlock Trends & Cohorts</CardTitle>
-                      <CardDescription>
-                        Join the Founding Beta to access trend syncing, cohorts, and early features
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Button onClick={() => navigate('/membership')}>
-                        Join Beta
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
-              </TabsContent>
 
               {/* Profile Tab */}
               <TabsContent value="profile" className="space-y-6">
@@ -309,94 +135,6 @@ export default function Account() {
                     </MembershipGate>
                   </CardContent>
                 </Card>
-              </TabsContent>
-
-              {/* PRISM Coach AI Tab */}
-              <TabsContent value="coach" className="space-y-6">
-                <MembershipGate 
-                  feature="PRISM Coach AI" 
-                  blurWhenLocked={false}
-                  fallback={
-                    <Card className="text-center p-12">
-                      <Bot className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                      <CardTitle className="mb-2">PRISM Coach AI</CardTitle>
-                      <CardDescription className="mb-4">
-                        Coming Soon — Beta members get early access & discount
-                      </CardDescription>
-                      <Button onClick={() => navigate('/membership')}>
-                        Join Beta
-                      </Button>
-                    </Card>
-                  }
-                >
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>PRISM Coach AI</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p>AI Coach features will appear here</p>
-                    </CardContent>
-                  </Card>
-                </MembershipGate>
-              </TabsContent>
-
-              {/* Groups Tab */}
-              <TabsContent value="groups" className="space-y-6">
-                <MembershipGate 
-                  feature="Your Groups" 
-                  blurWhenLocked={false}
-                  fallback={
-                    <Card className="text-center p-12">
-                      <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                      <CardTitle className="mb-2">Invite-Only Cohorts</CardTitle>
-                      <CardDescription className="mb-4">
-                        Join exclusive cohorts to explore relational fit and team dynamics
-                      </CardDescription>
-                      <Button onClick={() => navigate('/membership')}>
-                        Join Beta
-                      </Button>
-                    </Card>
-                  }
-                >
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Your Groups</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground mb-4">No cohorts yet</p>
-                      <Button variant="outline">Invite friend/team</Button>
-                    </CardContent>
-                  </Card>
-                </MembershipGate>
-              </TabsContent>
-
-              {/* 1:1 Sessions Tab */}
-              <TabsContent value="sessions" className="space-y-6">
-                <MembershipGate 
-                  feature="Your 1:1s" 
-                  blurWhenLocked={false}
-                  fallback={
-                    <Card className="text-center p-12">
-                      <Calendar className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                      <CardTitle className="mb-2">1:1 Coaching Sessions</CardTitle>
-                      <CardDescription className="mb-4">
-                        Beta members get priority booking for personalized coaching
-                      </CardDescription>
-                      <Button onClick={() => navigate('/membership')}>
-                        Join Beta
-                      </Button>
-                    </Card>
-                  }
-                >
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Your 1:1 Sessions</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p>Scheduling link will appear here</p>
-                    </CardContent>
-                  </Card>
-                </MembershipGate>
               </TabsContent>
 
               {/* Purchases Tab */}
