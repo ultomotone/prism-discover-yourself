@@ -41,6 +41,7 @@ import {
   StateBadgesWidget
 } from '@/components/account/TrendsWidgets';
 import { BetaOptInModal } from '@/components/BetaOptInModal';
+import { AICoachPreview } from '@/components/account/AICoachPreview';
 
 export default function Account() {
   const [searchParams] = useSearchParams();
@@ -434,21 +435,29 @@ export default function Account() {
               </TabsContent>
 
               {/* AI Coach Tab */}
-              <TabsContent value="ai-coach" className="space-y-6">
-                <MembershipGate feature="PRISM Coach AI">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>PRISM Coach AI</CardTitle>
-                      <CardDescription>Your personalized AI personality coach</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-96 bg-muted rounded-md flex items-center justify-center">
-                        <p className="text-muted-foreground">AI Coach interface coming soon</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </MembershipGate>
-              </TabsContent>
+          <TabsContent value="ai-coach" className="space-y-6">
+            {!isMember ? (
+              <AICoachPreview 
+                isMember={isMember}
+                onJoinBeta={() => setShowBetaModal(true)}
+              />
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Bot className="h-12 w-12 mx-auto mb-4 text-primary" />
+                  <h3 className="text-xl font-semibold mb-2">AI Coach Coming Soon</h3>
+                  <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+                    Your personalized AI coach will provide daily micro-plans tied to your 1D–4D profile 
+                    and state-aware nudges for Flow vs Stress contexts.
+                  </p>
+                  <Badge variant="outline" className="px-3 py-1">
+                    <Clock className="h-3 w-3 mr-1" />
+                    In Development
+                  </Badge>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
 
               {/* Groups Tab */}
               <TabsContent value="groups" className="space-y-6">
