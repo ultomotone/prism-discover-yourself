@@ -26,6 +26,7 @@ import {
   Share2,
   Sparkles
 } from 'lucide-react';
+import { FaDiscord, FaTwitter, FaLinkedin } from 'react-icons/fa';
 
 export default function Account() {
   const [searchParams] = useSearchParams();
@@ -57,23 +58,34 @@ export default function Account() {
       if (!user) return;
       
       try {
-        const { data, error } = await supabase
+        // Fetch sessions separately
+        const { data: sessionsData, error: sessionsError } = await supabase
           .from('assessment_sessions')
-          .select(`
-            *,
-            profiles (
-              type_code,
-              confidence,
-              overlay,
-              score_fit_calibrated
-            )
-          `)
+          .select('*')
           .eq('user_id', user.id)
           .order('started_at', { ascending: false })
           .limit(50);
 
-        if (error) throw error;
-        setSessions(data || []);
+        if (sessionsError) throw sessionsError;
+
+        // Fetch profiles separately
+        if (sessionsData && sessionsData.length > 0) {
+          const sessionIds = sessionsData.map(s => s.id);
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('*')
+            .in('session_id', sessionIds);
+          
+          // Merge data
+          const sessionsWithProfiles = sessionsData.map(session => ({
+            ...session,
+            profile: profilesData?.find(p => p.session_id === session.id)
+          }));
+          
+          setSessions(sessionsWithProfiles);
+        } else {
+          setSessions(sessionsData || []);
+        }
 
         // Fetch survey sessions
         const { data: surveyData } = await supabase
@@ -126,34 +138,50 @@ export default function Account() {
     : 0;
 
   const actionItems = [
-    ...(!hasCompletedSurvey && completedSessions.length > 0 ? [{
+    {
+      icon: CheckCircle2,
+      title: 'Complete Your First Assessment',
+      description: 'Start your PRISM journey today',
+      action: completedSessions.length > 0 ? null : () => navigate('/assessment'),
+      variant: 'default' as const,
+      completed: completedSessions.length > 0
+    },
+    {
       icon: CheckCircle2,
       title: 'Take the 2-Minute Survey',
       description: 'Help us improve by sharing your feedback',
-      action: () => navigate('/post-survey'),
-      variant: 'default' as const
-    }] : []),
+      action: hasCompletedSurvey ? null : () => navigate('/post-survey'),
+      variant: 'default' as const,
+      completed: hasCompletedSurvey
+    },
     ...(completedSessions.length > 0 && !canRetake ? [{
       icon: Clock,
       title: `Retake Available in ${daysUntilRetake} Days`,
       description: 'Track personality trends with 30-day retakes',
       action: null,
-      variant: 'secondary' as const
+      variant: 'secondary' as const,
+      completed: false
     }] : []),
-    ...(completedSessions.length === 0 ? [{
-      icon: AlertCircle,
-      title: 'Complete Your First Assessment',
-      description: 'Start your PRISM journey today',
-      action: () => navigate('/assessment'),
-      variant: 'default' as const
-    }] : []),
-    ...(!isMember ? [{
+    {
+      icon: Users,
+      title: 'Join Our Community',
+      description: 'Connect with us on social media',
+      socialLinks: [
+        { name: 'Discord', Icon: FaDiscord, url: 'https://discord.gg/lovable' },
+        { name: 'Twitter', Icon: FaTwitter, url: 'https://twitter.com/lovabledev' },
+        { name: 'LinkedIn', Icon: FaLinkedin, url: 'https://linkedin.com/company/lovable' }
+      ],
+      variant: 'default' as const,
+      completed: false
+    },
+    {
       icon: Sparkles,
       title: 'Join Founding Beta',
       description: 'Unlock AI Coach, Cohorts, and premium features',
-      action: () => navigate('/membership'),
-      variant: 'default' as const
-    }] : [])
+      action: isMember ? null : () => navigate('/membership'),
+      variant: 'default' as const,
+      completed: isMember
+    }
   ];
 
   return (
@@ -213,15 +241,48 @@ export default function Account() {
                       {actionItems.map((item, idx) => {
                         const Icon = item.icon;
                         return (
-                          <div key={idx} className="flex items-start gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                            <Icon className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                          <div key={idx} className={`flex items-start gap-4 p-4 rounded-lg border transition-colors ${
+                            item.completed 
+                              ? 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800' 
+                              : 'bg-card hover:bg-accent/50'
+                          }`}>
+                            <Icon className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
+                              item.completed ? 'text-green-600 dark:text-green-400' : 'text-primary'
+                            }`} />
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-medium">{item.title}</h4>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-medium">{item.title}</h4>
+                                {item.completed && (
+                                  <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                                    ✓ Completed!
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-sm text-muted-foreground">{item.description}</p>
                             </div>
-                            {item.action && (
-                              <Button onClick={item.action} variant={item.variant} size="sm" className="flex-shrink-0">
-                                Go
+                            {'socialLinks' in item && item.socialLinks ? (
+                              <div className="flex gap-2">
+                                {item.socialLinks.map(social => (
+                                  <Button
+                                    key={social.name}
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => window.open(social.url, '_blank')}
+                                    title={social.name}
+                                  >
+                                    <social.Icon className="h-4 w-4" />
+                                  </Button>
+                                ))}
+                              </div>
+                            ) : item.action && (
+                              <Button 
+                                onClick={item.action} 
+                                variant={item.variant} 
+                                size="sm" 
+                                className="flex-shrink-0"
+                                disabled={item.completed}
+                              >
+                                {item.completed ? 'Done' : 'Go'}
                               </Button>
                             )}
                           </div>
@@ -250,7 +311,7 @@ export default function Account() {
                     ) : (
                       <div className="space-y-3">
                         {completedSessions.map((session) => {
-                          const profile = session.profiles?.[0];
+                          const profile = session.profile;
                           return (
                             <div key={session.id} className="flex items-center justify-between p-4 rounded-lg border bg-card">
                               <div className="flex-1">
@@ -292,14 +353,18 @@ export default function Account() {
                                   Advanced
                                 </Button>
                                 <Button
-                                  variant="ghost"
+                                  variant="outline"
                                   size="sm"
                                   onClick={() => {
                                     navigator.clipboard.writeText(`${window.location.origin}/results/${session.id}?t=${session.share_token}`);
-                                    toast({ title: 'Link copied!' });
+                                    toast({ 
+                                      title: 'Link copied!',
+                                      description: 'Share your results with others'
+                                    });
                                   }}
                                 >
-                                  <Share2 className="h-4 w-4" />
+                                  <Share2 className="h-4 w-4 mr-1" />
+                                  Share
                                 </Button>
                               </div>
                             </div>
@@ -402,15 +467,50 @@ export default function Account() {
               <TabsContent value="profile" className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Trends Chart</CardTitle>
-                    <CardDescription>Track your personality trends across retakes</CardDescription>
+                    <CardTitle>Your Profile & History</CardTitle>
+                    <CardDescription>View your assessment history and trends</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <MembershipGate feature="Trend Syncing">
-                      <div className="h-64 bg-muted rounded-md flex items-center justify-center">
-                        <p className="text-muted-foreground">Trends chart will appear here</p>
+                    {completedSessions.length > 0 ? (
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="font-semibold mb-2">Assessment History</h3>
+                          <div className="space-y-2">
+                            {completedSessions.map((session) => {
+                              const profile = session.profile;
+                              return (
+                                <div key={session.id} className="flex items-center justify-between p-3 rounded-lg border bg-card/50">
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono font-bold">{profile?.type_code || '—'}</span>
+                                      {profile?.overlay && <Badge variant="outline" className="text-xs">{profile.overlay}</Badge>}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                      {new Date(session.completed_at || session.started_at).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                  <Badge variant={profile?.confidence === 'High' ? 'default' : 'secondary'}>
+                                    {profile?.confidence || 'Pending'}
+                                  </Badge>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        <div className="pt-4 border-t">
+                          <MembershipGate feature="Trend Syncing">
+                            <div className="h-48 bg-muted rounded-md flex items-center justify-center">
+                              <p className="text-muted-foreground">Advanced trends visualization coming soon</p>
+                            </div>
+                          </MembershipGate>
+                        </div>
                       </div>
-                    </MembershipGate>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground mb-4">No assessments completed yet</p>
+                        <Button onClick={() => navigate('/assessment')}>Take Your First Assessment</Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

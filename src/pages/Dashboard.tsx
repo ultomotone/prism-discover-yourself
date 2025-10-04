@@ -131,23 +131,34 @@ const Dashboard = () => {
       
       setLoadingSessions(true);
       try {
-        const { data, error } = await supabase
+        // Fetch sessions separately
+        const { data: sessionsData, error: sessionsError } = await supabase
           .from('assessment_sessions')
-          .select(`
-            *,
-            profiles (
-              type_code,
-              confidence,
-              overlay,
-              score_fit_calibrated
-            )
-          `)
+          .select('*')
           .eq('user_id', user.id)
           .order('started_at', { ascending: false })
           .limit(50);
 
-        if (error) throw error;
-        setUserSessions(data || []);
+        if (sessionsError) throw sessionsError;
+
+        // Fetch profiles separately
+        if (sessionsData && sessionsData.length > 0) {
+          const sessionIds = sessionsData.map(s => s.id);
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('*')
+            .in('session_id', sessionIds);
+          
+          // Merge data
+          const sessionsWithProfiles = sessionsData.map(session => ({
+            ...session,
+            profile: profilesData?.find(p => p.session_id === session.id)
+          }));
+          
+          setUserSessions(sessionsWithProfiles);
+        } else {
+          setUserSessions(sessionsData || []);
+        }
       } catch (error) {
         console.error('Error fetching user sessions:', error);
         toast({
@@ -378,7 +389,7 @@ const Dashboard = () => {
                   ) : userSessions.filter(s => s.status === 'completed').length > 0 ? (
                     <div className="space-y-3">
                       {userSessions.filter(s => s.status === 'completed').slice(0, 5).map((session: any) => {
-                        const profile = session.profiles?.[0] || session.profiles;
+                        const profile = session.profile;
                         return (
                           <Card key={session.id} className="p-4">
                             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
