@@ -42,6 +42,8 @@ import {
 } from '@/components/account/TrendsWidgets';
 import { BetaOptInModal } from '@/components/BetaOptInModal';
 import { AICoachPreview } from '@/components/account/AICoachPreview';
+import { CohortsPreview } from '@/components/account/CohortsPreview';
+import { OneOnOnePreview } from '@/components/account/OneOnOnePreview';
 
 export default function Account() {
   const [searchParams] = useSearchParams();
@@ -459,39 +461,55 @@ export default function Account() {
             )}
           </TabsContent>
 
-              {/* Groups Tab */}
-              <TabsContent value="groups" className="space-y-6">
-                <MembershipGate feature="Cohorts">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Your Cohorts</CardTitle>
-                      <CardDescription>Connect with others who share your type</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-96 bg-muted rounded-md flex items-center justify-center">
-                        <p className="text-muted-foreground">Cohorts interface coming soon</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </MembershipGate>
-              </TabsContent>
+          {/* Groups Tab */}
+          <TabsContent value="groups" className="space-y-6">
+            {!isMember ? (
+              <CohortsPreview 
+                isMember={isMember}
+                onJoinBeta={() => setShowBetaModal(true)}
+              />
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Users className="h-12 w-12 mx-auto mb-4 text-primary" />
+                  <h3 className="text-xl font-semibold mb-2">Cohorts Coming Soon</h3>
+                  <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+                    Your type-clustered cohorts and complementary mixes are being prepared. 
+                    Weekly prompts, async discussions, and live calls launching soon.
+                  </p>
+                  <Badge variant="outline" className="px-3 py-1">
+                    <Clock className="h-3 w-3 mr-1" />
+                    In Development
+                  </Badge>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
 
-              {/* 1:1s Tab */}
-              <TabsContent value="coaching" className="space-y-6">
-                <MembershipGate feature="1:1 Coaching">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>1:1 Coaching Sessions</CardTitle>
-                      <CardDescription>Book personalized coaching sessions</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-96 bg-muted rounded-md flex items-center justify-center">
-                        <p className="text-muted-foreground">Coaching scheduler coming soon</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </MembershipGate>
-              </TabsContent>
+          {/* 1:1s Tab */}
+          <TabsContent value="coaching" className="space-y-6">
+            {!isMember ? (
+              <OneOnOnePreview 
+                isMember={isMember}
+                onJoinBeta={() => setShowBetaModal(true)}
+              />
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Calendar className="h-12 w-12 mx-auto mb-4 text-primary" />
+                  <h3 className="text-xl font-semibold mb-2">1:1 Coaching Coming Soon</h3>
+                  <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+                    Type-certified coaches are being onboarded. Book 1:1 sessions with 
+                    custom action plans tied to your drift patterns and dimensional stack.
+                  </p>
+                  <Badge variant="outline" className="px-3 py-1">
+                    <Clock className="h-3 w-3 mr-1" />
+                    In Development
+                  </Badge>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
 
               {/* Trends & KPIs Tab */}
               <TabsContent value="profile" className="space-y-6">
