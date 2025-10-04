@@ -31,7 +31,9 @@ import {
   Grid3x3,
   MessageSquare,
   Play,
-  Trash2
+  Trash2,
+  Bell,
+  Heart
 } from 'lucide-react';
 import { FaReddit, FaLinkedin, FaFacebook } from 'react-icons/fa';
 import { Users2 } from 'lucide-react';
@@ -47,6 +49,7 @@ import { BetaOptInModal } from '@/components/BetaOptInModal';
 import { AICoachPreview } from '@/components/account/AICoachPreview';
 import { CohortsPreview } from '@/components/account/CohortsPreview';
 import { OneOnOnePreview } from '@/components/account/OneOnOnePreview';
+import { WaitlistModal } from '@/components/WaitlistModal';
 
 export default function Account() {
   const [searchParams] = useSearchParams();
@@ -57,6 +60,8 @@ export default function Account() {
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [surveySessions, setSurveySessions] = useState<any[]>([]);
   const [showBetaModal, setShowBetaModal] = useState(false);
+  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+  const [waitlistFeature, setWaitlistFeature] = useState<string>("");
   const navigate = useNavigate();
 
   // Check for success redirects
@@ -124,6 +129,16 @@ export default function Account() {
 
     fetchData();
   }, [user]);
+
+  const openWaitlist = (feature: string) => {
+    setWaitlistFeature(feature);
+    setIsWaitlistOpen(true);
+  };
+
+  const closeWaitlist = () => {
+    setIsWaitlistOpen(false);
+    setWaitlistFeature("");
+  };
 
   const handleOpenPortal = async () => {
     try {
@@ -563,17 +578,29 @@ export default function Account() {
               />
             ) : (
               <Card>
-                <CardContent className="py-12 text-center">
-                  <Bot className="h-12 w-12 mx-auto mb-4 text-primary" />
-                  <h3 className="text-xl font-semibold mb-2">AI Coach Coming Soon</h3>
-                  <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-                    Your personalized AI coach will provide daily micro-plans tied to your 1D–4D profile 
-                    and state-aware nudges for Flow vs Stress contexts.
-                  </p>
-                  <Badge variant="outline" className="px-3 py-1">
-                    <Clock className="h-3 w-3 mr-1" />
-                    In Development
-                  </Badge>
+                <CardContent className="py-12 text-center space-y-6">
+                  <div>
+                    <Bot className="h-12 w-12 mx-auto mb-4 text-primary" />
+                    <h3 className="text-xl font-semibold mb-2">AI Coach Coming Soon</h3>
+                    <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+                      Your personalized AI coach will provide daily micro-plans tied to your 1D–4D profile 
+                      and state-aware nudges for Flow vs Stress contexts.
+                    </p>
+                    <Badge variant="outline" className="px-3 py-1">
+                      <Clock className="h-3 w-3 mr-1" />
+                      In Development
+                    </Badge>
+                  </div>
+                  
+                  <Card className="border-primary/20 bg-primary/5 max-w-md mx-auto">
+                    <CardContent className="pt-6 text-center space-y-3">
+                      <p className="text-sm font-medium">Get early access to AI Coach</p>
+                      <Button onClick={() => openWaitlist('ai-coach')} variant="outline" className="gap-2">
+                        <Bell className="h-4 w-4" />
+                        Join the Waitlist
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </CardContent>
               </Card>
             )}
@@ -588,17 +615,29 @@ export default function Account() {
               />
             ) : (
               <Card>
-                <CardContent className="py-12 text-center">
-                  <Users className="h-12 w-12 mx-auto mb-4 text-primary" />
-                  <h3 className="text-xl font-semibold mb-2">Cohorts Coming Soon</h3>
-                  <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-                    Your type-clustered cohorts and complementary mixes are being prepared. 
-                    Weekly prompts, async discussions, and live calls launching soon.
-                  </p>
-                  <Badge variant="outline" className="px-3 py-1">
-                    <Clock className="h-3 w-3 mr-1" />
-                    In Development
-                  </Badge>
+                <CardContent className="py-12 text-center space-y-6">
+                  <div>
+                    <Users className="h-12 w-12 mx-auto mb-4 text-primary" />
+                    <h3 className="text-xl font-semibold mb-2">Cohorts Coming Soon</h3>
+                    <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+                      Your type-clustered cohorts and complementary mixes are being prepared. 
+                      Weekly prompts, async discussions, and live calls launching soon.
+                    </p>
+                    <Badge variant="outline" className="px-3 py-1">
+                      <Clock className="h-3 w-3 mr-1" />
+                      In Development
+                    </Badge>
+                  </div>
+                  
+                  <Card className="border-primary/20 bg-primary/5 max-w-md mx-auto">
+                    <CardContent className="pt-6 text-center space-y-3">
+                      <p className="text-sm font-medium">Get notified when Cohorts launch</p>
+                      <Button onClick={() => openWaitlist('cohorts')} variant="outline" className="gap-2">
+                        <Bell className="h-4 w-4" />
+                        Join the Waitlist
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </CardContent>
               </Card>
             )}
@@ -613,17 +652,29 @@ export default function Account() {
               />
             ) : (
               <Card>
-                <CardContent className="py-12 text-center">
-                  <Calendar className="h-12 w-12 mx-auto mb-4 text-primary" />
-                  <h3 className="text-xl font-semibold mb-2">1:1s — Relational Fit Coming Soon</h3>
-                  <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-                    Analyze relational compatibility one-on-one using KPIs similar to Cohorts: 
-                    core type alignment, drift patterns, supply/demand dynamics, and compatibility scoring.
-                  </p>
-                  <Badge variant="outline" className="px-3 py-1">
-                    <Clock className="h-3 w-3 mr-1" />
-                    In Development
-                  </Badge>
+                <CardContent className="py-12 text-center space-y-6">
+                  <div>
+                    <Calendar className="h-12 w-12 mx-auto mb-4 text-primary" />
+                    <h3 className="text-xl font-semibold mb-2">1:1s — Relational Fit Coming Soon</h3>
+                    <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+                      Analyze relational compatibility one-on-one using KPIs similar to Cohorts: 
+                      core type alignment, drift patterns, supply/demand dynamics, and compatibility scoring.
+                    </p>
+                    <Badge variant="outline" className="px-3 py-1">
+                      <Clock className="h-3 w-3 mr-1" />
+                      In Development
+                    </Badge>
+                  </div>
+                  
+                  <Card className="border-primary/20 bg-primary/5 max-w-md mx-auto">
+                    <CardContent className="pt-6 text-center space-y-3">
+                      <p className="text-sm font-medium">Be the first to book 1:1 sessions</p>
+                      <Button onClick={() => openWaitlist('one-on-ones')} variant="outline" className="gap-2">
+                        <Bell className="h-4 w-4" />
+                        Join the Waitlist
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </CardContent>
               </Card>
             )}
@@ -716,17 +767,29 @@ export default function Account() {
                 {/* For Members: Coming Soon Placeholder */}
                 {isMember && (
                   <Card>
-                    <CardContent className="py-12 text-center">
-                      <Sparkles className="h-12 w-12 mx-auto mb-4 text-primary" />
-                      <h3 className="text-xl font-semibold mb-2">Drift Map & Full KPIs</h3>
-                      <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-                        Your full dynamic profile is being prepared. Drift Map, Dimensional Heatmap, 
-                        and trending KPIs will be available soon.
-                      </p>
-                      <Badge variant="outline" className="px-3 py-1">
-                        <Clock className="h-3 w-3 mr-1" />
-                        Coming Soon
-                      </Badge>
+                    <CardContent className="py-12 text-center space-y-6">
+                      <div>
+                        <Sparkles className="h-12 w-12 mx-auto mb-4 text-primary" />
+                        <h3 className="text-xl font-semibold mb-2">Drift Map & Full KPIs</h3>
+                        <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+                          Your full dynamic profile is being prepared. Drift Map, Dimensional Heatmap, 
+                          and trending KPIs will be available soon.
+                        </p>
+                        <Badge variant="outline" className="px-3 py-1">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Coming Soon
+                        </Badge>
+                      </div>
+                      
+                      <Card className="border-primary/20 bg-primary/5 max-w-md mx-auto">
+                        <CardContent className="pt-6 text-center space-y-3">
+                          <p className="text-sm font-medium">Be among the first to access Trends & KPIs</p>
+                          <Button onClick={() => openWaitlist('trends-kpis')} variant="outline" className="gap-2">
+                            <Bell className="h-4 w-4" />
+                            Join the Waitlist
+                          </Button>
+                        </CardContent>
+                      </Card>
                     </CardContent>
                   </Card>
                 )}
@@ -749,30 +812,41 @@ export default function Account() {
 
                     {/* Support the Project */}
                     <div className="border-t pt-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <h4 className="font-medium mb-1">Support the Project</h4>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Heart className="h-5 w-5" />
+                            Support PRISM
+                          </CardTitle>
+                          <CardDescription>
+                            Help us build better personality assessment tools
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
                           <p className="text-sm text-muted-foreground">
-                            Help us build better tools for self-awareness
+                            Your donation helps us improve the assessment, add new features, and keep PRISM accessible to everyone.
                           </p>
-                        </div>
-                        <Badge variant="outline" className="bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400">
-                          47 supporters
-                        </Badge>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground">
-                          💚 Community members are donating <strong>$687/month</strong> to support open development
-                        </p>
-                        <Button 
-                          variant="outline" 
-                          className="w-full"
-                          onClick={() => window.open('https://donate.stripe.com/3cI6oHdR3cLg4n0eK56Ri04', '_blank')}
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Make a Donation
-                        </Button>
-                      </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <Button 
+                              variant="outline" 
+                              className="w-full"
+                              onClick={() => window.open('https://donate.stripe.com/3cI6oHdR3cLg4n0eUV', '_blank')}
+                            >
+                              <Heart className="mr-2 h-4 w-4" />
+                              One-Time Gift
+                            </Button>
+                            <Button 
+                              variant="default" 
+                              className="w-full"
+                              onClick={() => window.open('https://donate.stripe.com/3cI6oHdR3cLg4n0eUV', '_blank')}
+                            >
+                              <Heart className="mr-2 h-4 w-4" />
+                              Monthly Support
+                              <Badge variant="secondary" className="ml-2 text-xs">⭐</Badge>
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </div>
 
                     {membershipPlan && (
@@ -979,6 +1053,11 @@ export default function Account() {
         <BetaOptInModal 
           open={showBetaModal} 
           onOpenChange={setShowBetaModal} 
+        />
+        <WaitlistModal 
+          isOpen={isWaitlistOpen}
+          onClose={closeWaitlist}
+          feature={waitlistFeature}
         />
       </div>
     </ProtectedRoute>
