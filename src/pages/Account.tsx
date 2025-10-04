@@ -29,7 +29,9 @@ import {
   Lock,
   Map,
   Grid3x3,
-  MessageSquare
+  MessageSquare,
+  Play,
+  Trash2
 } from 'lucide-react';
 import { FaReddit, FaLinkedin, FaFacebook } from 'react-icons/fa';
 import { Users2 } from 'lucide-react';
@@ -141,6 +143,7 @@ export default function Account() {
   };
 
   const completedSessions = sessions.filter(s => s.status === 'completed');
+  const inProgressSessions = sessions.filter(s => s.status === 'in_progress');
   const currentYear = new Date().getFullYear();
   const retakesThisYear = completedSessions.filter(s => 
     new Date(s.started_at).getFullYear() === currentYear
@@ -327,9 +330,87 @@ export default function Account() {
                 )}
 
                 {/* Completed Results History */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Your Complete Results</CardTitle>
+            {inProgressSessions.length > 0 && (
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-orange-500" />
+                    In Progress Assessments
+                  </CardTitle>
+                  <CardDescription>
+                    {inProgressSessions.length} assessment{inProgressSessions.length !== 1 ? 's' : ''} in progress
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {inProgressSessions.map((session) => (
+                      <div key={session.id} className="flex items-center justify-between p-4 rounded-lg border bg-card border-orange-200 dark:border-orange-800">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-1">
+                            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-400">
+                              <Clock className="h-3 w-3 mr-1" />
+                              In Progress
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              {session.completed_questions || 0} / {session.total_questions || 0} questions
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Started {new Date(session.started_at).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            })}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => navigate(`/assessment?session=${session.id}`)}
+                          >
+                            <Play className="h-4 w-4 mr-1" />
+                            Continue
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              if (confirm('Are you sure you want to delete this in-progress assessment?')) {
+                                const { error } = await supabase
+                                  .from('assessment_sessions')
+                                  .delete()
+                                  .eq('id', session.id);
+                                
+                                if (error) {
+                                  toast({ 
+                                    title: 'Error',
+                                    description: 'Failed to delete assessment',
+                                    variant: 'destructive'
+                                  });
+                                } else {
+                                  toast({ 
+                                    title: 'Assessment deleted',
+                                    description: 'Your in-progress assessment has been removed'
+                                  });
+                                  setSessions(sessions.filter(s => s.id !== session.id));
+                                }
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Completed Results</CardTitle>
                     <CardDescription>
                       {completedSessions.length} assessment{completedSessions.length !== 1 ? 's' : ''} completed
                     </CardDescription>
