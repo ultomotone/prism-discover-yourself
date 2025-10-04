@@ -7,8 +7,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { useState } from "react";
 import Header from "@/components/Header";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Contact = () => {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -16,11 +19,74 @@ const Contact = () => {
     message: "",
     consent: false
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission here
-    console.log("Form submitted:", formData);
+    
+    // Basic validation
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.consent) {
+      toast({
+        title: "Consent Required",
+        description: "Please agree to the privacy policy to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate message length
+    if (formData.message.length > 2000) {
+      toast({
+        title: "Message Too Long",
+        description: "Please keep your message under 2000 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('submit-contact-form', {
+        body: formData,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Message Sent!",
+        description: "Thank you for reaching out. We'll respond within 24 hours.",
+      });
+
+      // Clear form
+      setFormData({
+        name: "",
+        email: "",
+        organization: "",
+        message: "",
+        consent: false,
+      });
+    } catch (error: any) {
+      console.error("Error submitting form:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -111,9 +177,9 @@ const Contact = () => {
                     variant="hero" 
                     size="lg" 
                     className="w-full"
-                    disabled={!formData.consent}
+                    disabled={!formData.consent || isSubmitting}
                   >
-                    Send Message
+                    {isSubmitting ? "Sending..." : "Send Message"}
                   </Button>
                 </form>
               </CardContent>

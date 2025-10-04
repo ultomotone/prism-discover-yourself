@@ -1,5 +1,8 @@
 project_id = "gnkuikentdtnatazeriu"
 
+[functions.submit-contact-form]
+verify_jwt = false
+
 [functions.refresh-analytics]
 verify_jwt = false
 

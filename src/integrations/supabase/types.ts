@@ -706,6 +706,51 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_submissions: {
+        Row: {
+          consent: boolean
+          created_at: string
+          email: string
+          id: string
+          ip_hash: string | null
+          message: string
+          name: string
+          notes: string | null
+          organization: string | null
+          responded_at: string | null
+          status: string
+          user_agent: string | null
+        }
+        Insert: {
+          consent?: boolean
+          created_at?: string
+          email: string
+          id?: string
+          ip_hash?: string | null
+          message: string
+          name: string
+          notes?: string | null
+          organization?: string | null
+          responded_at?: string | null
+          status?: string
+          user_agent?: string | null
+        }
+        Update: {
+          consent?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          ip_hash?: string | null
+          message?: string
+          name?: string
+          notes?: string | null
+          organization?: string | null
+          responded_at?: string | null
+          status?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       country_mapping: {
         Row: {
           country_name: string
