@@ -141,9 +141,9 @@ const Header = () => {
             <Button
               variant="assessment"
               size="sm"
-              onClick={() => navigate('/assessment')}
+              onClick={() => navigate('/membership')}
             >
-              Start the Test
+              Join Beta
             </Button>
             {!loading && (
               user ? (
@@ -158,6 +158,9 @@ const Header = () => {
                   <DropdownMenuContent align="end" className="w-48 bg-background border border-border shadow-lg z-50">
                     <DropdownMenuItem asChild>
                       <Link to="/dashboard" className="w-full">Dashboard</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/account?tab=purchases" className="w-full">Manage Purchases</Link>
                     </DropdownMenuItem>
                     {ADMIN_EMAILS.includes(user.email || '') && (
                       <>
@@ -310,11 +313,11 @@ const Header = () => {
                   variant="assessment"
                   className="w-full"
                   onClick={() => {
-                    navigate('/assessment');
+                    navigate('/membership');
                     setIsMenuOpen(false);
                   }}
                 >
-                  Start the Test
+                  Join Beta
                 </Button>
               </div>
               
@@ -328,6 +331,13 @@ const Header = () => {
                         onClick={() => setIsMenuOpen(false)}
                       >
                         Dashboard
+                      </Link>
+                      <Link
+                        to="/account?tab=purchases"
+                        className="block px-3 py-2 text-foreground hover:text-primary prism-transition font-medium"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Manage Purchases
                       </Link>
                       {ADMIN_EMAILS.includes(user.email || '') && (
                         <>

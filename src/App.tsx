@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/button";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { EntitlementsProvider } from "@/contexts/EntitlementsContext";
 import Header from "@/components/Header";
 import Footer from "./components/Footer";
 import Assessment from "./pages/Assessment";
 import Results from "./pages/Results";
 import History from "./pages/History";
 import UserDashboard from "./pages/UserDashboard";
+import Account from "./pages/Account";
 import RealTimeType from "./pages/RealTimeType";
 import LiveDashboard from "./pages/LiveDashboard";
 import Live from "./pages/Live";
@@ -197,10 +199,11 @@ const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <RouterProvider>
+        <EntitlementsProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <RouterProvider>
             <div className="min-h-screen flex flex-col bg-background">
               <Header />
               <main className="flex-1 pt-16">
@@ -233,6 +236,7 @@ const App = () => (
                   />
                   <Route path="/history" element={<History />} />
                   <Route path="/dashboard" element={<UserDashboard />} />
+                  <Route path="/account" element={<Account />} />
                   <Route path="/analytics" element={<AssessmentAnalytics />} />
                   <Route path="/content-studio" element={<ContentStudio />} />
                   <Route path="/post-survey-kpis" element={<PostSurveyKPIs />} />
@@ -472,8 +476,9 @@ const App = () => (
               </main>
               <Footer />
             </div>
-          </RouterProvider>
-        </TooltipProvider>
+            </RouterProvider>
+          </TooltipProvider>
+        </EntitlementsProvider>
       </AuthProvider>
     </QueryClientProvider>
   </ErrorBoundary>

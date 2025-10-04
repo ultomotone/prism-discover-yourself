@@ -8,9 +8,11 @@ import React, {
 } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/contexts/AuthContext";
 import { ResultsV2 } from "@/components/assessment/ResultsV2";
 import { SimpleResults } from "@/components/assessment/SimpleResults";
 import { PaywallGuard } from "@/components/PaywallGuard";
+import { UpgradeCards } from "@/components/results/UpgradeCards";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -297,6 +299,7 @@ export default function Results({ components }: ResultsProps = {}) {
   const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const sessionId = useMemo(
     () => paramId || query.get("sessionId") || "",
@@ -601,53 +604,66 @@ export default function Results({ components }: ResultsProps = {}) {
   return (
     <PaywallGuard profile={profile} sessionId={sessionId}>
       <div className="min-h-screen bg-background">
-        <div className="py-8 px-4 space-y-6">
-          {/* Debug Panel */}
-          <DebugPanel 
-            data={data}
-            error={resultsQuery.error}
-            sessionId={sessionId}
-            hasShareToken={hasShareToken}
-            shareToken={shareToken}
-            queryClient={queryClient}
-          />
+        <div className="prism-container px-6 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Debug Panel */}
+              <DebugPanel 
+                data={data}
+                error={resultsQuery.error}
+                sessionId={sessionId}
+                hasShareToken={hasShareToken}
+                shareToken={shareToken}
+                queryClient={queryClient}
+                userEmail={user?.email}
+              />
 
-          {/* Version Banner */}
-          {data?.results_version && (
-            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Badge variant="default" className="bg-blue-600">
-                      {data.results_version}
-                    </Badge>
-                    <div>
-                      <p className="font-medium text-blue-900">
-                        Results Version {data.results_version} • Type: {profile?.type_code}
-                      </p>
-                      <p className="text-sm text-blue-700">
-                        Confidence: {profile?.conf_calibrated?.toFixed(4)} • 
-                        Fit: {profile?.score_fit_calibrated?.toFixed(2)} • 
-                        Last Updated: {new Date().toLocaleTimeString()}
-                      </p>
+              {/* Version Banner */}
+              {data?.results_version && (
+                <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Badge variant="default" className="bg-blue-600">
+                          {data.results_version}
+                        </Badge>
+                        <div>
+                          <p className="font-medium text-blue-900">
+                            Results Version {data.results_version} • Type: {profile?.type_code}
+                          </p>
+                          <p className="text-sm text-blue-700">
+                            Confidence: {profile?.conf_calibrated?.toFixed(4)} • 
+                            Fit: {profile?.score_fit_calibrated?.toFixed(2)} • 
+                            Last Updated: {new Date().toLocaleTimeString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right text-xs text-blue-600">
+                        {(data as any).source === 'unified_cache' ? '🟢 Fresh Cache' : '🔄 Live Data'}
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right text-xs text-blue-600">
-                    {(data as any).source === 'unified_cache' ? '🟢 Fresh Cache' : '🔄 Live Data'}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          
-          <div id="results-content">
-            <ResultsView
-              profile={profile as any}
-              types={data.types}
-              functions={data.functions}
-              state={data.state}
-              resultsVersion={data.results_version}
-            />
+                  </CardContent>
+                </Card>
+              )}
+              
+              <div id="results-content">
+                <ResultsView
+                  profile={profile as any}
+                  types={data.types}
+                  functions={data.functions}
+                  state={data.state}
+                  resultsVersion={data.results_version}
+                />
+              </div>
+            </div>
+
+            {/* Right Rail - Upgrade Cards */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-20 space-y-4">
+                <UpgradeCards sessionId={sessionId} />
+              </div>
+            </div>
           </div>
 
           {/* Post-Survey Modal */}
