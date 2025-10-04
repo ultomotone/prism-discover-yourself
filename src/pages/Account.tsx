@@ -204,9 +204,9 @@ export default function Account() {
                   <BarChart3 className="h-4 w-4" />
                   Dashboard
                 </TabsTrigger>
-                <TabsTrigger value="ai-coach" className="flex items-center gap-2">
-                  <Bot className="h-4 w-4" />
-                  AI Coach
+                <TabsTrigger value="profile" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Profile
                 </TabsTrigger>
                 <TabsTrigger value="groups" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
@@ -216,9 +216,9 @@ export default function Account() {
                   <Calendar className="h-4 w-4" />
                   1:1s
                 </TabsTrigger>
-                <TabsTrigger value="profile" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Profile
+                <TabsTrigger value="ai-coach" className="flex items-center gap-2">
+                  <Bot className="h-4 w-4" />
+                  AI Coach
                 </TabsTrigger>
                 <TabsTrigger value="purchases" className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4" />
@@ -324,8 +324,8 @@ export default function Account() {
                                   {profile?.overlay && (
                                     <Badge variant="outline">{profile.overlay}</Badge>
                                   )}
-                                  <Badge variant={profile?.confidence === 'High' ? 'default' : 'secondary'}>
-                                    {profile?.confidence || 'Pending'}
+                                  <Badge variant={profile?.fit_band === 'High' ? 'default' : 'secondary'}>
+                                    {profile?.fit_band || 'Pending'}
                                   </Badge>
                                 </div>
                                 <p className="text-sm text-muted-foreground">
@@ -491,8 +491,8 @@ export default function Account() {
                                       {new Date(session.completed_at || session.started_at).toLocaleDateString()}
                                     </p>
                                   </div>
-                                  <Badge variant={profile?.confidence === 'High' ? 'default' : 'secondary'}>
-                                    {profile?.confidence || 'Pending'}
+                                  <Badge variant={profile?.fit_band === 'High' ? 'default' : 'secondary'}>
+                                    {profile?.fit_band || 'Pending'}
                                   </Badge>
                                 </div>
                               );
