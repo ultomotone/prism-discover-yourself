@@ -28,7 +28,8 @@ import {
   TrendingUp,
   Lock,
   Map,
-  Grid3x3
+  Grid3x3,
+  MessageSquare
 } from 'lucide-react';
 import { FaReddit, FaLinkedin, FaFacebook } from 'react-icons/fa';
 import { Users2 } from 'lucide-react';
@@ -154,6 +155,15 @@ export default function Account() {
   const daysUntilRetake = firstCompletedSession && !canRetake ?
     Math.ceil(30 - (Date.now() - new Date(firstCompletedSession.completed_at || firstCompletedSession.started_at).getTime()) / (24 * 60 * 60 * 1000))
     : 0;
+
+  // Helper to check if survey is completed for a specific session
+  const getSurveyStatus = (sessionId: string) => {
+    const survey = surveySessions.find(s => s.assessment_session_id === sessionId);
+    return {
+      exists: !!survey,
+      completed: !!survey?.completed_at
+    };
+  };
 
   const placeholderKpis = useMemo(
     () => getPlaceholderKpis(completedSessions.length),
@@ -358,7 +368,7 @@ export default function Account() {
                                   })}
                                 </p>
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -390,6 +400,29 @@ export default function Account() {
                                   <Share2 className="h-4 w-4 mr-1" />
                                   Share
                                 </Button>
+                                {(() => {
+                                  const surveyStatus = getSurveyStatus(session.id);
+                                  
+                                  if (surveyStatus.completed) {
+                                    return (
+                                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800">
+                                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                                        Survey Complete
+                                      </Badge>
+                                    );
+                                  }
+                                  
+                                  return (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => navigate(`/post-survey/${session.id}?t=${session.share_token}`)}
+                                    >
+                                      <MessageSquare className="h-4 w-4 mr-1" />
+                                      Take Survey
+                                    </Button>
+                                  );
+                                })()}
                               </div>
                             </div>
                           );
