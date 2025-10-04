@@ -13,6 +13,7 @@ import { ResultsV2 } from "@/components/assessment/ResultsV2";
 import { SimpleResults } from "@/components/assessment/SimpleResults";
 import { PaywallGuard } from "@/components/PaywallGuard";
 import { UpgradeCards } from "@/components/results/UpgradeCards";
+import { MembershipGate } from "@/components/MembershipGate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -656,6 +657,61 @@ export default function Results({ components }: ResultsProps = {}) {
                   resultsVersion={data.results_version}
                 />
               </div>
+
+              {/* Locked Sections - Beta Member Only */}
+              <MembershipGate feature="Trend Insights" blurWhenLocked={true}>
+                <Card className="mt-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      📈 Trend Insights
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <p className="text-muted-foreground">
+                        Track how your personality traits evolve over time with detailed trend analysis.
+                      </p>
+                      <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center">
+                        <svg className="w-full h-full p-4 opacity-30" viewBox="0 0 400 200">
+                          <polyline
+                            points="0,150 50,120 100,140 150,80 200,100 250,60 300,90 350,40 400,70"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </MembershipGate>
+
+              <MembershipGate feature="Relational Fit Analysis" blurWhenLocked={true}>
+                <Card className="mt-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      🤝 Relational Fit Analysis
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <p className="text-muted-foreground">
+                        Discover how your personality type interacts with others for optimal collaboration.
+                      </p>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                          <div
+                            key={i}
+                            className="h-20 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg flex items-center justify-center opacity-30"
+                          >
+                            <div className="w-12 h-12 rounded-full bg-purple-200" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </MembershipGate>
             </div>
 
             {/* Right Rail - Upgrade Cards */}

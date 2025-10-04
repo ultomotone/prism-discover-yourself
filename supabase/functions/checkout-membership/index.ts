@@ -41,8 +41,8 @@ serve(async (req) => {
         userId: user.id,
         resultId: resultId || ""
       },
-      success_url: `${Deno.env.get("APP_URL")}/results/${resultId || ""}?purchase=success&plan=${plan}&sid={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${Deno.env.get("APP_URL")}/results/${resultId || ""}`
+      success_url: `${Deno.env.get("APP_URL")}/account?purchase=success&plan=${plan}&sid={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${Deno.env.get("APP_URL")}/account`
     };
 
     // Use existing customer or create new one

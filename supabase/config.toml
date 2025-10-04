@@ -96,5 +96,14 @@ verify_jwt = false
 [functions.send-feedback-reminders]
 verify_jwt = false
 
+[functions.stripe-portal]
+verify_jwt = true
+
+[functions.checkout-membership]
+verify_jwt = true
+
+[functions.checkout-advanced]
+verify_jwt = true
+
 [auth]
 # (manage OTP expiry & password policies in the Supabase Dashboard)

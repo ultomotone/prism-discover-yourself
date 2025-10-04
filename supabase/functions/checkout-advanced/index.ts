@@ -15,9 +15,9 @@ serve(async (req) => {
       throw new Error("resultId is required");
     }
 
-    const advancedPrice = Deno.env.get("STRIPE_PRICE_ADVANCED");
+    const advancedPrice = Deno.env.get("STRIPE_PRICE_ADV");
     if (!advancedPrice) {
-      throw new Error("STRIPE_PRICE_ADVANCED not configured");
+      throw new Error("STRIPE_PRICE_ADV not configured");
     }
 
     // Check for existing Stripe customer
