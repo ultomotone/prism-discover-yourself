@@ -24,10 +24,23 @@ import {
   AlertCircle,
   ExternalLink,
   Share2,
-  Sparkles
+  Sparkles,
+  TrendingUp,
+  Lock,
+  Map,
+  Grid3x3
 } from 'lucide-react';
 import { FaReddit, FaLinkedin, FaFacebook } from 'react-icons/fa';
 import { Users2 } from 'lucide-react';
+import { useMemo } from 'react';
+import { getPlaceholderKpis } from '@/lib/placeholderKpis';
+import {
+  CoreAnchorWidget,
+  StabilityMeterWidget,
+  ConfidenceDialWidget,
+  StateBadgesWidget
+} from '@/components/account/TrendsWidgets';
+import { BetaOptInModal } from '@/components/BetaOptInModal';
 
 export default function Account() {
   const [searchParams] = useSearchParams();
@@ -37,6 +50,7 @@ export default function Account() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [surveySessions, setSurveySessions] = useState<any[]>([]);
+  const [showBetaModal, setShowBetaModal] = useState(false);
   const navigate = useNavigate();
 
   // Check for success redirects
@@ -138,6 +152,11 @@ export default function Account() {
     Math.ceil(30 - (Date.now() - new Date(firstCompletedSession.completed_at || firstCompletedSession.started_at).getTime()) / (24 * 60 * 60 * 1000))
     : 0;
 
+  const placeholderKpis = useMemo(
+    () => getPlaceholderKpis(completedSessions.length),
+    [completedSessions.length]
+  );
+
   const actionItems = [
     {
       icon: CheckCircle2,
@@ -205,8 +224,8 @@ export default function Account() {
                   Dashboard
                 </TabsTrigger>
                 <TabsTrigger value="profile" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Profile
+                  <TrendingUp className="h-4 w-4" />
+                  Trends & KPIs
                 </TabsTrigger>
                 <TabsTrigger value="groups" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
@@ -465,56 +484,107 @@ export default function Account() {
                 </MembershipGate>
               </TabsContent>
 
-              {/* Profile Tab */}
+              {/* Trends & KPIs Tab */}
               <TabsContent value="profile" className="space-y-6">
+                {/* Header with Beta CTA */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Your Profile & History</CardTitle>
-                    <CardDescription>View your assessment history and trends</CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <TrendingUp className="h-5 w-5" />
+                          Trends & KPIs
+                        </CardTitle>
+                        <CardDescription>
+                          Your personality dynamics over time
+                        </CardDescription>
+                      </div>
+                      {!isMember && (
+                        <Button onClick={() => setShowBetaModal(true)} variant="outline">
+                          <Lock className="h-4 w-4 mr-2" />
+                          Unlock Full Data
+                        </Button>
+                      )}
+                    </div>
                   </CardHeader>
-                  <CardContent>
-                    {completedSessions.length > 0 ? (
-                      <div className="space-y-4">
-                        <div>
-                          <h3 className="font-semibold mb-2">Assessment History</h3>
-                          <div className="space-y-2">
-                            {completedSessions.map((session) => {
-                              const profile = session.profile;
-                              return (
-                                <div key={session.id} className="flex items-center justify-between p-3 rounded-lg border bg-card/50">
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-mono font-bold">{profile?.type_code || '—'}</span>
-                                      {profile?.overlay && <Badge variant="outline" className="text-xs">{profile.overlay}</Badge>}
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">
-                                      {new Date(session.completed_at || session.started_at).toLocaleDateString()}
-                                    </p>
-                                  </div>
-                                  <Badge variant={profile?.fit_band === 'High' ? 'default' : 'secondary'}>
-                                    {profile?.fit_band || 'Pending'}
-                                  </Badge>
-                                </div>
-                              );
-                            })}
+                </Card>
+
+                {/* Sneak-Peek Widgets Grid */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <CoreAnchorWidget data={placeholderKpis.coreAnchor} isMember={isMember} />
+                  <StabilityMeterWidget data={placeholderKpis.stabilityMeter} isMember={isMember} />
+                  <ConfidenceDialWidget data={placeholderKpis.confidenceDial} isMember={isMember} />
+                  <StateBadgesWidget data={placeholderKpis.stateBadges} isMember={isMember} />
+                </div>
+
+                {/* Beta Unlock Tease Section (Non-Members) */}
+                {!isMember && (
+                  <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-primary" />
+                        What Beta Unlocks
+                      </CardTitle>
+                      <CardDescription>
+                        See your real drift over time, not just a 4-letter snapshot
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-3">
+                        {/* Feature previews */}
+                        <div className="flex gap-3 p-3 rounded-lg border bg-card/50">
+                          <Map className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                          <div>
+                            <h4 className="font-semibold text-sm">Drift Map</h4>
+                            <p className="text-xs text-muted-foreground">
+                              Triangle plot showing core → 3 lookalikes with event pins from your notes
+                            </p>
                           </div>
                         </div>
-                        <div className="pt-4 border-t">
-                          <MembershipGate feature="Trend Syncing">
-                            <div className="h-48 bg-muted rounded-md flex items-center justify-center">
-                              <p className="text-muted-foreground">Advanced trends visualization coming soon</p>
-                            </div>
-                          </MembershipGate>
+                        <div className="flex gap-3 p-3 rounded-lg border bg-card/50">
+                          <Grid3x3 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                          <div>
+                            <h4 className="font-semibold text-sm">Dimensional Heatmap</h4>
+                            <p className="text-xs text-muted-foreground">
+                              1D–4D per function with workload guidance (Lead/Primary/Ops/Checklist)
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-3 p-3 rounded-lg border bg-card/50">
+                          <BarChart3 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                          <div>
+                            <h4 className="font-semibold text-sm">KPI Suite</h4>
+                            <p className="text-xs text-muted-foreground">
+                              Trend Top-2 Gap, Confidence, Method Agreement, and N-tilt monthly/quarterly
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-muted-foreground mb-4">No assessments completed yet</p>
-                        <Button onClick={() => navigate('/assessment')}>Take Your First Assessment</Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      <Button onClick={() => setShowBetaModal(true)} className="w-full" size="lg">
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Join Beta to Unlock
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* For Members: Coming Soon Placeholder */}
+                {isMember && (
+                  <Card>
+                    <CardContent className="py-12 text-center">
+                      <Sparkles className="h-12 w-12 mx-auto mb-4 text-primary" />
+                      <h3 className="text-xl font-semibold mb-2">Drift Map & Full KPIs</h3>
+                      <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+                        Your full dynamic profile is being prepared. Drift Map, Dimensional Heatmap, 
+                        and trending KPIs will be available soon.
+                      </p>
+                      <Badge variant="outline" className="px-3 py-1">
+                        <Clock className="h-3 w-3 mr-1" />
+                        Coming Soon
+                      </Badge>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               {/* Purchases Tab */}
@@ -566,6 +636,11 @@ export default function Account() {
             </Tabs>
           </div>
         </div>
+        
+        <BetaOptInModal 
+          open={showBetaModal} 
+          onOpenChange={setShowBetaModal} 
+        />
       </div>
     </ProtectedRoute>
   );
