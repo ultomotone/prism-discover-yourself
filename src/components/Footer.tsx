@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Mail, Phone, Linkedin, Facebook, Youtube, Users } from "lucide-react";
+import { Mail, Phone, Linkedin, Facebook, Youtube, Users, Hash } from "lucide-react";
 import prismLogo from "@/assets/prism-logo.png";
 
 const Footer = () => {
@@ -98,6 +98,15 @@ const Footer = () => {
               onClick={() => window.open('https://www.skool.com/your-personality-blueprint?c=541fd1febb454e4792fec796f6c7e5dc', '_blank')}
             >
               <Users className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white p-0"
+              aria-label="Reddit"
+              onClick={() => window.open('https://www.reddit.com/r/PrismDynamics/s/5XVfgvoBYF', '_blank')}
+            >
+              <Hash className="h-5 w-5" />
             </Button>
           </div>
         </div>
