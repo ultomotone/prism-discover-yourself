@@ -24,6 +24,7 @@ jobs:
           R -e 'install.packages(c("DBI","RPostgres","dplyr","tidyr","jsonlite","lavaan"), repos="https://cloud.r-project.org")'
 
       - name: Run CFA computation
+        timeout-minutes: 20
         env:
           PGHOST: ${{ secrets.PGHOST }}
           PGPORT: ${{ secrets.PGPORT }}
@@ -33,16 +34,29 @@ jobs:
           RESULTS_VERSION: v1.2.1
         run: |
           R -e 'source("ops/cfa/run_cfa_lavaan.R")'
+      
+      - name: Verify CFA output exists
+        run: |
+          if [ ! -f "ops/cfa/out/cfa_payload.json" ]; then
+            echo "❌ CFA output file not found - R script likely failed"
+            exit 1
+          fi
+          echo "✅ CFA output file exists"
+          echo "File size: $(du -h ops/cfa/out/cfa_payload.json | cut -f1)"
+          echo "Lines: $(wc -l < ops/cfa/out/cfa_payload.json)"
 
       - name: POST results to Supabase
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           CFA_INGEST_TOKEN: ${{ secrets.CFA_INGEST_TOKEN }}
         run: |
-          curl -sS -X POST "$SUPABASE_URL/functions/v1/cfa-ingest" \
+          echo "Posting CFA results to Supabase..."
+          curl -v -X POST "$SUPABASE_URL/functions/v1/cfa-ingest" \
             -H "Content-Type: application/json" \
             -H "x-cfa-ingest-token: $CFA_INGEST_TOKEN" \
-            --data-binary @ops/cfa/out/cfa_payload.json
+            --data-binary @ops/cfa/out/cfa_payload.json \
+            --max-time 60 \
+            -w "\nHTTP Status: %{http_code}\n"
 
       - name: Upload CFA results as artifact
         uses: actions/upload-artifact@v4
@@ -50,3 +64,15 @@ jobs:
           name: cfa-results
           path: ops/cfa/out/cfa_payload.json
           retention-days: 30
+      
+      - name: Generate workflow summary
+        if: always()
+        run: |
+          echo "### CFA Computation Summary" >> $GITHUB_STEP_SUMMARY
+          if [ -f "ops/cfa/out/cfa_payload.json" ]; then
+            echo "✅ JSON output created" >> $GITHUB_STEP_SUMMARY
+            echo "- File size: $(du -h ops/cfa/out/cfa_payload.json | cut -f1)" >> $GITHUB_STEP_SUMMARY
+            echo "- Loadings count: $(jq '.loadings | length' ops/cfa/out/cfa_payload.json 2>/dev/null || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ JSON output NOT created - check R script logs above" >> $GITHUB_STEP_SUMMARY
+          fi

@@ -58,6 +58,15 @@ if (nrow(resp) == 0) {
 cat(sprintf("[CFA] Loaded %d responses from %d sessions\n", 
     nrow(resp), length(unique(resp$session_id))))
 
+# Check sample size before proceeding
+n_sessions <- length(unique(resp$session_id))
+min_required <- 200
+if (n_sessions < min_required) {
+  cat(sprintf("[CFA] ⚠️  WARNING: Only %d sessions (need %d+ for stable CFA)\n", 
+      n_sessions, min_required))
+  cat("[CFA] Model may not converge with small sample\n")
+}
+
 # Normalize 1-7 to 1-5 scale (linear transformation)
 resp <- resp %>% 
   mutate(x5 = 1 + (x - 1) * (4/6))
@@ -101,14 +110,46 @@ cat(model, "\n")
 
 # 6) Fit CFA
 cat("[CFA] Fitting CFA model...\n")
+flush.console()
+
+# Calculate complete cases for diagnostics
+n_complete <- sum(complete.cases(wide[, -1]))  # Exclude session_id column
+cat(sprintf("[CFA] Complete cases: %d (%.1f%%)\n", 
+    n_complete, 100 * n_complete / nrow(wide)))
+flush.console()
+
 fit <- tryCatch({
+  cat("[CFA] Attempting CFA with FIML estimation...\n")
+  flush.console()
   cfa(model, data = wide, std.lv = TRUE, missing = "fiml")
 }, error = function(e) {
-  cat(sprintf("[CFA] ERROR: %s\n", e$message))
+  cat(sprintf("[CFA] ❌ ERROR during model fitting:\n"))
+  cat(sprintf("  Error message: %s\n", e$message))
+  cat(sprintf("  Sample size: %d sessions\n", nrow(wide)))
+  cat(sprintf("  Variables: %d items\n", ncol(wide) - 1))
+  cat(sprintf("  Complete cases: %d (%.1f%%)\n", n_complete, 100 * n_complete / nrow(wide)))
+  cat(sprintf("  Missing data: %.1f%%\n", mean(is.na(wide[, -1])) * 100))
+  flush.console()
+  
+  # Try to diagnose multicollinearity
+  cat("[CFA] Diagnosing correlation matrix...\n")
+  tryCatch({
+    cor_mat <- cor(wide[, -1], use = "pairwise.complete.obs")
+    max_cor <- max(cor_mat[upper.tri(cor_mat)])
+    cat(sprintf("  Max correlation: %.3f\n", max_cor))
+    if (max_cor > 0.95) {
+      cat("  ⚠️  Potential multicollinearity detected (r > 0.95)\n")
+    }
+  }, error = function(e2) {
+    cat("  Could not compute correlation matrix\n")
+  })
+  flush.console()
+  
   stop(e)
 })
 
-cat("[CFA] ✅ Model converged\n")
+cat("[CFA] ✅ Model converged successfully\n")
+flush.console()
 
 # 7) Extract standardized loadings
 cat("[CFA] Extracting loadings...\n")
